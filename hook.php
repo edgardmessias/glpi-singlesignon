@@ -12,12 +12,11 @@ function plugin_singlesignon_display_login() {
       $url_sufix = "/redirect/" . str_replace('/', '~', $_GET['redirect']);
    }
 
-
    $signon_provider = new PluginSinglesignonProvider();
 
    $rows = $signon_provider->find('`is_active` = 1');
 
-   $html = [];
+   $html = array();
 
    foreach ($rows as $row) {
       $html[] = '<a href="' . $url_prefix . '/provider/' . $row['id'] . $url_sufix . '" style="color: #CFCFCF">[ Login with ' . $row['name'] . ' ]</a>';
@@ -32,8 +31,8 @@ function plugin_singlesignon_install() {
 
    $currentVersion = '0.0.0';
 
-   $default = [
-   ];
+   $default = array(
+   );
 
    $current = Config::getConfigurationValues('singlesignon');
 
@@ -73,17 +72,17 @@ function plugin_singlesignon_install() {
 
       $DB->query($query) or die("error creating glpi_plugin_singlesignon_providers " . $DB->error());
 
-//      $query = "INSERT INTO `glpi_plugin_singlesignon_providers`
-//                       (`id`, `name`, `serial`, `is_deleted`)
-//                VALUES (1, 'example 1', 'serial 1', 0),
-//                       (2, 'example 2', 'serial 2', 0),
-//                       (3, 'example 3', 'serial 3', 0)";
-//      $DB->query($query) or die("error populate glpi_plugin_example " . $DB->error());
+      //      $query = "INSERT INTO `glpi_plugin_singlesignon_providers`
+      //                       (`id`, `name`, `serial`, `is_deleted`)
+      //                VALUES (1, 'example 1', 'serial 1', 0),
+      //                       (2, 'example 2', 'serial 2', 0),
+      //                       (3, 'example 3', 'serial 3', 0)";
+      //      $DB->query($query) or die("error populate glpi_plugin_example " . $DB->error());
    }
 
-   Config::setConfigurationValues('singlesignon', [
+   Config::setConfigurationValues('singlesignon', array(
       'version' => PLUGIN_SINGLESIGNON_VERSION,
-   ]);
+   ));
    return true;
 }
 
@@ -94,7 +93,7 @@ function plugin_singlesignon_uninstall() {
    $rows = $config->find("`context` LIKE 'singlesignon%'");
 
    foreach ($rows as $id => $row) {
-      $config->delete(['id' => $id]);
+      $config->delete(array('id' => $id));
    }
 
    // Old version tables

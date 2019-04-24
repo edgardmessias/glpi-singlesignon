@@ -5,7 +5,7 @@
 
 include ('../../../inc/includes.php');
 
-$params = [];
+$params = array();
 
 if (isset($_SERVER['PATH_INFO'])) {
    $path_info = trim($_SERVER['PATH_INFO'], '/');
@@ -42,15 +42,15 @@ if (!$signon_provider->fields['is_active']) {
    Html::displayErrorAndDie(__sso("Provider not active."), true);
 }
 
-$httpClient = new GuzzleHttp\Client([
+$httpClient = new GuzzleHttp\Client(array(
    'verify' => false,
-      ]);
+      ));
 
-$collaborators = [
+$collaborators = array(
    'httpClient' => $httpClient,
-];
+);
 
-$provider = $signon_provider->prepareProviderInstance([], $collaborators);
+$provider = $signon_provider->prepareProviderInstance(array(), $collaborators);
 
 $signon_provider->checkAuthorization();
 
@@ -90,14 +90,14 @@ if ($signon_provider->login()) {
 
 
 try {
-// Try to get an access token (using the authorization code grant)
-   $token = $provider->getAccessToken('authorization_code', [
+   // Try to get an access token (using the authorization code grant)
+   $token = $provider->getAccessToken('authorization_code', array(
       'code' => $_GET['code']
-   ]);
+   ));
 
    var_dump($token);
 
-// Optional: Now you have a token you can look up a users profile data
+   // Optional: Now you have a token you can look up a users profile data
    // We got an access token, let's now get the user's details
    $user = $provider->getResourceOwner($token);
 

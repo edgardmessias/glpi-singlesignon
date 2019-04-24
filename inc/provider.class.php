@@ -49,17 +49,17 @@ class PluginSinglesignonProvider extends CommonDBTM {
       global $CFG_GLPI;
       $links = array();
 
-//      $links['add'] = '/plugins/singlesignon/front/provider.form.php';
-//      $links['config'] = '/plugins/singlesignon/index.php';
+      //      $links['add'] = '/plugins/singlesignon/front/provider.form.php';
+      //      $links['config'] = '/plugins/singlesignon/index.php';
       $links["<img  src='" . $CFG_GLPI["root_doc"] . "/pics/menu_showall.png' title='" . __s('Show all') . "' alt='" . __s('Show all') . "'>"] = '/plugins/singlesignon/index.php';
       $links[__s('Test link', 'singlesignon')] = '/plugins/singlesignon/index.php';
 
       return $links;
    }
 
-//   public function maybeTemplate() {
-//      parent::maybeTemplate();
-//   }
+   //   public function maybeTemplate() {
+   //      parent::maybeTemplate();
+   //   }
 
    function defineTabs($options = array()) {
 
@@ -262,14 +262,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return '';
    }
 
-//////////////////////////////
-////// SPECIFIC MODIF MASSIVE FUNCTIONS ///////
+   //////////////////////////////
+   ////// SPECIFIC MODIF MASSIVE FUNCTIONS ///////
    /**
     * @since version 0.85
     *
     * @see CommonDBTM::getSpecificMassiveActions()
     * */
-   function getSpecificMassiveActions($checkitem = NULL) {
+   function getSpecificMassiveActions($checkitem = null) {
 
       $actions = parent::getSpecificMassiveActions($checkitem);
 
@@ -352,13 +352,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
    }
 
    /**
-    * 
+    *
     * @param string $type
     * @param array $options
     * @param array $collaborators
     * @return \League\OAuth2\Client\Provider\AbstractProvider
     */
-   public static function createInstance($type = 'generic', array $options = [], array $collaborators = []) {
+   public static function createInstance($type = 'generic', array $options = array(), array $collaborators = array()) {
       switch ($type) {
          case 'facebook':
             if (!isset($options['graphApiVersion'])) {
@@ -391,7 +391,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $currentURL;
    }
 
-   public function prepareProviderInstance(array $options = [], array $collaborators = []) {
+   public function prepareProviderInstance(array $options = array(), array $collaborators = array()) {
       global $CFG_GLPI;
 
       if ($this->_provider === null) {
@@ -399,11 +399,11 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $redirect_uri = $this->getCurrentURL();
 
          $type = $this->fields['type'];
-         $default = [
+         $default = array(
             'clientId'     => $this->fields['client_id'],
             'clientSecret' => $this->fields['client_secret'],
             'redirectUri'  => $redirect_uri,
-         ];
+         );
 
          if ($type === 'generic') {
             $default['urlAuthorize'] = $this->fields['url_authorize'];
@@ -414,11 +414,12 @@ class PluginSinglesignonProvider extends CommonDBTM {
          if (!empty($this->fields['extra_options'])) {
             try {
                $extra = json_decode($this->fields['extra_options'], true);
-               if (!empty($extra)) {
-                  $default = array_merge($default, $extra);
-               }
             } catch (Exception $ex) {
-               
+               $extra = array();
+            }
+
+            if (!empty($extra)) {
+               $default = array_merge($default, $extra);
             }
          }
          $options = array_merge($default, $options);
@@ -429,7 +430,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
    }
 
    /**
-    * 
+    *
     * @return boolean|string
     */
    public function checkAuthorization() {
@@ -439,15 +440,15 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       if (!isset($_GET['code'])) {
 
-         $scope = [];
+         $scope = array();
          if (!empty($this->fields['scope'])) {
             $scope = explode(',', $this->fields['scope']);
          }
 
-         $options = [
+         $options = array(
             'scope' => $scope,
             'state' => Session::getNewCSRFToken(),
-         ];
+         );
 
          $this->_provider->authorize($options);
       }
@@ -455,9 +456,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
       // Check given state against previously stored one to mitigate CSRF attack
       $state = isset($_GET['state']) ? $_GET['state'] : '';
 
-      Session::checkCSRF([
+      Session::checkCSRF(array(
          '_glpi_csrf_token' => $state,
-      ]);
+      ));
 
       $this->_code = $_GET['code'];
 
@@ -465,7 +466,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
    }
 
    /**
-    * 
+    *
     * @return boolean|\League\OAuth2\Client\Token\AccessToken
     */
    public function getAccessToken() {
@@ -477,15 +478,15 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return false;
       }
 
-      $this->_token = $this->_provider->getAccessToken('authorization_code', [
+      $this->_token = $this->_provider->getAccessToken('authorization_code', array(
          'code' => $this->_code
-      ]);
+      ));
 
       return $this->_token;
    }
 
    /**
-    * 
+    *
     * @return boolean|\League\OAuth2\Client\Provider\ResourceOwnerInterface
     */
    public function getResourceOwner() {
@@ -497,7 +498,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
       if (!$token) {
          return false;
       }
-
 
       $this->_resource_owner = $this->_provider->getResourceOwner($token);
 
@@ -513,7 +513,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       //First: check linked user
 
       $email = false;
-      $email_fields = ['email', 'e-mail'];
+      $email_fields = array('email', 'e-mail');
 
       foreach ($email_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
@@ -527,7 +527,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $login = false;
-      $login_fields = ['login', 'username'];
+      $login_fields = array('login', 'username');
 
       foreach ($login_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {

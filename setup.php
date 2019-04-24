@@ -18,10 +18,10 @@ function plugin_init_singlesignon() {
 
    $PLUGIN_HOOKS['display_login']['singlesignon'] = "plugin_singlesignon_display_login";
 
-   $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
+   $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = array(
       'plugins' => 'PluginSinglesignonProvider',
       'config'  => 'PluginSinglesignonProvider',
-   ];
+   );
 }
 
 // Get the name and the version of the plugin - Needed
