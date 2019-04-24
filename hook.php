@@ -48,7 +48,7 @@ function plugin_singlesignon_install() {
 
    Config::setConfigurationValues('singlesignon', $current);
 
-   if (!TableExists("glpi_plugin_singlesignon_providers")) {
+   if (!sso_TableExists("glpi_plugin_singlesignon_providers")) {
       $query = "CREATE TABLE `glpi_plugin_singlesignon_providers` (
                   `id`                         int(11) NOT NULL auto_increment,
                   `type`                       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
@@ -97,7 +97,7 @@ function plugin_singlesignon_uninstall() {
    }
 
    // Old version tables
-   if (TableExists("glpi_plugin_singlesignon_providers")) {
+   if (sso_TableExists("glpi_plugin_singlesignon_providers")) {
       $query = "DROP TABLE `glpi_plugin_singlesignon_providers`";
       $DB->query($query) or die("error deleting glpi_plugin_singlesignon_providers");
    }

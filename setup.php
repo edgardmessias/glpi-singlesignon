@@ -58,3 +58,21 @@ function plugin_singlesignon_check_config() {
 function __sso($str) {
    return __($str, 'singlesignon');
 }
+
+function sso_TableExists($table) {
+   if (function_exists("TableExists")) {
+      return TableExists($table);
+   }
+
+   global $DB;
+   return $DB->TableExists($table);
+}
+
+function sso_FieldExists($table, $field, $usecache = true) {
+   if (function_exists("FieldExists")) {
+      return FieldExists($table);
+   }
+
+   global $DB;
+   return $DB->FieldExists($table, $field, $usecache);
+}
