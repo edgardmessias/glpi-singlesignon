@@ -19,10 +19,23 @@ function plugin_singlesignon_display_login() {
    $html = array();
 
    foreach ($rows as $row) {
-      $html[] = '<a href="' . $url_prefix . '/provider/' . $row['id'] . $url_sufix . '" style="color: #CFCFCF">[ Login with ' . $row['name'] . ' ]</a>';
+      $html[] = '<a href="' . $url_prefix . '/provider/' . $row['id'] . $url_sufix . '" class="singlesignon" style="color: #CFCFCF">[ Login with ' . $row['name'] . ' ]</a>';
    }
 
    echo implode("<br />\n", $html);
+   echo '<script type="text/javascript">
+      $(".singlesignon").on("click", function (e) {
+         e.preventDefault();
+
+         var url   = $(this).attr("href");
+         var left  = ($(window).width()/2)-(600/2);
+         var top   = ($(window).height()/2)-(800/2);
+         var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
+         if (window.focus) {
+            newWindow.focus();
+         }
+      });
+       </script>';
 }
 
 function plugin_singlesignon_install() {
