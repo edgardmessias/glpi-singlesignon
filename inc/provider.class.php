@@ -522,7 +522,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
          }
       }
 
-      if ($email && $user->getFromDBbyEmail($email, '')) {
+      $default_condition = '';
+
+      if (version_compare(GLPI_VERSION, '9.3', '>=')) {
+         $default_condition = array();
+      }
+
+      if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
          return $user;
       }
 
