@@ -359,19 +359,26 @@ class PluginSinglesignonProvider extends CommonDBTM {
     * @return \League\OAuth2\Client\Provider\AbstractProvider
     */
    public static function createInstance($type = 'generic', array $options = array(), array $collaborators = array()) {
+
+      if (!isset($options['scope'])) {
+         $options['scope'] = [];
+      }
+
       switch ($type) {
          case 'facebook':
             if (!isset($options['graphApiVersion'])) {
-               $options['graphApiVersion'] = 'v2.8';
+               $options['graphApiVersion'] = 'v2.12';
             }
             return new League\OAuth2\Client\Provider\Facebook($options, $collaborators);
          case 'github':
+            $options['scope'][] = 'user:email';
             return new League\OAuth2\Client\Provider\Github($options, $collaborators);
          case 'google':
             return new League\OAuth2\Client\Provider\Google($options, $collaborators);
          case 'instagram':
             return new League\OAuth2\Client\Provider\Instagram($options, $collaborators);
          case 'linkedin':
+            $options['scope'][] = 'r_emailaddress';
             return new League\OAuth2\Client\Provider\LinkedIn($options, $collaborators);
          case 'generic':
          default:
@@ -513,7 +520,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       //First: check linked user
 
       $email = false;
-      $email_fields = array('email', 'e-mail');
+      $email_fields = array('email', 'e-mail', 'email-address');
 
       foreach ($email_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
