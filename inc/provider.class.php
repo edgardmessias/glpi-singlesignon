@@ -361,7 +361,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
    public static function createInstance($type = 'generic', array $options = array(), array $collaborators = array()) {
 
       if (!isset($options['scope'])) {
-         $options['scope'] = [];
+         $options['scope'] = array();
       }
 
       switch ($type) {
