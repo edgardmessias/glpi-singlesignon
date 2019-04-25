@@ -50,7 +50,7 @@ $collaborators = array(
    'httpClient' => $httpClient,
 );
 
-$provider = $signon_provider->prepareProviderInstance(array(), $collaborators);
+$signon_provider->prepareProviderInstance(array(), $collaborators);
 
 $signon_provider->checkAuthorization();
 
@@ -77,40 +77,27 @@ if ($signon_provider->login()) {
       }
    }
 
-   echo "<script type=\"text/javascript\">
-           if (window.opener) {
-              window.opener.location='" . $url_redirect . "';
-              window.close();
-           } else {
-              window.location='" . $url_redirect . "';
-           }
-         </script>";
+   Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
+   echo '<div class="center spaced"><a href="' + $url_redirect + '">' .
+   __('Automatic redirection, else click') . '</a>';
+   echo '<script type="text/javascript">
+         if (window.opener) {
+           window.opener.location="' . $url_redirect . '";
+           window.close();
+         } else {
+           window.location="' . $url_redirect . '";
+         }
+       </script></div>';
+   Html::nullFooter();
    exit();
 }
 
 
-try {
-   // Try to get an access token (using the authorization code grant)
-   $token = $provider->getAccessToken('authorization_code', array(
-      'code' => $_GET['code']
-   ));
-
-   var_dump($token);
-
-   // Optional: Now you have a token you can look up a users profile data
-   // We got an access token, let's now get the user's details
-   $user = $provider->getResourceOwner($token);
-
-   // Use these details to create a new profile
-   printf('Hello %s!', $user->getNickname());
-
-   var_dump($user->toArray());
-} catch (Exception $e) {
-   var_dump($e);
-
-   // Failed to get user details
-   exit('Oh dear...' . $e->getMessage());
-}
-
-// Use this to interact with an API on the users behalf
-echo $token->getToken();
+// we have done at least a good login? No, we exit.
+Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
+echo '<div class="center b">' . __('User not authorized to connect in GLPI') . '<br><br>';
+// Logout whit noAUto to manage auto_login with errors
+echo '<a href="' . $CFG_GLPI["root_doc"] . '/front/logout.php?noAUTO=1' .
+ str_replace("?", "&", $REDIRECT) . '">' . __('Log in again') . '</a></div>';
+Html::nullFooter();
+exit();
