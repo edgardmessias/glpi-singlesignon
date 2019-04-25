@@ -76,12 +76,64 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $this->initForm($ID, $options);
       $this->showFormHeader($options);
 
-      echo "<tr class='tab_bg_1'>";
+      if (empty($this->fields["type"])) {
+         $this->fields["type"] = 'generic';
+      }
 
-      echo "<td>" . __('ID') . "</td>";
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __('Name') . "</td>";
       echo "<td>";
-      echo $ID;
+      Html::autocompletionTextField($this, "name");
       echo "</td>";
+      echo "<td>" . __('Comments') . "</td>";
+      echo "<td>";
+      echo "<textarea name='comment' >" . $this->fields["comment"] . "</textarea>";
+      echo "</td></tr>";
+
+      $on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");';
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __sso('SSO Type') . "</td><td>";
+      self::dropdownType('type', array('value' => $this->fields["type"], 'on_change' => $on_change));
+      echo "<td>" . __('Active') . "</td>";
+      echo "<td>";
+      Dropdown::showYesNo("is_active", $this->fields["is_active"]);
+      echo "</td></tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __sso('Client ID') . "</td>";
+      echo "<td><input type='text' style='width:96%' name='client_id' value='" . $this->fields["client_id"] . "'></td>";
+      echo "<td>" . __sso('Client Secret') . "</td>";
+      echo "<td><input type='text' style='width:96%' name='client_secret' value='" . $this->fields["client_secret"] . "'></td>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __sso('Scope') . "</td>";
+      echo "<td><input type='text' style='width:96%' name='scope' value='" . $this->fields["scope"] . "'></td>";
+      echo "<td>" . __sso('Extra Options') . "</td>";
+      echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "'></td>";
+      echo "</tr>\n";
+
+      $url_style = "";
+
+      if ($this->fields["type"] != 'generic') {
+         $url_style = 'style="display: none;"';
+      }
+
+      echo "<tr class='tab_bg_1 sso_url' $url_style>";
+      echo "<td>" . __sso('Authorize URL') . "</td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='url_authorize' value='" . $this->fields["url_authorize"] . "'></td>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1 sso_url' $url_style>";
+      echo "<td>" . __sso('Access Token URL') . "</td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='url_access_token' value='" . $this->fields["url_access_token"] . "'></td>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1 sso_url' $url_style>";
+      echo "<td>" . __sso('Resource Owner Details URL') . "</td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='url_resource_owner_details' value='" . $this->fields["url_resource_owner_details"] . "'></td>";
+      echo "</tr>\n";
 
       $this->showFormButtons($options);
 
@@ -264,6 +316,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
    //////////////////////////////
    ////// SPECIFIC MODIF MASSIVE FUNCTIONS ///////
+
    /**
     * @since version 0.85
     *
@@ -407,9 +460,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
          $type = $this->fields['type'];
          $default = array(
-            'clientId'     => $this->fields['client_id'],
+            'clientId' => $this->fields['client_id'],
             'clientSecret' => $this->fields['client_secret'],
-            'redirectUri'  => $redirect_uri,
+            'redirectUri' => $redirect_uri,
          );
 
          if ($type === 'generic') {
