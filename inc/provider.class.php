@@ -571,6 +571,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
    }
 
+   /**
+    * Get current URL without query string
+    * @return string
+    */
    private function getCurrentURL() {
       $currentURL = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") ? "https://" : "http://";
       $currentURL .= $_SERVER["SERVER_NAME"];
@@ -579,7 +583,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $currentURL .= ":" . $_SERVER["SERVER_PORT"];
       }
 
-      $currentURL .= $_SERVER["REQUEST_URI"];
+      // $currentURL .= $_SERVER["REQUEST_URI"];
+      // Ignore Query String
+      if (isset($_SERVER["SCRIPT_NAME"])) {
+         $currentURL .= $_SERVER["SCRIPT_NAME"];
+      }
+      if (isset($_SERVER["PATH_INFO"])) {
+         $currentURL .= $_SERVER["PATH_INFO"];
+      }
       return $currentURL;
    }
 
