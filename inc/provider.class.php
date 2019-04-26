@@ -2,6 +2,8 @@
 
 class PluginSinglesignonProvider extends CommonDBTM {
 
+   // From CommonDBTM
+   public $dohistory = true;
    static $rightname = 'config';
 
    /**
@@ -66,15 +68,12 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $links;
    }
 
-   //   public function maybeTemplate() {
-   //      parent::maybeTemplate();
-   //   }
-
    function defineTabs($options = array()) {
 
       $ong = array();
       $this->addDefaultFormTab($ong);
-      $this->addStandardTab('Link', $ong, $options);
+      $this->addStandardTab(__CLASS__, $ong, $options);
+      $this->addStandardTab('Log', $ong, $options);
 
       return $ong;
    }
