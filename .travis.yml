@@ -13,3 +13,17 @@ before_script:
 
 script:
   - ./vendor/bin/phpcs --colors -p
+
+before_deploy:
+  - php ./tools/make-release.php
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  overwrite: true
+  file: 
+    - "singlesignon.tar.gz"
+    - "singlesignon.zip"
+  skip_cleanup: true
+  on:
+    tags: true
