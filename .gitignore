@@ -1,3 +1,6 @@
 /locales/*.mo
 /nbproject
 /vendor
+/*.tar
+/*.tar.gz
+/*.zip
