@@ -93,6 +93,19 @@ function plugin_singlesignon_install() {
       //      $DB->query($query) or die("error populate glpi_plugin_example " . $DB->error());
    }
 
+   // add display preferences
+   $query_display_pref = "SELECT id
+      FROM glpi_displaypreferences
+      WHERE itemtype = 'PluginSinglesignonProvider'";
+   $res_display_pref = $DB->query($query_display_pref);
+   if ($DB->numrows($res_display_pref) == 0) {
+      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','2','1','0');");
+      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','3','2','0');");
+      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','5','4','0');");
+      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','6','5','0');");
+      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','10','6','0');");
+   }
+
    Config::setConfigurationValues('singlesignon', [
       'version' => PLUGIN_SINGLESIGNON_VERSION,
    ]);

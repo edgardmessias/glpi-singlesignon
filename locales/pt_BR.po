@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-04-26 14:37-0300\n"
+"POT-Creation-Date: 2019-04-26 15:28-0300\n"
 "PO-Revision-Date: 2019-04-26 11:04-0300\n"
 "Last-Translator: Edgard Lorraine Messias <edgardmessias@gmail.com>\n"
 "Language-Team: none\n"
@@ -55,99 +55,99 @@ msgstr "Provedor não ativo."
 msgid "Single Sign-on Provider"
 msgstr "Provedor Single Sign-on"
 
-#: inc/provider.class.php:109
+#: inc/provider.class.php:94
 msgid "SSO Type"
 msgstr "Tipo SSO"
 
-#: inc/provider.class.php:117 inc/provider.class.php:250
+#: inc/provider.class.php:102 inc/provider.class.php:267
 msgid "Client ID"
 msgstr "ID de Cliente"
 
-#: inc/provider.class.php:119 inc/provider.class.php:255
+#: inc/provider.class.php:104 inc/provider.class.php:275
 msgid "Client Secret"
 msgstr "Segredo do Cliente"
 
-#: inc/provider.class.php:124 inc/provider.class.php:260
+#: inc/provider.class.php:109 inc/provider.class.php:283
 msgid "Scope"
 msgstr "Escopo"
 
-#: inc/provider.class.php:126 inc/provider.class.php:265
+#: inc/provider.class.php:111 inc/provider.class.php:291
 msgid "Extra Options"
 msgstr "Opções Extras"
 
-#: inc/provider.class.php:137 inc/provider.class.php:270
+#: inc/provider.class.php:122 inc/provider.class.php:299
 msgid "Authorize URL"
 msgstr "URL de Autorização"
 
-#: inc/provider.class.php:142 inc/provider.class.php:275
+#: inc/provider.class.php:127 inc/provider.class.php:307
 msgid "Access Token URL"
 msgstr "URL de Token de Acesso"
 
-#: inc/provider.class.php:147 inc/provider.class.php:280
+#: inc/provider.class.php:132 inc/provider.class.php:315
 msgid "Resource Owner Details URL"
 msgstr "URL de Detalhes do Proprietário do Recurso"
 
-#: inc/provider.class.php:181
+#: inc/provider.class.php:166
 msgid "A Name is required"
 msgstr "Nome é obrigatório"
 
-#: inc/provider.class.php:187
+#: inc/provider.class.php:172
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "O \"%s\" é um tipo inválido"
 
-#: inc/provider.class.php:191
+#: inc/provider.class.php:176
 msgid "A Client ID is required"
 msgstr "ID de cliente é obrigatório"
 
-#: inc/provider.class.php:195
+#: inc/provider.class.php:180
 msgid "A Client Secret is required"
 msgstr "Segredo do Cliente é obrigatório"
 
-#: inc/provider.class.php:200
+#: inc/provider.class.php:185
 msgid "An Authorize URL is required"
 msgstr "URL de Autorização é obrigatório"
 
-#: inc/provider.class.php:202
+#: inc/provider.class.php:187
 msgid "The Authorize URL is invalid"
 msgstr "A URL de Autorização é inválida"
 
-#: inc/provider.class.php:206
+#: inc/provider.class.php:191
 msgid "An Access Token URL is required"
 msgstr "URL de Token de Acesso é obrigatório"
 
-#: inc/provider.class.php:208
+#: inc/provider.class.php:193
 msgid "The Access Token URL is invalid"
 msgstr "A URL de Token de Acesso é inválida"
 
-#: inc/provider.class.php:212
+#: inc/provider.class.php:197
 msgid "A Resource Owner Details URL is required"
 msgstr "URL de Detalhes do Proprietário do Recurso é obrigatório"
 
-#: inc/provider.class.php:214
+#: inc/provider.class.php:199
 msgid "The Resource Owner Details URL is invalid"
 msgstr "A URL de Detalhes do Proprietário do Recurso é inválida"
 
-#: inc/provider.class.php:331
+#: inc/provider.class.php:374
 msgid "Generic"
 msgstr "Generic"
 
-#: inc/provider.class.php:332
+#: inc/provider.class.php:375
 msgid "Facebook"
 msgstr "Facebook"
 
-#: inc/provider.class.php:333
+#: inc/provider.class.php:376
 msgid "GitHub"
 msgstr "GitHub"
 
-#: inc/provider.class.php:334
+#: inc/provider.class.php:377
 msgid "Google"
 msgstr "Google"
 
-#: inc/provider.class.php:335
+#: inc/provider.class.php:378
 msgid "Instagram"
 msgstr "Instagram"
 
-#: inc/provider.class.php:336
+#: inc/provider.class.php:379
 msgid "LinkdeIn"
 msgstr "LinkdeIn"

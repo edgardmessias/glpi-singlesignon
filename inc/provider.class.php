@@ -53,21 +53,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return __sso('Single Sign-on');
    }
 
-   /**
-    * @see CommonGLPI::getAdditionalMenuLinks()
-    * */
-   static function getAdditionalMenuLinks() {
-      global $CFG_GLPI;
-      $links = [];
-
-      //      $links['add'] = '/plugins/singlesignon/front/provider.form.php';
-      //      $links['config'] = '/plugins/singlesignon/index.php';
-      $links["<img  src='" . $CFG_GLPI["root_doc"] . "/pics/menu_showall.png' title='" . __s('Show all') . "' alt='" . __s('Show all') . "'>"] = '/plugins/singlesignon/index.php';
-      $links[__s('Test link', 'singlesignon')] = '/plugins/singlesignon/index.php';
-
-      return $links;
-   }
-
    function defineTabs($options = []) {
 
       $ong = [];
@@ -230,65 +215,123 @@ class PluginSinglesignonProvider extends CommonDBTM {
    }
 
    function getSearchOptions() {
+      // For GLPI <= 9.2
+      $options = [];
+      foreach ($this->rawSearchOptions() as $opt) {
+         if (!isset($opt['id'])) {
+            continue;
+         }
+         $optid = $opt['id'];
+         unset($opt['id']);
+         if (isset($options[$optid])) {
+            $message = "Duplicate key $optid ({$options[$optid]['name']}/{$opt['name']}) in " .
+                  get_class($this) . " searchOptions!";
+            Toolbox::logDebug($message);
+         }
+         foreach ($opt as $k => $v) {
+            $options[$optid][$k] = $v;
+         }
+      }
+      return $options;
+   }
 
+   function rawSearchOptions() {
       $tab = [];
-      $tab['common'] = __('Characteristics');
 
-      $tab[1]['table'] = $this->getTable();
-      $tab[1]['field'] = 'type';
-      $tab[1]['name'] = __('Type');
-      $tab[1]['searchtype'] = 'equals';
-      $tab[1]['datatype'] = 'specific';
+      $tab[] = [
+         'id' => 'common',
+         'name' => __('Characteristics'),
+      ];
 
-      $tab[2]['table'] = $this->getTable();
-      $tab[2]['field'] = 'name';
-      $tab[2]['name'] = __('Name');
-      $tab[2]['datatype'] = 'text';
+      $tab[] = [
+         'id' => 1,
+         'table' => $this->getTable(),
+         'field' => 'name',
+         'name' => __('Name'),
+         'datatype' => 'itemlink',
+      ];
 
-      $tab[3]['table'] = $this->getTable();
-      $tab[3]['field'] = 'client_id';
-      $tab[3]['name'] = __sso('Client ID');
-      $tab[3]['datatype'] = 'text';
+      $tab[] = [
+         'id' => 2,
+         'table' => $this->getTable(),
+         'field' => 'type',
+         'name' => __('Type'),
+         'searchtype' => 'equals',
+         'datatype' => 'specific',
+      ];
 
-      $tab[4]['table'] = $this->getTable();
-      $tab[4]['field'] = 'client_secret';
-      $tab[4]['name'] = __sso('Client Secret');
-      $tab[4]['datatype'] = 'text';
+      $tab[] = [
+         'id' => 3,
+         'table' => $this->getTable(),
+         'field' => 'client_id',
+         'name' => __sso('Client ID'),
+         'datatype' => 'text',
+      ];
 
-      $tab[5]['table'] = $this->getTable();
-      $tab[5]['field'] = 'scope';
-      $tab[5]['name'] = __sso('Scope');
-      $tab[5]['datatype'] = 'text';
+      $tab[] = [
+         'id' => 4,
+         'table' => $this->getTable(),
+         'field' => 'client_secret',
+         'name' => __sso('Client Secret'),
+         'datatype' => 'text',
+      ];
 
-      $tab[6]['table'] = $this->getTable();
-      $tab[6]['field'] = 'extra_options';
-      $tab[6]['name'] = __sso('Extra Options');
-      $tab[6]['datatype'] = 'text';
+      $tab[] = [
+         'id' => 5,
+         'table' => $this->getTable(),
+         'field' => 'scope',
+         'name' => __sso('Scope'),
+         'datatype' => 'text',
+      ];
 
-      $tab[7]['table'] = $this->getTable();
-      $tab[7]['field'] = 'url_authorize';
-      $tab[7]['name'] = __sso('Authorize URL');
-      $tab[7]['datatype'] = 'weblink';
+      $tab[] = [
+         'id' => 6,
+         'table' => $this->getTable(),
+         'field' => 'extra_options',
+         'name' => __sso('Extra Options'),
+         'datatype' => 'specific',
+      ];
 
-      $tab[8]['table'] = $this->getTable();
-      $tab[8]['field'] = 'url_access_token';
-      $tab[8]['name'] = __sso('Access Token URL');
-      $tab[8]['datatype'] = 'weblink';
+      $tab[] = [
+         'id' => 7,
+         'table' => $this->getTable(),
+         'field' => 'url_authorize',
+         'name' => __sso('Authorize URL'),
+         'datatype' => 'weblink',
+      ];
 
-      $tab[9]['table'] = $this->getTable();
-      $tab[9]['field'] = 'url_resource_owner_details';
-      $tab[9]['name'] = __sso('Resource Owner Details URL');
-      $tab[9]['datatype'] = 'weblink';
+      $tab[] = [
+         'id' => 8,
+         'table' => $this->getTable(),
+         'field' => 'url_access_token',
+         'name' => __sso('Access Token URL'),
+         'datatype' => 'weblink',
+      ];
 
-      $tab[10]['table'] = $this->getTable();
-      $tab[10]['field'] = 'is_active';
-      $tab[10]['name'] = __('Active');
-      $tab[10]['searchtype'] = 'equals';
-      $tab[10]['datatype'] = 'bool';
+      $tab[] = [
+         'id' => 9,
+         'table' => $this->getTable(),
+         'field' => 'url_resource_owner_details',
+         'name' => __sso('Resource Owner Details URL'),
+         'datatype' => 'weblink',
+      ];
 
-      $tab[30]['table'] = $this->getTable();
-      $tab[30]['field'] = 'id';
-      $tab[30]['name'] = __('ID');
+      $tab[] = [
+         'id' => 10,
+         'table' => $this->getTable(),
+         'field' => 'is_active',
+         'name' => __('Active'),
+         'searchtype' => 'equals',
+         'datatype' => 'bool',
+      ];
+
+      $tab[] = [
+         'id' => 30,
+         'table' => $this->getTable(),
+         'field' => 'id',
+         'name' => __('ID'),
+         'datatype' => 'itemlink',
+      ];
 
       return $tab;
    }
