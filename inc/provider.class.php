@@ -78,6 +78,11 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $ong;
    }
 
+   function post_getEmpty() {
+      $this->fields["type"] = 'generic';
+      $this->fields["is_active"] = 1;
+   }
+
    function showForm($ID, $options = array()) {
       global $CFG_GLPI;
 
@@ -148,6 +153,82 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return true;
    }
 
+   function prepareInputForAdd($input) {
+      return $this->prepareInput($input);
+   }
+
+   function prepareInputForUpdate($input) {
+      return $this->prepareInput($input);
+   }
+
+   /**
+    * Prepares input (for update and add)
+    *
+    * @param array $input Input data
+    *
+    * @return array
+    */
+   private function prepareInput($input) {
+      $error_detected = array();
+
+      $type = '';
+      //check for requirements
+      if (isset($input['type'])) {
+         $type = $input['type'];
+      }
+
+      if (!isset($input['name']) || empty($input['name'])) {
+         $error_detected[] = __sso('A Name is required');
+      }
+
+      if (empty($type)) {
+         $error_detected[] = __('An item type is required');
+      } else if (!isset(static::getTypes()[$type])) {
+         $error_detected[] = sprintf(__sso('The "%s" is a Invalid type'), $type);
+      }
+
+      if (!isset($input['client_id']) || empty($input['client_id'])) {
+         $error_detected[] = __sso('A Client ID is required');
+      }
+
+      if (!isset($input['client_secret']) || empty($input['client_secret'])) {
+         $error_detected[] = __sso('A Client Secret is required');
+      }
+
+      if ($type === 'generic') {
+         if (!isset($input['url_authorize']) || empty($input['url_authorize'])) {
+            $error_detected[] = __sso('An Authorize URL is required');
+         } else if (!filter_var($input['url_authorize'], FILTER_VALIDATE_URL)) {
+            $error_detected[] = __sso('The Authorize URL is invalid');
+         }
+
+         if (!isset($input['url_access_token']) || empty($input['url_access_token'])) {
+            $error_detected[] = __sso('An Access Token URL is required');
+         } else if (!filter_var($input['url_access_token'], FILTER_VALIDATE_URL)) {
+            $error_detected[] = __sso('The Access Token URL is invalid');
+         }
+
+         if (!isset($input['url_resource_owner_details']) || empty($input['url_resource_owner_details'])) {
+            $error_detected[] = __sso('A Resource Owner Details URL is required');
+         } else if (!filter_var($input['url_resource_owner_details'], FILTER_VALIDATE_URL)) {
+            $error_detected[] = __sso('The Resource Owner Details URL is invalid');
+         }
+      }
+
+      if (count($error_detected)) {
+         foreach ($error_detected as $error) {
+            Session::addMessageAfterRedirect(
+                  $error,
+                  true,
+                  ERROR
+            );
+         }
+         return false;
+      }
+
+      return $input;
+   }
+
    function getSearchOptions() {
 
       $tab = array();
@@ -176,7 +257,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       $tab[5]['table'] = $this->getTable();
       $tab[5]['field'] = 'scope';
-      $tab[5]['name'] = __sso('Client Secret');
+      $tab[5]['name'] = __sso('Scope');
       $tab[5]['datatype'] = 'text';
 
       $tab[6]['table'] = $this->getTable();
@@ -186,17 +267,17 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       $tab[7]['table'] = $this->getTable();
       $tab[7]['field'] = 'url_authorize';
-      $tab[7]['name'] = __sso('URL Authorize');
+      $tab[7]['name'] = __sso('Authorize URL');
       $tab[7]['datatype'] = 'weblink';
 
       $tab[8]['table'] = $this->getTable();
       $tab[8]['field'] = 'url_access_token';
-      $tab[8]['name'] = __sso('URL Access Token');
+      $tab[8]['name'] = __sso('Access Token URL');
       $tab[8]['datatype'] = 'weblink';
 
       $tab[9]['table'] = $this->getTable();
       $tab[9]['field'] = 'url_resource_owner_details';
-      $tab[9]['name'] = __sso('URL Resource Owner Details');
+      $tab[9]['name'] = __sso('Resource Owner Details URL');
       $tab[9]['datatype'] = 'weblink';
 
       $tab[10]['table'] = $this->getTable();
