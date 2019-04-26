@@ -58,7 +58,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
     * */
    static function getAdditionalMenuLinks() {
       global $CFG_GLPI;
-      $links = array();
+      $links = [];
 
       //      $links['add'] = '/plugins/singlesignon/front/provider.form.php';
       //      $links['config'] = '/plugins/singlesignon/index.php';
@@ -68,9 +68,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $links;
    }
 
-   function defineTabs($options = array()) {
+   function defineTabs($options = []) {
 
-      $ong = array();
+      $ong = [];
       $this->addDefaultFormTab($ong);
       $this->addStandardTab(__CLASS__, $ong, $options);
       $this->addStandardTab('Log', $ong, $options);
@@ -83,7 +83,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $this->fields["is_active"] = 1;
    }
 
-   function showForm($ID, $options = array()) {
+   function showForm($ID, $options = []) {
       global $CFG_GLPI;
 
       $this->initForm($ID, $options);
@@ -107,7 +107,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __sso('SSO Type') . "</td><td>";
-      self::dropdownType('type', array('value' => $this->fields["type"], 'on_change' => $on_change));
+      self::dropdownType('type', ['value' => $this->fields["type"], 'on_change' => $on_change]);
       echo "<td>" . __('Active') . "</td>";
       echo "<td>";
       Dropdown::showYesNo("is_active", $this->fields["is_active"]);
@@ -169,7 +169,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
     * @return array
     */
    private function prepareInput($input) {
-      $error_detected = array();
+      $error_detected = [];
 
       $type = '';
       //check for requirements
@@ -231,7 +231,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
    function getSearchOptions() {
 
-      $tab = array();
+      $tab = [];
       $tab['common'] = __('Characteristics');
 
       $tab[1]['table'] = $this->getTable();
@@ -293,10 +293,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $tab;
    }
 
-   static function getSpecificValueToDisplay($field, $values, array $options = array()) {
+   static function getSpecificValueToDisplay($field, $values, array $options = []) {
 
       if (!is_array($values)) {
-         $values = array($field => $values);
+         $values = [$field => $values];
       }
       switch ($field) {
          case 'type':
@@ -307,10 +307,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return '';
    }
 
-   static function getSpecificValueToSelect($field, $name = '', $values = '', array $options = array()) {
+   static function getSpecificValueToSelect($field, $name = '', $values = '', array $options = []) {
 
       if (!is_array($values)) {
-         $values = array($field => $values);
+         $values = [$field => $values];
       }
       $options['display'] = false;
       switch ($field) {
@@ -361,10 +361,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return string id of the select
     * */
-   static function dropdownType($name, $options = array()) {
+   static function dropdownType($name, $options = []) {
 
       $params['value'] = 0;
-      $params['toadd'] = array();
+      $params['toadd'] = [];
       $params['on_change'] = '';
       $params['display'] = true;
 
@@ -374,7 +374,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          }
       }
 
-      $items = array();
+      $items = [];
       if (count($params['toadd']) > 0) {
          $items = $params['toadd'];
       }
@@ -431,11 +431,11 @@ class PluginSinglesignonProvider extends CommonDBTM {
       switch ($ma->getAction()) {
          case 'DoIt':
             echo "&nbsp;<input type='hidden' name='toto' value='1'>" .
-            Html::submit(_x('button', 'Post'), array('name' => 'massiveaction')) .
+            Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
             " " . __('Write in item history', 'example');
             return true;
          case 'do_nothing' :
-            echo "&nbsp;" . Html::submit(_x('button', 'Post'), array('name' => 'massiveaction')) .
+            echo "&nbsp;" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
             " " . __('but do nothing :)', 'example');
             return true;
       }
@@ -455,7 +455,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             if ($item->getType() == 'Computer') {
                Session::addMessageAfterRedirect(__("Right it is the type I want...", 'example'));
                Session::addMessageAfterRedirect(__('Write in item history', 'example'));
-               $changes = array(0, 'old value', 'new value');
+               $changes = [0, 'old value', 'new value'];
                foreach ($ids as $id) {
                   if ($item->getFromDB($id)) {
                      Session::addMessageAfterRedirect("- " . $item->getField("name"));
@@ -500,10 +500,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
     * @param array $collaborators
     * @return \League\OAuth2\Client\Provider\AbstractProvider
     */
-   public static function createInstance($type = 'generic', array $options = array(), array $collaborators = array()) {
+   public static function createInstance($type = 'generic', array $options = [], array $collaborators = []) {
 
       if (!isset($options['scope'])) {
-         $options['scope'] = array();
+         $options['scope'] = [];
       }
 
       switch ($type) {
@@ -540,7 +540,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $currentURL;
    }
 
-   public function prepareProviderInstance(array $options = array(), array $collaborators = array()) {
+   public function prepareProviderInstance(array $options = [], array $collaborators = []) {
       global $CFG_GLPI;
 
       if ($this->_provider === null) {
@@ -548,11 +548,11 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $redirect_uri = $this->getCurrentURL();
 
          $type = $this->fields['type'];
-         $default = array(
+         $default = [
             'clientId' => $this->fields['client_id'],
             'clientSecret' => $this->fields['client_secret'],
             'redirectUri' => $redirect_uri,
-         );
+         ];
 
          if ($type === 'generic') {
             $default['urlAuthorize'] = $this->fields['url_authorize'];
@@ -564,7 +564,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             try {
                $extra = json_decode($this->fields['extra_options'], true);
             } catch (Exception $ex) {
-               $extra = array();
+               $extra = [];
             }
 
             if (!empty($extra)) {
@@ -589,15 +589,15 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       if (!isset($_GET['code'])) {
 
-         $scope = array();
+         $scope = [];
          if (!empty($this->fields['scope'])) {
             $scope = explode(',', $this->fields['scope']);
          }
 
-         $options = array(
+         $options = [
             'scope' => $scope,
             'state' => Session::getNewCSRFToken(),
-         );
+         ];
 
          $this->_provider->authorize($options);
       }
@@ -605,9 +605,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
       // Check given state against previously stored one to mitigate CSRF attack
       $state = isset($_GET['state']) ? $_GET['state'] : '';
 
-      Session::checkCSRF(array(
+      Session::checkCSRF([
          '_glpi_csrf_token' => $state,
-      ));
+      ]);
 
       $this->_code = $_GET['code'];
 
@@ -627,9 +627,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return false;
       }
 
-      $this->_token = $this->_provider->getAccessToken('authorization_code', array(
+      $this->_token = $this->_provider->getAccessToken('authorization_code', [
          'code' => $this->_code
-      ));
+      ]);
 
       return $this->_token;
    }
@@ -662,7 +662,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       //First: check linked user
 
       $email = false;
-      $email_fields = array('email', 'e-mail', 'email-address');
+      $email_fields = ['email', 'e-mail', 'email-address'];
 
       foreach ($email_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
@@ -674,7 +674,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $default_condition = '';
 
       if (version_compare(GLPI_VERSION, '9.3', '>=')) {
-         $default_condition = array();
+         $default_condition = [];
       }
 
       if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
@@ -682,7 +682,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $login = false;
-      $login_fields = array('login', 'username');
+      $login_fields = ['login', 'username'];
 
       foreach ($login_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {

@@ -16,7 +16,7 @@ function plugin_singlesignon_display_login() {
 
    $rows = $signon_provider->find('`is_active` = 1');
 
-   $html = array();
+   $html = [];
 
    foreach ($rows as $row) {
       $html[] = '<a href="' . $url_prefix . '/provider/' . $row['id'] . $url_sufix . '" class="singlesignon" style="color: #CFCFCF">[ Login with ' . $row['name'] . ' ]</a>';
@@ -44,8 +44,8 @@ function plugin_singlesignon_install() {
 
    $currentVersion = '0.0.0';
 
-   $default = array(
-   );
+   $default = [
+   ];
 
    $current = Config::getConfigurationValues('singlesignon');
 
@@ -93,9 +93,9 @@ function plugin_singlesignon_install() {
       //      $DB->query($query) or die("error populate glpi_plugin_example " . $DB->error());
    }
 
-   Config::setConfigurationValues('singlesignon', array(
+   Config::setConfigurationValues('singlesignon', [
       'version' => PLUGIN_SINGLESIGNON_VERSION,
-   ));
+   ]);
    return true;
 }
 
@@ -106,7 +106,7 @@ function plugin_singlesignon_uninstall() {
    $rows = $config->find("`context` LIKE 'singlesignon%'");
 
    foreach ($rows as $id => $row) {
-      $config->delete(array('id' => $id));
+      $config->delete(['id' => $id]);
    }
 
    // Old version tables

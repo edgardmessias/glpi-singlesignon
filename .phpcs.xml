@@ -3,10 +3,7 @@
 
    <!-- rules -->
    <rule ref="./vendor/glpi-project/coding-standard/GlpiStandard">
-      <exclude name="Generic.Arrays.DisallowLongArraySyntax" />
    </rule>
-   <!-- keep support for php 5.3 -->
-   <rule ref="Generic.Arrays.DisallowShortArraySyntax" />
 
    <!-- files -->
    <file>.</file>

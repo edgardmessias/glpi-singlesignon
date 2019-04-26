@@ -5,7 +5,7 @@
 
 include ('../../../inc/includes.php');
 
-$params = array();
+$params = [];
 
 if (isset($_SERVER['PATH_INFO'])) {
    $path_info = trim($_SERVER['PATH_INFO'], '/');
@@ -42,15 +42,15 @@ if (!$signon_provider->fields['is_active']) {
    Html::displayErrorAndDie(__sso("Provider not active."), true);
 }
 
-$httpClient = new GuzzleHttp\Client(array(
+$httpClient = new GuzzleHttp\Client([
    'verify' => false,
-      ));
+      ]);
 
-$collaborators = array(
+$collaborators = [
    'httpClient' => $httpClient,
-);
+];
 
-$signon_provider->prepareProviderInstance(array(), $collaborators);
+$signon_provider->prepareProviderInstance([], $collaborators);
 
 $signon_provider->checkAuthorization();
 

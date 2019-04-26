@@ -18,20 +18,20 @@ function plugin_init_singlesignon() {
 
    $PLUGIN_HOOKS['display_login']['singlesignon'] = "plugin_singlesignon_display_login";
 
-   $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = array(
+   $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
       'config'  => 'PluginSinglesignonProvider',
-   );
+   ];
 }
 
 // Get the name and the version of the plugin - Needed
 function plugin_version_singlesignon() {
-   return array(
+   return [
       'name'           => __sso('Single Sign-on'),
       'version'        => PLUGIN_SINGLESIGNON_VERSION,
       'author'         => 'Edgard Lorraine Messias',
       'homepage'       => 'https://github.com/edgardmessias/glpi-singlesignon',
       'minGlpiVersion' => '0.85'
-   );
+   ];
 }
 
 // Optional : check prerequisites before install : may print errors or add to message after redirect
