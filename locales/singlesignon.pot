@@ -1,0 +1,143 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-04-26 11:06-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: setup.php:29 front/provider.form.php:59 front/provider.form.php:61
+#: front/provider.php:6 front/provider.php:8 inc/provider.class.php:53
+msgid "Single Sign-on"
+msgstr ""
+
+#: setup.php:42
+msgid "Run first: composer install"
+msgstr ""
+
+#: setup.php:46
+msgid "This plugin requires GLPI >= 0.85"
+msgstr ""
+
+#: front/callback.php:29
+msgid "Provider not defined."
+msgstr ""
+
+#: front/callback.php:38
+msgid "Provider not found."
+msgstr ""
+
+#: front/callback.php:42
+msgid "Provider not active."
+msgstr ""
+
+#: inc/provider.class.php:46
+msgid "Single Sign-on Provider"
+msgstr ""
+
+#: inc/provider.class.php:109
+msgid "SSO Type"
+msgstr ""
+
+#: inc/provider.class.php:117 inc/provider.class.php:250
+msgid "Client ID"
+msgstr ""
+
+#: inc/provider.class.php:119 inc/provider.class.php:255
+msgid "Client Secret"
+msgstr ""
+
+#: inc/provider.class.php:124 inc/provider.class.php:260
+msgid "Scope"
+msgstr ""
+
+#: inc/provider.class.php:126 inc/provider.class.php:265
+msgid "Extra Options"
+msgstr ""
+
+#: inc/provider.class.php:137 inc/provider.class.php:270
+msgid "Authorize URL"
+msgstr ""
+
+#: inc/provider.class.php:142 inc/provider.class.php:275
+msgid "Access Token URL"
+msgstr ""
+
+#: inc/provider.class.php:147 inc/provider.class.php:280
+msgid "Resource Owner Details URL"
+msgstr ""
+
+#: inc/provider.class.php:181
+msgid "A Name is required"
+msgstr ""
+
+#: inc/provider.class.php:187
+#, php-format
+msgid "The \"%s\" is a Invalid type"
+msgstr ""
+
+#: inc/provider.class.php:191
+msgid "A Client ID is required"
+msgstr ""
+
+#: inc/provider.class.php:195
+msgid "A Client Secret is required"
+msgstr ""
+
+#: inc/provider.class.php:200
+msgid "An Authorize URL is required"
+msgstr ""
+
+#: inc/provider.class.php:202
+msgid "The Authorize URL is invalid"
+msgstr ""
+
+#: inc/provider.class.php:206
+msgid "An Access Token URL is required"
+msgstr ""
+
+#: inc/provider.class.php:208
+msgid "The Access Token URL is invalid"
+msgstr ""
+
+#: inc/provider.class.php:212
+msgid "A Resource Owner Details URL is required"
+msgstr ""
+
+#: inc/provider.class.php:214
+msgid "The Resource Owner Details URL is invalid"
+msgstr ""
+
+#: inc/provider.class.php:331
+msgid "Generic"
+msgstr ""
+
+#: inc/provider.class.php:332
+msgid "Facebook"
+msgstr ""
+
+#: inc/provider.class.php:333
+msgid "GitHub"
+msgstr ""
+
+#: inc/provider.class.php:334
+msgid "Google"
+msgstr ""
+
+#: inc/provider.class.php:335
+msgid "Instagram"
+msgstr ""
+
+#: inc/provider.class.php:336
+msgid "LinkdeIn"
+msgstr ""

@@ -1,0 +1,145 @@
+# Portuguese translations for PACKAGE package.
+# Copyright (C) 2019 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-04-26 10:56-0300\n"
+"PO-Revision-Date: 2019-04-26 11:04-0300\n"
+"Last-Translator: Edgard Lorraine Messias <edgardmessias@gmail.com>\n"
+"Language-Team: none\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: pt_BR\n"
+"X-Generator: Poedit 1.7.4\n"
+
+#: setup.php:29 front/provider.form.php:59 front/provider.form.php:61
+#: front/provider.php:6 front/provider.php:8 inc/provider.class.php:53
+msgid "Single Sign-on"
+msgstr "Single Sign-on"
+
+#: setup.php:42
+msgid "Run first: composer install"
+msgstr "Execute primeiro: composer install"
+
+#: setup.php:46
+msgid "This plugin requires GLPI >= 0.85"
+msgstr "Este plugin requer GLPI >= 0.85"
+
+#: front/callback.php:29
+msgid "Provider not defined."
+msgstr "Provedor não definido."
+
+#: front/callback.php:38
+msgid "Provider not found."
+msgstr "Provedor não encontrado."
+
+#: front/callback.php:42
+msgid "Provider not active."
+msgstr "Provedor não ativo."
+
+#: inc/provider.class.php:46
+msgid "Single Sign-on Provider"
+msgstr "Provedor Single Sign-on"
+
+#: inc/provider.class.php:109
+msgid "SSO Type"
+msgstr "Tipo SSO"
+
+#: inc/provider.class.php:117 inc/provider.class.php:250
+msgid "Client ID"
+msgstr "ID de Cliente"
+
+#: inc/provider.class.php:119 inc/provider.class.php:255
+msgid "Client Secret"
+msgstr "Segredo do Cliente"
+
+#: inc/provider.class.php:124 inc/provider.class.php:260
+msgid "Scope"
+msgstr "Escopo"
+
+#: inc/provider.class.php:126 inc/provider.class.php:265
+msgid "Extra Options"
+msgstr "Opções Extras"
+
+#: inc/provider.class.php:137 inc/provider.class.php:270
+msgid "Authorize URL"
+msgstr "URL de Autorização"
+
+#: inc/provider.class.php:142 inc/provider.class.php:275
+msgid "Access Token URL"
+msgstr "URL de Token de Acesso"
+
+#: inc/provider.class.php:147 inc/provider.class.php:280
+msgid "Resource Owner Details URL"
+msgstr "URL de Detalhes do Proprietário do Recurso"
+
+#: inc/provider.class.php:181
+msgid "A Name is required"
+msgstr "Nome é obrigatório"
+
+#: inc/provider.class.php:187
+#, php-format
+msgid "The \"%s\" is a Invalid type"
+msgstr "O \"%s\" é um tipo inválido"
+
+#: inc/provider.class.php:191
+msgid "A Client ID is required"
+msgstr "ID de cliente é obrigatório"
+
+#: inc/provider.class.php:195
+msgid "A Client Secret is required"
+msgstr "Segredo do Cliente é obrigatório"
+
+#: inc/provider.class.php:200
+msgid "An Authorize URL is required"
+msgstr "URL de Autorização é obrigatório"
+
+#: inc/provider.class.php:202
+msgid "The Authorize URL is invalid"
+msgstr "A URL de Autorização é inválida"
+
+#: inc/provider.class.php:206
+msgid "An Access Token URL is required"
+msgstr "URL de Token de Acesso é obrigatório"
+
+#: inc/provider.class.php:208
+msgid "The Access Token URL is invalid"
+msgstr "A URL de Token de Acesso é inválida"
+
+#: inc/provider.class.php:212
+msgid "A Resource Owner Details URL is required"
+msgstr "URL de Detalhes do Proprietário do Recurso é obrigatório"
+
+#: inc/provider.class.php:214
+msgid "The Resource Owner Details URL is invalid"
+msgstr "A URL de Detalhes do Proprietário do Recurso é inválida"
+
+#: inc/provider.class.php:331
+msgid "Generic"
+msgstr "Generic"
+
+#: inc/provider.class.php:332
+msgid "Facebook"
+msgstr "Facebook"
+
+#: inc/provider.class.php:333
+msgid "GitHub"
+msgstr "GitHub"
+
+#: inc/provider.class.php:334
+msgid "Google"
+msgstr "Google"
+
+#: inc/provider.class.php:335
+msgid "Instagram"
+msgstr "Instagram"
+
+#: inc/provider.class.php:336
+msgid "LinkdeIn"
+msgstr "LinkdeIn"

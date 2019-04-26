@@ -12,6 +12,9 @@
     "require-dev": {
         "glpi-project/coding-standard": "^0.7.1"
     },
+    "scripts": {
+        "update-locales": "@php tools/update-locales.php"
+    },
     "config": {
         "platform": {
             "php": "5.6"
