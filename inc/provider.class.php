@@ -24,10 +24,19 @@ class PluginSinglesignonProvider extends CommonDBTM {
    protected $_resource_owner = null;
 
    public static function canCreate() {
-      if (static::$rightname) {
-         return Session::haveRight(static::$rightname, UPDATE);
-      }
-      return false;
+      return static::canUpdate();
+   }
+
+   public static function canDelete() {
+      return static::canUpdate();
+   }
+
+   public static function canPurge() {
+      return static::canUpdate();
+   }
+
+   public static function canView() {
+      return static::canUpdate();
    }
 
    // Should return the localized name of the type
