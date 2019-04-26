@@ -599,7 +599,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
          if ($type === 'generic') {
             $default['urlAuthorize'] = $this->fields['url_authorize'];
-            $default['urlAccessToken'] = $this->fields['url_accessToken'];
+            $default['urlAccessToken'] = $this->fields['url_access_token'];
             $default['urlResourceOwnerDetails'] = $this->fields['url_resource_owner_details'];
          }
 
