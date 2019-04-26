@@ -5,32 +5,11 @@
 
 include ('../../../inc/includes.php');
 
-$params = [];
+$provider_id = PluginSinglesignonProvider::getCallbackParameters('provider');
 
-if (isset($_SERVER['PATH_INFO'])) {
-   $path_info = trim($_SERVER['PATH_INFO'], '/');
-
-   $parts = explode('/', $path_info);
-
-   $key = null;
-
-   foreach ($parts as $part) {
-      $part = str_replace('~', '/', $part);
-      if ($key === null) {
-         $key = $part;
-      } else {
-         $params[$key] = $part;
-         $key = null;
-      }
-   }
-}
-
-if (!isset($params['provider'])) {
+if (!$provider_id) {
    Html::displayErrorAndDie(__sso("Provider not defined."), false);
 }
-
-$provider_id = (int) $params['provider'];
-
 
 $signon_provider = new PluginSinglesignonProvider();
 
@@ -55,6 +34,9 @@ $signon_provider->prepareProviderInstance([], $collaborators);
 $signon_provider->checkAuthorization();
 
 if ($signon_provider->login()) {
+
+   $params = PluginSinglesignonProvider::getCallbackParameters('q');
+
    $url_redirect = '';
 
    $REDIRECT = "";
@@ -91,7 +73,6 @@ if ($signon_provider->login()) {
    Html::nullFooter();
    exit();
 }
-
 
 // we have done at least a good login? No, we exit.
 Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');

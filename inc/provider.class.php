@@ -718,4 +718,66 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $auth->auth_succeded;
    }
 
+   /**
+    * Generate a URL to callback
+    * Some providers don't accept query string, it convert to PATH
+    * @global array $CFG_GLPI
+    * @param integer $id
+    * @param array $query
+    * @return string
+    */
+   public static function getCallbackUrl($id, $query = []) {
+      global $CFG_GLPI;
+
+      $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php';
+
+      $url .= "/provider/$id";
+
+      http_build_query($url);
+
+      if (!empty($query)) {
+         $url .= "/q/" . base64_encode(http_build_query($query));
+      }
+
+      return $url;
+   }
+
+   public static function getCallbackParameters($name = null) {
+      $data = [];
+
+      if (isset($_SERVER['PATH_INFO'])) {
+         $path_info = trim($_SERVER['PATH_INFO'], '/');
+
+         $parts = explode('/', $path_info);
+
+         $key = null;
+
+         foreach ($parts as $part) {
+            if ($key === null) {
+               $key = $part;
+            } else {
+               if ($key === "provider") {
+                  $part = intval($part);
+               } else {
+                  $tmp = base64_decode($part);
+                  parse_str($tmp, $part);
+               }
+
+               if ($key === $name) {
+                  return $part;
+               }
+
+               $data[$key] = $part;
+               $key = null;
+            }
+         }
+      }
+
+      if (!isset($data[$name])) {
+         return null;
+      }
+
+      return $data;
+   }
+
 }

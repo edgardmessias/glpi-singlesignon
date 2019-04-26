@@ -3,15 +3,6 @@
 function plugin_singlesignon_display_login() {
    global $CFG_GLPI;
 
-   $url_prefix = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php';
-   $url_sufix = '';
-
-   if (isset($_POST['redirect']) && (strlen($_POST['redirect']) > 0)) {
-      $url_sufix = "/redirect/" . str_replace('/', '~', $_POST['redirect']);
-   } else if (isset($_GET['redirect']) && strlen($_GET['redirect']) > 0) {
-      $url_sufix = "/redirect/" . str_replace('/', '~', $_GET['redirect']);
-   }
-
    $signon_provider = new PluginSinglesignonProvider();
 
    $rows = $signon_provider->find('`is_active` = 1');
@@ -19,7 +10,16 @@ function plugin_singlesignon_display_login() {
    $html = [];
 
    foreach ($rows as $row) {
-      $html[] = '<a href="' . $url_prefix . '/provider/' . $row['id'] . $url_sufix . '" class="singlesignon" style="color: #CFCFCF">[ Login with ' . $row['name'] . ' ]</a>';
+      $query = [];
+
+      if (isset($_REQUEST['redirect'])) {
+         $query['redirect'] = $_REQUEST['redirect'];
+      }
+
+      $url = PluginSinglesignonProvider::getCallbackUrl($row['id'], $query);
+
+      $html[] = '<a href="' . $url . '" class="singlesignon" style="color: #CFCFCF">' .
+            sprintf(__sso('[ Login with %s ]'), $row['name']) . '</a>';
    }
 
    echo implode("<br />\n", $html);

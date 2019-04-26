@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-04-26 10:56-0300\n"
+"POT-Creation-Date: 2019-04-26 14:37-0300\n"
 "PO-Revision-Date: 2019-04-26 11:04-0300\n"
 "Last-Translator: Edgard Lorraine Messias <edgardmessias@gmail.com>\n"
 "Language-Team: none\n"
@@ -16,28 +16,38 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: setup.php:29 front/provider.form.php:59 front/provider.form.php:61
+#: hook.php:22
+#, php-format
+msgid "[ Login with %s ]"
+msgstr "[ Entrar com %s ]"
+
+#: setup.php:8
+#, php-format
+msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
+msgstr "Por favor, renomeie a pasta do plugin \"%s\" para \"singlesignon\""
+
+#: setup.php:36 front/provider.form.php:59 front/provider.form.php:61
 #: front/provider.php:6 front/provider.php:8 inc/provider.class.php:53
 msgid "Single Sign-on"
 msgstr "Single Sign-on"
 
-#: setup.php:42
+#: setup.php:49
 msgid "Run first: composer install"
 msgstr "Execute primeiro: composer install"
 
-#: setup.php:46
+#: setup.php:53
 msgid "This plugin requires GLPI >= 0.85"
 msgstr "Este plugin requer GLPI >= 0.85"
 
-#: front/callback.php:29
+#: front/callback.php:11
 msgid "Provider not defined."
 msgstr "Provedor não definido."
 
-#: front/callback.php:38
+#: front/callback.php:17
 msgid "Provider not found."
 msgstr "Provedor não encontrado."
 
-#: front/callback.php:42
+#: front/callback.php:21
 msgid "Provider not active."
 msgstr "Provedor não ativo."
 
