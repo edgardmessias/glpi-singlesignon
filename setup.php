@@ -2,6 +2,13 @@
 
 define('PLUGIN_SINGLESIGNON_VERSION', '1.0.0');
 
+$folder = basename(dirname(__FILE__));
+
+if ($folder !== "singlesignon") {
+   $msg = sprintf(__sso("Please, rename the plugin folder \"%s\" to \"singlesignon\""), $folder);
+   Session::addMessageAfterRedirect($msg, true, ERROR);
+}
+
 // Init the hooks of the plugins -Needed
 function plugin_init_singlesignon() {
    global $PLUGIN_HOOKS, $CFG_GLPI, $CFG_SSO;
