@@ -1,18 +1,20 @@
-# English translations for PACKAGE package.
-# Copyright (C) 2019 THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# English translations for singlesignon package.
+# Copyright (C) 2019 THE singlesignon'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the singlesignon package.
 # Automatically generated, 2019.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-04-26 15:28-0300\n"
-"PO-Revision-Date: 2019-04-26 15:28-0300\n"
+"Project-Id-Version: singlesignon 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/edgardmessias/glpi-singlesignon/"
+"issues\n"
+"POT-Creation-Date: 2019-04-29 09:32-0300\n"
+"PO-Revision-Date: 2019-04-29 09:32-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
+"Language: en_GB\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
