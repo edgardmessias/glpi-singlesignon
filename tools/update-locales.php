@@ -33,7 +33,7 @@ $source_files = implode(" ", $file_list);
 putenv("LANG=C");
 log_and_exec("xgettext $source_files -D $dir -o $dir/locales/singlesignon.pot" .
       " -L PHP --add-comments=TRANS --from-code=UTF-8 --force-po --keyword=__sso" .
-      " --package-name=singlesignon --package-version=" . PLUGIN_SINGLESIGNON_VERSION . 
+      " --package-name=singlesignon --package-version=" . PLUGIN_SINGLESIGNON_VERSION .
       " --msgid-bugs-address=https://github.com/edgardmessias/glpi-singlesignon/issues");
 
 // Replace some KEYWORDS
