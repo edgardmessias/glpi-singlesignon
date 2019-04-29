@@ -87,6 +87,9 @@ if (!$zip->open("$dir/singlesignon.zip", ZipArchive::CREATE)) {
    echo "Failed to create singlesignon.zip\n";
 }
 
+$zip->addEmptyDir("singlesignon");
+$tar->addEmptyDir("singlesignon");
+
 $current_dir = getcwd() . DIRECTORY_SEPARATOR;
 
 $files = glob_recursive("*");
@@ -101,8 +104,8 @@ foreach ($files as $f) {
    // Relativer file only
    $f = str_replace($current_dir, '', $f);
 
-   $zip->addFile($f);
-   $tar->addFile($f);
+   $zip->addFile($f, "singlesignon" . DIRECTORY_SEPARATOR . $f);
+   $tar->addFile($f, "singlesignon" . DIRECTORY_SEPARATOR . $f);
 }
 
 $zip->close();
