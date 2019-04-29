@@ -2,12 +2,6 @@
     "name": "edgardmessias/glpi-singlesignon",
     "description": "",
     "require": {
-        "league/oauth2-client": "^2.2",
-        "league/oauth2-facebook": "^2.0",
-        "league/oauth2-github": "^2.0",
-        "league/oauth2-google": "^3.0",
-        "league/oauth2-instagram": "^2.0",
-        "league/oauth2-linkedin": "^4.0"
     },
     "require-dev": {
         "glpi-project/coding-standard": "^0.7.1"

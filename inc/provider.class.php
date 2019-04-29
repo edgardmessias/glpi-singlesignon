@@ -7,21 +7,25 @@ class PluginSinglesignonProvider extends CommonDBTM {
    static $rightname = 'config';
 
    /**
-    * Provider instance
-    * @var null|\League\OAuth2\Client\Provider\GenericProvider
+    * @var array
     */
-   protected $_provider = null;
+   static $default = null;
+
+   /**
+    *
+    * @var string
+    */
    protected $_code = null;
 
    /**
     *
-    * @var null|\League\OAuth2\Client\Token\AccessToken
+    * @var null|string
     */
    protected $_token = null;
 
    /**
     *
-    * @var null|\League\OAuth2\Client\Provider\ResourceOwnerInterface
+    * @var null|array
     */
    protected $_resource_owner = null;
 
@@ -536,56 +540,126 @@ class PluginSinglesignonProvider extends CommonDBTM {
       parent::processMassiveActionsForOneItemtype($ma, $item, $ids);
    }
 
-   /**
-    *
-    * @param string $type
-    * @param array $options
-    * @param array $collaborators
-    * @return \League\OAuth2\Client\Provider\AbstractProvider
-    */
-   public static function createInstance($type = 'generic', array $options = [], array $collaborators = []) {
-      global $CFG_GLPI;
-
-      if (!isset($options['scope'])) {
-         $options['scope'] = [];
+   public static function getDefault($type, $key, $default = null) {
+      if (static::$default === null) {
+         $content = file_get_contents(dirname(__FILE__) . '/../providers.json');
+         static::$default = json_decode($content, true);
       }
 
-      $clientOptions = ['verify' => false];
-
-      if (!empty($CFG_GLPI["proxy_name"])) {
-         $clientOptions['proxy'] = $CFG_GLPI["proxy_name"] . ":" . $CFG_GLPI["proxy_port"];
-
-         if (!empty($CFG_GLPI["proxy_user"])) {
-            $clientOptions['proxy'] = $CFG_GLPI["proxy_user"] . ":" .
-                  Toolbox::decrypt($CFG_GLPI["proxy_passwd"], GLPIKEY) .
-                  "@" . $clientOptions['proxy'];
-         }
+      if (isset(static::$default[$type]) && static::$default[$type][$key]) {
+         return static::$default[$type][$key];
       }
 
-      $httpClient = new GuzzleHttp\Client($clientOptions);
+      return $default;
+   }
 
-      $collaborators['httpClient'] = $httpClient;
+   public function getClientType() {
+      $value = "generic";
 
-      switch ($type) {
-         case 'facebook':
-            if (!isset($options['graphApiVersion'])) {
-               $options['graphApiVersion'] = 'v2.12';
-            }
-            return new League\OAuth2\Client\Provider\Facebook($options, $collaborators);
-         case 'github':
-            $options['scope'][] = 'user:email';
-            return new League\OAuth2\Client\Provider\Github($options, $collaborators);
-         case 'google':
-            return new League\OAuth2\Client\Provider\Google($options, $collaborators);
-         case 'instagram':
-            return new League\OAuth2\Client\Provider\Instagram($options, $collaborators);
-         case 'linkedin':
-            $options['scope'][] = 'r_emailaddress';
-            return new League\OAuth2\Client\Provider\LinkedIn($options, $collaborators);
-         case 'generic':
-         default:
-            return new League\OAuth2\Client\Provider\GenericProvider($options, $collaborators);
+      if (isset($this->fields['type']) && !empty($this->fields['type'])) {
+         $value = $this->fields['type'];
       }
+
+      return $value;
+   }
+
+   public function getClientId() {
+      $value = "";
+
+      if (isset($this->fields['client_id']) && !empty($this->fields['client_id'])) {
+         $value = $this->fields['client_id'];
+      }
+
+      return $value;
+   }
+
+   public function getClientSecret() {
+      $value = "";
+
+      if (isset($this->fields['client_secret']) && !empty($this->fields['client_secret'])) {
+         $value = $this->fields['client_secret'];
+      }
+
+      return $value;
+   }
+
+   public function getScope() {
+      $value = "";
+
+      $default = [
+         'github' => 'user:email',
+         'linkedin' => 'r_emailaddress',
+      ];
+
+      $type = $this->getClientType();
+
+      if (isset($default[$type])) {
+         $value = $default[$type];
+      }
+
+      $fields = $this->fields;
+
+      if (!isset($fields['scope']) || empty($fields['scope'])) {
+         $fields['scope'] = $value;
+      }
+
+      $fields = Plugin::doHookFunction("sso:scope", $fields);
+
+      return $fields['scope'];
+   }
+
+   public function getAuthorizeUrl() {
+      $type = $this->getClientType();
+
+      $value = static::getDefault($type, "url_authorize");
+
+      $fields = $this->fields;
+
+      if (!isset($fields['url_authorize']) || empty($fields['url_authorize'])) {
+         $fields['url_authorize'] = $value;
+      }
+
+      $fields = Plugin::doHookFunction("sso:url_authorize", $fields);
+
+      return $fields['url_authorize'];
+   }
+
+   public function getAccessTokenUrl() {
+      $type = $this->getClientType();
+
+      $value = static::getDefault($type, "url_access_token");
+
+      $fields = $this->fields;
+
+      if (!isset($fields['url_access_token']) || empty($fields['url_access_token'])) {
+         $fields['url_access_token'] = $value;
+      }
+
+      $fields = Plugin::doHookFunction("sso:url_access_token", $fields);
+
+      return $fields['url_access_token'];
+   }
+
+   public function getResourceOwnerDetailsUrl($access_token) {
+      $type = $this->getClientType();
+
+      $value = static::getDefault($type, "url_resource_owner_details", "");
+
+      $fields = $this->fields;
+      $fields['access_token'] = $access_token;
+
+      if (!isset($fields['url_resource_owner_details']) || empty($fields['url_resource_owner_details'])) {
+         $fields['url_resource_owner_details'] = $value;
+      }
+
+      $fields = Plugin::doHookFunction("sso:url_resource_owner_details", $fields);
+
+      $url = $fields['url_resource_owner_details'];
+
+      $url = str_replace("<access_token>", $access_token, $url);
+      $url = str_replace("<appsecret_proof>", hash_hmac('sha256', $access_token, $this->getClientSecret()), $url);
+
+      return $url;
    }
 
    /**
@@ -611,66 +685,39 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $currentURL;
    }
 
-   public function prepareProviderInstance(array $options = [], array $collaborators = []) {
-      global $CFG_GLPI;
-
-      if ($this->_provider === null) {
-
-         $redirect_uri = $this->getCurrentURL();
-
-         $type = $this->fields['type'];
-         $default = [
-            'clientId' => $this->fields['client_id'],
-            'clientSecret' => $this->fields['client_secret'],
-            'redirectUri' => $redirect_uri,
-         ];
-
-         if ($type === 'generic') {
-            $default['urlAuthorize'] = $this->fields['url_authorize'];
-            $default['urlAccessToken'] = $this->fields['url_access_token'];
-            $default['urlResourceOwnerDetails'] = $this->fields['url_resource_owner_details'];
-         }
-
-         if (!empty($this->fields['extra_options'])) {
-            try {
-               $extra = json_decode($this->fields['extra_options'], true);
-            } catch (Exception $ex) {
-               $extra = [];
-            }
-
-            if (!empty($extra)) {
-               $default = array_merge($default, $extra);
-            }
-         }
-         $options = array_merge($default, $options);
-
-         $this->_provider = self::createInstance($type, $options, $collaborators);
-      }
-      return $this->_provider;
-   }
-
    /**
     *
     * @return boolean|string
     */
    public function checkAuthorization() {
-      if ($this->_provider === null) {
-         return false;
+
+      if (isset($_GET['error'])) {
+
+         $error_description = isset($_GET['error_description']) ? $_GET['error_description'] : __("The action you have requested is not allowed.");
+
+         Html::displayErrorAndDie(__($error_description), true);
       }
 
       if (!isset($_GET['code'])) {
 
-         $scope = [];
-         if (!empty($this->fields['scope'])) {
-            $scope = explode(',', $this->fields['scope']);
-         }
-
-         $options = [
-            'scope' => $scope,
+         $params = [
+            'client_id' => $this->getClientId(),
+            'scope' => $this->getScope(),
             'state' => Session::getNewCSRFToken(),
+            'response_type' => 'code',
+            'approval_prompt' => 'auto',
+            'redirect_uri' => $this->getCurrentURL(),
          ];
 
-         $this->_provider->authorize($options);
+         $params = Plugin::doHookFunction("sso:authorize_params", $params);
+
+         $url = $this->getAuthorizeUrl();
+
+         $glue = strstr($url, '?') === false ? '?' : '&';
+         $url .= $glue . http_build_query($params);
+
+         header('Location: ' . $url);
+         exit;
       }
 
       // Check given state against previously stored one to mitigate CSRF attack
@@ -687,27 +734,52 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
    /**
     *
-    * @return boolean|\League\OAuth2\Client\Token\AccessToken
+    * @return boolean|string
     */
    public function getAccessToken() {
       if ($this->_token !== null) {
          return $this->_token;
       }
 
-      if ($this->_provider === null || $this->_code === null) {
+      if ($this->_code === null) {
          return false;
       }
 
-      $this->_token = $this->_provider->getAccessToken('authorization_code', [
-         'code' => $this->_code
+      $params = [
+         'client_id' => $this->getClientId(),
+         'client_secret' => $this->getClientSecret(),
+         'redirect_uri' => $this->getCurrentURL(),
+         'grant_type' => 'authorization_code',
+         'code' => $this->_code,
+      ];
+
+      $params = Plugin::doHookFunction("sso:access_token_params", $params);
+
+      $url = $this->getAccessTokenUrl();
+
+      $content = Toolbox::callCurl($url, [
+               CURLOPT_HTTPHEADER => [
+                  "Accept: application/json",
+               ],
+               CURLOPT_POST => true,
+               CURLOPT_POSTFIELDS => http_build_query($params),
+               CURLOPT_SSL_VERIFYHOST => false,
+               CURLOPT_SSL_VERIFYPEER => false,
       ]);
+
+      try {
+         $data = json_decode($content, true);
+         $this->_token = $data['access_token'];
+      } catch (\Exception $ex) {
+         return false;
+      }
 
       return $this->_token;
    }
 
    /**
     *
-    * @return boolean|\League\OAuth2\Client\Provider\ResourceOwnerInterface
+    * @return boolean|array
     */
    public function getResourceOwner() {
       if ($this->_resource_owner !== null) {
@@ -719,18 +791,63 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return false;
       }
 
-      $this->_resource_owner = $this->_provider->getResourceOwner($token);
+      $url = $this->getResourceOwnerDetailsUrl($token);
+
+      $headers = [
+         "Accept:application/json",
+         "Authorization:Bearer $token",
+      ];
+
+      $headers = Plugin::doHookFunction("sso:resource_owner_header", $headers);
+
+      $content = Toolbox::callCurl($url, [
+               CURLOPT_HTTPHEADER => $headers,
+               CURLOPT_SSL_VERIFYHOST => false,
+               CURLOPT_SSL_VERIFYPEER => false,
+      ]);
+
+      try {
+         $data = json_decode($content, true);
+         $this->_resource_owner = $data;
+      } catch (\Exception $ex) {
+         return false;
+      }
+
+      if ($this->getClientType() === "linkedin") {
+         $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
+         $content = Toolbox::callCurl($email_url, [
+                  CURLOPT_HTTPHEADER => $headers,
+                  CURLOPT_SSL_VERIFYHOST => false,
+                  CURLOPT_SSL_VERIFYPEER => false,
+         ]);
+
+         try {
+            $data = json_decode($content, true);
+
+            $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
+         } catch (\Exception $ex) {
+            return false;
+         }
+      }
 
       return $this->_resource_owner;
    }
 
    public function findUser() {
-      $resource = $this->getResourceOwner();
+      $resource_array = $this->getResourceOwner();
 
-      $resource_array = $resource->toArray();
+      if (!$resource_array) {
+         return false;
+      }
 
       $user = new User();
       //First: check linked user
+
+      $id = Plugin::doHookFunction("sso:find_user", $resource_array);
+
+      if (is_numeric($id) && $user->getFromDB($id)) {
+         return $user;
+      }
 
       $email = false;
       $email_fields = ['email', 'e-mail', 'email-address'];
@@ -753,7 +870,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $login = false;
-      $login_fields = ['login', 'username'];
+      $login_fields = ['login', 'username', 'id'];
 
       foreach ($login_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {

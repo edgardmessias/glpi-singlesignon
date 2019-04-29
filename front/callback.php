@@ -1,7 +1,11 @@
 <?php
 
 //Disable CSRF token
-//define('GLPI_USE_CSRF_CHECK', 0);
+define('GLPI_USE_CSRF_CHECK', 0);
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 include ('../../../inc/includes.php');
 
@@ -20,8 +24,6 @@ if (!$signon_provider->getFromDB($provider_id)) {
 if (!$signon_provider->fields['is_active']) {
    Html::displayErrorAndDie(__sso("Provider not active."), true);
 }
-
-$signon_provider->prepareProviderInstance();
 
 $signon_provider->checkAuthorization();
 
