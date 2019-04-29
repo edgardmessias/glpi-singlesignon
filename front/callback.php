@@ -21,15 +21,7 @@ if (!$signon_provider->fields['is_active']) {
    Html::displayErrorAndDie(__sso("Provider not active."), true);
 }
 
-$httpClient = new GuzzleHttp\Client([
-   'verify' => false,
-      ]);
-
-$collaborators = [
-   'httpClient' => $httpClient,
-];
-
-$signon_provider->prepareProviderInstance([], $collaborators);
+$signon_provider->prepareProviderInstance();
 
 $signon_provider->checkAuthorization();
 

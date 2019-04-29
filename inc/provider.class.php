@@ -544,10 +544,27 @@ class PluginSinglesignonProvider extends CommonDBTM {
     * @return \League\OAuth2\Client\Provider\AbstractProvider
     */
    public static function createInstance($type = 'generic', array $options = [], array $collaborators = []) {
+      global $CFG_GLPI;
 
       if (!isset($options['scope'])) {
          $options['scope'] = [];
       }
+
+      $clientOptions = ['verify' => false];
+
+      if (!empty($CFG_GLPI["proxy_name"])) {
+         $clientOptions['proxy'] = $CFG_GLPI["proxy_name"] . ":" . $CFG_GLPI["proxy_port"];
+
+         if (!empty($CFG_GLPI["proxy_user"])) {
+            $clientOptions['proxy'] = $CFG_GLPI["proxy_user"] . ":" .
+                  Toolbox::decrypt($CFG_GLPI["proxy_passwd"], GLPIKEY) .
+                  "@" . $clientOptions['proxy'];
+         }
+      }
+
+      $httpClient = new GuzzleHttp\Client($clientOptions);
+
+      $collaborators['httpClient'] = $httpClient;
 
       switch ($type) {
          case 'facebook':
