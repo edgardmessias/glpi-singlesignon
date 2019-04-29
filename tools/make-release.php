@@ -14,8 +14,8 @@ function remove_recursive($dir) {
          }
       }
       rmdir($dir);
-   } else if ($dir != "." && $dir != ".." && file_exists($dir)) {
-      unlink($dir);
+   } else if (is_file($dir)) {
+      @unlink($dir);
    }
 }
 
@@ -48,6 +48,8 @@ if (file_exists($tmp_dir)) {
    remove_recursive($tmp_dir);
 }
 
+sleep(1);
+
 echo "Copy to  /tmp directory\n";
 log_and_exec("git checkout-index -a -f --prefix=/tmp/singlesignon/");
 
@@ -75,7 +77,7 @@ $to_remove = array_filter($to_remove, function ($t) {
 $to_remove = array_values($to_remove);
 
 foreach ($to_remove as $r) {
-   remove_recursive($r);
+   remove_recursive("$tmp_dir/$r");
 }
 
 echo "Zip files\n";
