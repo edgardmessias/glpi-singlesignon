@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <name>Single Sign-On</name>
+    <key>singlesignon</key>
+    <state>stable</state>
+    <logo>https://raw.githubusercontent.com/edgardmessias/glpi-singlesignon/master/plugin.png</logo>
+    <description>
+        <short>
+            <en><![CDATA[Allow to login in GLPI with Single sign-on (SSO)]]></en>
+        </short>
+        <long>
+            <en><![CDATA[
+# Single Sign-On for GLPI
+
+[![Build Status](https://travis-ci.org/edgardmessias/glpi-singlesignon.svg?branch=master)](https://travis-ci.org/edgardmessias/glpi-singlesignon)
+[![CodeFactor](https://www.codefactor.io/repository/github/edgardmessias/glpi-singlesignon/badge)](https://www.codefactor.io/repository/github/edgardmessias/glpi-singlesignon)
+[![Total Downloads](https://img.shields.io/github/downloads/edgardmessias/glpi-singlesignon/total.svg)](https://github.com/edgardmessias/glpi-singlesignon/releases)
+[![Current Release](https://img.shields.io/github/release/edgardmessias/glpi-singlesignon.svg)](https://github.com/edgardmessias/glpi-singlesignon/releases/latest)
+
+Single sign-on (SSO) is a property of access control of multiple related, yet independent, software systems. With this property, a user logs in with a single ID and password to gain access to any of several related systems.
+
+# Installation
+ * Uncompress the archive to the `<GLPI_ROOT>/plugins/singlesignon` directory
+ * Navigate to the Configuration > Plugins page,
+ * Install and activate the plugin.
+
+# Usage
+ * Go to `Configuration > Single Sign-On` and add a provider
+ * To test, do logout and try login with links below login page `[ Login with <name> ]`
+
+# Available providers
+ * Facebook - https://developers.facebook.com/docs/apps/
+ * GitHub - https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/
+ * Google - https://developers.google.com/identity/protocols/OpenIDConnect
+ * Instagram - https://www.instagram.com/developer/authentication/
+ * LinkedIn - https://docs.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow?context=linkedin/context
+ * Generic - Allow to define custom URLs
+]]></en>
+        </long>
+    </description>
+    <homepage>https://github.com/edgardmessias/glpi-singlesignon</homepage>
+    <download>https://github.com/edgardmessias/glpi-singlesignon/releases</download>
+    <issues>https://github.com/edgardmessias/glpi-singlesignon/issues</issues>
+    <readme>https://github.com/edgardmessias/glpi-singlesignon/wiki</readme>
+    <authors>
+        <author>Edgard Lorraine Messias</author>
+    </authors>
+    <versions>
+        <version>
+            <num>1.0.0</num>
+            <compatibility>0.85</compatibility>
+            <compatibility>0.90</compatibility>
+            <compatibility>9.1</compatibility>
+            <compatibility>9.2</compatibility>
+            <compatibility>9.3</compatibility>
+            <compatibility>9.4</compatibility>
+        </version>
+        <version>
+            <num>1.1.0</num>
+            <compatibility>0.85</compatibility>
+            <compatibility>0.90</compatibility>
+            <compatibility>9.1</compatibility>
+            <compatibility>9.2</compatibility>
+            <compatibility>9.3</compatibility>
+            <compatibility>9.4</compatibility>
+        </version>
+    </versions>
+    <langs>
+        <lang>en_GB</lang>
+        <lang>pt_BR</lang>
+    </langs>
+    <license><![CDATA[GPL v2+]]></license>
+    <tags>
+        <en>
+            <tag>Authentication</tag>
+            <tag>Login</tag>
+            <tag>Single Sign On</tag>
+            <tag>SSO</tag>
+        </en>
+    </tags>
+</root>
