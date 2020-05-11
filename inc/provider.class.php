@@ -584,18 +584,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
    }
 
    public function getScope() {
-      $value = "";
-
-      $default = [
-         'github' => 'user:email',
-         'linkedin' => 'r_emailaddress',
-      ];
-
       $type = $this->getClientType();
 
-      if (isset($default[$type])) {
-         $value = $default[$type];
-      }
+      $value = static::getDefault($type, "scope");
 
       $fields = $this->fields;
 
