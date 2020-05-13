@@ -45,10 +45,10 @@ function plugin_version_singlesignon() {
 function plugin_singlesignon_check_prerequisites() {
    $autoload = __DIR__ . '/vendor/autoload.php';
 
-   if (!file_exists($autoload)) {
-      echo __sso("Run first: composer install");
-      return false;
-   }
+   // if (!file_exists($autoload)) {
+   //    echo __sso("Run first: composer install");
+   //    return false;
+   // }
    if (version_compare(GLPI_VERSION, '0.85', 'lt')) {
       echo __sso("This plugin requires GLPI >= 0.85");
       return false;
