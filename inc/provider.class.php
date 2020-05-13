@@ -948,8 +948,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       $url .= "/provider/$id";
 
-      http_build_query($url);
-
       if (!empty($query)) {
          $url .= "/q/" . base64_encode(http_build_query($query));
       }
