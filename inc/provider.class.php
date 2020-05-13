@@ -138,18 +138,24 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "</tr>\n";
 
       if ($ID) {
+         $url = self::getCallbackUrl($ID);
+         $fullUrl = $this->getBaseURL() . $url;
+         echo "<tr class='tab_bg_1'>";
+         echo "<td>" . __sso('Callback URL') . "</td>";
+         echo "<td colspan='3'><a id='singlesignon_callbackurl' href='$fullUrl' data-url='$url'>$fullUrl</a></td>";
+         echo "</tr>\n";
+
          $options['addbuttons'] = ['test_singlesignon' => __sso('Test Single Sign-on')];
       }
 
       $this->showFormButtons($options);
 
       if ($ID) {
-         $url = self::getCallbackUrl($ID) . '/test/1';
          echo '<script type="text/javascript">
          $("[name=test_singlesignon]").on("click", function (e) {
             e.preventDefault();
 
-            var url   = ' . json_encode($url) . ';
+            var url   = $("#singlesignon_callbackurl").attr("data-url") + "/test/1";
             var left  = ($(window).width()/2)-(600/2);
             var top   = ($(window).height()/2)-(800/2);
             var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
@@ -678,13 +684,22 @@ class PluginSinglesignonProvider extends CommonDBTM {
     * Get current URL without query string
     * @return string
     */
-   private function getCurrentURL() {
-      $currentURL = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") ? "https://" : "http://";
-      $currentURL .= $_SERVER["SERVER_NAME"];
+   private function getBaseURL() {
+      $baseURL = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") ? "https://" : "http://";
+      $baseURL .= $_SERVER["SERVER_NAME"];
 
       if ($_SERVER["SERVER_PORT"] != "80" && $_SERVER["SERVER_PORT"] != "443") {
-         $currentURL .= ":" . $_SERVER["SERVER_PORT"];
+         $baseURL .= ":" . $_SERVER["SERVER_PORT"];
       }
+      return $baseURL;
+   }
+
+   /**
+    * Get current URL without query string
+    * @return string
+    */
+   private function getCurrentURL() {
+      $currentURL = $this->getBaseURL();
 
       // $currentURL .= $_SERVER["REQUEST_URI"];
       // Ignore Query String
