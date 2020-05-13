@@ -137,7 +137,28 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "<td colspan='3'><input type='text' style='width:96%' name='url_resource_owner_details' value='" . $this->fields["url_resource_owner_details"] . "'></td>";
       echo "</tr>\n";
 
+      if ($ID) {
+         $options['addbuttons'] = ['test_singlesignon' => __sso('Test Single Sign-on')];
+      }
+
       $this->showFormButtons($options);
+
+      if ($ID) {
+         $url = self::getCallbackUrl($ID) . '/test/1';
+         echo '<script type="text/javascript">
+         $("[name=test_singlesignon]").on("click", function (e) {
+            e.preventDefault();
+
+            var url   = ' . json_encode($url) . ';
+            var left  = ($(window).width()/2)-(600/2);
+            var top   = ($(window).height()/2)-(800/2);
+            var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
+            if (window.focus) {
+               newWindow.focus();
+            }
+         });
+         </script>';
+      }
 
       return true;
    }
@@ -935,7 +956,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             if ($key === null) {
                $key = $part;
             } else {
-               if ($key === "provider") {
+               if ($key === "provider" || $key === "test") {
                   $part = intval($part);
                } else {
                   $tmp = base64_decode($part);

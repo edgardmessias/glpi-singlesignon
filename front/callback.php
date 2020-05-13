@@ -27,6 +27,19 @@ if (!$signon_provider->fields['is_active']) {
 
 $signon_provider->checkAuthorization();
 
+$test = PluginSinglesignonProvider::getCallbackParameters('test');
+
+if ($test) {
+   Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
+   echo '<div class="left spaced">';
+   echo '<pre>';
+   print_r($signon_provider->getResourceOwner());
+   echo '</pre>';
+   Html::nullFooter();
+   exit();
+}
+
+
 if ($signon_provider->login()) {
 
    $params = PluginSinglesignonProvider::getCallbackParameters('q');
