@@ -63,6 +63,7 @@ log_and_exec("php tools/build-locales-mo.php");
 
 echo "Remove unused files\n";
 $to_remove = [
+   'screenshots',
    'tools',
    'composer.json',
    'composer.lock',

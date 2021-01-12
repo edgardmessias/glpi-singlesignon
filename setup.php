@@ -1,6 +1,6 @@
 <?php
 
-define('PLUGIN_SINGLESIGNON_VERSION', '1.1.0');
+define('PLUGIN_SINGLESIGNON_VERSION', '1.2.0');
 
 $folder = basename(dirname(__FILE__));
 

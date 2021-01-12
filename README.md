@@ -14,7 +14,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
 
 # Usage
  * Go to `Configuration > Single Sign-On` and add a provider
- * To test, do logout and try login with links below login page `[ Login with <name> ]`
+ * To test, do logout and try login with links below login page `Login with <name>`
 
 # Available providers
  * Azure - https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad
@@ -24,6 +24,11 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * Instagram - https://www.instagram.com/developer/authentication/
  * LinkedIn - https://docs.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow?context=linkedin/context
  * Generic - Allow to define custom URLs
+
+# Screenshots
+
+![image 1](./screenshots/image_1.png)
+![image 2](./screenshots/image_2.png)
 
 # Donation
 <table border="0">

@@ -64,6 +64,15 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
             <compatibility>9.3</compatibility>
             <compatibility>9.4</compatibility>
         </version>
+        <version>
+            <num>1.2.0</num>
+            <compatibility>0.85</compatibility>
+            <compatibility>0.90</compatibility>
+            <compatibility>9.1</compatibility>
+            <compatibility>9.2</compatibility>
+            <compatibility>9.3</compatibility>
+            <compatibility>9.4</compatibility>
+        </version>
     </versions>
     <langs>
         <lang>en_GB</lang>
@@ -78,4 +87,8 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
             <tag>SSO</tag>
         </en>
     </tags>
+    <screenshots>
+      <screenshot>https://raw.githubusercontent.com/edgardmessias/glpi-singlesignon/master/screenshots/image_1.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/edgardmessias/glpi-singlesignon/master/screenshots/image_1.png</screenshot>
+   </screenshots>
 </root>
