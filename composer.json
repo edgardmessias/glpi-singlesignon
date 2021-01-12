@@ -6,6 +6,8 @@
         "squizlabs/php_codesniffer": "^3.5"
     },
     "scripts": {
+        "lint": "phpcs",
+        "lint:fix": "phpcbf",
         "update-locales": "@php tools/update-locales.php"
     },
     "config": {

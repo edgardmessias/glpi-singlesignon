@@ -256,7 +256,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          unset($opt['id']);
          if (isset($options[$optid])) {
             $message = "Duplicate key $optid ({$options[$optid]['name']}/{$opt['name']}) in " .
-                  get_class($this) . " searchOptions!";
+            get_class($this) . " searchOptions!";
             Toolbox::logDebug($message);
          }
          foreach ($opt as $k => $v) {

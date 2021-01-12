@@ -86,7 +86,7 @@ Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
 echo '<div class="center b">' . __('User not authorized to connect in GLPI') . '<br><br>';
 // Logout whit noAUto to manage auto_login with errors
 echo '<a href="' . $CFG_GLPI["root_doc"] . '/front/logout.php?noAUTO=1' .
- str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';
+str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';
 echo '<script type="text/javascript">
    if (window.opener) {
       $(".singlesignon").on("click", function (e) {

@@ -19,7 +19,7 @@ function plugin_singlesignon_display_login() {
       $url = PluginSinglesignonProvider::getCallbackUrl($row['id'], $query);
 
       $html[] = '<a href="' . $url . '" class="singlesignon" style="color: #CFCFCF">' .
-            sprintf(__sso('[ Login with %s ]'), $row['name']) . '</a>';
+      sprintf(__sso('[ Login with %s ]'), $row['name']) . '</a>';
    }
 
    echo implode("<br />\n", $html);

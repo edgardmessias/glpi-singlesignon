@@ -2,8 +2,18 @@
 <ruleset>
 
    <!-- rules -->
-   <rule ref="./vendor/glpi-project/coding-standard/GlpiStandard">
+   <rule ref="./vendor/glpi-project/coding-standard/GlpiStandard" />
+
+   <!-- Indent 3 -->
+   <rule ref="Generic.WhiteSpace.ScopeIndent">
+      <properties>
+         <property name="indent" value="3"/>
+         <property name="exact" value="true"/>
+      </properties>
    </rule>
+
+   <!-- file must end by a new line -->
+   <rule ref="PSR2.Files.EndFileNewline" />
 
    <!-- files -->
    <file>.</file>
