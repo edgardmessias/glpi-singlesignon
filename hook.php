@@ -174,7 +174,7 @@ function plugin_singlesignon_install() {
       $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','10','6','0');");
    }
 
-   if (version_compare($currentVersion, PLUGIN_SINGLESIGNON_VERSION, '<=')) {
+   if (version_compare($currentVersion, "1.2.0", '<')) {
       $query = "ALTER TABLE `glpi_plugin_singlesignon_providers`
                 ADD `picture` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
                 ADD `bgcolor` varchar(7) DEFAULT NULL,
