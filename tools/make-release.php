@@ -34,7 +34,7 @@ if (!function_exists('glob_recursive')) {
 
 $dir = dirname(dirname(__FILE__));
 
-$tmp_dir = "/tmp/singlesignon";
+$tmp_dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . "singlesignon/";
 
 echo "Delete old release\n";
 remove_recursive("$dir/singlesignon.zip");
@@ -50,8 +50,8 @@ if (file_exists($tmp_dir)) {
 
 sleep(1);
 
-echo "Copy to  /tmp directory\n";
-log_and_exec("git checkout-index -a -f --prefix=/tmp/singlesignon/");
+echo "Copy to $tmp_dir\n";
+log_and_exec("git checkout-index -a -f --prefix=" . $tmp_dir);
 
 chdir($tmp_dir);
 
@@ -112,3 +112,5 @@ foreach ($files as $f) {
 
 $zip->close();
 $tar->compress(Phar::GZ);
+
+remove_recursive("$dir/singlesignon.tar");

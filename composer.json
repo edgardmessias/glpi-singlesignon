@@ -8,6 +8,7 @@
     "scripts": {
         "lint": "phpcs",
         "lint:fix": "phpcbf",
+        "make-release": "@php tools/make-release.php",
         "update-locales": "@php tools/update-locales.php"
     },
     "config": {
