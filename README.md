@@ -17,6 +17,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * To test, do logout and try login with links below login page `[ Login with <name> ]`
 
 # Available providers
+ * Azure - https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad
  * Facebook - https://developers.facebook.com/docs/apps/
  * GitHub - https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/
  * Google - https://developers.google.com/identity/protocols/OpenIDConnect

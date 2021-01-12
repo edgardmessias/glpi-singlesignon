@@ -877,7 +877,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $email = false;
-      $email_fields = ['email', 'e-mail', 'email-address'];
+      $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
 
       foreach ($email_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
