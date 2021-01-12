@@ -137,7 +137,82 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "<td colspan='3'><input type='text' style='width:96%' name='url_resource_owner_details' value='" . $this->fields["url_resource_owner_details"] . "'></td>";
       echo "</tr>\n";
 
+      echo "<tr class='tab_bg_1'>";
+      echo "<th colspan='4'>" . __('Personalization') . "</th>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __('Background color') . "</td>";
+      echo "<td>";
+      Html::showColorField(
+         'bgcolor',
+         [
+            'value'  => $this->fields['bgcolor'],
+         ]
+      );
+      echo "&nbsp;";
+      echo Html::getCheckbox([
+         'title' => __('Clear'),
+         'name'  => '_blank_bgcolor',
+         'checked' => empty($this->fields['bgcolor']),
+      ]);
+      echo "&nbsp;" . __('Clear');
+      echo "</td>";
+      echo "<td>" . __('Color') . "</td>";
+      echo "<td>";
+      Html::showColorField(
+         'color',
+         [
+            'value'  => $this->fields['color'],
+         ]
+      );
+      echo "&nbsp;";
+      echo Html::getCheckbox([
+         'title' => __('Clear'),
+         'name'  => '_blank_color',
+         'checked' => empty($this->fields['color']),
+      ]);
+      echo "&nbsp;" . __('Clear');
+      echo "</td>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __('Picture') . "</td>";
+      echo "<td colspan='3'>";
+      if (!empty($this->fields['picture'])) {
+         echo Html::image(static::getPictureUrl($this->fields['picture']), [
+            'style' => 'max-width: 100px; max-height: 50px;',
+            'class' => 'picture_square'
+         ]);
+         echo "&nbsp;";
+         echo Html::getCheckbox([
+            'title' => __('Clear'),
+            'name'  => '_blank_picture'
+         ]);
+         echo "&nbsp;" . __('Clear');
+      } else {
+         echo Html::file([
+            'name'       => 'picture',
+            'onlyimages' => true,
+         ]);
+      }
+      echo "</td>";
+      echo "</tr>\n";
+
+      echo '<script type="text/javascript">
+      $("[name=bgcolor]").on("change", function (e) {
+         $("[name=_blank_bgcolor]").prop("checked", false).attr("checked", false);
+      });
+      $("[name=color]").on("change", function (e) {
+         $("[name=_blank_color]").prop("checked", false).attr("checked", false);
+      });
+      </script>';
+
       if ($ID) {
+         echo "<tr class='tab_bg_1'>";
+         echo "<th colspan='4'>" . __('Test') . "</th>";
+         echo "</tr>\n";
+
          $url = self::getCallbackUrl($ID);
          $fullUrl = $this->getBaseURL() . $url;
          echo "<tr class='tab_bg_1'>";
@@ -175,6 +250,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
    function prepareInputForUpdate($input) {
       return $this->prepareInput($input);
+   }
+
+   function cleanDBonPurge() {
+      static::deletePicture($this->fields['picture']);
    }
 
    /**
@@ -234,12 +313,48 @@ class PluginSinglesignonProvider extends CommonDBTM {
       if (count($error_detected)) {
          foreach ($error_detected as $error) {
             Session::addMessageAfterRedirect(
-                  $error,
-                  true,
-                  ERROR
+               $error,
+               true,
+               ERROR
             );
          }
          return false;
+      }
+
+      if (isset($input["_blank_bgcolor"])
+         && $input["_blank_bgcolor"]
+      ) {
+         $input['bgcolor'] = '';
+      }
+
+      if (isset($input["_blank_color"])
+         && $input["_blank_color"]
+      ) {
+         $input['color'] = '';
+      }
+
+      if (isset($input["_blank_picture"])
+         && $input["_blank_picture"]
+      ) {
+         $input['picture'] = '';
+
+         if (array_key_exists('picture', $this->fields)) {
+            static::deletePicture($this->fields['picture']);
+         }
+      }
+
+      if (isset($input["_picture"])) {
+         $picture = array_shift($input["_picture"]);
+
+         if ($dest = static::savePicture(GLPI_TMP_DIR . '/' . $picture)) {
+            $input['picture'] = $dest;
+         } else {
+            Session::addMessageAfterRedirect(__('Unable to save picture file.'), true, ERROR);
+         }
+
+         if (array_key_exists('picture', $this->fields)) {
+            static::deletePicture($this->fields['picture']);
+         }
       }
 
       return $input;
@@ -508,7 +623,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
             " " . __('Write in item history', 'example');
             return true;
-         case 'do_nothing' :
+         case 'do_nothing':
             echo "&nbsp;" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
             " " . __('but do nothing :)', 'example');
             return true;
@@ -525,7 +640,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       global $DB;
 
       switch ($ma->getAction()) {
-         case 'DoIt' :
+         case 'DoIt':
             if ($item->getType() == 'Computer') {
                Session::addMessageAfterRedirect(__("Right it is the type I want...", 'example'));
                Session::addMessageAfterRedirect(__('Write in item history', 'example'));
@@ -546,8 +661,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
             }
             return;
 
-         case 'do_nothing' :
-            If ($item->getType() == 'PluginExampleExample') {
+         case 'do_nothing':
+            if ($item->getType() == 'PluginExampleExample') {
                Session::addMessageAfterRedirect(__("Right it is the type I want...", 'example'));
                Session::addMessageAfterRedirect(__("But... I say I will do nothing for:", 'example'));
                foreach ($ids as $id) {
@@ -562,9 +677,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
             } else {
                $ma->itemDone($item->getType(), $ids, MassiveAction::ACTION_KO);
             }
-            Return;
+            return;
       }
       parent::processMassiveActionsForOneItemtype($ma, $item, $ids);
+   }
+
+   static function getIcon() {
+      return "fas fa-user-lock";
    }
 
    public static function getDefault($type, $key, $default = null) {
@@ -803,13 +922,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $url = $this->getAccessTokenUrl();
 
       $content = Toolbox::callCurl($url, [
-               CURLOPT_HTTPHEADER => [
-                  "Accept: application/json",
-               ],
-               CURLOPT_POST => true,
-               CURLOPT_POSTFIELDS => http_build_query($params),
-               CURLOPT_SSL_VERIFYHOST => false,
-               CURLOPT_SSL_VERIFYPEER => false,
+         CURLOPT_HTTPHEADER => [
+            "Accept: application/json",
+         ],
+         CURLOPT_POST => true,
+         CURLOPT_POSTFIELDS => http_build_query($params),
+         CURLOPT_SSL_VERIFYHOST => false,
+         CURLOPT_SSL_VERIFYPEER => false,
       ]);
 
       try {
@@ -849,9 +968,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $headers = Plugin::doHookFunction("sso:resource_owner_header", $headers);
 
       $content = Toolbox::callCurl($url, [
-               CURLOPT_HTTPHEADER => $headers,
-               CURLOPT_SSL_VERIFYHOST => false,
-               CURLOPT_SSL_VERIFYPEER => false,
+         CURLOPT_HTTPHEADER => $headers,
+         CURLOPT_SSL_VERIFYHOST => false,
+         CURLOPT_SSL_VERIFYPEER => false,
       ]);
 
       try {
@@ -864,9 +983,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
       if ($this->getClientType() === "linkedin") {
          $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
          $content = Toolbox::callCurl($email_url, [
-                  CURLOPT_HTTPHEADER => $headers,
-                  CURLOPT_SSL_VERIFYHOST => false,
-                  CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => false,
          ]);
 
          try {
@@ -1014,9 +1133,98 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $data;
    }
 
-   public static function renderButton($url, $name, $class = 'oauth-login') {
-      return '<span><a href="' . $url . '" class="singlesignon vsubmit ' . $class . '">' .
-      sprintf(__sso('Login with %s'), $name) . '</a></span>';
+   static public function startsWith($haystack, $needle) {
+      $length = strlen($needle);
+      return (substr($haystack, 0, $length) === $needle);
    }
 
+   static function getPictureUrl($path) {
+      global $CFG_GLPI;
+
+      $path = Html::cleanInputText($path); // prevent xss
+
+      if (empty($path)) {
+         return null;
+      }
+
+      return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/picture.send.php?path=' . $path;
+   }
+
+   static public function savePicture($src, $uniq_prefix = null) {
+
+      if (function_exists('Document::isImage') && !Document::isImage($src)) {
+         return false;
+      }
+
+      $filename     = uniqid($uniq_prefix);
+      $ext          = pathinfo($src, PATHINFO_EXTENSION);
+      $subdirectory = substr($filename, -2); // subdirectory based on last 2 hex digit
+
+      $basePath = GLPI_PLUGIN_DOC_DIR . "/singlesignon";
+      $i = 0;
+      do {
+         // Iterate on possible suffix while dest exists.
+         // This case will almost never exists as dest is based on an unique id.
+         $dest = $basePath
+         . '/' . $subdirectory
+         . '/' . $filename . ($i > 0 ? '_' . $i : '') . '.' . $ext;
+         $i++;
+      } while (file_exists($dest));
+
+      if (!is_dir($basePath . '/' . $subdirectory) && !mkdir($basePath . '/' . $subdirectory)) {
+         return false;
+      }
+
+      if (!rename($src, $dest)) {
+         return false;
+      }
+
+      return substr($dest, strlen($basePath . '/')); // Return dest relative to GLPI_PICTURE_DIR
+   }
+
+   public static function deletePicture($path) {
+      $basePath = GLPI_PLUGIN_DOC_DIR . "/singlesignon";
+      $fullpath = $basePath . '/' . $path;
+
+      if (!file_exists($fullpath)) {
+         return false;
+      }
+
+      $fullpath = realpath($fullpath);
+      if (!static::startsWith($fullpath, realpath($basePath))) {
+         return false;
+      }
+
+      return @unlink($fullpath);
+   }
+
+   public static function renderButton($url, $data, $class = 'oauth-login') {
+      $btn = '<span><a href="' . $url . '" class="singlesignon vsubmit ' . $class . '"';
+
+      $style = '';
+      if ((isset($data['bgcolor']) && $data['bgcolor'])) {
+         $style .= 'background-color: ' . $data['bgcolor'] . ';';
+      }
+      if ((isset($data['color']) && $data['color'])) {
+         $style .= 'color: ' . $data['color'] . ';';
+      }
+      if ($style) {
+         $btn .= ' style="' . $style . '"';
+      }
+      $btn .= '>';
+
+      if (isset($data['picture']) && $data['picture']) {
+         $btn .= Html::image(
+            static::getPictureUrl($data['picture']),
+            [
+               'style' => 'max-height: 20px;',
+            ]
+         );
+         $btn .= ' ';
+      }
+
+      $btn .= sprintf(__sso('Login with %s'), $data['name']);
+      $btn .= '</a></span>';
+      return $btn;
+   }
 }

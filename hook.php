@@ -21,13 +21,13 @@ function plugin_singlesignon_display_login() {
       }
 
       $url = PluginSinglesignonProvider::getCallbackUrl($row['id'], $query);
-      $html[] = PluginSinglesignonProvider::renderButton($url, $row['name']);
+      $html[] = PluginSinglesignonProvider::renderButton($url, $row);
    }
 
    if (!empty($html)) {
       echo '<div class="singlesignon-box">';
       echo implode(" \n", $html);
-      echo PluginSinglesignonProvider::renderButton('#', __('GLPI'), 'vsubmit old-login');
+      echo PluginSinglesignonProvider::renderButton('#', ['name' => __('GLPI')], 'vsubmit old-login');
       echo '</div>';
       ?>
       <style>
@@ -50,6 +50,11 @@ function plugin_singlesignon_display_login() {
             font-size: 1.3em !important;
             text-align: center;
             box-sizing: border-box;
+         }
+         #boxlogin .singlesignon-box .vsubmit img {
+            max-height: 20px;
+            max-width: 100px;
+            vertical-align: sub;
          }
       </style>
       <script type="text/javascript">
@@ -154,13 +159,6 @@ function plugin_singlesignon_install() {
                ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
 
       $DB->query($query) or die("error creating glpi_plugin_singlesignon_providers " . $DB->error());
-
-      //      $query = "INSERT INTO `glpi_plugin_singlesignon_providers`
-      //                       (`id`, `name`, `serial`, `is_deleted`)
-      //                VALUES (1, 'example 1', 'serial 1', 0),
-      //                       (2, 'example 2', 'serial 2', 0),
-      //                       (3, 'example 3', 'serial 3', 0)";
-      //      $DB->query($query) or die("error populate glpi_plugin_example " . $DB->error());
    }
 
    // add display preferences
@@ -174,6 +172,14 @@ function plugin_singlesignon_install() {
       $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','5','4','0');");
       $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','6','5','0');");
       $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','10','6','0');");
+   }
+
+   if (version_compare($currentVersion, PLUGIN_SINGLESIGNON_VERSION, '<=')) {
+      $query = "ALTER TABLE `glpi_plugin_singlesignon_providers`
+                ADD `picture` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+                ADD `bgcolor` varchar(7) DEFAULT NULL,
+                ADD `color` varchar(7) DEFAULT NULL";
+      $DB->query($query) or die("error adding picture column " . $DB->error());
    }
 
    Config::setConfigurationValues('singlesignon', [

@@ -3,6 +3,7 @@
   "phpsab.standard": ".phpcs.xml",
   "phpsab.composerJsonPath": "composer.json",
   "intelephense.environment.includePaths": ["../../"],
+  "intelephense.format.braces": "k&r",
   "[php]": {
     "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
   }
