@@ -40,13 +40,14 @@ if ($test) {
 }
 
 
+$REDIRECT = "";
+
 if ($signon_provider->login()) {
 
    $params = PluginSinglesignonProvider::getCallbackParameters('q');
 
    $url_redirect = '';
 
-   $REDIRECT = "";
 
    if (isset($params['redirect'])) {
       $REDIRECT = '?redirect=' . $params['redirect'];

@@ -5,7 +5,11 @@ function plugin_singlesignon_display_login() {
 
    $signon_provider = new PluginSinglesignonProvider();
 
-   $rows = $signon_provider->find('`is_active` = 1');
+   $condition = '`is_active` = 1';
+   if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+      $condition = [$condition];
+   }
+   $rows = $signon_provider->find($condition);
 
    $html = [];
 
@@ -116,7 +120,11 @@ function plugin_singlesignon_uninstall() {
    global $DB;
 
    $config = new Config();
-   $rows = $config->find("`context` LIKE 'singlesignon%'");
+   $condition = "`context` LIKE 'singlesignon%'";
+   if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+      $condition = [$condition];
+   }
+   $rows = $config->find($condition);
 
    foreach ($rows as $id => $row) {
       $config->delete(['id' => $id]);

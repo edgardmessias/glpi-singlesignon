@@ -814,6 +814,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       try {
          $data = json_decode($content, true);
+         if (!isset($data['access_token'])) {
+            return false;
+         }
          $this->_token = $data['access_token'];
       } catch (\Exception $ex) {
          return false;
