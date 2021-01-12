@@ -685,10 +685,28 @@ class PluginSinglesignonProvider extends CommonDBTM {
     * @return string
     */
    private function getBaseURL() {
-      $baseURL = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == "on") ? "https://" : "http://";
-      $baseURL .= $_SERVER["SERVER_NAME"];
+      $baseURL = "";
+      if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+         $baseURL = ($_SERVER["HTTP_X_FORWARDED_PROTO"] == "https") ? "https://" : "http://";
+      } else if (isset($_SERVER["HTTPS"])) {
+         $baseURL = ($_SERVER["HTTPS"] == "on") ? "https://" : "http://";
+      } else {
+         $baseURL = "http://";
+      }
+      if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
+         $baseURL .= $_SERVER["HTTP_X_FORWARDED_HOST"];
+      } else if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
+         $baseURL .= $_SERVER["HTTP_X_FORWARDED_HOST"];
+      } else {
+         $baseURL .= $_SERVER["SERVER_NAME"];
+      }
 
-      if ($_SERVER["SERVER_PORT"] != "80" && $_SERVER["SERVER_PORT"] != "443") {
+      $port = $_SERVER["SERVER_PORT"];
+      if (isset($_SERVER["HTTP_X_FORWARDED_PORT"])) {
+         $port = $_SERVER["HTTP_X_FORWARDED_PORT"];
+      }
+
+      if ($port != "80" && $port != "443") {
          $baseURL .= ":" . $_SERVER["SERVER_PORT"];
       }
       return $baseURL;
