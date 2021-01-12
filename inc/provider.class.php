@@ -1014,4 +1014,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $data;
    }
 
+   public static function renderButton($url, $name, $class = 'oauth-login') {
+      return '<span><a href="' . $url . '" class="singlesignon vsubmit ' . $class . '">' .
+      sprintf(__sso('Login with %s'), $name) . '</a></span>';
+   }
+
 }

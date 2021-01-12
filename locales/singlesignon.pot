@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: singlesignon 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/edgardmessias/glpi-singlesignon/"
 "issues\n"
-"POT-Creation-Date: 2019-04-29 09:32-0300\n"
+"POT-Creation-Date: 2021-01-12 13:25-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,9 +18,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: hook.php:22
+#: hook.php:27 hook.php:75
 #, php-format
-msgid "[ Login with %s ]"
+msgid "Login with %s"
 msgstr ""
 
 #: setup.php:8
@@ -29,127 +29,131 @@ msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
 msgstr ""
 
 #: setup.php:36 front/provider.form.php:59 front/provider.form.php:61
-#: front/provider.php:6 front/provider.php:8 inc/provider.class.php:53
+#: front/provider.php:6 front/provider.php:8 inc/provider.class.php:57
 msgid "Single Sign-on"
-msgstr ""
-
-#: setup.php:49
-msgid "Run first: composer install"
 msgstr ""
 
 #: setup.php:53
 msgid "This plugin requires GLPI >= 0.85"
 msgstr ""
 
-#: front/callback.php:11
+#: front/callback.php:15
 msgid "Provider not defined."
 msgstr ""
 
-#: front/callback.php:17
+#: front/callback.php:21
 msgid "Provider not found."
 msgstr ""
 
-#: front/callback.php:21
+#: front/callback.php:25
 msgid "Provider not active."
 msgstr ""
 
-#: inc/provider.class.php:46
+#: inc/provider.class.php:50
 msgid "Single Sign-on Provider"
 msgstr ""
 
-#: inc/provider.class.php:94
+#: inc/provider.class.php:98
 msgid "SSO Type"
 msgstr ""
 
-#: inc/provider.class.php:102 inc/provider.class.php:267
+#: inc/provider.class.php:106 inc/provider.class.php:298
 msgid "Client ID"
 msgstr ""
 
-#: inc/provider.class.php:104 inc/provider.class.php:275
+#: inc/provider.class.php:108 inc/provider.class.php:306
 msgid "Client Secret"
 msgstr ""
 
-#: inc/provider.class.php:109 inc/provider.class.php:283
+#: inc/provider.class.php:113 inc/provider.class.php:314
 msgid "Scope"
 msgstr ""
 
-#: inc/provider.class.php:111 inc/provider.class.php:291
+#: inc/provider.class.php:115 inc/provider.class.php:322
 msgid "Extra Options"
 msgstr ""
 
-#: inc/provider.class.php:122 inc/provider.class.php:299
+#: inc/provider.class.php:126 inc/provider.class.php:330
 msgid "Authorize URL"
 msgstr ""
 
-#: inc/provider.class.php:127 inc/provider.class.php:307
+#: inc/provider.class.php:131 inc/provider.class.php:338
 msgid "Access Token URL"
 msgstr ""
 
-#: inc/provider.class.php:132 inc/provider.class.php:315
+#: inc/provider.class.php:136 inc/provider.class.php:346
 msgid "Resource Owner Details URL"
 msgstr ""
 
-#: inc/provider.class.php:166
+#: inc/provider.class.php:144
+msgid "Callback URL"
+msgstr ""
+
+#: inc/provider.class.php:148
+msgid "Test Single Sign-on"
+msgstr ""
+
+#: inc/provider.class.php:197
 msgid "A Name is required"
 msgstr ""
 
-#: inc/provider.class.php:172
+#: inc/provider.class.php:203
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr ""
 
-#: inc/provider.class.php:176
+#: inc/provider.class.php:207
 msgid "A Client ID is required"
 msgstr ""
 
-#: inc/provider.class.php:180
+#: inc/provider.class.php:211
 msgid "A Client Secret is required"
 msgstr ""
 
-#: inc/provider.class.php:185
+#: inc/provider.class.php:216
 msgid "An Authorize URL is required"
 msgstr ""
 
-#: inc/provider.class.php:187
+#: inc/provider.class.php:218
 msgid "The Authorize URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:191
+#: inc/provider.class.php:222
 msgid "An Access Token URL is required"
 msgstr ""
 
-#: inc/provider.class.php:193
+#: inc/provider.class.php:224
 msgid "The Access Token URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:197
+#: inc/provider.class.php:228
 msgid "A Resource Owner Details URL is required"
 msgstr ""
 
-#: inc/provider.class.php:199
+#: inc/provider.class.php:230
 msgid "The Resource Owner Details URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:374
+#: inc/provider.class.php:405
 msgid "Generic"
 msgstr ""
 
-#: inc/provider.class.php:375
+#: inc/provider.class.php:406
 msgid "Facebook"
 msgstr ""
 
-#: inc/provider.class.php:376
+#: inc/provider.class.php:407
 msgid "GitHub"
 msgstr ""
 
-#: inc/provider.class.php:377
+#: inc/provider.class.php:408
 msgid "Google"
 msgstr ""
 
-#: inc/provider.class.php:378
+#: inc/provider.class.php:409
 msgid "Instagram"
 msgstr ""
 
-#: inc/provider.class.php:379
+#: inc/provider.class.php:410
 msgid "LinkdeIn"
 msgstr ""

@@ -21,25 +21,92 @@ function plugin_singlesignon_display_login() {
       }
 
       $url = PluginSinglesignonProvider::getCallbackUrl($row['id'], $query);
-
-      $html[] = '<a href="' . $url . '" class="singlesignon" style="color: #CFCFCF">' .
-      sprintf(__sso('[ Login with %s ]'), $row['name']) . '</a>';
+      $html[] = PluginSinglesignonProvider::renderButton($url, $row['name']);
    }
 
-   echo implode("<br />\n", $html);
-   echo '<script type="text/javascript">
-      $(".singlesignon").on("click", function (e) {
-         e.preventDefault();
-
-         var url   = $(this).attr("href");
-         var left  = ($(window).width()/2)-(600/2);
-         var top   = ($(window).height()/2)-(800/2);
-         var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
-         if (window.focus) {
-            newWindow.focus();
+   if (!empty($html)) {
+      echo '<div class="singlesignon-box">';
+      echo implode(" \n", $html);
+      echo PluginSinglesignonProvider::renderButton('#', __('GLPI'), 'vsubmit old-login');
+      echo '</div>';
+      ?>
+      <style>
+         #display-login .singlesignon-box span {
+            display: inline-block;
+            margin: 5px;
          }
-      });
-       </script>';
+
+         #display-login .singlesignon-box .old-login {
+            display: none;
+         }
+
+         #boxlogin .singlesignon-box span {
+            display: block;
+         }
+
+         #boxlogin .singlesignon-box .vsubmit {
+            width: 100%;
+            height: 30px;
+            font-size: 1.3em !important;
+            text-align: center;
+            box-sizing: border-box;
+         }
+      </style>
+      <script type="text/javascript">
+         $(document).ready(function() {
+
+            // On click, open a popup
+            $(document).on("click", ".singlesignon.oauth-login", function(e) {
+               e.preventDefault();
+
+               var url = $(this).attr("href");
+               var left = ($(window).width() / 2) - (600 / 2);
+               var top = ($(window).height() / 2) - (800 / 2);
+               var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
+               if (window.focus) {
+                  newWindow.focus();
+               }
+            });
+
+            var $boxLogin = $('#boxlogin');
+            var $form = $boxLogin.find('form');
+            var $boxButtons = $('.singlesignon-box');
+
+            // Move the buttons to before form
+            $boxButtons.prependTo($boxLogin);
+            $boxButtons.find('span').addClass('login_input');
+
+            // Show old form
+            $(document).on("click", ".singlesignon.old-login", function(e) {
+               e.preventDefault();
+               $boxButtons.slideToggle();
+               $form.slideToggle(function() {
+                  $('#login_name').focus();
+               });
+            });
+
+            var $line = $('<p />', {
+               class: 'login_input'
+            }).prependTo($form);
+
+            var $backLogin = $('<label />', {
+               css: {
+                  cursor: 'pointer'
+               },
+               text: "<< " + <?php echo json_encode(__('Back')) ?>,
+            }).appendTo($line);
+
+            $backLogin.on('click', function(e) {
+               e.preventDefault();
+               $boxButtons.slideToggle();
+               $form.slideToggle();
+            });
+
+            $form.hide();
+         });
+      </script>
+      <?php
+   }
 }
 
 function plugin_singlesignon_install() {
@@ -48,8 +115,7 @@ function plugin_singlesignon_install() {
 
    $currentVersion = '0.0.0';
 
-   $default = [
-   ];
+   $default = [];
 
    $current = Config::getConfigurationValues('singlesignon');
 
