@@ -181,7 +181,12 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "<td colspan='3'>";
       if (!empty($this->fields['picture'])) {
          echo Html::image(static::getPictureUrl($this->fields['picture']), [
-            'style' => 'max-width: 100px; max-height: 50px;',
+            'style' => '
+               max-width: 100px;
+               max-height: 100px;
+               background-image: linear-gradient(45deg, #b0b0b0 25%, transparent 25%), linear-gradient(-45deg, #b0b0b0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #b0b0b0 75%), linear-gradient(-45deg, transparent 75%, #b0b0b0 75%);
+               background-size: 10px 10px;
+               background-position: 0 0, 0 5px, 5px -5px, -5px 0px;',
             'class' => 'picture_square'
          ]);
          echo "&nbsp;";
