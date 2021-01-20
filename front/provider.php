@@ -2,6 +2,8 @@
 
 include ('../../../inc/includes.php');
 
+Session::checkRight("config", UPDATE);
+
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
    Html::header(__sso('Single Sign-on'), $_SERVER['PHP_SELF'], "config", "pluginsinglesignonprovider", "");
 } else {
