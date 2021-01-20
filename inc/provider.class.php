@@ -326,19 +326,22 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return false;
       }
 
-      if (isset($input["_blank_bgcolor"])
+      if (
+         isset($input["_blank_bgcolor"])
          && $input["_blank_bgcolor"]
       ) {
          $input['bgcolor'] = '';
       }
 
-      if (isset($input["_blank_color"])
+      if (
+         isset($input["_blank_color"])
          && $input["_blank_color"]
       ) {
          $input['color'] = '';
       }
 
-      if (isset($input["_blank_picture"])
+      if (
+         isset($input["_blank_picture"])
          && $input["_blank_picture"]
       ) {
          $input['picture'] = '';
@@ -376,7 +379,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          unset($opt['id']);
          if (isset($options[$optid])) {
             $message = "Duplicate key $optid ({$options[$optid]['name']}/{$opt['name']}) in " .
-            get_class($this) . " searchOptions!";
+               get_class($this) . " searchOptions!";
             Toolbox::logDebug($message);
          }
          foreach ($opt as $k => $v) {
@@ -625,12 +628,12 @@ class PluginSinglesignonProvider extends CommonDBTM {
       switch ($ma->getAction()) {
          case 'DoIt':
             echo "&nbsp;<input type='hidden' name='toto' value='1'>" .
-            Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
-            " " . __('Write in item history', 'example');
+               Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
+               " " . __('Write in item history', 'example');
             return true;
          case 'do_nothing':
             echo "&nbsp;" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
-            " " . __('but do nothing :)', 'example');
+               " " . __('but do nothing :)', 'example');
             return true;
       }
       return parent::showMassiveActionsSubForm($ma);
@@ -1078,6 +1081,27 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $auth->auth_succeded;
    }
 
+   public function linkUser($user_id) {
+      /** @var User */
+      $user = User::getById($user_id);
+      if (!$user) {
+         return;
+      }
+
+      $resource_array = $this->getResourceOwner();
+
+      if (!$resource_array) {
+         return false;
+      }
+
+      $link = new PluginSinglesignonProvider_User();
+      return $link->add([
+         'plugin_singlesignon_providers_id' => $this->fields['id'],
+         'users_id' => $user_id,
+         'remote_id' => $resource_array['id'],
+      ]);
+   }
+
    /**
     * Generate a URL to callback
     * Some providers don't accept query string, it convert to PATH
@@ -1171,8 +1195,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
          // Iterate on possible suffix while dest exists.
          // This case will almost never exists as dest is based on an unique id.
          $dest = $basePath
-         . '/' . $subdirectory
-         . '/' . $filename . ($i > 0 ? '_' . $i : '') . '.' . $ext;
+            . '/' . $subdirectory
+            . '/' . $filename . ($i > 0 ? '_' . $i : '') . '.' . $ext;
          $i++;
       } while (file_exists($dest));
 

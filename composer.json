@@ -17,5 +17,8 @@
         "platform": {
             "php": "7.1.2"
         }
+    },
+    "require": {
+        "galbar/jsonpath": "^1.1"
     }
 }
