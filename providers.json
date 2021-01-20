@@ -1,8 +1,8 @@
 {
    "facebook": {
-      "url_authorize": "https://www.facebook.com/v2.12/dialog/oauth",
-      "url_access_token": "https://www.facebook.com/v2.12/oauth/access_token",
-      "url_resource_owner_details": "https://www.facebook.com/v2.12/me?fields=id,email&access_token=<access_token>&appsecret_proof=<appsecret_proof>",
+      "url_authorize": "https://www.facebook.com/v9.0/dialog/oauth",
+      "url_access_token": "https://graph.facebook.com/v9.0/oauth/access_token",
+      "url_resource_owner_details": "https://graph.facebook.com/v9.0/me?fields=id,email&access_token=<access_token>&appsecret_proof=<appsecret_proof>",
       "scope": "public_profile,email"
    },
    "github": {
