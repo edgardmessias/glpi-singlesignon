@@ -20,14 +20,14 @@ function plugin_singlesignon_display_login() {
          $query['redirect'] = $_REQUEST['redirect'];
       }
 
-      $url = PluginSinglesignonProvider::getCallbackUrl($row['id'], $query);
-      $html[] = PluginSinglesignonProvider::renderButton($url, $row);
+      $url = PluginSinglesignonToolbox::getCallbackUrl($row['id'], $query);
+      $html[] = PluginSinglesignonToolbox::renderButton($url, $row);
    }
 
    if (!empty($html)) {
       echo '<div class="singlesignon-box">';
       echo implode(" \n", $html);
-      echo PluginSinglesignonProvider::renderButton('#', ['name' => __('GLPI')], 'vsubmit old-login');
+      echo PluginSinglesignonToolbox::renderButton('#', ['name' => __('GLPI')], 'vsubmit old-login');
       echo '</div>';
       ?>
       <style>
@@ -180,6 +180,18 @@ function plugin_singlesignon_install() {
                 ADD `bgcolor` varchar(7) DEFAULT NULL,
                 ADD `color` varchar(7) DEFAULT NULL";
       $DB->query($query) or die("error adding picture column " . $DB->error());
+   }
+   if (version_compare($currentVersion, "1.3.0", '<')) {
+      $query = "CREATE TABLE `glpi_plugin_singlesignon_providers_users` (
+         `id` int(11) NOT NULL AUTO_INCREMENT,
+         `plugin_singlesignon_providers_id` int(11) NOT NULL DEFAULT '0',
+         `users_id` int(11) NOT NULL DEFAULT '0',
+         `remote_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+         PRIMARY KEY (`id`),
+         UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
+         UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`)
+       ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+      $DB->query($query) or die("error creating glpi_plugin_singlesignon_providers_users " . $DB->error());
    }
 
    Config::setConfigurationValues('singlesignon', [

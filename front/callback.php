@@ -7,9 +7,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-include ('../../../inc/includes.php');
+include('../../../inc/includes.php');
 
-$provider_id = PluginSinglesignonProvider::getCallbackParameters('provider');
+$provider_id = PluginSinglesignonToolbox::getCallbackParameters('provider');
 
 if (!$provider_id) {
    Html::displayErrorAndDie(__sso("Provider not defined."), false);
@@ -27,24 +27,33 @@ if (!$signon_provider->fields['is_active']) {
 
 $signon_provider->checkAuthorization();
 
-$test = PluginSinglesignonProvider::getCallbackParameters('test');
+$test = PluginSinglesignonToolbox::getCallbackParameters('test');
 
 if ($test) {
    Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
    echo '<div class="left spaced">';
    echo '<pre>';
+   echo "### BEGIN ###\n";
    print_r($signon_provider->getResourceOwner());
+   echo "### END ###";
    echo '</pre>';
    Html::nullFooter();
    exit();
 }
 
+$user_id = Session::getLoginUserID();
 
 $REDIRECT = "";
 
-if ($signon_provider->login()) {
+if ($user_id || $signon_provider->login()) {
 
-   $params = PluginSinglesignonProvider::getCallbackParameters('q');
+   $user_id = $user_id ?: Session::getLoginUserID();
+
+   if ($user_id) {
+      $signon_provider->linkUser($user_id);
+   }
+
+   $params = PluginSinglesignonToolbox::getCallbackParameters('q');
 
    $url_redirect = '';
 

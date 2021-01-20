@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: singlesignon 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/edgardmessias/glpi-singlesignon/"
 "issues\n"
-"POT-Creation-Date: 2021-01-12 13:25-0300\n"
+"POT-Creation-Date: 2021-01-20 14:48-0300\n"
 "PO-Revision-Date: 2019-04-26 11:04-0300\n"
 "Last-Translator: Edgard Lorraine Messias <edgardmessias@gmail.com>\n"
 "Language-Team: none\n"
@@ -18,22 +18,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: hook.php:27 hook.php:75
-#, php-format
-msgid "Login with %s"
-msgstr "Entrar com %s"
-
 #: setup.php:8
 #, php-format
 msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
 msgstr "Por favor, renomeie a pasta do plugin \"%s\" para \"singlesignon\""
 
-#: setup.php:36 front/provider.form.php:59 front/provider.form.php:61
-#: front/provider.php:6 front/provider.php:8 inc/provider.class.php:57
+#: setup.php:40 front/provider.form.php:59 front/provider.form.php:61
+#: front/provider.php:6 front/provider.php:8 inc/preference.class.php:64
+#: inc/provider.class.php:57
 msgid "Single Sign-on"
-msgstr "Single Sign-on"
+msgstr "Logon Único"
 
-#: setup.php:53
+#: setup.php:57
 msgid "This plugin requires GLPI >= 0.85"
 msgstr "Este plugin requer GLPI >= 0.85"
 
@@ -49,115 +45,123 @@ msgstr "Provedor não encontrado."
 msgid "Provider not active."
 msgstr "Provedor não ativo."
 
-#: inc/provider.class.php:50
+#: inc/preference.class.php:147 inc/provider.class.php:50
 msgid "Single Sign-on Provider"
-msgstr "Provedor Single Sign-on"
+msgstr "Provedor de Logon Único"
+
+#: inc/preference.class.php:172
+msgid "Linked accounts"
+msgstr "Contas vinculadas"
 
 #: inc/provider.class.php:98
 msgid "SSO Type"
 msgstr "Tipo SSO"
 
-#: inc/provider.class.php:106 inc/provider.class.php:298
+#: inc/provider.class.php:106 inc/provider.class.php:426
 msgid "Client ID"
 msgstr "ID de Cliente"
 
-#: inc/provider.class.php:108 inc/provider.class.php:306
+#: inc/provider.class.php:108 inc/provider.class.php:434
 msgid "Client Secret"
 msgstr "Segredo do Cliente"
 
-#: inc/provider.class.php:113 inc/provider.class.php:314
+#: inc/provider.class.php:113 inc/provider.class.php:442
 msgid "Scope"
 msgstr "Escopo"
 
-#: inc/provider.class.php:115 inc/provider.class.php:322
+#: inc/provider.class.php:115 inc/provider.class.php:450
 msgid "Extra Options"
 msgstr "Opções Extras"
 
-#: inc/provider.class.php:126 inc/provider.class.php:330
+#: inc/provider.class.php:126 inc/provider.class.php:458
 msgid "Authorize URL"
 msgstr "URL de Autorização"
 
-#: inc/provider.class.php:131 inc/provider.class.php:338
+#: inc/provider.class.php:131 inc/provider.class.php:466
 msgid "Access Token URL"
 msgstr "URL de Token de Acesso"
 
-#: inc/provider.class.php:136 inc/provider.class.php:346
+#: inc/provider.class.php:136 inc/provider.class.php:474
 msgid "Resource Owner Details URL"
 msgstr "URL de Detalhes do Proprietário do Recurso"
 
-#: inc/provider.class.php:144
+#: inc/provider.class.php:224
 msgid "Callback URL"
-msgstr ""
+msgstr "URL de Retorno"
 
-#: inc/provider.class.php:148
-#, fuzzy
+#: inc/provider.class.php:228
 msgid "Test Single Sign-on"
-msgstr "Single Sign-on"
+msgstr "Testar Logon Único"
 
-#: inc/provider.class.php:197
+#: inc/provider.class.php:286
 msgid "A Name is required"
 msgstr "Nome é obrigatório"
 
-#: inc/provider.class.php:203
+#: inc/provider.class.php:292
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "O \"%s\" é um tipo inválido"
 
-#: inc/provider.class.php:207
+#: inc/provider.class.php:296
 msgid "A Client ID is required"
 msgstr "ID de cliente é obrigatório"
 
-#: inc/provider.class.php:211
+#: inc/provider.class.php:300
 msgid "A Client Secret is required"
 msgstr "Segredo do Cliente é obrigatório"
 
-#: inc/provider.class.php:216
+#: inc/provider.class.php:305
 msgid "An Authorize URL is required"
 msgstr "URL de Autorização é obrigatório"
 
-#: inc/provider.class.php:218
+#: inc/provider.class.php:307
 msgid "The Authorize URL is invalid"
 msgstr "A URL de Autorização é inválida"
 
-#: inc/provider.class.php:222
+#: inc/provider.class.php:311
 msgid "An Access Token URL is required"
 msgstr "URL de Token de Acesso é obrigatório"
 
-#: inc/provider.class.php:224
+#: inc/provider.class.php:313
 msgid "The Access Token URL is invalid"
 msgstr "A URL de Token de Acesso é inválida"
 
-#: inc/provider.class.php:228
+#: inc/provider.class.php:317
 msgid "A Resource Owner Details URL is required"
 msgstr "URL de Detalhes do Proprietário do Recurso é obrigatório"
 
-#: inc/provider.class.php:230
+#: inc/provider.class.php:319
 msgid "The Resource Owner Details URL is invalid"
 msgstr "A URL de Detalhes do Proprietário do Recurso é inválida"
 
-#: inc/provider.class.php:405
+#: inc/provider.class.php:533
 msgid "Generic"
-msgstr "Generic"
+msgstr "Genérico"
 
-#: inc/provider.class.php:406
+#: inc/provider.class.php:534
 msgid "Facebook"
 msgstr "Facebook"
 
-#: inc/provider.class.php:407
+#: inc/provider.class.php:535
 msgid "GitHub"
 msgstr "GitHub"
 
-#: inc/provider.class.php:408
+#: inc/provider.class.php:536
 msgid "Google"
 msgstr "Google"
 
-#: inc/provider.class.php:409
+#: inc/provider.class.php:537
 msgid "Instagram"
 msgstr "Instagram"
 
-#: inc/provider.class.php:410
+#: inc/provider.class.php:538
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
+
+#: inc/toolbox.class.php:154
+#, php-format
+msgid "Login with %s"
+msgstr "Entrar com %s"
 
 #~ msgid "Run first: composer install"
 #~ msgstr "Execute primeiro: composer install"

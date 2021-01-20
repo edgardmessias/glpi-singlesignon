@@ -180,7 +180,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "<td>" . __('Picture') . "</td>";
       echo "<td colspan='3'>";
       if (!empty($this->fields['picture'])) {
-         echo Html::image(static::getPictureUrl($this->fields['picture']), [
+         echo Html::image(PluginSinglesignonToolbox::getPictureUrl($this->fields['picture']), [
             'style' => '
                max-width: 100px;
                max-height: 100px;
@@ -218,7 +218,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          echo "<th colspan='4'>" . __('Test') . "</th>";
          echo "</tr>\n";
 
-         $url = self::getCallbackUrl($ID);
+         $url = PluginSinglesignonToolbox::getCallbackUrl($ID);
          $fullUrl = $this->getBaseURL() . $url;
          echo "<tr class='tab_bg_1'>";
          echo "<td>" . __sso('Callback URL') . "</td>";
@@ -258,7 +258,12 @@ class PluginSinglesignonProvider extends CommonDBTM {
    }
 
    function cleanDBonPurge() {
-      static::deletePicture($this->fields['picture']);
+      PluginSinglesignonToolbox::deletePicture($this->fields['picture']);
+      $this->deleteChildrenAndRelationsFromDb(
+         [
+            'PluginSinglesignonProvider_User',
+         ]
+      );
    }
 
    /**
@@ -344,21 +349,21 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $input['picture'] = '';
 
          if (array_key_exists('picture', $this->fields)) {
-            static::deletePicture($this->fields['picture']);
+            PluginSinglesignonToolbox::deletePicture($this->fields['picture']);
          }
       }
 
       if (isset($input["_picture"])) {
          $picture = array_shift($input["_picture"]);
 
-         if ($dest = static::savePicture(GLPI_TMP_DIR . '/' . $picture)) {
+         if ($dest = PluginSinglesignonToolbox::savePicture(GLPI_TMP_DIR . '/' . $picture)) {
             $input['picture'] = $dest;
          } else {
             Session::addMessageAfterRedirect(__('Unable to save picture file.'), true, ERROR);
          }
 
          if (array_key_exists('picture', $this->fields)) {
-            static::deletePicture($this->fields['picture']);
+            PluginSinglesignonToolbox::deletePicture($this->fields['picture']);
          }
       }
 
@@ -1021,6 +1026,34 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return $user;
       }
 
+      $remote_id = false;
+      $remote_id_fields = ['id', 'username'];
+
+      foreach ($remote_id_fields as $field) {
+         if (isset($resource_array[$field]) && !empty($resource_array[$field])) {
+            $remote_id = $resource_array[$field];
+            break;
+         }
+      }
+
+      if ($remote_id) {
+         $link = new PluginSinglesignonProvider_User();
+         $condition = "`remote_id` = '{$remote_id}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
+         if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+            $condition = [$condition];
+         }
+         $links = $link->find($condition);
+         if (!empty($links) && $first = reset($links)) {
+            $id = $first['users_id'];
+         }
+
+         $remote_id;
+      }
+
+      if (is_numeric($id) && $user->getFromDB($id)) {
+         return $user;
+      }
+
       $email = false;
       $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
 
@@ -1078,158 +1111,45 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $auth->auth_succeded;
    }
 
-   /**
-    * Generate a URL to callback
-    * Some providers don't accept query string, it convert to PATH
-    * @global array $CFG_GLPI
-    * @param integer $id
-    * @param array $query
-    * @return string
-    */
-   public static function getCallbackUrl($id, $query = []) {
-      global $CFG_GLPI;
-
-      $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php';
-
-      $url .= "/provider/$id";
-
-      if (!empty($query)) {
-         $url .= "/q/" . base64_encode(http_build_query($query));
+   public function linkUser($user_id) {
+      /** @var User */
+      $user = User::getById($user_id);
+      if (!$user) {
+         return;
       }
 
-      return $url;
-   }
+      $resource_array = $this->getResourceOwner();
 
-   public static function getCallbackParameters($name = null) {
-      $data = [];
+      if (!$resource_array) {
+         return false;
+      }
 
-      if (isset($_SERVER['PATH_INFO'])) {
-         $path_info = trim($_SERVER['PATH_INFO'], '/');
+      $remote_id = false;
+      $id_fields = ['id', 'sub', 'username'];
 
-         $parts = explode('/', $path_info);
-
-         $key = null;
-
-         foreach ($parts as $part) {
-            if ($key === null) {
-               $key = $part;
-            } else {
-               if ($key === "provider" || $key === "test") {
-                  $part = intval($part);
-               } else {
-                  $tmp = base64_decode($part);
-                  parse_str($tmp, $part);
-               }
-
-               if ($key === $name) {
-                  return $part;
-               }
-
-               $data[$key] = $part;
-               $key = null;
-            }
+      foreach ($id_fields as $field) {
+         if (isset($resource_array[$field]) && !empty($resource_array[$field])) {
+            $remote_id = $resource_array[$field];
+            break;
          }
       }
 
-      if (!isset($data[$name])) {
-         return null;
-      }
-
-      return $data;
-   }
-
-   static public function startsWith($haystack, $needle) {
-      $length = strlen($needle);
-      return (substr($haystack, 0, $length) === $needle);
-   }
-
-   static function getPictureUrl($path) {
-      global $CFG_GLPI;
-
-      $path = Html::cleanInputText($path); // prevent xss
-
-      if (empty($path)) {
-         return null;
-      }
-
-      return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/picture.send.php?path=' . $path;
-   }
-
-   static public function savePicture($src, $uniq_prefix = null) {
-
-      if (function_exists('Document::isImage') && !Document::isImage($src)) {
+      if (!$remote_id) {
          return false;
       }
 
-      $filename     = uniqid($uniq_prefix);
-      $ext          = pathinfo($src, PATHINFO_EXTENSION);
-      $subdirectory = substr($filename, -2); // subdirectory based on last 2 hex digit
+      $link = new PluginSinglesignonProvider_User();
 
-      $basePath = GLPI_PLUGIN_DOC_DIR . "/singlesignon";
-      $i = 0;
-      do {
-         // Iterate on possible suffix while dest exists.
-         // This case will almost never exists as dest is based on an unique id.
-         $dest = $basePath
-         . '/' . $subdirectory
-         . '/' . $filename . ($i > 0 ? '_' . $i : '') . '.' . $ext;
-         $i++;
-      } while (file_exists($dest));
+      // Unlink from another user
+      $link->deleteByCriteria([
+         'plugin_singlesignon_providers_id' => $this->fields['id'],
+         'remote_id' => $remote_id,
+      ]);
 
-      if (!is_dir($basePath . '/' . $subdirectory) && !mkdir($basePath . '/' . $subdirectory)) {
-         return false;
-      }
-
-      if (!rename($src, $dest)) {
-         return false;
-      }
-
-      return substr($dest, strlen($basePath . '/')); // Return dest relative to GLPI_PICTURE_DIR
-   }
-
-   public static function deletePicture($path) {
-      $basePath = GLPI_PLUGIN_DOC_DIR . "/singlesignon";
-      $fullpath = $basePath . '/' . $path;
-
-      if (!file_exists($fullpath)) {
-         return false;
-      }
-
-      $fullpath = realpath($fullpath);
-      if (!static::startsWith($fullpath, realpath($basePath))) {
-         return false;
-      }
-
-      return @unlink($fullpath);
-   }
-
-   public static function renderButton($url, $data, $class = 'oauth-login') {
-      $btn = '<span><a href="' . $url . '" class="singlesignon vsubmit ' . $class . '"';
-
-      $style = '';
-      if ((isset($data['bgcolor']) && $data['bgcolor'])) {
-         $style .= 'background-color: ' . $data['bgcolor'] . ';';
-      }
-      if ((isset($data['color']) && $data['color'])) {
-         $style .= 'color: ' . $data['color'] . ';';
-      }
-      if ($style) {
-         $btn .= ' style="' . $style . '"';
-      }
-      $btn .= '>';
-
-      if (isset($data['picture']) && $data['picture']) {
-         $btn .= Html::image(
-            static::getPictureUrl($data['picture']),
-            [
-               'style' => 'max-height: 20px;',
-            ]
-         );
-         $btn .= ' ';
-      }
-
-      $btn .= sprintf(__sso('Login with %s'), $data['name']);
-      $btn .= '</a></span>';
-      return $btn;
+      return $link->add([
+         'plugin_singlesignon_providers_id' => $this->fields['id'],
+         'users_id' => $user_id,
+         'remote_id' => $remote_id,
+      ]);
    }
 }

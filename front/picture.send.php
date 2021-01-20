@@ -22,4 +22,4 @@ if (!file_exists($path)) {
    Html::displayErrorAndDie(__('File not found'), true); // Not found
 }
 
-Toolbox::sendFile($path, $logo);
+Toolbox::sendFile($path, "logo.png");

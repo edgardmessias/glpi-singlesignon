@@ -1,6 +1,6 @@
 <?php
 
-define('PLUGIN_SINGLESIGNON_VERSION', '1.2.0');
+define('PLUGIN_SINGLESIGNON_VERSION', '1.3.0');
 
 $folder = basename(dirname(__FILE__));
 
@@ -18,6 +18,10 @@ function plugin_init_singlesignon() {
    if (file_exists($autoload)) {
       include_once $autoload;
    }
+
+   Plugin::registerClass('PluginSinglesignonPreference', [
+      'addtabon' => ['Preference', 'User']
+   ]);
 
    $PLUGIN_HOOKS['csrf_compliant']['singlesignon'] = true;
 
