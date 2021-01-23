@@ -3,4 +3,5 @@
 /vendor
 /*.tar
 /*.tar.gz
+/*.tgz
 /*.zip

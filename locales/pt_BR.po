@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: singlesignon 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/edgardmessias/glpi-singlesignon/"
 "issues\n"
-"POT-Creation-Date: 2021-01-20 14:48-0300\n"
+"POT-Creation-Date: 2021-01-23 15:50-0300\n"
 "PO-Revision-Date: 2019-04-26 11:04-0300\n"
 "Last-Translator: Edgard Lorraine Messias <edgardmessias@gmail.com>\n"
 "Language-Team: none\n"
@@ -17,21 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-
-#: setup.php:8
-#, php-format
-msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
-msgstr "Por favor, renomeie a pasta do plugin \"%s\" para \"singlesignon\""
-
-#: setup.php:40 front/provider.form.php:59 front/provider.form.php:61
-#: front/provider.php:6 front/provider.php:8 inc/preference.class.php:64
-#: inc/provider.class.php:57
-msgid "Single Sign-on"
-msgstr "Logon Único"
-
-#: setup.php:57
-msgid "This plugin requires GLPI >= 0.85"
-msgstr "Este plugin requer GLPI >= 0.85"
 
 #: front/callback.php:15
 msgid "Provider not defined."
@@ -45,6 +30,12 @@ msgstr "Provedor não encontrado."
 msgid "Provider not active."
 msgstr "Provedor não ativo."
 
+#: front/provider.form.php:61 front/provider.form.php:63 front/provider.php:8
+#: front/provider.php:10 inc/preference.class.php:64 inc/provider.class.php:57
+#: setup.php:40
+msgid "Single Sign-on"
+msgstr "Logon Único"
+
 #: inc/preference.class.php:147 inc/provider.class.php:50
 msgid "Single Sign-on Provider"
 msgstr "Provedor de Logon Único"
@@ -57,31 +48,31 @@ msgstr "Contas vinculadas"
 msgid "SSO Type"
 msgstr "Tipo SSO"
 
-#: inc/provider.class.php:106 inc/provider.class.php:426
+#: inc/provider.class.php:106 inc/provider.class.php:423
 msgid "Client ID"
 msgstr "ID de Cliente"
 
-#: inc/provider.class.php:108 inc/provider.class.php:434
+#: inc/provider.class.php:108 inc/provider.class.php:431
 msgid "Client Secret"
 msgstr "Segredo do Cliente"
 
-#: inc/provider.class.php:113 inc/provider.class.php:442
+#: inc/provider.class.php:113 inc/provider.class.php:439
 msgid "Scope"
 msgstr "Escopo"
 
-#: inc/provider.class.php:115 inc/provider.class.php:450
+#: inc/provider.class.php:115 inc/provider.class.php:447
 msgid "Extra Options"
 msgstr "Opções Extras"
 
-#: inc/provider.class.php:126 inc/provider.class.php:458
+#: inc/provider.class.php:126 inc/provider.class.php:455
 msgid "Authorize URL"
 msgstr "URL de Autorização"
 
-#: inc/provider.class.php:131 inc/provider.class.php:466
+#: inc/provider.class.php:131 inc/provider.class.php:463
 msgid "Access Token URL"
 msgstr "URL de Token de Acesso"
 
-#: inc/provider.class.php:136 inc/provider.class.php:474
+#: inc/provider.class.php:136 inc/provider.class.php:471
 msgid "Resource Owner Details URL"
 msgstr "URL de Detalhes do Proprietário do Recurso"
 
@@ -134,27 +125,27 @@ msgstr "URL de Detalhes do Proprietário do Recurso é obrigatório"
 msgid "The Resource Owner Details URL is invalid"
 msgstr "A URL de Detalhes do Proprietário do Recurso é inválida"
 
-#: inc/provider.class.php:533
+#: inc/provider.class.php:530
 msgid "Generic"
 msgstr "Genérico"
 
-#: inc/provider.class.php:534
+#: inc/provider.class.php:531
 msgid "Facebook"
 msgstr "Facebook"
 
-#: inc/provider.class.php:535
+#: inc/provider.class.php:532
 msgid "GitHub"
 msgstr "GitHub"
 
-#: inc/provider.class.php:536
+#: inc/provider.class.php:533
 msgid "Google"
 msgstr "Google"
 
-#: inc/provider.class.php:537
+#: inc/provider.class.php:534
 msgid "Instagram"
 msgstr "Instagram"
 
-#: inc/provider.class.php:538
+#: inc/provider.class.php:535
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
 
@@ -162,6 +153,15 @@ msgstr "LinkdeIn"
 #, php-format
 msgid "Login with %s"
 msgstr "Entrar com %s"
+
+#: setup.php:8
+#, php-format
+msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
+msgstr "Por favor, renomeie a pasta do plugin \"%s\" para \"singlesignon\""
+
+#: setup.php:57
+msgid "This plugin requires GLPI >= 0.85"
+msgstr "Este plugin requer GLPI >= 0.85"
 
 #~ msgid "Run first: composer install"
 #~ msgstr "Execute primeiro: composer install"

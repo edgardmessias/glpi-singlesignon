@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: singlesignon 1.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/edgardmessias/glpi-singlesignon/"
 "issues\n"
-"POT-Creation-Date: 2021-01-20 14:48-0300\n"
-"PO-Revision-Date: 2021-01-20 14:48-0300\n"
+"POT-Creation-Date: 2021-01-23 16:16-0300\n"
+"PO-Revision-Date: 2021-01-23 16:16-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: en_GB\n"
@@ -17,21 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-#: setup.php:8
-#, php-format
-msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
-msgstr "Please, rename the plugin folder \"%s\" to \"singlesignon\""
-
-#: setup.php:40 front/provider.form.php:59 front/provider.form.php:61
-#: front/provider.php:6 front/provider.php:8 inc/preference.class.php:64
-#: inc/provider.class.php:57
-msgid "Single Sign-on"
-msgstr "Single Sign-on"
-
-#: setup.php:57
-msgid "This plugin requires GLPI >= 0.85"
-msgstr "This plugin requires GLPI >= 0.85"
 
 #: front/callback.php:15
 msgid "Provider not defined."
@@ -45,6 +30,12 @@ msgstr "Provider not found."
 msgid "Provider not active."
 msgstr "Provider not active."
 
+#: front/provider.form.php:61 front/provider.form.php:63 front/provider.php:8
+#: front/provider.php:10 inc/preference.class.php:64 inc/provider.class.php:57
+#: setup.php:40
+msgid "Single Sign-on"
+msgstr "Single Sign-on"
+
 #: inc/preference.class.php:147 inc/provider.class.php:50
 msgid "Single Sign-on Provider"
 msgstr "Single Sign-on Provider"
@@ -57,31 +48,31 @@ msgstr "Linked accounts"
 msgid "SSO Type"
 msgstr "SSO Type"
 
-#: inc/provider.class.php:106 inc/provider.class.php:426
+#: inc/provider.class.php:106 inc/provider.class.php:423
 msgid "Client ID"
 msgstr "Client ID"
 
-#: inc/provider.class.php:108 inc/provider.class.php:434
+#: inc/provider.class.php:108 inc/provider.class.php:431
 msgid "Client Secret"
 msgstr "Client Secret"
 
-#: inc/provider.class.php:113 inc/provider.class.php:442
+#: inc/provider.class.php:113 inc/provider.class.php:439
 msgid "Scope"
 msgstr "Scope"
 
-#: inc/provider.class.php:115 inc/provider.class.php:450
+#: inc/provider.class.php:115 inc/provider.class.php:447
 msgid "Extra Options"
 msgstr "Extra Options"
 
-#: inc/provider.class.php:126 inc/provider.class.php:458
+#: inc/provider.class.php:126 inc/provider.class.php:455
 msgid "Authorize URL"
 msgstr "Authorize URL"
 
-#: inc/provider.class.php:131 inc/provider.class.php:466
+#: inc/provider.class.php:131 inc/provider.class.php:463
 msgid "Access Token URL"
 msgstr "Access Token URL"
 
-#: inc/provider.class.php:136 inc/provider.class.php:474
+#: inc/provider.class.php:136 inc/provider.class.php:471
 msgid "Resource Owner Details URL"
 msgstr "Resource Owner Details URL"
 
@@ -134,27 +125,27 @@ msgstr "A Resource Owner Details URL is required"
 msgid "The Resource Owner Details URL is invalid"
 msgstr "The Resource Owner Details URL is invalid"
 
-#: inc/provider.class.php:533
+#: inc/provider.class.php:530
 msgid "Generic"
 msgstr "Generic"
 
-#: inc/provider.class.php:534
+#: inc/provider.class.php:531
 msgid "Facebook"
 msgstr "Facebook"
 
-#: inc/provider.class.php:535
+#: inc/provider.class.php:532
 msgid "GitHub"
 msgstr "GitHub"
 
-#: inc/provider.class.php:536
+#: inc/provider.class.php:533
 msgid "Google"
 msgstr "Google"
 
-#: inc/provider.class.php:537
+#: inc/provider.class.php:534
 msgid "Instagram"
 msgstr "Instagram"
 
-#: inc/provider.class.php:538
+#: inc/provider.class.php:535
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
 
@@ -162,3 +153,12 @@ msgstr "LinkdeIn"
 #, php-format
 msgid "Login with %s"
 msgstr "Login with %s"
+
+#: setup.php:8
+#, php-format
+msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
+msgstr "Please, rename the plugin folder \"%s\" to \"singlesignon\""
+
+#: setup.php:57
+msgid "This plugin requires GLPI >= 0.85"
+msgstr "This plugin requires GLPI >= 0.85"

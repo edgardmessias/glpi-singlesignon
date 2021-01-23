@@ -2,7 +2,9 @@
     "name": "edgardmessias/glpi-singlesignon",
     "description": "Single Sign-On (OAuth) for GLPI",
     "require-dev": {
+        "consolidation/robo": "^1.4",
         "glpi-project/coding-standard": "^0.8",
+        "pear/archive_tar": "^1.4",
         "phpcompatibility/php-compatibility": "^9.3",
         "squizlabs/php_codesniffer": "^3.5"
     },
