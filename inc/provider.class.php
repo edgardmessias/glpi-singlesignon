@@ -1112,10 +1112,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
    }
 
    public function linkUser($user_id) {
-      /** @var User */
-      $user = User::getById($user_id);
-      if (!$user) {
-         return;
+      $user = new User();
+
+      if (!$user->getFromDB($user_id)) {
+         return false;
       }
 
       $resource_array = $this->getResourceOwner();
