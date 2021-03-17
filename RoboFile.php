@@ -136,6 +136,7 @@ class RoboFile extends \Robo\Tasks {
 
       $exclude = glob(__DIR__ . '/.*');
       $exclude[] = 'plugin.xml';
+      $exclude[] = 'RoboFile.php';
       $exclude[] = 'screenshots';
       $exclude[] = 'tools';
       $exclude[] = 'vendor';
