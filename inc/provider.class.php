@@ -874,8 +874,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       if (!isset($_GET['code'])) {
          $state = Session::getNewCSRFToken();
-         if(isset($_SESSION['redirect'])){
-            $state .= "&redirect=".$_SESSION['redirect'];
+         if (isset($_SESSION['redirect'])) {
+            $state .= "&redirect=" . $_SESSION['redirect'];
          }
          $params = [
             'client_id' => $this->getClientId(),
@@ -897,11 +897,11 @@ class PluginSinglesignonProvider extends CommonDBTM {
          exit;
       }
 
-      if(isset($_GET['state']) && is_integer(strpos($_GET['state'], "&redirect="))){
-         $pos_redirect = strpos($_GET['state'], "&redirect=");
-         $state = substr($_GET['state'],0,$pos_redirect);
-         $_GET['state'] = substr($_GET['state'],$pos_redirect);
-      } else{
+      if(isset($_GET['state']) && is_integer(strpos($_GET['state'], "&redirect="))) {
+         $pos_redirect  = strpos($_GET['state'], "&redirect=");
+         $state         = substr($_GET['state'], 0, $pos_redirect);
+         $_GET['state'] = substr($_GET['state'], $pos_redirect);
+      } else {
          $state = isset($_GET['state']) ? $_GET['state'] : '';
       }
       // Check given state against previously stored one to mitigate CSRF attack

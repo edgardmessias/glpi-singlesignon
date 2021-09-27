@@ -18,7 +18,7 @@ class PluginSinglesignonToolbox {
 
       if (!empty($query) && $row['type'] != 'google') {
          $url .= "/q/" . base64_encode(http_build_query($query));
-      } else if(!empty($query) && $row['type'] == 'google'){
+      } else if (!empty($query) && $row['type'] == 'google') {
          $_SESSION['redirect'] = $query['redirect'];
       }
 
