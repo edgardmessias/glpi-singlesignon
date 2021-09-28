@@ -60,6 +60,8 @@ if ($user_id || $signon_provider->login()) {
 
    if (isset($params['redirect'])) {
       $REDIRECT = '?redirect=' . $params['redirect'];
+   } else if (isset($_GET['state']) && is_integer(strpos($_GET['state'], "&redirect="))) {
+      $REDIRECT = '?' . substr($_GET['state'], strpos($_GET['state'], "&redirect=") + 1);
    }
 
    if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {

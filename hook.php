@@ -20,7 +20,7 @@ function plugin_singlesignon_display_login() {
          $query['redirect'] = $_REQUEST['redirect'];
       }
 
-      $url = PluginSinglesignonToolbox::getCallbackUrl($row['id'], $query);
+      $url = PluginSinglesignonToolbox::getCallbackUrl($row, $query);
       $html[] = PluginSinglesignonToolbox::renderButton($url, $row);
    }
 

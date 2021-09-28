@@ -9,15 +9,17 @@ class PluginSinglesignonToolbox {
     * @param array $query
     * @return string
     */
-   public static function getCallbackUrl($id, $query = []) {
+   public static function getCallbackUrl($row, $query = []) {
       global $CFG_GLPI;
 
       $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php';
 
-      $url .= "/provider/$id";
+      $url .= "/provider/".$row['id'];
 
-      if (!empty($query)) {
+      if (!empty($query) && $row['type'] != 'google') {
          $url .= "/q/" . base64_encode(http_build_query($query));
+      } else if (!empty($query) && $row['type'] == 'google') {
+         $_SESSION['redirect'] = $query['redirect'];
       }
 
       return $url;
