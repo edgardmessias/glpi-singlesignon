@@ -109,33 +109,53 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "<td><input type='text' style='width:96%' name='client_secret' value='" . $this->fields["client_secret"] . "'></td>";
       echo "</tr>\n";
 
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>" . __sso('Scope') . "</td>";
-      echo "<td><input type='text' style='width:96%' name='scope' value='" . $this->fields["scope"] . "'></td>";
-      echo "<td>" . __sso('Extra Options') . "</td>";
-      echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "'></td>";
-      echo "</tr>\n";
-
       $url_style = "";
 
       if ($this->fields["type"] != 'generic') {
          $url_style = 'style="display: none;"';
       }
 
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __sso('Scope') . "</td>";
+      echo "<td><input type='text' style='width:96%' name='scope' value='" . $this->getScope() . "'></td>";
+      echo "<td>" . __sso('Extra Options') . "</td>";
+      echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "'></td>";
+      echo "</tr>\n";
+
       echo "<tr class='tab_bg_1 sso_url' $url_style>";
       echo "<td>" . __sso('Authorize URL') . "</td>";
-      echo "<td colspan='3'><input type='text' style='width:96%' name='url_authorize' value='" . $this->fields["url_authorize"] . "'></td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='url_authorize' value='" . $this->getAuthorizeUrl() . "'></td>";
       echo "</tr>\n";
 
       echo "<tr class='tab_bg_1 sso_url' $url_style>";
       echo "<td>" . __sso('Access Token URL') . "</td>";
-      echo "<td colspan='3'><input type='text' style='width:96%' name='url_access_token' value='" . $this->fields["url_access_token"] . "'></td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='url_access_token' value='" . $this->getAccessTokenUrl() . "'></td>";
       echo "</tr>\n";
 
       echo "<tr class='tab_bg_1 sso_url' $url_style>";
       echo "<td>" . __sso('Resource Owner Details URL') . "</td>";
-      echo "<td colspan='3'><input type='text' style='width:96%' name='url_resource_owner_details' value='" . $this->fields["url_resource_owner_details"] . "'></td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='url_resource_owner_details' value='" . $this->getResourceOwnerDetailsUrl() . "'></td>";
       echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __('IsDefault', 'singlesignon') . "</td><td>";
+      Dropdown::showYesNo("is_default", $this->fields["is_default"]);
+      echo "<td>" . __sso('PopupAuth') . "</td>";
+      echo "<td>";
+      Dropdown::showYesNo("popup", $this->fields["popup"]);
+      echo "</td></tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __sso('SplitDomain') . "</td>";
+      echo "<td>";
+      Dropdown::showYesNo("split_domain", $this->fields["split_domain"]);
+      echo "</td>";
+      echo "<td>" . __sso('AuthorizedDomains');
+      echo "&nbsp;";
+      Html::showToolTip(nl2br(__sso('AuthorizedDomainsTooltip')));
+      echo "</td>";
+      echo "<td><input type='text' style='width:96%' name='authorized_domains' value='" . $this->fields["authorized_domains"] . "'></td>";
+      echo "</td></tr>\n";
 
       echo "<tr class='tab_bg_1'>";
       echo "<th colspan='4'>" . __('Personalization') . "</th>";
@@ -528,6 +548,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
    static function getTypes() {
 
       $options['generic'] = __sso('Generic');
+      $options['azure'] = __sso('Azure');
       $options['facebook'] = __sso('Facebook');
       $options['github'] = __sso('GitHub');
       $options['google'] = __sso('Google');
@@ -787,7 +808,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $fields['url_access_token'];
    }
 
-   public function getResourceOwnerDetailsUrl($access_token) {
+   public function getResourceOwnerDetailsUrl($access_token = null) {
       $type = $this->getClientType();
 
       $value = static::getDefault($type, "url_resource_owner_details", "");
@@ -1062,12 +1083,54 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return $user;
       }
 
+      $split = $this->fields['split_domain'];
+      $login = false;
+      $login_fields = ['userPrincipalName','login', 'username', 'id'];
+
+      foreach ($login_fields as $field) {
+         if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
+            $login = $resource_array[$field];
+            $isAuthorized = empty($authorizedDomains);
+            foreach ($authorizedDomains as $authorizedDomain) {
+              if(preg_match("/{$authorizedDomain}$/i", $login)) {
+                 $isAuthorized = true;
+              }
+            }
+            if (!$isAuthorized) return false;
+            if ($split) {
+               $loginSplit = explode("@", $login);
+               $login = $loginSplit[0];
+            }
+            break;
+         }
+      }
+
+      if ($login && $user->getFromDBbyName($login)) {
+         return $user;
+      }
+
       $email = false;
       $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
+      $authorizedDomainsString = $this->fields['authorized_domains'];
+      $authorizedDomains = [];
+      if (isset($authorizedDomainsString)) {
+         $authorizedDomains = explode(',', $authorizedDomainsString);
+      }
 
       foreach ($email_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
             $email = $resource_array[$field];
+            $isAuthorized = empty($authorizedDomains);
+            foreach ($authorizedDomains as $authorizedDomain) {
+              if(preg_match("/{$authorizedDomain}$/i", $email)) {
+                 $isAuthorized = true;
+              }
+            }
+            if (!$isAuthorized) return false;
+            if ($split) {
+               $emailSplit = explode("@", $email);
+               $email = $emailSplit[0];
+            }
             break;
          }
       }
@@ -1079,20 +1142,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
-         return $user;
-      }
-
-      $login = false;
-      $login_fields = ['login', 'username', 'id'];
-
-      foreach ($login_fields as $field) {
-         if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-            $login = $resource_array[$field];
-            break;
-         }
-      }
-
-      if ($login && $user->getFromDBbyName($login)) {
          return $user;
       }
 

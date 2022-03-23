@@ -21,6 +21,11 @@ function plugin_singlesignon_display_login() {
       }
 
       $url = PluginSinglesignonToolbox::getCallbackUrl($row, $query);
+      $isDefault = PluginSinglesignonToolbox::isDefault($row);
+      if ($isDefault && !isset($_GET["noAUTO"])) {
+         Html::redirect($url);
+         return;
+      }
       $html[] = PluginSinglesignonToolbox::renderButton($url, $row);
    }
 
@@ -45,15 +50,15 @@ function plugin_singlesignon_display_login() {
          }
 
          #boxlogin .singlesignon-box .vsubmit {
-            width: 100%;
-            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-size: 1.3em !important;
             text-align: center;
             box-sizing: border-box;
          }
          #boxlogin .singlesignon-box .vsubmit img {
-            max-height: 20px;
-            max-width: 100px;
+
             vertical-align: sub;
          }
       </style>
@@ -61,7 +66,7 @@ function plugin_singlesignon_display_login() {
          $(document).ready(function() {
 
             // On click, open a popup
-            $(document).on("click", ".singlesignon.oauth-login", function(e) {
+            $(document).on("click", ".singlesignon.oauth-login.popup", function(e) {
                e.preventDefault();
 
                var url = $(this).attr("href");
@@ -139,6 +144,10 @@ function plugin_singlesignon_install() {
    if (!sso_TableExists("glpi_plugin_singlesignon_providers")) {
       $query = "CREATE TABLE `glpi_plugin_singlesignon_providers` (
                   `id`                         int(11) NOT NULL auto_increment,
+                  `is_default`                 tinyint(1) NOT NULL DEFAULT '0',
+                  `popup`                      tinyint(1) NOT NULL DEFAULT '0',
+                  `split_domain`               tinyint(1) NOT NULL DEFAULT '0',
+                  `authorized_domains`         varchar(255) COLLATE utf8_unicode_ci NULL,
                   `type`                       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
                   `name`                       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
                   `client_id`                  varchar(255) COLLATE utf8_unicode_ci NOT NULL,
@@ -156,9 +165,35 @@ function plugin_singlesignon_install() {
                   PRIMARY KEY (`id`),
                   KEY `date_mod` (`date_mod`),
                   KEY `date_creation` (`date_creation`)
-               ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
+               ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
 
       $DB->query($query) or die("error creating glpi_plugin_singlesignon_providers " . $DB->error());
+   } else {
+		$query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'is_default'";
+		$result = $DB->query($query) or die($DB->error());
+		if ($DB->numrows($result) != 1)
+		{
+			$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD is_default tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
+		}
+
+      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'popup'";
+		$result = $DB->query($query) or die($DB->error());
+		if ($DB->numrows($result) != 1)
+		{
+			$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD popup tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
+		}
+      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'split_domain'";
+		$result = $DB->query($query) or die($DB->error());
+		if ($DB->numrows($result) != 1)
+		{
+			$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD split_domain tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
+		}
+      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'authorized_domains'";
+		$result = $DB->query($query) or die($DB->error());
+		if ($DB->numrows($result) != 1)
+		{
+			$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD authorized_domains varchar(255) COLLATE utf8_unicode_ci NULL") or die ($DB->error());
+		}
    }
 
    // add display preferences
