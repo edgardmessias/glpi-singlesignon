@@ -1,4 +1,10 @@
 {
+   "azure": {
+      "url_authorize": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+      "url_access_token": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+      "url_resource_owner_details": "https://graph.microsoft.com/v1.0/me",
+      "scope": "User.Read"
+   },
    "facebook": {
       "url_authorize": "https://www.facebook.com/v9.0/dialog/oauth",
       "url_access_token": "https://graph.facebook.com/v9.0/oauth/access_token",

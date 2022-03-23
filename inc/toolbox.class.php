@@ -16,13 +16,17 @@ class PluginSinglesignonToolbox {
 
       $url .= "/provider/".$row['id'];
 
-      if (!empty($query) && $row['type'] != 'google') {
-         $url .= "/q/" . base64_encode(http_build_query($query));
-      } else if (!empty($query) && $row['type'] == 'google') {
+      if (!empty($query)) {
          $_SESSION['redirect'] = $query['redirect'];
       }
 
       return $url;
+   }
+
+   public static function isDefault($row, $query = []) {
+
+      if ($row['is_default'] == 1) return true;
+      return false;
    }
 
    public static function getCallbackParameters($name = null) {
@@ -129,7 +133,9 @@ class PluginSinglesignonToolbox {
    }
 
    public static function renderButton($url, $data, $class = 'oauth-login') {
-      $btn = '<span><a href="' . $url . '" class="singlesignon vsubmit ' . $class . '"';
+      $popupClass = "";
+      if (isset($data['popup']) && $data['popup'] == 1) $popupClass = "popup";
+      $btn = '<span><a href="' . $url . '" class="singlesignon vsubmit ' . $class . ' ' . $popupClass . '"';
 
       $style = '';
       if ((isset($data['bgcolor']) && $data['bgcolor'])) {
@@ -147,7 +153,7 @@ class PluginSinglesignonToolbox {
          $btn .= Html::image(
             static::getPictureUrl($data['picture']),
             [
-               'style' => 'max-height: 20px;',
+               'style' => 'max-height: 20px;margin-right: 4px',
             ]
          );
          $btn .= ' ';

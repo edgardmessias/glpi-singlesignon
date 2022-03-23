@@ -162,3 +162,19 @@ msgstr ""
 #: setup.php:57
 msgid "This plugin requires GLPI >= 0.85"
 msgstr ""
+
+#: inc/provider.class.php:141
+msgid "IsDefault"
+msgstr ""
+
+msgid "PopupAuth"
+msgstr ""
+
+msgid "SplitDomain"
+msgstr ""
+
+msgid "AuthorizedDomains"
+msgstr ""
+
+msgid "AuthorizedDomainsTooltip"
+msgstr ""
