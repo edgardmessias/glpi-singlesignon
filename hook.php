@@ -20,7 +20,7 @@ function plugin_singlesignon_display_login() {
          $query['redirect'] = $_REQUEST['redirect'];
       }
 
-      $url = PluginSinglesignonToolbox::getCallbackUrl($row, $query);
+      $url = PluginSinglesignonToolbox::getCallbackUrl($row['id'], $query);
       $isDefault = PluginSinglesignonToolbox::isDefault($row);
       if ($isDefault && !isset($_GET["noAUTO"])) {
          Html::redirect($url);
