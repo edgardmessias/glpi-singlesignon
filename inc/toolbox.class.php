@@ -9,12 +9,12 @@ class PluginSinglesignonToolbox {
     * @param array $query
     * @return string
     */
-   public static function getCallbackUrl($row, $query = []) {
+   public static function getCallbackUrl($id, $query = []) {
       global $CFG_GLPI;
 
       $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php';
 
-      $url .= "/provider/".$row['id'];
+      $url .= "/provider/".$id;
 
       if (!empty($query)) {
          $_SESSION['redirect'] = $query['redirect'];

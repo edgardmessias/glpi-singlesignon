@@ -29,6 +29,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     */
    protected $_resource_owner = null;
 
+   public $debug = false;
+
    public static function canCreate() {
       return static::canUpdate();
    }
@@ -85,7 +87,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __('Name') . "</td>";
       echo "<td>";
-      Html::autocompletionTextField($this, "name");
+      echo Html::input("name", ['value' => $this->fields["name"], 'class' => 'form-control']);
       echo "</td>";
       echo "<td>" . __('Comments') . "</td>";
       echo "<td>";
@@ -970,13 +972,23 @@ class PluginSinglesignonProvider extends CommonDBTM {
          CURLOPT_SSL_VERIFYPEER => false,
       ]);
 
+      if ($this->debug) {
+         print_r("\ngetAccessToken:\n");
+      }
+
       try {
          $data = json_decode($content, true);
+         if ($this->debug) {
+            print_r($data);
+         }
          if (!isset($data['access_token'])) {
             return false;
          }
          $this->_token = $data['access_token'];
       } catch (\Exception $ex) {
+         if ($this->debug) {
+            print_r($content);
+         }
          return false;
       }
 
@@ -1012,14 +1024,27 @@ class PluginSinglesignonProvider extends CommonDBTM {
          CURLOPT_SSL_VERIFYPEER => false,
       ]);
 
+      if ($this->debug) {
+         print_r("\ngetResourceOwner:\n");
+      }
+
       try {
          $data = json_decode($content, true);
+         if ($this->debug) {
+            print_r($data);
+         }
          $this->_resource_owner = $data;
       } catch (\Exception $ex) {
+         if ($this->debug) {
+            print_r($content);
+         }
          return false;
       }
 
       if ($this->getClientType() === "linkedin") {
+         if ($this->debug) {
+            print_r("\nlinkedin:\n");
+         }
          $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
          $content = Toolbox::callCurl($email_url, [
             CURLOPT_HTTPHEADER => $headers,
@@ -1029,6 +1054,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
          try {
             $data = json_decode($content, true);
+            if ($this->debug) {
+               print_r($content);
+            }
 
             $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
          } catch (\Exception $ex) {

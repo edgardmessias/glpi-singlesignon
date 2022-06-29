@@ -30,11 +30,12 @@ $signon_provider->checkAuthorization();
 $test = PluginSinglesignonToolbox::getCallbackParameters('test');
 
 if ($test) {
+   $signon_provider->debug = true;
    Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
    echo '<div class="left spaced">';
    echo '<pre>';
    echo "### BEGIN ###\n";
-   print_r($signon_provider->getResourceOwner());
+   $signon_provider->getResourceOwner();
    echo "### END ###";
    echo '</pre>';
    Html::nullFooter();
