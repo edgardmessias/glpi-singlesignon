@@ -1092,11 +1092,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
             $login = $resource_array[$field];
             $isAuthorized = empty($authorizedDomains);
             foreach ($authorizedDomains as $authorizedDomain) {
-              if(preg_match("/{$authorizedDomain}$/i", $login)) {
-                 $isAuthorized = true;
-              }
+               if (preg_match("/{$authorizedDomain}$/i", $login)) {
+                  $isAuthorized = true;
+               }
             }
-            if (!$isAuthorized) return false;
+            if (!$isAuthorized) {
+               return false;
+            }
             if ($split) {
                $loginSplit = explode("@", $login);
                $login = $loginSplit[0];
@@ -1122,11 +1124,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
             $email = $resource_array[$field];
             $isAuthorized = empty($authorizedDomains);
             foreach ($authorizedDomains as $authorizedDomain) {
-              if(preg_match("/{$authorizedDomain}$/i", $email)) {
-                 $isAuthorized = true;
-              }
+               if (preg_match("/{$authorizedDomain}$/i", $email)) {
+                  $isAuthorized = true;
+               }
             }
-            if (!$isAuthorized) return false;
+            if (!$isAuthorized) {
+               return false;
+            }
             if ($split) {
                $emailSplit = explode("@", $email);
                $email = $emailSplit[0];

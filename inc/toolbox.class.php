@@ -25,7 +25,9 @@ class PluginSinglesignonToolbox {
 
    public static function isDefault($row, $query = []) {
 
-      if ($row['is_default'] == 1) return true;
+      if ($row['is_default'] == 1) {
+         return true;
+      }
       return false;
    }
 
@@ -134,7 +136,9 @@ class PluginSinglesignonToolbox {
 
    public static function renderButton($url, $data, $class = 'oauth-login') {
       $popupClass = "";
-      if (isset($data['popup']) && $data['popup'] == 1) $popupClass = "popup";
+      if (isset($data['popup']) && $data['popup'] == 1) {
+         $popupClass = "popup";
+      }
       $btn = '<span><a href="' . $url . '" class="singlesignon vsubmit ' . $class . ' ' . $popupClass . '"';
 
       $style = '';

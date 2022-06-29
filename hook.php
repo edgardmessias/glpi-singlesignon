@@ -169,31 +169,27 @@ function plugin_singlesignon_install() {
 
       $DB->query($query) or die("error creating glpi_plugin_singlesignon_providers " . $DB->error());
    } else {
-		$query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'is_default'";
-		$result = $DB->query($query) or die($DB->error());
-		if ($DB->numrows($result) != 1)
-		{
-			$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD is_default tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
-		}
+      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'is_default'";
+      $result = $DB->query($query) or die($DB->error());
+      if ($DB->numrows($result) != 1) {
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD is_default tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
+      }
 
       $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'popup'";
-		$result = $DB->query($query) or die($DB->error());
-		if ($DB->numrows($result) != 1)
-		{
-			$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD popup tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
-		}
+      $result = $DB->query($query) or die($DB->error());
+      if ($DB->numrows($result) != 1) {
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD popup tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
+      }
       $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'split_domain'";
-		$result = $DB->query($query) or die($DB->error());
-		if ($DB->numrows($result) != 1)
-		{
-			$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD split_domain tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
-		}
+      $result = $DB->query($query) or die($DB->error());
+      if ($DB->numrows($result) != 1) {
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD split_domain tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
+      }
       $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'authorized_domains'";
-		$result = $DB->query($query) or die($DB->error());
-		if ($DB->numrows($result) != 1)
-		{
-			$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD authorized_domains varchar(255) COLLATE utf8_unicode_ci NULL") or die ($DB->error());
-		}
+      $result = $DB->query($query) or die($DB->error());
+      if ($DB->numrows($result) != 1) {
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD authorized_domains varchar(255) COLLATE utf8_unicode_ci NULL") or die ($DB->error());
+      }
    }
 
    // add display preferences
