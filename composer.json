@@ -11,8 +11,8 @@
     "scripts": {
         "lint": "phpcs",
         "lint:fix": "phpcbf",
-        "make-release": "@php tools/make-release.php",
-        "update-locales": "@php tools/update-locales.php"
+        "make-release": "robo build",
+        "update-locales": "robo update_locales"
     },
     "config": {
         "allow-plugins": {
