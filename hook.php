@@ -57,6 +57,7 @@ function plugin_singlesignon_display_login() {
             text-align: center;
             box-sizing: border-box;
          }
+
          #boxlogin .singlesignon-box .vsubmit img {
 
             vertical-align: sub;
@@ -78,41 +79,88 @@ function plugin_singlesignon_display_login() {
                }
             });
 
-            var $boxLogin = $('#boxlogin');
-            var $form = $boxLogin.find('form');
-            var $boxButtons = $('.singlesignon-box');
+      <?php if (version_compare(GLPI_VERSION, '10', '>=')) : ?>
+               var $boxButtons = $('.singlesignon-box');
 
-            // Move the buttons to before form
-            $boxButtons.prependTo($boxLogin);
-            $boxButtons.find('span').addClass('login_input');
+               $boxButtons.parent().hide();
 
-            // Show old form
-            $(document).on("click", ".singlesignon.old-login", function(e) {
-               e.preventDefault();
-               $boxButtons.slideToggle();
-               $form.slideToggle(function() {
-                  $('#login_name').focus();
+               var $line = $boxButtons.prev('hr');
+               if ($line.length) {
+                  $line.remove();
+               }
+
+               var $row = $boxButtons.closest('.row');
+               var $boxLogin = $row.find('div:eq(0)');
+
+               $boxButtons.addClass('col-md-5 text-center');
+               $boxButtons.prependTo($row);
+
+               $boxButtons.find('span').addClass("row mb-2");
+               $boxButtons.find('span a').addClass("col-md-12");
+
+               $boxLogin.hide();
+
+               $(document).on("click", ".singlesignon.old-login", function(e) {
+                  e.preventDefault();
+                  $boxButtons.slideUp(function() {
+                     $boxLogin.slideDown(function() {
+                        $boxLogin.find(':input:eq(0)').focus();
+                     });
+                  });
                });
-            });
 
-            var $line = $('<p />', {
-               class: 'login_input'
-            }).prependTo($form);
+               var $backLogin = $('<label />', {
+                  css: {
+                     cursor: 'pointer'
+                  },
+                  text: "<< " + <?php echo json_encode(__('Back')) ?>,
+               }).prependTo($boxLogin);
 
-            var $backLogin = $('<label />', {
-               css: {
-                  cursor: 'pointer'
-               },
-               text: "<< " + <?php echo json_encode(__('Back')) ?>,
-            }).appendTo($line);
+               $backLogin.on('click', function(e) {
+                  e.preventDefault();
+                  $boxLogin.slideUp(function() {
+                     $boxButtons.slideDown();
+                  });
+               });
 
-            $backLogin.on('click', function(e) {
-               e.preventDefault();
-               $boxButtons.slideToggle();
-               $form.slideToggle();
-            });
+            <?php else : ?>
+               var $boxLogin = $('#boxlogin');
 
-            $form.hide();
+               var $form = $boxLogin.find('form');
+               var $boxButtons = $('.singlesignon-box');
+
+               // Move the buttons to before form
+               $boxButtons.prependTo($boxLogin);
+               $boxButtons.find('span').addClass('login_input');
+
+               // Show old form
+               $(document).on("click", ".singlesignon.old-login", function(e) {
+                  e.preventDefault();
+                  $boxButtons.slideUp();
+                  $form.slideDown(function() {
+                     $('#login_name').focus();
+                  });
+               });
+
+               var $line = $('<p />', {
+                  class: 'login_input'
+               }).prependTo($form);
+
+               var $backLogin = $('<label />', {
+                  css: {
+                     cursor: 'pointer'
+                  },
+                  text: "<< " + <?php echo json_encode(__('Back')) ?>,
+               }).appendTo($line);
+
+               $backLogin.on('click', function(e) {
+                  e.preventDefault();
+                  $boxButtons.slideDown();
+                  $form.slideUp();
+               });
+
+               $form.hide();
+            <?php endif; ?>
          });
       </script>
       <?php
@@ -172,23 +220,23 @@ function plugin_singlesignon_install() {
       $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'is_default'";
       $result = $DB->query($query) or die($DB->error());
       if ($DB->numrows($result) != 1) {
-         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD is_default tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD is_default tinyint(1) NOT NULL DEFAULT '0'") or die($DB->error());
       }
 
       $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'popup'";
       $result = $DB->query($query) or die($DB->error());
       if ($DB->numrows($result) != 1) {
-         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD popup tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD popup tinyint(1) NOT NULL DEFAULT '0'") or die($DB->error());
       }
       $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'split_domain'";
       $result = $DB->query($query) or die($DB->error());
       if ($DB->numrows($result) != 1) {
-         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD split_domain tinyint(1) NOT NULL DEFAULT '0'") or die ($DB->error());
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD split_domain tinyint(1) NOT NULL DEFAULT '0'") or die($DB->error());
       }
       $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'authorized_domains'";
       $result = $DB->query($query) or die($DB->error());
       if ($DB->numrows($result) != 1) {
-         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD authorized_domains varchar(255) COLLATE utf8_unicode_ci NULL") or die ($DB->error());
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD authorized_domains varchar(255) COLLATE utf8_unicode_ci NULL") or die($DB->error());
       }
    }
 
