@@ -1,7 +1,7 @@
 {
     "recommendations": [
         "bmewburn.vscode-intelephense-client",
-        "felixfbecker.php-debug",
-        "valeryanm.vscode-phpsab"
+        "valeryanm.vscode-phpsab",
+        "xdebug.php-debug"
     ]
 }

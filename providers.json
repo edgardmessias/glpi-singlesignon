@@ -1,38 +1,38 @@
 {
-   "azure": {
-      "url_authorize": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
-      "url_access_token": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-      "url_resource_owner_details": "https://graph.microsoft.com/v1.0/me",
-      "scope": "User.Read"
-   },
-   "facebook": {
-      "url_authorize": "https://www.facebook.com/v9.0/dialog/oauth",
-      "url_access_token": "https://graph.facebook.com/v9.0/oauth/access_token",
-      "url_resource_owner_details": "https://graph.facebook.com/v9.0/me?fields=id,email&access_token=<access_token>&appsecret_proof=<appsecret_proof>",
-      "scope": "public_profile,email"
-   },
-   "github": {
-      "url_authorize": "https://github.com/login/oauth/authorize",
-      "url_access_token": "https://github.com/login/oauth/access_token",
-      "url_resource_owner_details": "https://api.github.com/user",
-      "scope": "user:email"
-   },
-   "google": {
-      "url_authorize": "https://accounts.google.com/o/oauth2/v2/auth",
-      "url_access_token": "https://www.googleapis.com/oauth2/v4/token",
-      "url_resource_owner_details": "https://openidconnect.googleapis.com/v1/userinfo",
-      "scope": "openid email profile"
-   },
-   "instagram": {
-      "url_authorize": "https://api.instagram.com/oauth/authorize",
-      "url_access_token": "https://api.instagram.com/oauth/access_token",
-      "url_resource_owner_details": "https://api.instagram.com/v1/users/self?access_token=<access_token>",
-      "scope": "basic"
-   },
-   "linkedin": {
-      "url_authorize": "https://www.linkedin.com/oauth/v2/authorization",
-      "url_access_token": "https://www.linkedin.com/oauth/v2/accessToken",
-      "url_resource_owner_details": "https://api.linkedin.com/v2/me",
-      "scope": "r_liteprofile r_emailaddress"
-   }
+    "azure": {
+        "url_authorize": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        "url_access_token": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        "url_resource_owner_details": "https://graph.microsoft.com/v1.0/me",
+        "scope": "User.Read"
+    },
+    "facebook": {
+        "url_authorize": "https://www.facebook.com/v9.0/dialog/oauth",
+        "url_access_token": "https://graph.facebook.com/v9.0/oauth/access_token",
+        "url_resource_owner_details": "https://graph.facebook.com/v9.0/me?fields=id,email&access_token=<access_token>&appsecret_proof=<appsecret_proof>",
+        "scope": "public_profile,email"
+    },
+    "github": {
+        "url_authorize": "https://github.com/login/oauth/authorize",
+        "url_access_token": "https://github.com/login/oauth/access_token",
+        "url_resource_owner_details": "https://api.github.com/user",
+        "scope": "user:email"
+    },
+    "google": {
+        "url_authorize": "https://accounts.google.com/o/oauth2/v2/auth",
+        "url_access_token": "https://www.googleapis.com/oauth2/v4/token",
+        "url_resource_owner_details": "https://openidconnect.googleapis.com/v1/userinfo",
+        "scope": "openid email profile"
+    },
+    "instagram": {
+        "url_authorize": "https://api.instagram.com/oauth/authorize",
+        "url_access_token": "https://api.instagram.com/oauth/access_token",
+        "url_resource_owner_details": "https://api.instagram.com/v1/users/self?access_token=<access_token>",
+        "scope": "basic"
+    },
+    "linkedin": {
+        "url_authorize": "https://www.linkedin.com/oauth/v2/authorization",
+        "url_access_token": "https://www.linkedin.com/oauth/v2/accessToken",
+        "url_resource_owner_details": "https://api.linkedin.com/v2/me",
+        "scope": "r_liteprofile r_emailaddress"
+    }
 }
