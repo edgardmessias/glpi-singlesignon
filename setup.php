@@ -25,6 +25,8 @@ function plugin_init_singlesignon() {
 
    $PLUGIN_HOOKS['csrf_compliant']['singlesignon'] = true;
 
+   $PLUGIN_HOOKS['config_page']['singlesignon'] = 'front/provider.php';
+
    $CFG_SSO = Config::getConfigurationValues('singlesignon');
 
    $PLUGIN_HOOKS['display_login']['singlesignon'] = "plugin_singlesignon_display_login";
