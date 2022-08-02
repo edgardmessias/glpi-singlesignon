@@ -1,6 +1,7 @@
 {
     "name": "edgardmessias/glpi-singlesignon",
     "description": "Single Sign-On (OAuth) for GLPI",
+    "license": "GPL-3.0-or-later",
     "require-dev": {
         "consolidation/robo": "^1.4",
         "glpi-project/coding-standard": "^0.8",
