@@ -81,42 +81,14 @@ if ($user_id || $signon_provider->login()) {
 
    $params = PluginSinglesignonToolbox::getCallbackParameters('q');
 
-   $url_redirect = '';
-
-
    if (isset($params['redirect'])) {
       $REDIRECT = '?redirect=' . $params['redirect'];
    } else if (isset($_GET['state']) && is_integer(strpos($_GET['state'], "&redirect="))) {
       $REDIRECT = '?' . substr($_GET['state'], strpos($_GET['state'], "&redirect=") + 1);
    }
 
-   if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
-      if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-         $url_redirect = $CFG_GLPI['root_doc'] . "/front/helpdesk.public.php?create_ticket=1";
-      } else {
-         $url_redirect = $CFG_GLPI['root_doc'] . "/front/helpdesk.public.php$REDIRECT";
-      }
-   } else {
-      if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-         $url_redirect = $CFG_GLPI['root_doc'] . "/front/ticket.form.php";
-      } else {
-         $url_redirect = $CFG_GLPI['root_doc'] . "/front/central.php$REDIRECT";
-      }
-   }
+   Auth::redirectIfAuthenticated();
 
-   Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
-   echo '<div class="center spaced"><a href="' . $url_redirect . '">' .
-   __('Automatic redirection, else click') . '</a>';
-   echo '<script type="text/javascript">
-         if (window.opener) {
-           window.opener.location="' . $url_redirect . '";
-           window.close();
-         } else {
-           window.location="' . $url_redirect . '";
-         }
-       </script></div>';
-   Html::nullFooter();
-   exit();
 }
 
 // we have done at least a good login? No, we exit.

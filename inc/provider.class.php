@@ -25,7 +25,8 @@
  * ---------------------------------------------------------------------
  */
 
-class PluginSinglesignonProvider extends CommonDBTM {
+class PluginSinglesignonProvider extends CommonDBTM
+{
 
    // From CommonDBTM
    public $dohistory = true;
@@ -56,35 +57,42 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
    public $debug = false;
 
-   public static function canCreate() {
+   public static function canCreate()
+   {
       return static::canUpdate();
    }
 
-   public static function canDelete() {
+   public static function canDelete()
+   {
       return static::canUpdate();
    }
 
-   public static function canPurge() {
+   public static function canPurge()
+   {
       return static::canUpdate();
    }
 
-   public static function canView() {
+   public static function canView()
+   {
       return static::canUpdate();
    }
 
    // Should return the localized name of the type
-   static function getTypeName($nb = 0) {
+   static function getTypeName($nb = 0)
+   {
       return __sso('Single Sign-on Provider');
    }
 
    /**
     * @see CommonGLPI::getMenuName()
     * */
-   static function getMenuName() {
+   static function getMenuName()
+   {
       return __sso('Single Sign-on');
    }
 
-   function defineTabs($options = []) {
+   function defineTabs($options = [])
+   {
 
       $ong = [];
       $this->addDefaultFormTab($ong);
@@ -94,12 +102,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $ong;
    }
 
-   function post_getEmpty() {
+   function post_getEmpty()
+   {
       $this->fields["type"] = 'generic';
       $this->fields["is_active"] = 1;
    }
 
-   function showForm($ID, $options = []) {
+   function showForm($ID, $options = [])
+   {
       global $CFG_GLPI;
 
       $this->initForm($ID, $options);
@@ -296,15 +306,18 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return true;
    }
 
-   function prepareInputForAdd($input) {
+   function prepareInputForAdd($input)
+   {
       return $this->prepareInput($input);
    }
 
-   function prepareInputForUpdate($input) {
+   function prepareInputForUpdate($input)
+   {
       return $this->prepareInput($input);
    }
 
-   function cleanDBonPurge() {
+   function cleanDBonPurge()
+   {
       PluginSinglesignonToolbox::deletePicture($this->fields['picture']);
       $this->deleteChildrenAndRelationsFromDb(
          [
@@ -320,7 +333,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return array
     */
-   private function prepareInput($input) {
+   private function prepareInput($input)
+   {
       $error_detected = [];
 
       $type = '';
@@ -378,19 +392,22 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return false;
       }
 
-      if (isset($input["_blank_bgcolor"])
+      if (
+         isset($input["_blank_bgcolor"])
          && $input["_blank_bgcolor"]
       ) {
          $input['bgcolor'] = '';
       }
 
-      if (isset($input["_blank_color"])
+      if (
+         isset($input["_blank_color"])
          && $input["_blank_color"]
       ) {
          $input['color'] = '';
       }
 
-      if (isset($input["_blank_picture"])
+      if (
+         isset($input["_blank_picture"])
          && $input["_blank_picture"]
       ) {
          $input['picture'] = '';
@@ -417,7 +434,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $input;
    }
 
-   function getSearchOptions() {
+   function getSearchOptions()
+   {
       // For GLPI <= 9.2
       $options = [];
       foreach ($this->rawSearchOptions() as $opt) {
@@ -428,7 +446,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          unset($opt['id']);
          if (isset($options[$optid])) {
             $message = "Duplicate key $optid ({$options[$optid]['name']}/{$opt['name']}) in " .
-            get_class($this) . " searchOptions!";
+               get_class($this) . " searchOptions!";
             Toolbox::logDebug($message);
          }
          foreach ($opt as $k => $v) {
@@ -438,7 +456,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $options;
    }
 
-   function rawSearchOptions() {
+   function rawSearchOptions()
+   {
       $tab = [];
 
       $tab[] = [
@@ -539,7 +558,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $tab;
    }
 
-   static function getSpecificValueToDisplay($field, $values, array $options = []) {
+   static function getSpecificValueToDisplay($field, $values, array $options = [])
+   {
 
       if (!is_array($values)) {
          $values = [$field => $values];
@@ -553,7 +573,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return '';
    }
 
-   static function getSpecificValueToSelect($field, $name = '', $values = '', array $options = []) {
+   static function getSpecificValueToSelect($field, $name = '', $values = '', array $options = [])
+   {
 
       if (!is_array($values)) {
          $values = [$field => $values];
@@ -572,7 +593,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return array of types
     * */
-   static function getTypes() {
+   static function getTypes()
+   {
 
       $options['generic'] = __sso('Generic');
       $options['azure'] = __sso('Azure');
@@ -590,7 +612,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @param $value type ID
     * */
-   static function getTicketTypeName($value) {
+   static function getTicketTypeName($value)
+   {
       $tab = static::getTypes();
       // Return $value if not defined
       return (isset($tab[$value]) ? $tab[$value] : $value);
@@ -608,7 +631,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return string id of the select
     * */
-   static function dropdownType($name, $options = []) {
+   static function dropdownType($name, $options = [])
+   {
 
       $params['value'] = 0;
       $params['toadd'] = [];
@@ -640,7 +664,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return string
     * */
-   static function getHistoryEntry($data) {
+   static function getHistoryEntry($data)
+   {
 
       switch ($data['linked_action'] - Log::HISTORY_PLUGIN) {
          case 0:
@@ -658,7 +683,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @see CommonDBTM::getSpecificMassiveActions()
     * */
-   function getSpecificMassiveActions($checkitem = null) {
+   function getSpecificMassiveActions($checkitem = null)
+   {
 
       $actions = parent::getSpecificMassiveActions($checkitem);
 
@@ -673,17 +699,18 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @see CommonDBTM::showMassiveActionsSubForm()
     * */
-   static function showMassiveActionsSubForm(MassiveAction $ma) {
+   static function showMassiveActionsSubForm(MassiveAction $ma)
+   {
 
       switch ($ma->getAction()) {
          case 'DoIt':
             echo "&nbsp;<input type='hidden' name='toto' value='1'>" .
-            Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
-            " " . __('Write in item history', 'example');
+               Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
+               " " . __('Write in item history', 'example');
             return true;
          case 'do_nothing':
             echo "&nbsp;" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
-            " " . __('but do nothing :)', 'example');
+               " " . __('but do nothing :)', 'example');
             return true;
       }
       return parent::showMassiveActionsSubForm($ma);
@@ -694,7 +721,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @see CommonDBTM::processMassiveActionsForOneItemtype()
     * */
-   static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids) {
+   static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids)
+   {
       global $DB;
 
       switch ($ma->getAction()) {
@@ -740,11 +768,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
       parent::processMassiveActionsForOneItemtype($ma, $item, $ids);
    }
 
-   static function getIcon() {
+   static function getIcon()
+   {
       return "fas fa-user-lock";
    }
 
-   public static function getDefault($type, $key, $default = null) {
+   public static function getDefault($type, $key, $default = null)
+   {
       if (static::$default === null) {
          $content = file_get_contents(dirname(__FILE__) . '/../providers.json');
          static::$default = json_decode($content, true);
@@ -757,7 +787,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $default;
    }
 
-   public function getClientType() {
+   public function getClientType()
+   {
       $value = "generic";
 
       if (isset($this->fields['type']) && !empty($this->fields['type'])) {
@@ -767,7 +798,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $value;
    }
 
-   public function getClientId() {
+   public function getClientId()
+   {
       $value = "";
 
       if (isset($this->fields['client_id']) && !empty($this->fields['client_id'])) {
@@ -777,7 +809,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $value;
    }
 
-   public function getClientSecret() {
+   public function getClientSecret()
+   {
       $value = "";
 
       if (isset($this->fields['client_secret']) && !empty($this->fields['client_secret'])) {
@@ -787,7 +820,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $value;
    }
 
-   public function getScope() {
+   public function getScope()
+   {
       $type = $this->getClientType();
 
       $value = static::getDefault($type, "scope");
@@ -803,7 +837,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $fields['scope'];
    }
 
-   public function getAuthorizeUrl() {
+   public function getAuthorizeUrl()
+   {
       $type = $this->getClientType();
 
       $value = static::getDefault($type, "url_authorize");
@@ -819,7 +854,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $fields['url_authorize'];
    }
 
-   public function getAccessTokenUrl() {
+   public function getAccessTokenUrl()
+   {
       $type = $this->getClientType();
 
       $value = static::getDefault($type, "url_access_token");
@@ -835,7 +871,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $fields['url_access_token'];
    }
 
-   public function getResourceOwnerDetailsUrl($access_token = null) {
+   public function getResourceOwnerDetailsUrl($access_token = null)
+   {
       $type = $this->getClientType();
 
       $value = static::getDefault($type, "url_resource_owner_details", "");
@@ -861,7 +898,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     * Get current URL without query string
     * @return string
     */
-   private function getBaseURL() {
+   private function getBaseURL()
+   {
       $baseURL = "";
       if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
          $baseURL = ($_SERVER["HTTP_X_FORWARDED_PROTO"] == "https") ? "https://" : "http://";
@@ -893,7 +931,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     * Get current URL without query string
     * @return string
     */
-   private function getCurrentURL() {
+   private function getCurrentURL()
+   {
       $currentURL = $this->getBaseURL();
 
       // $currentURL .= $_SERVER["REQUEST_URI"];
@@ -911,7 +950,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return boolean|string
     */
-   public function checkAuthorization() {
+   public function checkAuthorization()
+   {
 
       if (isset($_GET['error'])) {
 
@@ -966,7 +1006,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return boolean|string
     */
-   public function getAccessToken() {
+   public function getAccessToken()
+   {
       if ($this->_token !== null) {
          return $this->_token;
       }
@@ -1024,7 +1065,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return boolean|array
     */
-   public function getResourceOwner() {
+   public function getResourceOwner()
+   {
       if ($this->_resource_owner !== null) {
          return $this->_resource_owner;
       }
@@ -1092,7 +1134,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $this->_resource_owner;
    }
 
-   public function findUser() {
+   public function findUser()
+   {
       $resource_array = $this->getResourceOwner();
 
       if (!$resource_array) {
@@ -1137,8 +1180,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $split = $this->fields['split_domain'];
+      $authorizedDomainsString = $this->fields['authorized_domains'];
+      $authorizedDomains = [];
+      if (isset($authorizedDomainsString)) {
+         $authorizedDomains = explode(',', $authorizedDomainsString);
+      }
+
       $login = false;
-      $login_fields = ['userPrincipalName','login', 'username', 'id'];
+      $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name'];
 
       foreach ($login_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
@@ -1149,6 +1198,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
                   $isAuthorized = true;
                }
             }
+
             if (!$isAuthorized) {
                return false;
             }
@@ -1166,11 +1216,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       $email = false;
       $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
-      $authorizedDomainsString = $this->fields['authorized_domains'];
-      $authorizedDomains = [];
-      if (isset($authorizedDomainsString)) {
-         $authorizedDomains = explode(',', $authorizedDomainsString);
-      }
 
       foreach ($email_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
@@ -1202,10 +1247,68 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return $user;
       }
 
+      // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
+      if (static::getClientType() == "generic") {
+         try {
+            // Generates an api token and a personal token
+            $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+            $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+
+            $userPost['name'] = $resource_array['displayName'];
+            $userPost['realname'] = preg_split('/ /', $resource_array['displayName'])[1];
+            $userPost['_useremails'][-1] = $resource_array['mail'];
+            $userPost['firstname'] = preg_split('/ /', $resource_array['name'])[0];
+            $userPost['api_token'] = $tokenAPI;
+            $userPost['personal_token'] = $tokenPersonnel;
+            $userPost['is_active'] = 1;
+            $userPost['add'] = "Ajouter";
+            $user->add($userPost);
+
+            $profils = 0;
+            // Verification default profiles exist in the entity
+            // If no default profile exists, the user will not be able to log in.
+            // In this case, we retrieve a profile and an entity and assign these values ​​to it.
+            // The administrator can change these values ​​later.
+            if (0 == Profile::getDefault()) {
+               // No default profiles
+               // Profile recovery and assignment
+               global $DB;
+
+               $datasProfiles = [];
+               foreach ($DB->request('glpi_profiles') as $data) {
+                  array_push($datasProfiles, $data);
+               }
+               $datasEntities = [];
+               foreach ($DB->request('glpi_entities') as $data) {
+                  array_push($datasEntities, $data);
+               }
+               if (count($datasProfiles) > 0 && count($datasEntities) > 0) {
+                  $profils = $datasProfiles[0]['id'];
+                  $entitie = $datasEntities[0]['id'];
+
+                  $profile   = new Profile_User();
+                  $userProfile['users_id'] = intval($user->fields['id']);
+                  $userProfile['entities_id'] = intval($entitie);
+                  $userProfile['is_recursive'] = 0;
+                  $userProfile['profiles_id'] = intval($profils);
+                  $userProfile['add'] = "Ajouter";
+                  $profile->add($userProfile);
+               } else {
+                  return false;
+               }
+            }
+
+            return $user;
+         } catch (\Exception $ex) {
+            return false;
+         }
+      }
+
       return false;
    }
 
-   public function login() {
+   public function login()
+   {
       $user = $this->findUser();
 
       if (!$user) {
@@ -1222,10 +1325,12 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       Session::init($auth);
 
+      // Return false if the profile is not defined in Session::init($auth)
       return $auth->auth_succeded;
    }
 
-   public function linkUser($user_id) {
+   public function linkUser($user_id)
+   {
       $user = new User();
 
       if (!$user->getFromDB($user_id)) {
