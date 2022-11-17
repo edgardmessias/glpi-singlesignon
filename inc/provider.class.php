@@ -1144,7 +1144,6 @@ class PluginSinglesignonProvider extends CommonDBTM
 
       $user = new User();
       //First: check linked user
-
       $id = Plugin::doHookFunction("sso:find_user", $resource_array);
 
       if (is_numeric($id) && $user->getFromDB($id)) {
@@ -1243,12 +1242,18 @@ class PluginSinglesignonProvider extends CommonDBTM
          $default_condition = [];
       }
 
+      $bOk = true;
       if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
          return $user;
+      } else {
+         $bOk = false;
       }
 
+      // var_dump($bOk);
+      // die();
+
       // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
-      if (static::getClientType() == "generic") {
+      if (static::getClientType() == "generic" && !$bOk) {
          try {
             // Generates an api token and a personal token
             $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
@@ -1257,12 +1262,14 @@ class PluginSinglesignonProvider extends CommonDBTM
             $userPost['name'] = $resource_array['displayName'];
             $userPost['realname'] = preg_split('/ /', $resource_array['displayName'])[1];
             $userPost['_useremails'][-1] = $resource_array['mail'];
-            $userPost['firstname'] = preg_split('/ /', $resource_array['name'])[0];
+            $userPost['firstname'] = preg_split('/ /', $resource_array['displayName'])[0];
             $userPost['api_token'] = $tokenAPI;
             $userPost['personal_token'] = $tokenPersonnel;
             $userPost['is_active'] = 1;
-            $userPost['add'] = "Ajouter";
-            $user->add($userPost);
+            $userPost['add'] = "1";
+            $newID = $user->add($userPost);
+
+            // var_dump($newID);
 
             $profils = 0;
             // Verification default profiles exist in the entity
@@ -1320,7 +1327,7 @@ class PluginSinglesignonProvider extends CommonDBTM
       $auth->user = $user;
       $auth->auth_succeded = true;
       $auth->extauth = 1;
-      $auth->user_present = $auth->user->getFromDBbyName(addslashes($user->fields['name']));
+      $auth->user_present = 1;
       $auth->user->fields['authtype'] = Auth::DB_GLPI;
 
       Session::init($auth);
