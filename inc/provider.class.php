@@ -378,21 +378,15 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return false;
       }
 
-      if (isset($input["_blank_bgcolor"])
-         && $input["_blank_bgcolor"]
-      ) {
+      if (isset($input["_blank_bgcolor"]) && $input["_blank_bgcolor"]) {
          $input['bgcolor'] = '';
       }
 
-      if (isset($input["_blank_color"])
-         && $input["_blank_color"]
-      ) {
+      if (isset($input["_blank_color"]) && $input["_blank_color"]) {
          $input['color'] = '';
       }
 
-      if (isset($input["_blank_picture"])
-         && $input["_blank_picture"]
-      ) {
+      if (isset($input["_blank_picture"]) && $input["_blank_picture"]) {
          $input['picture'] = '';
 
          if (array_key_exists('picture', $this->fields)) {
@@ -427,8 +421,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $optid = $opt['id'];
          unset($opt['id']);
          if (isset($options[$optid])) {
-            $message = "Duplicate key $optid ({$options[$optid]['name']}/{$opt['name']}) in " .
-            get_class($this) . " searchOptions!";
+            $message = "Duplicate key $optid ({$options[$optid]['name']}/{$opt['name']}) in " . get_class($this) . " searchOptions!";
             Toolbox::logDebug($message);
          }
          foreach ($opt as $k => $v) {
@@ -677,13 +670,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       switch ($ma->getAction()) {
          case 'DoIt':
-            echo "&nbsp;<input type='hidden' name='toto' value='1'>" .
-            Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
-            " " . __('Write in item history', 'example');
+            echo "&nbsp;<input type='hidden' name='toto' value='1'>" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __('Write in item history', 'example');
             return true;
          case 'do_nothing':
-            echo "&nbsp;" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
-            " " . __('but do nothing :)', 'example');
+            echo "&nbsp;" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __('but do nothing :)', 'example');
             return true;
       }
       return parent::showMassiveActionsSubForm($ma);
@@ -1101,7 +1091,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       $user = new User();
       //First: check linked user
-
       $id = Plugin::doHookFunction("sso:find_user", $resource_array);
 
       if (is_numeric($id) && $user->getFromDB($id)) {
@@ -1137,8 +1126,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $split = $this->fields['split_domain'];
+      $authorizedDomainsString = $this->fields['authorized_domains'];
+      $authorizedDomains = [];
+      if (isset($authorizedDomainsString)) {
+         $authorizedDomains = explode(',', $authorizedDomainsString);
+      }
+
       $login = false;
-      $login_fields = ['userPrincipalName','login', 'username', 'id'];
+      $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
 
       foreach ($login_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
@@ -1149,6 +1144,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
                   $isAuthorized = true;
                }
             }
+
             if (!$isAuthorized) {
                return false;
             }
@@ -1166,11 +1162,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       $email = false;
       $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
-      $authorizedDomainsString = $this->fields['authorized_domains'];
-      $authorizedDomains = [];
-      if (isset($authorizedDomainsString)) {
-         $authorizedDomains = explode(',', $authorizedDomainsString);
-      }
 
       foreach ($email_fields as $field) {
          if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
@@ -1198,8 +1189,93 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $default_condition = [];
       }
 
+      $bOk = true;
       if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
          return $user;
+      } else {
+         $bOk = false;
+      }
+
+      // var_dump($bOk);
+      // die();
+
+      // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
+      if (static::getClientType() == "generic" && !$bOk) {
+         try {
+            // Generates an api token and a personal token
+            $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+            $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+
+            $userPost['name'] = "";
+            $userPost['realname']  = "";
+            $userPost['firstname'] = "";
+            foreach ($login_fields as $field) {
+               if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
+                  $userPost['name'] = $resource_array[$field];
+                  $userPost['realname'] = preg_split('/ /', $resource_array['displayName'])[1];
+                  $userPost['firstname'] = preg_split('/ /', $resource_array['displayName'])[0];
+                  break;
+               }
+            }
+
+            $userPost['_useremails'][-1] = "";
+            foreach ($email_fields as $field) {
+               if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
+                  $userPost['_useremails'][-1] = $resource_array[$field];
+                  break;
+               }
+            }
+
+            // $userPost['name'] = $resource_array['displayName'];
+            // $userPost['realname'] = preg_split('/ /', $resource_array['displayName'])[1];
+            // $userPost['_useremails'][-1] = $resource_array['mail'];
+            // $userPost['firstname'] = preg_split('/ /', $resource_array['displayName'])[0];
+            $userPost['api_token'] = $tokenAPI;
+            $userPost['personal_token'] = $tokenPersonnel;
+            $userPost['is_active'] = 1;
+            $userPost['add'] = "1";
+            $newID = $user->add($userPost);
+
+            // var_dump($newID);
+
+            $profils = 0;
+            // Verification default profiles exist in the entity
+            // If no default profile exists, the user will not be able to log in.
+            // In this case, we retrieve a profile and an entity and assign these values ​​to it.
+            // The administrator can change these values ​​later.
+            if (0 == Profile::getDefault()) {
+               // No default profiles
+               // Profile recovery and assignment
+               global $DB;
+
+               $datasProfiles = [];
+               foreach ($DB->request('glpi_profiles') as $data) {
+                  array_push($datasProfiles, $data);
+               }
+               $datasEntities = [];
+               foreach ($DB->request('glpi_entities') as $data) {
+                  array_push($datasEntities, $data);
+               }
+               if (count($datasProfiles) > 0 && count($datasEntities) > 0) {
+                  $profils = $datasProfiles[0]['id'];
+                  $entitie = $datasEntities[0]['id'];
+
+                  $profile   = new Profile_User();
+                  $userProfile['users_id'] = intval($user->fields['id']);
+                  $userProfile['entities_id'] = intval($entitie);
+                  $userProfile['is_recursive'] = 0;
+                  $userProfile['profiles_id'] = intval($profils);
+                  $userProfile['add'] = "Ajouter";
+                  $profile->add($userProfile);
+               } else {
+                  return false;
+               }
+            }
+
+            return $user;
+         } catch (\Exception $ex) {
+            return false;
+         }
       }
 
       return false;
@@ -1217,11 +1293,12 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $auth->user = $user;
       $auth->auth_succeded = true;
       $auth->extauth = 1;
-      $auth->user_present = $auth->user->getFromDBbyName(addslashes($user->fields['name']));
+      $auth->user_present = 1;
       $auth->user->fields['authtype'] = Auth::DB_GLPI;
 
       Session::init($auth);
 
+      // Return false if the profile is not defined in Session::init($auth)
       return $auth->auth_succeded;
    }
 
