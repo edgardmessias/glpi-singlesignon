@@ -378,24 +378,15 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return false;
       }
 
-      if (
-         isset($input["_blank_bgcolor"])
-         && $input["_blank_bgcolor"]
-      ) {
+      if (isset($input["_blank_bgcolor"]) && $input["_blank_bgcolor"]) {
          $input['bgcolor'] = '';
       }
 
-      if (
-         isset($input["_blank_color"])
-         && $input["_blank_color"]
-      ) {
+      if (isset($input["_blank_color"]) && $input["_blank_color"]) {
          $input['color'] = '';
       }
 
-      if (
-         isset($input["_blank_picture"])
-         && $input["_blank_picture"]
-      ) {
+      if (isset($input["_blank_picture"]) && $input["_blank_picture"]) {
          $input['picture'] = '';
 
          if (array_key_exists('picture', $this->fields)) {
@@ -430,8 +421,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $optid = $opt['id'];
          unset($opt['id']);
          if (isset($options[$optid])) {
-            $message = "Duplicate key $optid ({$options[$optid]['name']}/{$opt['name']}) in " .
-               get_class($this) . " searchOptions!";
+            $message = "Duplicate key $optid ({$options[$optid]['name']}/{$opt['name']}) in " . get_class($this) . " searchOptions!";
             Toolbox::logDebug($message);
          }
          foreach ($opt as $k => $v) {
@@ -681,12 +671,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
       switch ($ma->getAction()) {
          case 'DoIt':
             echo "&nbsp;<input type='hidden' name='toto' value='1'>" .
-               Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
-               " " . __('Write in item history', 'example');
+               Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __('Write in item history', 'example');
             return true;
          case 'do_nothing':
-            echo "&nbsp;" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) .
-               " " . __('but do nothing :)', 'example');
+            echo "&nbsp;" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __('but do nothing :)', 'example');
             return true;
       }
       return parent::showMassiveActionsSubForm($ma);
