@@ -17,18 +17,22 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * To test, do logout and try login with links below login page `Login with <name>`
 
 # Available providers
- * Azure - https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad
+ * Azure (Tenant common) - https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad
  * Facebook - https://developers.facebook.com/docs/apps/
  * GitHub - https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/
  * Google - https://developers.google.com/identity/protocols/OpenIDConnect
  * Instagram - https://www.instagram.com/developer/authentication/
  * LinkedIn - https://docs.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow?context=linkedin/context
- * Generic - Allow to define custom URLs
+ * Generic - Allow to define custom URLs, ex: With an Azure tenant
 
 # Screenshots
 
 ![image 1](./screenshots/image_1.png)
 ![image 2](./screenshots/image_2.png)
+![image 3](./screenshots/image_3.png)
+![image 4](./screenshots/image_4.png)
+![image 5](./screenshots/image_5.png)
+![image 6](./screenshots/image_6.png)
 
 # Donation
 <table border="0">
