@@ -670,8 +670,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       switch ($ma->getAction()) {
          case 'DoIt':
-            echo "&nbsp;<input type='hidden' name='toto' value='1'>" .
-               Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __('Write in item history', 'example');
+            echo "&nbsp;<input type='hidden' name='toto' value='1'>" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __('Write in item history', 'example');
             return true;
          case 'do_nothing':
             echo "&nbsp;" . Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __('but do nothing :)', 'example');
