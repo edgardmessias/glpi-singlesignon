@@ -7,6 +7,8 @@
 
 Single sign-on (SSO) is a property of access control of multiple related, yet independent, software systems. With this property, a user logs in with a single ID and password to gain access to any of several related systems.
 
+For the generic provider, the user is added directly to the database, if it does not exist.
+
 # Installation
  * Uncompress the archive to the `<GLPI_ROOT>/plugins/singlesignon` directory
  * Navigate to the Configuration > Plugins page,
@@ -14,7 +16,8 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
 
 # Usage
  * Go to `Configuration > Single Sign-On` and add a provider
- * To test, do logout and try login with links below login page `Login with <name>`
+ * To test you can use the test button or logout and try to login with the links below the login pageLogin with `Login with <name>`
+   * It is possible that the test fails with the test button but that does not mean that the configuration is bad. Disconnect and try directly.
 
 # Available providers
  * Azure (Tenant common) - https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad
