@@ -220,6 +220,7 @@ function plugin_singlesignon_install() {
                   `is_default`                 tinyint(1) NOT NULL DEFAULT '0',
                   `popup`                      tinyint(1) NOT NULL DEFAULT '0',
                   `split_domain`               tinyint(1) NOT NULL DEFAULT '0',
+                  `add_user`                   tinyint(1) NOT NULL DEFAULT '0',
                   `authorized_domains`         varchar(255) COLLATE utf8_unicode_ci NULL,
                   `type`                       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
                   `name`                       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
