@@ -1143,6 +1143,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $login = false;
+      $loginSplited = false;
       $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
 
       foreach ($login_fields as $field) {
@@ -1160,17 +1161,18 @@ class PluginSinglesignonProvider extends CommonDBTM {
             }
             if ($split) {
                $loginSplit = explode("@", $login);
-               $login = $loginSplit[0];
+               $loginSplited = $loginSplit[0];
             }
             break;
          }
       }
 
-      if ($login && $user->getFromDBbyName($login)) {
+      if ($login && $user->getFromDBbyName($login) || $loginSplited && $user->getFromDBbyName($loginSplited)) {
          return $user;
       }
 
       $email = false;
+      $emailSplited = false;
       $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
 
       foreach ($email_fields as $field) {
@@ -1187,7 +1189,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             }
             if ($split) {
                $emailSplit = explode("@", $email);
-               $email = $emailSplit[0];
+               $emailSplited = $emailSplit[0];
             }
             break;
          }
@@ -1200,7 +1202,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $bOk = true;
-      if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
+
+      if ($email && $user->getFromDBbyEmail($email, $default_condition) || $emailSplited && $user->getFromDBbyEmail($emailSplited, $default_condition)) {
          return $user;
       } else {
          $bOk = false;
