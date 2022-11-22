@@ -25,7 +25,10 @@
  * ---------------------------------------------------------------------
  */
 
-function plugin_singlesignon_display_login() {
+
+
+function plugin_singlesignon_display_login()
+{
    global $CFG_GLPI;
 
    $signon_provider = new PluginSinglesignonProvider();
@@ -59,7 +62,7 @@ function plugin_singlesignon_display_login() {
       echo implode(" \n", $html);
       echo PluginSinglesignonToolbox::renderButton('#', ['name' => __('GLPI')], 'vsubmit old-login');
       echo '</div>';
-      ?>
+?>
       <style>
          #display-login .singlesignon-box span {
             display: inline-block;
@@ -104,7 +107,7 @@ function plugin_singlesignon_display_login() {
                }
             });
 
-      <?php if (version_compare(GLPI_VERSION, '10', '>=')) : ?>
+            <?php if (version_compare(GLPI_VERSION, '10', '>=')) : ?>
                var $boxButtons = $('.singlesignon-box');
 
                $boxButtons.parent().hide();
@@ -188,13 +191,18 @@ function plugin_singlesignon_display_login() {
             <?php endif; ?>
          });
       </script>
-      <?php
+<?php
    }
 }
 
-function plugin_singlesignon_install() {
+function plugin_singlesignon_install()
+{
    /* @var $DB DB */
    global $DB;
+
+   $default_charset = DBConnection::getDefaultCharset();
+   $default_collation = DBConnection::getDefaultCollation();
+   $default_key_sign = DBConnection::getDefaultPrimaryKeySignOption();
 
    $currentVersion = '0.0.0';
 
@@ -216,30 +224,30 @@ function plugin_singlesignon_install() {
 
    if (!sso_TableExists("glpi_plugin_singlesignon_providers")) {
       $query = "CREATE TABLE `glpi_plugin_singlesignon_providers` (
-                  `id`                         int(11) NOT NULL auto_increment,
+                  `id`                         int(11) NOT NULL AUTO_INCREMENT,
                   `is_default`                 tinyint(1) NOT NULL DEFAULT '0',
                   `popup`                      tinyint(1) NOT NULL DEFAULT '0',
                   `split_domain`               tinyint(1) NOT NULL DEFAULT '0',
                   `add_user`                   tinyint(1) NOT NULL DEFAULT '0',
-                  `authorized_domains`         varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `type`                       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-                  `name`                       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-                  `client_id`                  varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-                  `client_secret`              varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-                  `scope`                      varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `extra_options`              varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `url_authorize`              varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `url_access_token`           varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `url_resource_owner_details` varchar(255) COLLATE utf8_unicode_ci NULL,
+                  `authorized_domains`         varchar(255) DEFAULT NULL,
+                  `type`                       varchar(255) NOT NULL DEFAULT '',
+                  `name`                       varchar(255) NOT NULL DEFAULT '',
+                  `client_id`                  varchar(255) NOT NULL DEFAULT '',
+                  `client_secret`              varchar(255) NOT NULL DEFAULT '',
+                  `scope`                      varchar(255) DEFAULT NULL,
+                  `extra_options`              varchar(255) DEFAULT NULL,
+                  `url_authorize`              varchar(255) DEFAULT NULL,
+                  `url_access_token`           varchar(255) DEFAULT NULL,
+                  `url_resource_owner_details` varchar(255) DEFAULT NULL,
                   `is_active`                  tinyint(1) NOT NULL DEFAULT '0',
                   `is_deleted`                 tinyint(1) NOT NULL default '0',
-                  `comment`                    text COLLATE utf8_unicode_ci,
-                  `date_mod`                   datetime DEFAULT NULL,
-                  `date_creation`              datetime DEFAULT NULL,
+                  `comment`                    text DEFAULT NULL,
+                  `date_mod`                   timestamp NULL DEFAULT NULL,
+                  `date_creation`              timestamp NULL DEFAULT NULL,
                   PRIMARY KEY (`id`),
                   KEY `date_mod` (`date_mod`),
                   KEY `date_creation` (`date_creation`)
-               ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
+               ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC DEFAULT CHARSET = {$default_charset} COLLATE = {$default_collation};";
 
       $DB->query($query) or die("error creating glpi_plugin_singlesignon_providers " . $DB->error());
    } else {
@@ -262,7 +270,7 @@ function plugin_singlesignon_install() {
       $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'authorized_domains'";
       $result = $DB->query($query) or die($DB->error());
       if ($DB->numrows($result) != 1) {
-         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD authorized_domains varchar(255) COLLATE utf8_unicode_ci NULL") or die($DB->error());
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD authorized_domains varchar(255) COLLATE {$default_collation} NULL") or die($DB->error());
       }
    }
 
@@ -279,23 +287,23 @@ function plugin_singlesignon_install() {
       $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','10','6','0');");
    }
 
-   if (version_compare($currentVersion, "1.2.0", '<')) {
+   if (version_compare($currentVersion, "1.2.0", '<') && !$DB->fieldExists('glpi_plugin_singlesignon_providers', 'picture') && !$DB->fieldExists('glpi_plugin_singlesignon_providers', 'bgcolor') && !$DB->fieldExists('glpi_plugin_singlesignon_providers', 'color')) {
       $query = "ALTER TABLE `glpi_plugin_singlesignon_providers`
-                ADD `picture` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+                ADD `picture` varchar(255) DEFAULT NULL,
                 ADD `bgcolor` varchar(7) DEFAULT NULL,
                 ADD `color` varchar(7) DEFAULT NULL";
       $DB->query($query) or die("error adding picture column " . $DB->error());
    }
-   if (version_compare($currentVersion, "1.3.0", '<')) {
+   if (version_compare($currentVersion, "1.3.0", '<')&& !$DB->tableExists('glpi_plugin_singlesignon_providers_users')) {
       $query = "CREATE TABLE `glpi_plugin_singlesignon_providers_users` (
          `id` int(11) NOT NULL AUTO_INCREMENT,
          `plugin_singlesignon_providers_id` int(11) NOT NULL DEFAULT '0',
          `users_id` int(11) NOT NULL DEFAULT '0',
-         `remote_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+         `remote_id` varchar(255) DEFAULT NULL,
          PRIMARY KEY (`id`),
          UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
          UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`)
-       ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+       ) ENGINE=InnoDB DEFAULT CHARSET={$default_charset} COLLATE={$default_collation};";
       $DB->query($query) or die("error creating glpi_plugin_singlesignon_providers_users " . $DB->error());
    }
 
@@ -305,7 +313,8 @@ function plugin_singlesignon_install() {
    return true;
 }
 
-function plugin_singlesignon_uninstall() {
+function plugin_singlesignon_uninstall()
+{
    global $DB;
 
    $config = new Config();
@@ -323,6 +332,11 @@ function plugin_singlesignon_uninstall() {
    if (sso_TableExists("glpi_plugin_singlesignon_providers")) {
       $query = "DROP TABLE `glpi_plugin_singlesignon_providers`";
       $DB->query($query) or die("error deleting glpi_plugin_singlesignon_providers");
+   }
+
+   if (sso_TableExists("glpi_plugin_singlesignon_providers_users")) {
+      $query = "DROP TABLE `glpi_plugin_singlesignon_providers_users`";
+      $DB->query($query) or die("error deleting glpi_plugin_singlesignon_providers_users");
    }
 
    return true;
