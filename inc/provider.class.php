@@ -185,6 +185,16 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "</td></tr>\n";
 
       echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __('Add user in database', 'singlesignon');
+      echo "&nbsp;";
+      Html::showToolTip(nl2br(__sso('Add user in database if not exist')));
+      echo "</td>";
+      echo "<td>";
+      Dropdown::showYesNo("add_user", $this->fields["add_user"]);
+      echo "</td>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
       echo "<th colspan='4'>" . __('Personalization') . "</th>";
       echo "</tr>\n";
 
@@ -1196,11 +1206,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $bOk = false;
       }
 
-      // var_dump($bOk);
-      // die();
-
       // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
-      if (static::getClientType() == "generic" && !$bOk) {
+      if (static::getClientType() == "generic" && !$bOk && $this->fields['add_user']) {
          try {
             // Generates an api token and a personal token
             $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
@@ -1226,17 +1233,11 @@ class PluginSinglesignonProvider extends CommonDBTM {
                }
             }
 
-            // $userPost['name'] = $resource_array['displayName'];
-            // $userPost['realname'] = preg_split('/ /', $resource_array['displayName'])[1];
-            // $userPost['_useremails'][-1] = $resource_array['mail'];
-            // $userPost['firstname'] = preg_split('/ /', $resource_array['displayName'])[0];
             $userPost['api_token'] = $tokenAPI;
             $userPost['personal_token'] = $tokenPersonnel;
             $userPost['is_active'] = 1;
             $userPost['add'] = "1";
             $newID = $user->add($userPost);
-
-            // var_dump($newID);
 
             $profils = 0;
             // Verification default profiles exist in the entity
