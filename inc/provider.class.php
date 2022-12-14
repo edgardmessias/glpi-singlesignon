@@ -1098,7 +1098,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $remote_id = false;
-      $remote_id_fields = ['id', 'username'];
+      $remote_id_fields = ['id', 'username', 'sub'];
 
       foreach ($remote_id_fields as $field) {
          if (isset($resource_array[$field]) && !empty($resource_array[$field])) {
