@@ -280,9 +280,9 @@ function plugin_singlesignon_install() {
 
    if (version_compare($currentVersion, "1.2.0", '<')) {
       $query = "ALTER TABLE `glpi_plugin_singlesignon_providers`
-                ADD `picture` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-                ADD `bgcolor` varchar(7) DEFAULT NULL,
-                ADD `color` varchar(7) DEFAULT NULL";
+                  ADD COLUMN IF NOT EXISTS `picture` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+                  ADD COLUMN IF NOT EXISTS `bgcolor` varchar(7) DEFAULT NULL,
+                  ADD COLUMN IF NOT EXISTS `color` varchar(7) DEFAULT NULL;";
       $DB->query($query) or die("error adding picture column " . $DB->error());
    }
    if (version_compare($currentVersion, "1.3.0", '<')) {
