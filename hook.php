@@ -231,6 +231,8 @@ function plugin_singlesignon_install() {
                   `url_access_token`           varchar(255) COLLATE utf8_unicode_ci NULL,
                   `url_resource_owner_details` varchar(255) COLLATE utf8_unicode_ci NULL,
                   `is_active`                  tinyint(1) NOT NULL DEFAULT '0',
+                  `use_email_for_login`        tinyint(1) NOT NULL DEFAULT '0',
+                  `split_name`                 tinyint(1) NOT NULL DEFAULT '0',
                   `is_deleted`                 tinyint(1) NOT NULL default '0',
                   `comment`                    text COLLATE utf8_unicode_ci,
                   `date_mod`                   datetime DEFAULT NULL,
@@ -262,6 +264,16 @@ function plugin_singlesignon_install() {
       $result = $DB->query($query) or die($DB->error());
       if ($DB->numrows($result) != 1) {
          $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD authorized_domains varchar(255) COLLATE utf8_unicode_ci NULL") or die($DB->error());
+      }
+      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'use_email_for_login'";
+      $result = $DB->query($query) or die($DB->error());
+      if ($DB->numrows($result) != 1) {
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD use_email_for_login tinyint(1) NOT NULL DEFAULT '0'") or die($DB->error());
+      }
+      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'split_name'";
+      $result = $DB->query($query) or die($DB->error());
+      if ($DB->numrows($result) != 1) {
+         $DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD split_name tinyint(1) NOT NULL DEFAULT '0'") or die($DB->error());
       }
    }
 

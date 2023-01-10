@@ -185,6 +185,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "</td></tr>\n";
 
       echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __sso("Use Email as Login") . "<td>";
+      Dropdown::showYesNo("use_email_for_login", $this->fields["use_email_for_login"]);
+      echo "</td>";
+      echo "<td>" . __sso('Split Name') . "<td>";
+      Dropdown::showYesNo("split_name", $this->fields["split_name"]);
+      echo "</td>";
+
+      echo "<tr class='tab_bg_1'>";
       echo "<th colspan='4'>" . __('Personalization') . "</th>";
       echo "</tr>\n";
 
@@ -517,6 +525,24 @@ class PluginSinglesignonProvider extends CommonDBTM {
          'table' => $this->getTable(),
          'field' => 'is_active',
          'name' => __('Active'),
+         'searchtype' => 'equals',
+         'datatype' => 'bool',
+      ];
+
+      $tab[] = [
+         'id' => 11,
+         'table' => $this->getTable(),
+         'field' => 'use_email_for_login',
+         'name' => __('Use email field for login'),
+         'searchtype' => 'equals',
+         'datatype' => 'bool',
+      ];
+
+      $tab[] = [
+         'id' => 12,
+         'table' => $this->getTable(),
+         'field' => 'split_name',
+         'name' => __('Split name field for First & Last Name'),
          'searchtype' => 'equals',
          'datatype' => 'bool',
       ];
@@ -1132,34 +1158,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $authorizedDomains = explode(',', $authorizedDomainsString);
       }
 
-      $login = false;
-      $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
-
-      foreach ($login_fields as $field) {
-         if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-            $login = $resource_array[$field];
-            $isAuthorized = empty($authorizedDomains);
-            foreach ($authorizedDomains as $authorizedDomain) {
-               if (preg_match("/{$authorizedDomain}$/i", $login)) {
-                  $isAuthorized = true;
-               }
-            }
-
-            if (!$isAuthorized) {
-               return false;
-            }
-            if ($split) {
-               $loginSplit = explode("@", $login);
-               $login = $loginSplit[0];
-            }
-            break;
-         }
-      }
-
-      if ($login && $user->getFromDBbyName($login)) {
-         return $user;
-      }
-
+      // check email first
       $email = false;
       $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
 
@@ -1183,6 +1182,39 @@ class PluginSinglesignonProvider extends CommonDBTM {
          }
       }
 
+      $login = false;
+      $use_email = $this->fields['use_email_for_login'];
+      if ($email && $use_email) {
+         $login = $email;
+      } else {
+         $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
+
+         foreach ($login_fields as $field) {
+            if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
+               $login = $resource_array[$field];
+               $isAuthorized = empty($authorizedDomains);
+               foreach ($authorizedDomains as $authorizedDomain) {
+                  if (preg_match("/{$authorizedDomain}$/i", $login)) {
+                     $isAuthorized = true;
+                  }
+               }
+
+               if (!$isAuthorized) {
+                  return false;
+               }
+               if ($split) {
+                  $loginSplit = explode("@", $login);
+                  $login = $loginSplit[0];
+               }
+               break;
+            }
+         }
+      }
+
+      if ($login && $user->getFromDBbyName($login)) {
+         return $user;
+      }
+
       $default_condition = '';
 
       if (version_compare(GLPI_VERSION, '9.3', '>=')) {
@@ -1202,38 +1234,28 @@ class PluginSinglesignonProvider extends CommonDBTM {
       // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
       if (static::getClientType() == "generic" && !$bOk) {
          try {
-            // Generates an api token and a personal token
+            // Generates an api token and a personal token... probably not necessary
             $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
             $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
-            $userPost['name'] = "";
-            $userPost['realname']  = "";
-            $userPost['firstname'] = "";
-            foreach ($login_fields as $field) {
-               if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-                  $userPost['name'] = $resource_array[$field];
-                  $userPost['realname'] = preg_split('/ /', $resource_array['displayName'])[1];
-                  $userPost['firstname'] = preg_split('/ /', $resource_array['displayName'])[0];
-                  break;
-               }
+            $splitname = $this->fields['split_name'];
+            $firstLastArray = ($splitname) ? preg_split('/ /', $resource_array['name'], 2) : preg_split('/ /', $resource_array['displayName'], 2);
+
+            $userPost = [
+               'name' => $login,
+               'add' => 1,
+               'realname' => $firstLastArray[1],
+               'firstname' => $firstLastArray[0],
+               'api_token' => $tokenAPI,
+               'personal_token' => $tokenPersonnel,
+               'is_active' => 1
+            ];
+
+            if ($email) {
+               $userPost['_useremails'][-1] = $email;
             }
 
-            $userPost['_useremails'][-1] = "";
-            foreach ($email_fields as $field) {
-               if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-                  $userPost['_useremails'][-1] = $resource_array[$field];
-                  break;
-               }
-            }
-
-            // $userPost['name'] = $resource_array['displayName'];
-            // $userPost['realname'] = preg_split('/ /', $resource_array['displayName'])[1];
-            // $userPost['_useremails'][-1] = $resource_array['mail'];
-            // $userPost['firstname'] = preg_split('/ /', $resource_array['displayName'])[0];
-            $userPost['api_token'] = $tokenAPI;
-            $userPost['personal_token'] = $tokenPersonnel;
-            $userPost['is_active'] = 1;
-            $userPost['add'] = "1";
+            //$user->check(-1, CREATE, $userPost);
             $newID = $user->add($userPost);
 
             // var_dump($newID);
