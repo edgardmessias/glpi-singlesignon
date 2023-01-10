@@ -1184,10 +1184,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       $login = false;
       $use_email = $this->fields['use_email_for_login'];
-      if ($email && $use_email){
+      if ($email && $use_email) {
          $login = $email;
-      }
-      else{
+      } else {
          $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
 
          foreach ($login_fields as $field) {
@@ -1252,7 +1251,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
                'is_active' => 1
             ];
 
-            if($email){
+            if ($email) {
                $userPost['_useremails'][-1] = $email;
             }
 
