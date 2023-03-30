@@ -1251,6 +1251,17 @@ class PluginSinglesignonProvider extends CommonDBTM {
                'is_active' => 1
             ];
 
+            // Set the office location from Office 365 user as entity for the GLPI new user if they names match
+            if (isset($resource_array['officeLocation'])) {
+               global $DB;
+               foreach ($DB->request('glpi_entities') as $entity) {
+                  if ($entity['name'] == $resource_array['officeLocation']) {
+                     $userPost['entities_id'] = $entity['id'];
+                     break;
+                  }
+               }
+            }
+
             if ($email) {
                $userPost['_useremails'][-1] = $email;
             }
