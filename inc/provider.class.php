@@ -1251,6 +1251,19 @@ class PluginSinglesignonProvider extends CommonDBTM {
                'is_active' => 1
             ];
 
+            // Set the office location from Office 365 user as entity for the GLPI new user if they names match
+            $entitie = null;
+            if (isset($resource_array['officeLocation'])) {
+               global $DB;
+               foreach ($DB->request('glpi_entities') as $entity) {
+                  if ($entity['name'] == $resource_array['officeLocation']) {
+                     $userPost['entities_id'] = $entity['id'];
+                     $entitie = $entity['id'];
+                     break;
+                  }
+               }
+            }
+
             if ($email) {
                $userPost['_useremails'][-1] = $email;
             }
@@ -1260,28 +1273,37 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
             // var_dump($newID);
 
-            $profils = 0;
-            // Verification default profiles exist in the entity
-            // If no default profile exists, the user will not be able to log in.
-            // In this case, we retrieve a profile and an entity and assign these values ​​to it.
-            // The administrator can change these values ​​later.
-            if (0 == Profile::getDefault()) {
-               // No default profiles
-               // Profile recovery and assignment
+            // If there is a user entity from oauth values, or default profile doesn't exist
+            // assign profile for user entity
+            $profils = Profile::getDefault();
+            if ( $profils == 0 || isset($entitie)) {
                global $DB;
 
-               $datasProfiles = [];
-               foreach ($DB->request('glpi_profiles') as $data) {
-                  array_push($datasProfiles, $data);
+               // Select default profile or first one
+               // If no default profile exists, the user will not be able to log in.
+               // In this case, we retrieve a profile and assign these values ​​to it.
+               // The administrator can change these values ​​later.
+               if ($profils == 0) {
+                  $datasProfiles = [];
+                  foreach ($DB->request('glpi_profiles') as $data) {
+                     array_push($datasProfiles, $data);
+                  }
+                  if (count($datasProfiles) > 0) {
+                     $profils = $datasProfiles[0]['id'];
+                  }
                }
-               $datasEntities = [];
-               foreach ($DB->request('glpi_entities') as $data) {
-                  array_push($datasEntities, $data);
+               // If there is no entity defined for the user, select first one
+               if (is_null($entitie)) {
+                  $datasEntities = [];
+                  foreach ($DB->request('glpi_entities') as $data) {
+                     array_push($datasEntities, $data);
+                  }
+                  if (count($datasEntities) > 0) {
+                     $entitie = $datasEntities[0]['id'];
+                  }
                }
-               if (count($datasProfiles) > 0 && count($datasEntities) > 0) {
-                  $profils = $datasProfiles[0]['id'];
-                  $entitie = $datasEntities[0]['id'];
-
+            
+               if ($profils != 0 && isset($entitie)) {
                   $profile   = new Profile_User();
                   $userProfile['users_id'] = intval($user->fields['id']);
                   $userProfile['entities_id'] = intval($entitie);
