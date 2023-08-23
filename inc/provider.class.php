@@ -1262,7 +1262,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          ];
          $userPost['_useremails'][-1] = $useremail;
          $user->add($userPost);
-
+         return $user;
       }
 
       // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
