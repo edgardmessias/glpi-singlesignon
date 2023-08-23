@@ -1237,17 +1237,30 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
          $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
+         $realname = '';
+         if (isset($resource_array['family_name'])) {
+            $realname = $resource_array['family_name'];
+         }
+         $firstname = '';
+         if (isset($resource_array['given_name'])) {
+            $firstname = $resource_array['given_name'];
+         }
+         $useremail = $email;
+         if (isset($resource_array['email'])) {
+            $useremail = $resource_array['email'];
+         }
+
          $userPost = [
             'name' => $login,
             'add' => 1,
-            'realname' => $resource_array['family_name'] ?? '',
-            'firstname' => $resource_array['given_name'] ?? '',
-            'picture' => $resource_array['picture'] ?? '',
+            'realname' => $realname,
+            'firstname' => $firstname,
+            //'picture' => $resource_array['picture'] ?? '',
             'api_token' => $tokenAPI,
             'personal_token' => $tokenPersonnel,
             'is_active' => 1
          ];
-         $userPost['_useremails'][-1] = $resource_array['email'] ?? $email;
+         $userPost['_useremails'][-1] = $useremail;
          $user->add($userPost);
 
       }
