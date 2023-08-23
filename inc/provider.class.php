@@ -1231,6 +1231,32 @@ class PluginSinglesignonProvider extends CommonDBTM {
       // var_dump($bOk);
       // die();
 
+      // If the user does not exist in the database and the provider is google
+       if (static::getClientType() == "google" && !$bOk) {
+          // Generates an api token and a personal token... probably not necessary
+          $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+          $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+
+          $userPost = [
+             'name' => $login,
+             'add' => 1,
+             'realname' => $resource_array['family_name'] ?? '',
+             'firstname' => $resource_array['given_name'] ?? '',
+             'picture' => $resource_array['picture'] ?? '',
+             'api_token' => $tokenAPI,
+             'personal_token' => $tokenPersonnel,
+             'is_active' => 1
+          ];
+          if ($email) {
+             $userPost['_useremails'][-1] = $email;
+          }
+
+          $newID = $user->add($userPost);
+
+          return $user;
+
+       }
+
       // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
       if (static::getClientType() == "generic" && !$bOk) {
          try {
