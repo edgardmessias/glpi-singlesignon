@@ -39,7 +39,10 @@ class PluginSinglesignonToolbox {
 
       $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php';
 
-      $url .= "/provider/".$row['id'];
+      if(is_int($row))
+         $url .= "/provider/".$row;
+      else
+         $url .= "/provider/".$row['id'];
 
       if (!empty($query)) {
          $_SESSION['redirect'] = $query['redirect'];
