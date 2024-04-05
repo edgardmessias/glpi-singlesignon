@@ -290,7 +290,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $("[name=test_singlesignon]").on("click", function (e) {
             e.preventDefault();
 
-            var url   = $("#singlesignon_callbackurl").attr("data-url") + "/test/1";
+            // Im not sure why /test/1 is added here, I got a problem with the redirect_uri because its added after /provider/id
+            var url   = $("#singlesignon_callbackurl").attr("data-url"); // + "/test/1";
             var left  = ($(window).width()/2)-(600/2);
             var top   = ($(window).height()/2)-(800/2);
             var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
