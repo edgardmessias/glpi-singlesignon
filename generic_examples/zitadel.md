@@ -1,0 +1,29 @@
+- Go to Zitadel and login as admin
+- Create a new Project, name for example: glpi
+- Create a new Application in this new project, name for example: glpi
+  - Type of application: WEB
+  - Authentication Method: CODE
+  - Redirect URIs: empty, will be set later
+  - Create
+  - Save Client-ID and Client-Secret, we need it later
+- Go to GLPI and login as a Super-Admin
+- Install and activate the plugin
+- Go to the plugin settings
+- Create your first Single Sign-on Provider with the following options
+  - Name: choose one you like
+  - Client ID: the previous saved Client-ID from Zitadel
+  - client Secret: the previous saved Client-Secret from Zitadel
+  - Scope: openid email profile
+  - Authorize URL: https://zitadel.example.com/oauth/v2/authorize
+  - Access Token URL: https://zitadel.example.com/oauth/v2/token
+  - Resource Owner Details URL: https://zitadel.example.com/oidc/v1/userinfo
+  - SplitDomain: Yes
+  - Split Name: Yes
+  - Save Settings
+- Copy the Callback URL and go back to Zitadel
+- Open the project and the application, then go to Redirect Settings
+- Paste the URL in Redirect URIs, click on the plus and save the settings
+- Go back to GLPI and open the provider in the plugins settings again, now press Test Single Sign-on
+- A Pop-Up should open and close after a few seconds and the side reloads
+- Your current account should be linked now to your current Zitadel Account
+- All users from Zitadel can login into glpi and will be created there automatically

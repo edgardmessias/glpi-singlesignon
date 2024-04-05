@@ -24,6 +24,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * Instagram - https://www.instagram.com/developer/authentication/
  * LinkedIn - https://docs.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow?context=linkedin/context
  * Generic - Allow to define custom URLs
+ * Zitadel - use _Generic_ and see parameters in [Generic Examples - Zitadel](generic_examples/zitadel.md)
 
 # Screenshots
 
