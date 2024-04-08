@@ -95,6 +95,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
     <langs>
         <lang>en_GB</lang>
         <lang>pt_BR</lang>
+	<lang>de_DE</lang>
     </langs>
     <license><![CDATA[GPL v2+]]></license>
     <tags>
