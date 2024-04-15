@@ -962,8 +962,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
          exit;
       }
 
-      if (isset($_GET['state']) && is_integer(strpos($_GET['state'], "&redirect="))) {
-         $pos_redirect  = strpos($_GET['state'], "&redirect=");
+      if (isset($_GET['state']) && is_integer(strpos($_GET['state'], ";redirect="))) {
+         $pos_redirect  = strpos($_GET['state'], ";redirect=");
          $state         = substr($_GET['state'], 0, $pos_redirect);
          $_GET['state'] = substr($_GET['state'], $pos_redirect);
       } else {
@@ -1111,7 +1111,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
    public function findUser() {
       $resource_array = $this->getResourceOwner();
-
       if (!$resource_array) {
          return false;
       }
@@ -1123,6 +1122,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       if (is_numeric($id) && $user->getFromDB($id)) {
          return $user;
       }
+
 
       $remote_id = false;
       $remote_id_fields = ['id', 'username', 'sub'];
@@ -1144,8 +1144,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
          if (!empty($links) && $first = reset($links)) {
             $id = $first['users_id'];
          }
-
-         $remote_id;
       }
 
       if (is_numeric($id) && $user->getFromDB($id)) {
