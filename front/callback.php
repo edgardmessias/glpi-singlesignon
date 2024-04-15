@@ -83,7 +83,7 @@ if ($user_id || $signon_provider->login()) {
     if (isset($params['redirect'])) {
         $REDIRECT = '?redirect=' . $params['redirect'];
     } else if (isset($_GET['state']) && is_integer(strpos($_GET['state'], ";redirect="))) {
-        $REDIRECT = '?'.substr($_GET['state'], strpos($_GET['state'], ";redirect=") + 1);
+        $REDIRECT = '?' . substr($_GET['state'], strpos($_GET['state'], ";redirect=") + 1);
     }
 
     if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
@@ -101,7 +101,7 @@ if ($user_id || $signon_provider->login()) {
     }
     Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
     echo '<div class="center spaced"><a href="' . $url_redirect . '">' .
-    __('Automatic redirection, else click') . '</a>';
+        __('Automatic redirection, else click') . '</a>';
     echo '<script type="text/javascript">
          if (window.opener) {
            window.opener.location="' . $url_redirect . '";
@@ -121,7 +121,7 @@ Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
 echo '<div class="center b">' . __('User not authorized to connect in GLPI') . '<br><br>';
 // Logout whit noAUto to manage auto_login with errors
 echo '<a href="' . $CFG_GLPI["root_doc"] . '/front/logout.php?noAUTO=1' .
- str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';
+    str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';
 echo '<script type="text/javascript">
    if (window.opener) {
       $(".singlesignon").on("click", function (e) {
