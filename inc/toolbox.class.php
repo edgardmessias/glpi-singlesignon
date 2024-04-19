@@ -111,7 +111,7 @@ class PluginSinglesignonToolbox {
       return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/picture.send.php?path=' . $path;
    }
 
-   static public function savePicture($src, $uniq_prefix = null) {
+   static public function savePicture($src, $uniq_prefix = "") {
 
       if (function_exists('Document::isImage') && !Document::isImage($src)) {
          return false;
@@ -131,7 +131,11 @@ class PluginSinglesignonToolbox {
          . '/' . $filename . ($i > 0 ? '_' . $i : '') . '.' . $ext;
          $i++;
       } while (file_exists($dest));
-
+      // If the base directory does not exists, create it
+      if (!is_dir($basePath) && !mkdir($basePath)) {
+         return false;
+      }
+      // If the sub directory does not exists, create the sub directory
       if (!is_dir($basePath . '/' . $subdirectory) && !mkdir($basePath . '/' . $subdirectory)) {
          return false;
       }
