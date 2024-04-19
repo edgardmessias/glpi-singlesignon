@@ -868,8 +868,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       $url = $fields['url_resource_owner_details'];
 
-      $url = str_replace("<access_token>", $access_token, $url);
-      $url = str_replace("<appsecret_proof>", hash_hmac('sha256', $access_token, $this->getClientSecret()), $url);
+      if (!IS_NULL($access_token)) {
+         $url = str_replace("<access_token>", $access_token, $url);
+         $url = str_replace("<appsecret_proof>", hash_hmac('sha256', $access_token, $this->getClientSecret()), $url);
+      }
 
       return $url;
    }
@@ -1257,6 +1259,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             'realname' => $realname,
             'firstname' => $firstname,
             //'picture' => $resource_array['picture'] ?? '',
+            'picture' => $resource_array['picture'],
             'api_token' => $tokenAPI,
             'personal_token' => $tokenPersonnel,
             'is_active' => 1
