@@ -112,7 +112,7 @@ if ($user_id || $signon_provider->login()) {
 
    Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
    echo '<div class="center spaced"><a href="' . $url_redirect . '">' .
-   __('Automatic redirection, else click') . '</a>';
+   __sso('Automatic redirection, else click') . '</a>';
    echo '<script type="text/javascript">
          if (window.opener) {
            window.opener.location="' . $url_redirect . '";
