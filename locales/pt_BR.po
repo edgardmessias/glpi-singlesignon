@@ -30,6 +30,10 @@ msgstr "Provedor não encontrado."
 msgid "Provider not active."
 msgstr "Provedor não ativo."
 
+#: front/callback.php:115
+msgid "Automatic redirection, else click"
+msgstr "Redirecionamento automático, caso contrário, clique"
+
 #: front/provider.form.php:61 front/provider.form.php:63 front/provider.php:8
 #: front/provider.php:10 inc/preference.class.php:64 inc/provider.class.php:59
 #: setup.php:40
