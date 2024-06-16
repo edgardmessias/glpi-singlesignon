@@ -24,6 +24,19 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * Instagram - https://www.instagram.com/developer/authentication/
  * LinkedIn - https://docs.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow?context=linkedin/context
  * Generic - Allow to define custom URLs
+ * Zitadel - use _Generic_ and see parameters in [Generic Examples - Zitadel](generic_examples/zitadel.md)
+
+# Adding translations
+If your preferred language is missing. You can add your own translation with the following steps:
+ * Go to the plugin folder
+ * Switch to the folder locales
+ * Copy one of the already existing .po files
+ * Rename it into the correct notation of your language
+ * Edit the file, edit msgstr to change the translation, do not touch the msgid
+ * Edit the header especially the "Language: "
+ * When the file is ready, then you need to compile it with: msgfmt -o filename.mo filename.po
+ * If msgfmt is not found, install the package gettext (apt install -y gettext)
+ * If you edit a previous translation, you may need to update the translation cache: go to Setup - General - Performance, enable Debug mode, clear translation cache
 
 # Screenshots
 

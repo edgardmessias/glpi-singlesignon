@@ -290,7 +290,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $("[name=test_singlesignon]").on("click", function (e) {
             e.preventDefault();
 
-            var url   = $("#singlesignon_callbackurl").attr("data-url") + "/test/1";
+            // Im not sure why /test/1 is added here, I got a problem with the redirect_uri because its added after /provider/id
+            var url   = $("#singlesignon_callbackurl").attr("data-url"); // + "/test/1";
             var left  = ($(window).width()/2)-(600/2);
             var top   = ($(window).height()/2)-(800/2);
             var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
@@ -867,8 +868,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       $url = $fields['url_resource_owner_details'];
 
-      $url = str_replace("<access_token>", $access_token, $url);
-      $url = str_replace("<appsecret_proof>", hash_hmac('sha256', $access_token, $this->getClientSecret()), $url);
+      if (!IS_NULL($access_token)) {
+         $url = str_replace("<access_token>", $access_token, $url);
+         $url = str_replace("<appsecret_proof>", hash_hmac('sha256', $access_token, $this->getClientSecret()), $url);
+      }
 
       return $url;
    }
@@ -1256,6 +1259,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             'realname' => $realname,
             'firstname' => $firstname,
             //'picture' => $resource_array['picture'] ?? '',
+            'picture' => $resource_array['picture'],
             'api_token' => $tokenAPI,
             'personal_token' => $tokenPersonnel,
             'is_active' => 1
