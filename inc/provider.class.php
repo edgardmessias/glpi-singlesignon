@@ -964,8 +964,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
          exit;
       }
 
-      if (isset($_GET['state']) && is_integer(strpos($_GET['state'], "&redirect="))) {
-         $pos_redirect  = strpos($_GET['state'], "&redirect=");
+      if (isset($_GET['state']) && is_integer(strpos($_GET['state'], ";redirect="))) {
+         $pos_redirect  = strpos($_GET['state'], ";redirect=");
          $state         = substr($_GET['state'], 0, $pos_redirect);
          $_GET['state'] = substr($_GET['state'], $pos_redirect);
       } else {
