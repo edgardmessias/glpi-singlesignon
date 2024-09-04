@@ -1359,18 +1359,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return false;
       }
 
-      //Create fake auth
-      $auth = new Auth();
-      $auth->user = $user;
-      $auth->auth_succeded = true;
-      $auth->extauth = 1;
-      $auth->user_present = 1;
-      $auth->user->fields['authtype'] = Auth::DB_GLPI;
+      // Set a random password for the current user
+	   global $DB;
+      $tempPassword = bin2hex(random_bytes(64));
+	   $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $user->fields['id']]);
 
-      Session::init($auth);
-
-      // Return false if the profile is not defined in Session::init($auth)
-      return $auth->auth_succeded;
+      // Log-in using the generated password as if you were logging in using the login form
+	   $auth = new Auth();
+	   return $auth->login($user->fields['name'], $tempPassword);
    }
 
    public function linkUser($user_id) {
