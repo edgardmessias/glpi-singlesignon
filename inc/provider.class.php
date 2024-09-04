@@ -1358,15 +1358,23 @@ class PluginSinglesignonProvider extends CommonDBTM {
       if (!$user) {
          return false;
       }
+	  
+	  global $DB;
+	  
+	  $userId = $user->fields['id'];
 
       // Set a random password for the current user
-	   global $DB;
       $tempPassword = bin2hex(random_bytes(64));
-	   $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $user->fields['id']]);
+	  $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
       // Log-in using the generated password as if you were logging in using the login form
-	   $auth = new Auth();
-	   return $auth->login($user->fields['name'], $tempPassword);
+	  $auth = new Auth();
+	  $authResult = $auth->login($user->fields['name'], $tempPassword);
+	  
+	  // Rollback password change
+	  $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+	   
+	  return $authResult;
    }
 
    public function linkUser($user_id) {
