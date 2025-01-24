@@ -1025,6 +1025,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
          if ($this->debug) {
             print_r($data);
          }
+         if (isset($data['error_description'])) {
+            echo '<style>#page .center small { font-weight: normal; }</style>
+            <script type="text/javascript">
+            window.onload = function() {
+               $("#page .center").append("<br><br><small>' . $data['error_description'] . '</small>");
+            };
+            </script>';
+         }
          if (!isset($data['access_token'])) {
             return false;
          }
