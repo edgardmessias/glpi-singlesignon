@@ -1461,7 +1461,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          ]);
          if (!empty($img)) {
             /* if ($this->debug) {
-               print_r($content);
+            print_r($content);
             } */
 
             //prepare paths
@@ -1476,13 +1476,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
             }
 
             //update picture if not exist or changed
-            if ( empty($user->fields["picture"])
+            if (empty($user->fields["picture"])
                || !file_exists($oldfile)
                || sha1_file($oldfile) !== sha1($img)
             ) {
 
                if (!is_dir(GLPI_PICTURE_DIR . "/$sub")) {
-                   mkdir(GLPI_PICTURE_DIR . "/$sub");
+                  mkdir(GLPI_PICTURE_DIR . "/$sub");
                }
 
                //save picture
@@ -1498,7 +1498,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
                $success = $user->updateInDB(['picture']);
                if ($this->debug) {
                   print_r(['id' => $user->getId(), 
-                           'picture' => "{$sub}/{$filename}.jpg", 
+                           'picture' => "{$sub}/{$filename}.jpg",
                            'success' => $success
                   ]);
                }
@@ -1514,11 +1514,11 @@ class PluginSinglesignonProvider extends CommonDBTM {
                   print_r("{$sub}/{$filename}.jpg");
                }
                return "{$sub}/{$filename}.jpg";
-           }
-           if ($this->debug) {
+            }
+            if ($this->debug) {
                print_r($user->fields["picture"]);
-           }
-           return $user->fields["picture"];
+            }
+            return $user->fields["picture"];
          }
       }
 
