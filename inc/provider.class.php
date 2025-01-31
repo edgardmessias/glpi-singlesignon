@@ -1431,7 +1431,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return string|boolean Filename to be stored in user picture field, false if no picture found
     */
-    public function syncOAuthPhoto($user) {
+   public function syncOAuthPhoto($user) {
       $token = $this->getAccessToken();
       if (!$token) {
          return false;
@@ -1449,7 +1449,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          print_r("\nsyncOAuthPhoto:\n");
       }
 
-     //get picture content (base64) in Azure
+      //get picture content (base64) in Azure
       if (preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url)) {
          array_push($headers, "Content-Type:image/jpeg; charset=utf-8");
 
@@ -1459,12 +1459,12 @@ class PluginSinglesignonProvider extends CommonDBTM {
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_SSL_VERIFYPEER => false,
          ]);
-         if(!empty($img)) {
+         if (!empty($img)) {
             /* if ($this->debug) {
                print_r($content);
             } */
 
-           //prepare paths
+            //prepare paths
             $filename  = uniqid($user->fields['id'] . '_');
             $sub       = substr($filename, -2); /* 2 hex digit */
             $file      = GLPI_PICTURE_DIR . "/{$sub}/{$filename}.jpg";
@@ -1475,22 +1475,22 @@ class PluginSinglesignonProvider extends CommonDBTM {
                $oldfile = null;
             }
 
-           //update picture if not exist or changed
-            if (
-               empty($user->fields["picture"])
+            //update picture if not exist or changed
+            if ( empty($user->fields["picture"])
                || !file_exists($oldfile)
                || sha1_file($oldfile) !== sha1($img)
             ) {
+
                if (!is_dir(GLPI_PICTURE_DIR . "/$sub")) {
                    mkdir(GLPI_PICTURE_DIR . "/$sub");
                }
 
-              //save picture
+               //save picture
                $outjpeg = fopen($file, 'wb');
                fwrite($outjpeg, $img);
                fclose($outjpeg);
 
-              //save thumbnail
+               //save thumbnail
                $thumb = GLPI_PICTURE_DIR . "/{$sub}/{$filename}_min.jpg";
                Toolbox::resizePicture($file, $thumb);
 
