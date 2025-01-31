@@ -1367,6 +1367,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
          return false;
       }
 
+      $this->syncOAuthPhoto($user);
+
       //Create fake auth
       $auth = new Auth();
       $auth->user = $user;
@@ -1421,5 +1423,108 @@ class PluginSinglesignonProvider extends CommonDBTM {
          'users_id' => $user_id,
          'remote_id' => $remote_id,
       ]);
+   }
+
+
+   /**
+    * Synchronize picture (photo) of the user.
+    *
+    * @return string|boolean Filename to be stored in user picture field, false if no picture found
+    */
+    public function syncOAuthPhoto($user) {
+      $token = $this->getAccessToken();
+      if (!$token) {
+         return false;
+      }
+
+      $url = $this->getResourceOwnerDetailsUrl($token);
+
+      $headers = [
+         "Authorization:Bearer $token"
+      ];
+
+      $headers = Plugin::doHookFunction("sso:resource_owner_picture", $headers);
+
+      if ($this->debug) {
+         print_r("\nsyncOAuthPhoto:\n");
+      }
+
+     //get picture content (base64) in Azure
+      if (preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url)) {
+         array_push($headers, "Content-Type:image/jpeg; charset=utf-8");
+
+         $photo_url = "https://graph.microsoft.com/v1.0/me/photo/\$value";
+         $img = Toolbox::callCurl($photo_url, [
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => false,
+         ]);
+         if(!empty($img)) {
+            /* if ($this->debug) {
+               print_r($content);
+            } */
+
+           //prepare paths
+            $filename  = uniqid($user->fields['id'] . '_');
+            $sub       = substr($filename, -2); /* 2 hex digit */
+            $file      = GLPI_PICTURE_DIR . "/{$sub}/{$filename}.jpg";
+
+            if (array_key_exists('picture', $user->fields)) {
+               $oldfile = GLPI_PICTURE_DIR . "/" . $user->fields["picture"];
+            } else {
+               $oldfile = null;
+            }
+
+           //update picture if not exist or changed
+            if (
+               empty($user->fields["picture"])
+               || !file_exists($oldfile)
+               || sha1_file($oldfile) !== sha1($img)
+            ) {
+               if (!is_dir(GLPI_PICTURE_DIR . "/$sub")) {
+                   mkdir(GLPI_PICTURE_DIR . "/$sub");
+               }
+
+              //save picture
+               $outjpeg = fopen($file, 'wb');
+               fwrite($outjpeg, $img);
+               fclose($outjpeg);
+
+              //save thumbnail
+               $thumb = GLPI_PICTURE_DIR . "/{$sub}/{$filename}_min.jpg";
+               Toolbox::resizePicture($file, $thumb);
+
+               $user->fields['picture'] = "{$sub}/{$filename}.jpg";
+               $success = $user->updateInDB(['picture']);
+               if ($this->debug) {
+                  print_r(['id' => $user->getId(), 
+                           'picture' => "{$sub}/{$filename}.jpg", 
+                           'success' => $success
+                  ]);
+               }
+
+               if (!$success) {
+                  if ($this->debug) {
+                     print_r(false);
+                  }
+                  return false;
+               }
+
+               if ($this->debug) {
+                  print_r("{$sub}/{$filename}.jpg");
+               }
+               return "{$sub}/{$filename}.jpg";
+           }
+           if ($this->debug) {
+               print_r($user->fields["picture"]);
+           }
+           return $user->fields["picture"];
+         }
+      }
+
+      if ($this->debug) {
+         print_r(false);
+      }
+      return false;
    }
 }
