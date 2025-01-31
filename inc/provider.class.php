@@ -1497,7 +1497,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
                $user->fields['picture'] = "{$sub}/{$filename}.jpg";
                $success = $user->updateInDB(['picture']);
                if ($this->debug) {
-                  print_r(['id' => $user->getId(), 
+                  print_r(['id' => $user->getId(),
                            'picture' => "{$sub}/{$filename}.jpg",
                            'success' => $success
                   ]);
