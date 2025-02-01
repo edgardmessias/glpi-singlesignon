@@ -94,7 +94,7 @@ class PluginSinglesignonToolbox {
       return $data;
    }
 
-   static public function startsWith($haystack, $needle) {
+   public static function startsWith($haystack, $needle) {
       $length = strlen($needle);
       return (substr($haystack, 0, $length) === $needle);
    }
@@ -111,7 +111,7 @@ class PluginSinglesignonToolbox {
       return PluginSinglesignonToolbox::getBaseURL() . Plugin::getPhpDir("singlesignon", false) . '/front/picture.send.php?path=' . $path;
    }
 
-   static public function savePicture($src, $uniq_prefix = "") {
+   public static function savePicture($src, $uniq_prefix = "") {
 
       if (function_exists('Document::isImage') && !Document::isImage($src)) {
          return false;
@@ -234,7 +234,7 @@ class PluginSinglesignonToolbox {
     * @return string
     */
    public static function getCurrentURL() {
-      $currentURL = $this->getBaseURL();
+      $currentURL = PluginSinglesignonToolbox::getBaseURL();
 
       // $currentURL .= $_SERVER["REQUEST_URI"];
       // Ignore Query String
