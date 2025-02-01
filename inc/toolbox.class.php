@@ -202,6 +202,12 @@ class PluginSinglesignonToolbox {
     * @return string
     */
    public static function getBaseURL() {
+      global $CFG_GLPI;
+
+      if (!empty($CFG_GLPI['url_base'])) {
+         return $CFG_GLPI['url_base'];
+      }
+
       $baseURL = "";
       if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
          $baseURL = ($_SERVER["HTTP_X_FORWARDED_PROTO"] == "https") ? "https://" : "http://";
@@ -210,6 +216,7 @@ class PluginSinglesignonToolbox {
       } else {
          $baseURL = "http://";
       }
+
       if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
          $baseURL .= $_SERVER["HTTP_X_FORWARDED_HOST"];
       } else if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
