@@ -56,7 +56,7 @@ $test = PluginSinglesignonToolbox::getCallbackParameters('test');
 
 if ($test) {
    $signon_provider->debug = true;
-   Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
+   Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
    echo '<div class="left spaced">';
    echo '<pre>';
    echo "### BEGIN ###\n";
@@ -98,19 +98,19 @@ if ($user_id || $signon_provider->login()) {
 
    if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
       if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-         $url_redirect = $CFG_GLPI['root_doc'] . "/front/helpdesk.public.php?create_ticket=1";
+         $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/helpdesk.public.php?create_ticket=1";
       } else {
-         $url_redirect = $CFG_GLPI['root_doc'] . "/front/helpdesk.public.php$REDIRECT";
+         $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/helpdesk.public.php$REDIRECT";
       }
    } else {
       if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-         $url_redirect = $CFG_GLPI['root_doc'] . "/front/ticket.form.php";
+         $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/ticket.form.php";
       } else {
-         $url_redirect = $CFG_GLPI['root_doc'] . "/front/central.php$REDIRECT";
+         $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/central.php$REDIRECT";
       }
    }
 
-   Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
+   Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
    echo '<div class="center spaced"><a href="' . $url_redirect . '">' .
    __sso('Automatic redirection, else click') . '</a>';
    echo '<script type="text/javascript">
@@ -129,10 +129,10 @@ if ($user_id || $signon_provider->login()) {
 }
 
 // we have done at least a good login? No, we exit.
-Html::nullHeader("Login", $CFG_GLPI["root_doc"] . '/index.php');
+Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
 echo '<div class="center b">' . __('User not authorized to connect in GLPI') . '<br><br>';
 // Logout whit noAUto to manage auto_login with errors
-echo '<a href="' . $CFG_GLPI["root_doc"] . '/front/logout.php?noAUTO=1' .
+echo '<a href="' . PluginSinglesignonToolbox::getBaseURL() . '/front/logout.php?noAUTO=1' .
 str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';
 echo '<script type="text/javascript">
    if (window.opener) {

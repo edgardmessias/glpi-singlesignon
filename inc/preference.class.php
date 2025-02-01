@@ -116,7 +116,7 @@ class PluginSinglesignonPreference extends CommonDBTM {
       }
       $canedit = Session::haveRight(User::$rightname, UPDATE);
       if ($canedit) {
-         echo "<form name='form' action=\"" . $CFG_GLPI['root_doc'] . "/plugins/singlesignon/front/user.form.php\" method='post'>";
+         echo "<form name='form' action=\"" . PluginSinglesignonToolbox::getBaseURL() . Plugin::getPhpDir("singlesignon", false) . "/front/user.form.php\" method='post'>";
       }
       echo Html::hidden('user_id', ['value' => $this->user_id]);
 
