@@ -1219,6 +1219,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             //'picture' => $resource_array['picture'] ?? '',
             'picture' => $resource_array['picture'],
             'api_token' => $tokenAPI,
+            'api_token_date' => date("Y-m-d H:i:s"),
             'personal_token' => $tokenPersonnel,
             'is_active' => 1
          ];
@@ -1243,6 +1244,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
                'realname' => $firstLastArray[1],
                'firstname' => $firstLastArray[0],
                'api_token' => $tokenAPI,
+               'api_token_date' => date("Y-m-d H:i:s"),
                'personal_token' => $tokenPersonnel,
                'is_active' => 1
             ];
