@@ -88,6 +88,18 @@ msgstr ""
 msgid "SplitDomain"
 msgstr ""
 
+#: inc/provider.class.php:168
+msgid "IsDefault"
+msgstr ""
+
+#: inc/provider.class.php:188
+msgid "Use Email as Login"
+msgstr ""
+
+#: inc/provider.class.php:191
+msgid "Split Name"
+msgstr ""
+
 #: inc/provider.class.php:155
 msgid "AuthorizedDomains"
 msgstr ""

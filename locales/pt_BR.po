@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: singlesignon 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/edgardmessias/glpi-singlesignon/"
 "issues\n"
-"POT-Creation-Date: 2022-06-28 23:01-0300\n"
-"PO-Revision-Date: 2019-04-26 11:04-0300\n"
+"POT-Creation-Date: 2022-06-28 23:02-0300\n"
+"PO-Revision-Date: 2025-01-31 19:31-0300\n"
 "Last-Translator: Edgard Lorraine Messias <edgardmessias@gmail.com>\n"
 "Language-Team: none\n"
 "Language: pt_BR\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.5\n"
 
 #: front/callback.php:15
 msgid "Provider not defined."
@@ -82,11 +83,23 @@ msgstr "URL de Detalhes do Proprietário do Recurso"
 
 #: inc/provider.class.php:145
 msgid "PopupAuth"
-msgstr ""
+msgstr "Autenticação Pop-up"
 
 #: inc/provider.class.php:151
 msgid "SplitDomain"
-msgstr ""
+msgstr "Dividir Domínio"
+
+#: inc/provider.class.php:168
+msgid "IsDefault"
+msgstr "É Padrão"
+
+#: inc/provider.class.php:188
+msgid "Use Email as Login"
+msgstr "Usar E-mail como Login"
+
+#: inc/provider.class.php:191
+msgid "Split Name"
+msgstr "Dividir Nome"
 
 #: inc/provider.class.php:155
 #, fuzzy
@@ -107,7 +120,7 @@ msgstr "Testar Logon Único"
 
 #: inc/provider.class.php:308
 msgid "A Name is required"
-msgstr "Nome é obrigatório"
+msgstr "O Nome é obrigatório"
 
 #: inc/provider.class.php:314
 #, php-format
@@ -116,15 +129,15 @@ msgstr "O \"%s\" é um tipo inválido"
 
 #: inc/provider.class.php:318
 msgid "A Client ID is required"
-msgstr "ID de cliente é obrigatório"
+msgstr "O ID de cliente é obrigatório"
 
 #: inc/provider.class.php:322
 msgid "A Client Secret is required"
-msgstr "Segredo do Cliente é obrigatório"
+msgstr "O Segredo do Cliente é obrigatório"
 
 #: inc/provider.class.php:327
 msgid "An Authorize URL is required"
-msgstr "URL de Autorização é obrigatório"
+msgstr "A URL de Autorização é obrigatória"
 
 #: inc/provider.class.php:329
 msgid "The Authorize URL is invalid"
@@ -132,7 +145,7 @@ msgstr "A URL de Autorização é inválida"
 
 #: inc/provider.class.php:333
 msgid "An Access Token URL is required"
-msgstr "URL de Token de Acesso é obrigatório"
+msgstr "A URL de Token de Acesso é obrigatória"
 
 #: inc/provider.class.php:335
 msgid "The Access Token URL is invalid"
@@ -140,7 +153,7 @@ msgstr "A URL de Token de Acesso é inválida"
 
 #: inc/provider.class.php:339
 msgid "A Resource Owner Details URL is required"
-msgstr "URL de Detalhes do Proprietário do Recurso é obrigatório"
+msgstr "A URL de Detalhes do Proprietário do Recurso é obrigatória"
 
 #: inc/provider.class.php:341
 msgid "The Resource Owner Details URL is invalid"
@@ -152,7 +165,7 @@ msgstr "Genérico"
 
 #: inc/provider.class.php:553
 msgid "Azure"
-msgstr ""
+msgstr "Azure"
 
 #: inc/provider.class.php:554
 msgid "Facebook"
