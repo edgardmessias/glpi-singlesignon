@@ -274,7 +274,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          echo "</tr>\n";
 
          $url = PluginSinglesignonToolbox::getCallbackUrl($ID);
-         $fullUrl = $this->getBaseURL() . $url;
+         $fullUrl = PluginSinglesignonToolbox::getBaseURL() . $url;
          echo "<tr class='tab_bg_1'>";
          echo "<td>" . __sso('Callback URL') . "</td>";
          echo "<td colspan='3'><a id='singlesignon_callbackurl' href='$fullUrl' data-url='$url'>$fullUrl</a></td>";
@@ -877,56 +877,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
    }
 
    /**
-    * Get current URL without query string
-    * @return string
-    */
-   private function getBaseURL() {
-      $baseURL = "";
-      if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
-         $baseURL = ($_SERVER["HTTP_X_FORWARDED_PROTO"] == "https") ? "https://" : "http://";
-      } else if (isset($_SERVER["HTTPS"])) {
-         $baseURL = ($_SERVER["HTTPS"] == "on") ? "https://" : "http://";
-      } else {
-         $baseURL = "http://";
-      }
-      if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
-         $baseURL .= $_SERVER["HTTP_X_FORWARDED_HOST"];
-      } else if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
-         $baseURL .= $_SERVER["HTTP_X_FORWARDED_HOST"];
-      } else {
-         $baseURL .= $_SERVER["SERVER_NAME"];
-      }
-
-      $port = $_SERVER["SERVER_PORT"];
-      if (isset($_SERVER["HTTP_X_FORWARDED_PORT"])) {
-         $port = $_SERVER["HTTP_X_FORWARDED_PORT"];
-      }
-
-      if ($port != "80" && $port != "443") {
-         $baseURL .= ":" . $_SERVER["SERVER_PORT"];
-      }
-      return $baseURL;
-   }
-
-   /**
-    * Get current URL without query string
-    * @return string
-    */
-   private function getCurrentURL() {
-      $currentURL = $this->getBaseURL();
-
-      // $currentURL .= $_SERVER["REQUEST_URI"];
-      // Ignore Query String
-      if (isset($_SERVER["SCRIPT_NAME"])) {
-         $currentURL .= $_SERVER["SCRIPT_NAME"];
-      }
-      if (isset($_SERVER["PATH_INFO"])) {
-         $currentURL .= $_SERVER["PATH_INFO"];
-      }
-      return $currentURL;
-   }
-
-   /**
     *
     * @return boolean|string
     */
@@ -950,7 +900,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             'state' => $state,
             'response_type' => 'code',
             'approval_prompt' => 'auto',
-            'redirect_uri' => $this->getCurrentURL(),
+            'redirect_uri' => PluginSinglesignonToolbox::getCurrentURL(),
          ];
 
          $params = Plugin::doHookFunction("sso:authorize_params", $params);
@@ -997,7 +947,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $params = [
          'client_id' => $this->getClientId(),
          'client_secret' => $this->getClientSecret(),
-         'redirect_uri' => $this->getCurrentURL(),
+         'redirect_uri' => PluginSinglesignonToolbox::getCurrentURL(),
          'grant_type' => 'authorization_code',
          'code' => $this->_code,
       ];

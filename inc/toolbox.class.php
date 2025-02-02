@@ -37,7 +37,7 @@ class PluginSinglesignonToolbox {
    public static function getCallbackUrl($row, $query = []) {
       global $CFG_GLPI;
 
-      $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php';
+      $url = Plugin::getPhpDir("singlesignon", false) . '/front/callback.php';
 
       $url .= "/provider/".$row;
 
@@ -94,7 +94,7 @@ class PluginSinglesignonToolbox {
       return $data;
    }
 
-   static public function startsWith($haystack, $needle) {
+   public static function startsWith($haystack, $needle) {
       $length = strlen($needle);
       return (substr($haystack, 0, $length) === $needle);
    }
@@ -108,10 +108,10 @@ class PluginSinglesignonToolbox {
          return null;
       }
 
-      return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/picture.send.php?path=' . $path;
+      return PluginSinglesignonToolbox::getBaseURL() . Plugin::getPhpDir("singlesignon", false) . '/front/picture.send.php?path=' . $path;
    }
 
-   static public function savePicture($src, $uniq_prefix = "") {
+   public static function savePicture($src, $uniq_prefix = "") {
 
       if (function_exists('Document::isImage') && !Document::isImage($src)) {
          return false;
@@ -195,5 +195,62 @@ class PluginSinglesignonToolbox {
       $btn .= sprintf(__sso('Login with %s'), $data['name']);
       $btn .= '</a></span>';
       return $btn;
+   }
+
+   /**
+    * Get base URL without query string
+    * @return string
+    */
+   public static function getBaseURL() {
+      global $CFG_GLPI;
+
+      if (!empty($CFG_GLPI['url_base'])) {
+         return $CFG_GLPI['url_base'];
+      }
+
+      $baseURL = "";
+      if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+         $baseURL = ($_SERVER["HTTP_X_FORWARDED_PROTO"] == "https") ? "https://" : "http://";
+      } else if (isset($_SERVER["HTTPS"])) {
+         $baseURL = ($_SERVER["HTTPS"] == "on") ? "https://" : "http://";
+      } else {
+         $baseURL = "http://";
+      }
+
+      if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
+         $baseURL .= $_SERVER["HTTP_X_FORWARDED_HOST"];
+      } else if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
+         $baseURL .= $_SERVER["HTTP_X_FORWARDED_HOST"];
+      } else {
+         $baseURL .= $_SERVER["SERVER_NAME"];
+      }
+
+      $port = $_SERVER["SERVER_PORT"];
+      if (isset($_SERVER["HTTP_X_FORWARDED_PORT"])) {
+         $port = $_SERVER["HTTP_X_FORWARDED_PORT"];
+      }
+
+      if ($port != "80" && $port != "443") {
+         $baseURL .= ":" . $_SERVER["SERVER_PORT"];
+      }
+      return $baseURL;
+   }
+
+   /**
+    * Get current URL without query string
+    * @return string
+    */
+   public static function getCurrentURL() {
+      $currentURL = PluginSinglesignonToolbox::getBaseURL();
+
+      // $currentURL .= $_SERVER["REQUEST_URI"];
+      // Ignore Query String
+      if (isset($_SERVER["SCRIPT_NAME"])) {
+         $currentURL .= $_SERVER["SCRIPT_NAME"];
+      }
+      if (isset($_SERVER["PATH_INFO"])) {
+         $currentURL .= $_SERVER["PATH_INFO"];
+      }
+      return $currentURL;
    }
 }
