@@ -660,6 +660,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return string
     * */
+   // phpcs:disable
    /* static function getHistoryEntry($data) {
 
       switch ($data['linked_action'] - Log::HISTORY_PLUGIN) {
@@ -669,6 +670,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       return '';
    } */
+   // phpcs:enable
 
    //////////////////////////////
    ////// SPECIFIC MODIF MASSIVE FUNCTIONS ///////
@@ -678,6 +680,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @see CommonDBTM::getSpecificMassiveActions()
     * */
+   // phpcs:disable
    /* function getSpecificMassiveActions($checkitem = null) {
 
       $actions = parent::getSpecificMassiveActions($checkitem);
@@ -687,12 +690,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       return $actions;
    } */
+   // phpcs:enable
 
    /**
     * @since version 0.85
     *
     * @see CommonDBTM::showMassiveActionsSubForm()
     * */
+   // phpcs:disable
    /* static function showMassiveActionsSubForm(MassiveAction $ma) {
 
       switch ($ma->getAction()) {
@@ -705,12 +710,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
       return parent::showMassiveActionsSubForm($ma);
    } */
+   // phpcs:enable
 
    /**
     * @since version 0.85
     *
     * @see CommonDBTM::processMassiveActionsForOneItemtype()
     * */
+   // phpcs:disable
    /* static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids) {
       global $DB;
 
@@ -756,6 +763,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
       parent::processMassiveActionsForOneItemtype($ma, $item, $ids);
    } */
+   // phpcs:enable
 
    static function getIcon() {
       return "fas fa-user-lock";
