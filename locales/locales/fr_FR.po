@@ -1,0 +1,192 @@
+# English translations for singlesignon package.
+# Copyright (C) 2021 THE singlesignon'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the singlesignon package.
+# Automatically generated, 2021.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: singlesignon 1.3.1\n"
+"Report-Msgid-Bugs-To: https://github.com/edgardmessias/glpi-singlesignon/"
+"issues\n"
+"POT-Creation-Date: 2022-06-28 23:01-0300\n"
+"PO-Revision-Date: 2022-03-23 14:35+0100\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.0.1\n"
+
+#: front/callback.php:15
+msgid "Provider not defined."
+msgstr "Fournisseur non défini"
+
+#: front/callback.php:21
+msgid "Provider not found."
+msgstr "Fournisseur introuvable"
+
+#: front/callback.php:25
+msgid "Provider not active."
+msgstr "Fournisseur désactivé"
+
+#: front/provider.form.php:61 front/provider.form.php:63 front/provider.php:8
+#: front/provider.php:10 inc/preference.class.php:64 inc/provider.class.php:59
+#: setup.php:40
+msgid "Single Sign-on"
+msgstr "Identification unique"
+
+#: inc/preference.class.php:147 inc/provider.class.php:52
+msgid "Single Sign-on Provider"
+msgstr "Fournisseur d'identification unique"
+
+#: inc/preference.class.php:172
+msgid "Linked accounts"
+msgstr "Comptes liés"
+
+#: inc/provider.class.php:100
+msgid "SSO Type"
+msgstr "Type de SSO"
+
+#: inc/provider.class.php:108 inc/provider.class.php:445
+msgid "Client ID"
+msgstr "Identificateur du client"
+
+#: inc/provider.class.php:110 inc/provider.class.php:453
+msgid "Client Secret"
+msgstr "Secret du client"
+
+#: inc/provider.class.php:121 inc/provider.class.php:461
+msgid "Scope"
+msgstr "Étendue"
+
+#: inc/provider.class.php:123 inc/provider.class.php:469
+msgid "Extra Options"
+msgstr "Options supplémentaires"
+
+#: inc/provider.class.php:128 inc/provider.class.php:477
+msgid "Authorize URL"
+msgstr "URL d'autorisation"
+
+#: inc/provider.class.php:133 inc/provider.class.php:485
+msgid "Access Token URL"
+msgstr "URL du jeton d'accès"
+
+#: inc/provider.class.php:138 inc/provider.class.php:493
+msgid "Resource Owner Details URL"
+msgstr "Resource Owner Details URL"
+
+#: inc/provider.class.php:145
+msgid "PopupAuth"
+msgstr "Authentification via Pop-up"
+
+#: inc/provider.class.php:151
+msgid "SplitDomain"
+msgstr ""
+"Ne pas prendre en compte le domaine pour la correspondance de l'identifiant "
+"GLPI"
+
+#: inc/provider.class.php:155
+msgid "AuthorizedDomains"
+msgstr "Domaines autorisés"
+
+#: inc/provider.class.php:157
+msgid "AuthorizedDomainsTooltip"
+msgstr ""
+"Domaines autorisés séparés par des ','. Vide : tous les domaines sont "
+"autorisés"
+
+#: inc/provider.class.php:246
+msgid "Callback URL"
+msgstr "URL de callback"
+
+#: inc/provider.class.php:250
+msgid "Test Single Sign-on"
+msgstr "Tester l'identification unique"
+
+#: inc/provider.class.php:308
+msgid "A Name is required"
+msgstr "Un nom est requis"
+
+#: inc/provider.class.php:314
+#, php-format
+msgid "The \"%s\" is a Invalid type"
+msgstr "Le type \"%s\" est invalide"
+
+#: inc/provider.class.php:318
+msgid "A Client ID is required"
+msgstr "L'identifiant de client est requis"
+
+#: inc/provider.class.php:322
+msgid "A Client Secret is required"
+msgstr "Le secret du client est requis"
+
+#: inc/provider.class.php:327
+msgid "An Authorize URL is required"
+msgstr "L'URL d'autorisation est requise"
+
+#: inc/provider.class.php:329
+msgid "The Authorize URL is invalid"
+msgstr "L'URL d'autorisation est invalide"
+
+#: inc/provider.class.php:333
+msgid "An Access Token URL is required"
+msgstr "L'URL du jeton d'accès est requise"
+
+#: inc/provider.class.php:335
+msgid "The Access Token URL is invalid"
+msgstr "L'URL du jeton d'accès est invalide"
+
+#: inc/provider.class.php:339
+msgid "A Resource Owner Details URL is required"
+msgstr "L'URL d'information sur l'utilisateur est requise"
+
+#: inc/provider.class.php:341
+msgid "The Resource Owner Details URL is invalid"
+msgstr "L'URL d'information sur l'utilisateur est invalide"
+
+#: inc/provider.class.php:552
+msgid "Generic"
+msgstr "Generique"
+
+#: inc/provider.class.php:553
+msgid "Azure"
+msgstr "Azure"
+
+#: inc/provider.class.php:554
+msgid "Facebook"
+msgstr "Facebook"
+
+#: inc/provider.class.php:555
+msgid "GitHub"
+msgstr "GitHub"
+
+#: inc/provider.class.php:556
+msgid "Google"
+msgstr "Google"
+
+#: inc/provider.class.php:557
+msgid "Instagram"
+msgstr "Instagram"
+
+#: inc/provider.class.php:558
+msgid "LinkdeIn"
+msgstr "LinkdeIn"
+
+#: inc/toolbox.class.php:166
+#, php-format
+msgid "Login with %s"
+msgstr "Se connecter avec %s"
+
+#: setup.php:8
+#, php-format
+msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
+msgstr "Renommez le dossier \"%s\" à \"singlesignon\""
+
+#: setup.php:57
+msgid "This plugin requires GLPI >= 0.85"
+msgstr "Ce plugin requiert une version de GLPI >= 0.85"
+
+#~ msgid "IsDefault"
+#~ msgstr "Authentification par défaut"
