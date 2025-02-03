@@ -107,8 +107,8 @@ msgid "AuthorizedDomains"
 msgstr "URL de Autorização"
 
 #: inc/provider.class.php:157
-msgid "AuthorizedDomainsTooltip"
-msgstr ""
+msgid "Provide a list of domains allowed to log in through this provider (separated by commas)."
+msgstr "Forneça uma lista de domínios permitidos para fazer login por meio deste provedor (separados por vírgulas)."
 
 #: inc/provider.class.php:246
 msgid "Callback URL"
