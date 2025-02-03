@@ -1222,6 +1222,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $userPost = [
             'name' => $login,
             'add' => 1,
+            'password' => '',
             'realname' => $realname,
             'firstname' => $firstname,
             //'picture' => $resource_array['picture'] ?? '',
@@ -1249,6 +1250,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             $userPost = [
                'name' => $login,
                'add' => 1,
+               'password' => '',
                'realname' => $firstLastArray[1],
                'firstname' => $firstLastArray[0],
                'api_token' => $tokenAPI,
