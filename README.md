@@ -24,7 +24,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * Instagram - https://www.instagram.com/developer/authentication/
  * LinkedIn - https://docs.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow?context=linkedin/context
  * Generic - Allow to define custom URLs
- * Zitadel - use _Generic_ and see parameters in [Generic Examples - Zitadel](generic_examples/zitadel.md)
+ * Zitadel - use _Generic_ and see parameters in [Generic Examples - Zitadel](https://github.com/edgardmessias/glpi-singlesignon/wiki/Generic-Examples-%E2%80%90-Zitadel)
 
 # Adding translations
 If your preferred language is missing. You can add your own translation with the following steps:
@@ -38,6 +38,9 @@ If your preferred language is missing. You can add your own translation with the
  * If msgfmt is not found, install the package gettext (apt install -y gettext)
  * If you edit a previous translation, you may need to update the translation cache: go to Setup - General - Performance, enable Debug mode, clear translation cache
 
+# Adding a new release
+To create a new release of this plugin automatically through GitHub Actions (Workflow), edit the file ``plugin.xml`` to include the new version tag (e.g. ``v1.3.4``), GLPI compatible version and download URL and create a new branch.
+
 # Screenshots
 
 ![image 1](./screenshots/image_1.png)
@@ -48,14 +51,13 @@ If your preferred language is missing. You can add your own translation with the
  <tr>
     <td align="center">
     PayPal <br>
-       <img src="https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=https://www.paypal.com/donate?hosted_button_id=5KHYY5ZDTNDSY"> <br>
        <a href="https://www.paypal.com/donate?hosted_button_id=5KHYY5ZDTNDSY">
           <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif">
        </a>
     </td>
     <td align="center">
        Pix (Brazil) <br>
-       <img src="https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=00020126680014BR.GOV.BCB.PIX013628571c52-8b9b-416c-a18f-8e52460608810206Doa%C3%A7%C3%A3o5204000053039865802BR5923Edgard%20Lorraine%20Messias6009SAO%20PAULO61080540900062160512NU50UnEaVM0H63042A45"> <br>
+       <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=00020126680014BR.GOV.BCB.PIX013628571c52-8b9b-416c-a18f-8e52460608810206Doa%C3%A7%C3%A3o5204000053039865802BR5923Edgard%20Lorraine%20Messias6009SAO%20PAULO61080540900062160512NU50UnEaVM0H63042A45"> <br>
        28571c52-8b9b-416c-a18f-8e5246060881
     </td>
  </tr>

@@ -1,0 +1,83 @@
+name: Bug Report
+description: Create a report to help us improve glpi-singlesignon
+body:
+  - type: markdown
+    attributes:
+      value: |
+
+        Dear GLPI plugin user.
+
+        BEFORE SUBMITTING YOUR ISSUE, please make sure to read and follow these steps:
+
+        * We do not guarantee any processing / resolution time for community issues.
+        * Keep this tracker in ENGLISH. If you want support in your language, the [community forum](https://forum.glpi-project.org) is the best place.
+        * Always try to reproduce your issue at least on latest stable release.
+
+        The GLPI Single-Sign On Development team.
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+        - label: I have searched the existing issues
+    validations:
+      required: true
+  - type: input
+    id: glpi-version
+    attributes:
+      label: GLPI Version
+      description: What version of our GLPI are you running?
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: What version of `glpi-singlesignon` are you running?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Bug description
+      description: A concise description of the problem you are experiencing and what you expected to happen.
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        Please copy and paste any relevant log output. Find them in `*-error.log` files under `glpi/files/_log/`.
+
+        Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in.
+      render: shell
+  - type: input
+    id: url
+    attributes:
+      label: Page URL
+      description: If applicable, page URL where the bug happens.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Steps To reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. With this config...
+        2. Go to...
+        3. Scroll down to...
+        4. See error...
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Your GLPI setup information
+      description: Please copy and paste information you will find in GLPI in `Setup > General` menu, `System` tab.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Anything else?
+      description: Add any other context about the problem here.
+    validations:
+      required: false

@@ -179,7 +179,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "</td>";
       echo "<td>" . __sso('AuthorizedDomains');
       echo "&nbsp;";
-      Html::showToolTip(nl2br(__sso('AuthorizedDomainsTooltip')));
+      Html::showToolTip(nl2br(__sso('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces).')));
       echo "</td>";
       echo "<td><input type='text' style='width:96%' name='authorized_domains' value='" . $this->fields["authorized_domains"] . "'></td>";
       echo "</td></tr>\n";
@@ -274,7 +274,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
          echo "</tr>\n";
 
          $url = PluginSinglesignonToolbox::getCallbackUrl($ID);
-         $fullUrl = $this->getBaseURL() . $url;
+         $fullUrl = PluginSinglesignonToolbox::getBaseURL() . $url;
          echo "<tr class='tab_bg_1'>";
          echo "<td>" . __sso('Callback URL') . "</td>";
          echo "<td colspan='3'><a id='singlesignon_callbackurl' href='$fullUrl' data-url='$url'>$fullUrl</a></td>";
@@ -660,7 +660,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return string
     * */
-   static function getHistoryEntry($data) {
+   // phpcs:disable
+   /* static function getHistoryEntry($data) {
 
       switch ($data['linked_action'] - Log::HISTORY_PLUGIN) {
          case 0:
@@ -668,7 +669,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       return '';
-   }
+   } */
+   // phpcs:enable
 
    //////////////////////////////
    ////// SPECIFIC MODIF MASSIVE FUNCTIONS ///////
@@ -678,7 +680,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @see CommonDBTM::getSpecificMassiveActions()
     * */
-   function getSpecificMassiveActions($checkitem = null) {
+   // phpcs:disable
+   /* function getSpecificMassiveActions($checkitem = null) {
 
       $actions = parent::getSpecificMassiveActions($checkitem);
 
@@ -686,14 +689,16 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $actions[__CLASS__ . MassiveAction::CLASS_ACTION_SEPARATOR . 'do_nothing'] = __('Do Nothing - just for fun', 'example');  // Specific one
 
       return $actions;
-   }
+   } */
+   // phpcs:enable
 
    /**
     * @since version 0.85
     *
     * @see CommonDBTM::showMassiveActionsSubForm()
     * */
-   static function showMassiveActionsSubForm(MassiveAction $ma) {
+   // phpcs:disable
+   /* static function showMassiveActionsSubForm(MassiveAction $ma) {
 
       switch ($ma->getAction()) {
          case 'DoIt':
@@ -704,14 +709,16 @@ class PluginSinglesignonProvider extends CommonDBTM {
             return true;
       }
       return parent::showMassiveActionsSubForm($ma);
-   }
+   } */
+   // phpcs:enable
 
    /**
     * @since version 0.85
     *
     * @see CommonDBTM::processMassiveActionsForOneItemtype()
     * */
-   static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids) {
+   // phpcs:disable
+   /* static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids) {
       global $DB;
 
       switch ($ma->getAction()) {
@@ -755,7 +762,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
             return;
       }
       parent::processMassiveActionsForOneItemtype($ma, $item, $ids);
-   }
+   } */
+   // phpcs:enable
 
    static function getIcon() {
       return "fas fa-user-lock";
@@ -877,56 +885,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
    }
 
    /**
-    * Get current URL without query string
-    * @return string
-    */
-   private function getBaseURL() {
-      $baseURL = "";
-      if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
-         $baseURL = ($_SERVER["HTTP_X_FORWARDED_PROTO"] == "https") ? "https://" : "http://";
-      } else if (isset($_SERVER["HTTPS"])) {
-         $baseURL = ($_SERVER["HTTPS"] == "on") ? "https://" : "http://";
-      } else {
-         $baseURL = "http://";
-      }
-      if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
-         $baseURL .= $_SERVER["HTTP_X_FORWARDED_HOST"];
-      } else if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
-         $baseURL .= $_SERVER["HTTP_X_FORWARDED_HOST"];
-      } else {
-         $baseURL .= $_SERVER["SERVER_NAME"];
-      }
-
-      $port = $_SERVER["SERVER_PORT"];
-      if (isset($_SERVER["HTTP_X_FORWARDED_PORT"])) {
-         $port = $_SERVER["HTTP_X_FORWARDED_PORT"];
-      }
-
-      if ($port != "80" && $port != "443") {
-         $baseURL .= ":" . $_SERVER["SERVER_PORT"];
-      }
-      return $baseURL;
-   }
-
-   /**
-    * Get current URL without query string
-    * @return string
-    */
-   private function getCurrentURL() {
-      $currentURL = $this->getBaseURL();
-
-      // $currentURL .= $_SERVER["REQUEST_URI"];
-      // Ignore Query String
-      if (isset($_SERVER["SCRIPT_NAME"])) {
-         $currentURL .= $_SERVER["SCRIPT_NAME"];
-      }
-      if (isset($_SERVER["PATH_INFO"])) {
-         $currentURL .= $_SERVER["PATH_INFO"];
-      }
-      return $currentURL;
-   }
-
-   /**
     *
     * @return boolean|string
     */
@@ -950,7 +908,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             'state' => $state,
             'response_type' => 'code',
             'approval_prompt' => 'auto',
-            'redirect_uri' => $this->getCurrentURL(),
+            'redirect_uri' => PluginSinglesignonToolbox::getCurrentURL(),
          ];
 
          $params = Plugin::doHookFunction("sso:authorize_params", $params);
@@ -964,8 +922,8 @@ class PluginSinglesignonProvider extends CommonDBTM {
          exit;
       }
 
-      if (isset($_GET['state']) && is_integer(strpos($_GET['state'], "&redirect="))) {
-         $pos_redirect  = strpos($_GET['state'], "&redirect=");
+      if (isset($_GET['state']) && is_integer(strpos($_GET['state'], ";redirect="))) {
+         $pos_redirect  = strpos($_GET['state'], ";redirect=");
          $state         = substr($_GET['state'], 0, $pos_redirect);
          $_GET['state'] = substr($_GET['state'], $pos_redirect);
       } else {
@@ -997,7 +955,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $params = [
          'client_id' => $this->getClientId(),
          'client_secret' => $this->getClientSecret(),
-         'redirect_uri' => $this->getCurrentURL(),
+         'redirect_uri' => PluginSinglesignonToolbox::getCurrentURL(),
          'grant_type' => 'authorization_code',
          'code' => $this->_code,
       ];
@@ -1024,6 +982,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $data = json_decode($content, true);
          if ($this->debug) {
             print_r($data);
+         }
+         if (isset($data['error_description'])) {
+            echo '<style>#page .center small { font-weight: normal; }</style>
+            <script type="text/javascript">
+            window.onload = function() {
+               $("#page .center").append("<br><br><small>' . $data['error_description'] . '</small>");
+            };
+            </script>';
          }
          if (!isset($data['access_token'])) {
             return false;
@@ -1256,11 +1222,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $userPost = [
             'name' => $login,
             'add' => 1,
+            'password' => '',
             'realname' => $realname,
             'firstname' => $firstname,
             //'picture' => $resource_array['picture'] ?? '',
             'picture' => $resource_array['picture'],
             'api_token' => $tokenAPI,
+            'api_token_date' => date("Y-m-d H:i:s"),
             'personal_token' => $tokenPersonnel,
             'is_active' => 1
          ];
@@ -1282,9 +1250,11 @@ class PluginSinglesignonProvider extends CommonDBTM {
             $userPost = [
                'name' => $login,
                'add' => 1,
+               'password' => '',
                'realname' => $firstLastArray[1],
                'firstname' => $firstLastArray[0],
                'api_token' => $tokenAPI,
+               'api_token_date' => date("Y-m-d H:i:s"),
                'personal_token' => $tokenPersonnel,
                'is_active' => 1
             ];
@@ -1358,23 +1328,38 @@ class PluginSinglesignonProvider extends CommonDBTM {
       if (!$user) {
          return false;
       }
+
+      $this->syncOAuthPhoto($user);
+     
+      // Create fake auth
+      /* $auth = new Auth();
+      $auth->user = $user;
+      $auth->auth_succeded = true;
+      $auth->extauth = 1;
+      $auth->user_present = 1;
+      $auth->user->fields['authtype'] = Auth::DB_GLPI;
+
+      Session::init($auth);
+
+      // Return false if the profile is not defined in Session::init($auth)
+      return $auth->auth_succeded; */
 	  
-	  global $DB;
+	    global $DB;
 	  
-	  $userId = $user->fields['id'];
+	    $userId = $user->fields['id'];
 
       // Set a random password for the current user
       $tempPassword = bin2hex(random_bytes(64));
-	  $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+	    $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
       // Log-in using the generated password as if you were logging in using the login form
-	  $auth = new Auth();
-	  $authResult = $auth->login($user->fields['name'], $tempPassword);
+	    $auth = new Auth();
+	    $authResult = $auth->login($user->fields['name'], $tempPassword);
 	  
-	  // Rollback password change
-	  $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+	    // Rollback password change
+	    $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
 	   
-	  return $authResult;
+	    return $authResult;
    }
 
    public function linkUser($user_id) {
@@ -1417,5 +1402,108 @@ class PluginSinglesignonProvider extends CommonDBTM {
          'users_id' => $user_id,
          'remote_id' => $remote_id,
       ]);
+   }
+
+
+   /**
+    * Synchronize picture (photo) of the user.
+    *
+    * @return string|boolean Filename to be stored in user picture field, false if no picture found
+    */
+   public function syncOAuthPhoto($user) {
+      $token = $this->getAccessToken();
+      if (!$token) {
+         return false;
+      }
+
+      $url = $this->getResourceOwnerDetailsUrl($token);
+
+      $headers = [
+         "Authorization:Bearer $token"
+      ];
+
+      $headers = Plugin::doHookFunction("sso:resource_owner_picture", $headers);
+
+      if ($this->debug) {
+         print_r("\nsyncOAuthPhoto:\n");
+      }
+
+      //get picture content (base64) in Azure
+      if (preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url)) {
+         array_push($headers, "Content-Type:image/jpeg; charset=utf-8");
+
+         $photo_url = "https://graph.microsoft.com/v1.0/me/photo/\$value";
+         $img = Toolbox::callCurl($photo_url, [
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => false,
+         ]);
+         if (!empty($img)) {
+            /* if ($this->debug) {
+            print_r($content);
+            } */
+
+            //prepare paths
+            $filename  = uniqid($user->fields['id'] . '_');
+            $sub       = substr($filename, -2); /* 2 hex digit */
+            $file      = GLPI_PICTURE_DIR . "/{$sub}/{$filename}.jpg";
+
+            if (array_key_exists('picture', $user->fields)) {
+               $oldfile = GLPI_PICTURE_DIR . "/" . $user->fields["picture"];
+            } else {
+               $oldfile = null;
+            }
+
+            //update picture if not exist or changed
+            if (empty($user->fields["picture"])
+               || !file_exists($oldfile)
+               || sha1_file($oldfile) !== sha1($img)
+            ) {
+
+               if (!is_dir(GLPI_PICTURE_DIR . "/$sub")) {
+                  mkdir(GLPI_PICTURE_DIR . "/$sub");
+               }
+
+               //save picture
+               $outjpeg = fopen($file, 'wb');
+               fwrite($outjpeg, $img);
+               fclose($outjpeg);
+
+               //save thumbnail
+               $thumb = GLPI_PICTURE_DIR . "/{$sub}/{$filename}_min.jpg";
+               Toolbox::resizePicture($file, $thumb);
+
+               $user->fields['picture'] = "{$sub}/{$filename}.jpg";
+               $success = $user->updateInDB(['picture']);
+               if ($this->debug) {
+                  print_r(['id' => $user->getId(),
+                           'picture' => "{$sub}/{$filename}.jpg",
+                           'success' => $success
+                  ]);
+               }
+
+               if (!$success) {
+                  if ($this->debug) {
+                     print_r(false);
+                  }
+                  return false;
+               }
+
+               if ($this->debug) {
+                  print_r("{$sub}/{$filename}.jpg");
+               }
+               return "{$sub}/{$filename}.jpg";
+            }
+            if ($this->debug) {
+               print_r($user->fields["picture"]);
+            }
+            return $user->fields["picture"];
+         }
+      }
+
+      if ($this->debug) {
+         print_r(false);
+      }
+      return false;
    }
 }
