@@ -38,6 +38,9 @@ If your preferred language is missing. You can add your own translation with the
  * If msgfmt is not found, install the package gettext (apt install -y gettext)
  * If you edit a previous translation, you may need to update the translation cache: go to Setup - General - Performance, enable Debug mode, clear translation cache
 
+# Adding a new release
+To create a new release of this plugin automatically through GitHub Actions (Workflow), edit the file ``plugin.xml`` to include the new version tag (e.g. ``v1.3.4``), GLPI compatible version and download URL and create a new branch.
+
 # Screenshots
 
 ![image 1](./screenshots/image_1.png)
