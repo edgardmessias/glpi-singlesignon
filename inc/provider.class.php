@@ -145,8 +145,12 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __sso('Scope') . "</td>";
       echo "<td><input type='text' style='width:96%' name='scope' value='" . $this->getScope() . "'></td>";
-      echo "<td>" . __sso('Extra Options') . "</td>";
-      echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "'></td>";
+      echo "<td>" . __sso('Extra Options');
+      echo "&nbsp;";
+      Html::showToolTip(nl2br(__sso('Allows you to specify custom parameters for the SSO provider <strong>Authorize URL</strong>. Example: <code>prompt=login</code> to force login or <code>prompt=select_account</code> to force account selection (supported URL settings may vary by provider). You can specify additional parameters with the "&" delimiter.')));
+      echo "</td>";
+      echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "'>";
+      echo "</td>";
       echo "</tr>\n";
 
       echo "<tr class='tab_bg_1 sso_url' $url_style>";
@@ -828,6 +832,18 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $fields['scope'];
    }
 
+   public function getExtraOptions() {
+      if (isset($this->fields['extra_options']) && !empty($this->fields['extra_options'])) {
+         // e.g. 'response_type=code&approval_prompt=auto'
+         parse_str($this->fields['extra_options'], $value);
+         // $value['response_type'] = 'code'
+      } else {
+         return false;
+      }
+
+      return $value;
+   }
+
    public function getAuthorizeUrl() {
       $type = $this->getClientType();
 
@@ -910,6 +926,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
             'approval_prompt' => 'auto',
             'redirect_uri' => PluginSinglesignonToolbox::getCurrentURL(),
          ];
+         $extra_options = $this->getExtraOptions();
+         if (is_array($extra_options)) {
+            $params = array_merge($params, $extra_options);
+         }
 
          $params = Plugin::doHookFunction("sso:authorize_params", $params);
 
