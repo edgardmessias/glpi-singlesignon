@@ -83,18 +83,11 @@ if ($user_id || $signon_provider->login()) {
 
    if (isset($params['redirect'])) {
       $REDIRECT = '?redirect=' . $params['redirect'];
-   } else if (isset($_GET['state']) && is_integer(strpos($_GET['state'], "&redirect="))) {
-      $REDIRECT = '?' . substr($_GET['state'], strpos($_GET['state'], "&redirect=") + 1);
-   }
-
-   $url_redirect = '';
-
-
-   if (isset($params['redirect'])) {
-      $REDIRECT = '?redirect=' . $params['redirect'];
    } else if (isset($_GET['state']) && is_integer(strpos($_GET['state'], ";redirect="))) {
       $REDIRECT = '?' . substr($_GET['state'], strpos($_GET['state'], ";redirect=") + 1);
    }
+
+   $url_redirect = '';
 
    if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
       if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
