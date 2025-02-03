@@ -1330,7 +1330,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $this->syncOAuthPhoto($user);
-     
+
       // Create fake auth
       /* $auth = new Auth();
       $auth->user = $user;
