@@ -660,7 +660,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @return string
     * */
-   static function getHistoryEntry($data) {
+   /* static function getHistoryEntry($data) {
 
       switch ($data['linked_action'] - Log::HISTORY_PLUGIN) {
          case 0:
@@ -668,7 +668,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       return '';
-   }
+   } */
 
    //////////////////////////////
    ////// SPECIFIC MODIF MASSIVE FUNCTIONS ///////
@@ -678,7 +678,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
     *
     * @see CommonDBTM::getSpecificMassiveActions()
     * */
-   function getSpecificMassiveActions($checkitem = null) {
+   /* function getSpecificMassiveActions($checkitem = null) {
 
       $actions = parent::getSpecificMassiveActions($checkitem);
 
@@ -686,14 +686,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $actions[__CLASS__ . MassiveAction::CLASS_ACTION_SEPARATOR . 'do_nothing'] = __('Do Nothing - just for fun', 'example');  // Specific one
 
       return $actions;
-   }
+   } */
 
    /**
     * @since version 0.85
     *
     * @see CommonDBTM::showMassiveActionsSubForm()
     * */
-   static function showMassiveActionsSubForm(MassiveAction $ma) {
+   /* static function showMassiveActionsSubForm(MassiveAction $ma) {
 
       switch ($ma->getAction()) {
          case 'DoIt':
@@ -704,14 +704,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
             return true;
       }
       return parent::showMassiveActionsSubForm($ma);
-   }
+   } */
 
    /**
     * @since version 0.85
     *
     * @see CommonDBTM::processMassiveActionsForOneItemtype()
     * */
-   static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids) {
+   /* static function processMassiveActionsForOneItemtype(MassiveAction $ma, CommonDBTM $item, array $ids) {
       global $DB;
 
       switch ($ma->getAction()) {
@@ -755,7 +755,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
             return;
       }
       parent::processMassiveActionsForOneItemtype($ma, $item, $ids);
-   }
+   } */
 
    static function getIcon() {
       return "fas fa-user-lock";
