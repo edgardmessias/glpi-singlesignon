@@ -1332,6 +1332,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       $this->syncOAuthPhoto($user);
 
       // Create fake auth
+      // phpcs:disable
       /* $auth = new Auth();
       $auth->user = $user;
       $auth->auth_succeded = true;
@@ -1343,6 +1344,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       // Return false if the profile is not defined in Session::init($auth)
       return $auth->auth_succeded; */
+      // phpcs:enable
 
       global $DB;
 
