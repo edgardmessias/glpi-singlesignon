@@ -27,16 +27,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * Zitadel - use _Generic_ and see parameters in [Generic Examples - Zitadel](https://github.com/edgardmessias/glpi-singlesignon/wiki/Generic-Examples-%E2%80%90-Zitadel)
 
 # Adding translations
-If your preferred language is missing. You can add your own translation with the following steps:
- * Go to the plugin folder
- * Switch to the folder locales
- * Copy one of the already existing .po files
- * Rename it into the correct notation of your language
- * Edit the file, edit msgstr to change the translation, do not touch the msgid
- * Edit the header especially the "Language: "
- * When the file is ready, then you need to compile it with: msgfmt -o filename.mo filename.po
- * If msgfmt is not found, install the package gettext (apt install -y gettext)
- * If you edit a previous translation, you may need to update the translation cache: go to Setup - General - Performance, enable Debug mode, clear translation cache
+If your preferred language is missing. You can add your own [translation on Transifex service](https://app.transifex.com/eduardomozart/glpi-singlesignon/languages/).
 
 # Adding a new release
 To create a new release of this plugin automatically through GitHub Actions (Workflow), edit the file ``plugin.xml`` to include the new version tag (e.g. ``v1.3.4``), GLPI compatible version and download URL and create a new branch.
