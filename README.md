@@ -30,7 +30,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
 If your preferred language is missing. You can add your own [translation on Transifex service](https://app.transifex.com/eduardomozart/glpi-singlesignon/languages/).
 
 # Adding a new release
-To create a new release of this plugin automatically through GitHub Actions (Workflow), edit the file ``plugin.xml`` to include the new version tag (e.g. ``v1.3.4``), GLPI compatible version and download URL and create a new branch.
+To create a new release of this plugin automatically through GitHub Actions (Workflow), edit the file ``plugin.xml`` to include the new version tag, GLPI compatible version and download URL and create a new branch.
 
 # Screenshots
 
