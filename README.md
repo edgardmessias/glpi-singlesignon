@@ -13,7 +13,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * Install and activate the plugin.
 
 # Usage
- * Go to `Configuration > Single Sign-On` and add a provider
+ * Go to `Configuration > Single Sign-On` and add a provider. You can find an explanation of the main configuration parameters [here](https://github.com/edgardmessias/glpi-singlesignon/wiki/Plugin-Provider-Options).
  * To test, do logout and try login with links below login page `Login with <name>`
 
 # Available providers
