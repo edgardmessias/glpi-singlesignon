@@ -41,10 +41,17 @@ jobs:
               #excludeTypes: build,docs,style
               #includeInvalidCommits: true
 
-          - name: Commit CHANGELOG.md
+          - name: Commit CHANGELOG.md (master)
             uses: stefanzweifel/git-auto-commit-action@v4
             with:
               branch: master
+              commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
+              file_pattern: CHANGELOG.md
+
+          - name: Commit CHANGELOG.md (branch)
+            uses: stefanzweifel/git-auto-commit-action@v4
+            with:
+              branch: ${{ github.ref_name }}
               commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
               file_pattern: CHANGELOG.md
 
