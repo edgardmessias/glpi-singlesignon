@@ -94,9 +94,44 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $ong;
    }
 
+   function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
+   {
+      $tabs = [];
+
+      $debug_mode = ($_SESSION['glpi_use_mode'] == Session::DEBUG_MODE);
+      if ($debug_mode) {
+         $tabs[1] =  __('Debug');
+      }
+
+      return $tabs;
+   }
+
+   public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+   {
+       switch ($tabnum) {
+           case 1:
+               $item->showFormDebug($item);
+               break;
+       }
+       return true;
+   }
+
    function post_getEmpty() {
       $this->fields["type"] = 'generic';
       $this->fields["is_active"] = 1;
+   }
+
+   function showFormDebug($item, $options = []) {
+      Html::requireJS('clipboard');
+      $item->fields['client_secret'] = substr($item->fields['client_secret'], 0, 3) . '... (' . strlen($item->fields['client_secret']) . ')';
+      echo "<table class='tab_cadre_fixe'>";
+      echo "<tr><th>" . __sso('JSON SSO provider representation') . "</th></tr>";
+      echo "<tr><td class='center'><button type='button' class='btn btn-secondary' onclick=\"document.getElementById('glpi-singlesignon-json-debug').click();flashIconButton(this, 'btn btn-success', 'ti ti-check', 1500);\"><i class='far fa-copy me-2'></i>" . __sso('Copy provider information') . "</button></td></tr>";
+      echo "<tr><td><div class='copy_to_clipboard_wrapper'>";
+      echo "<textarea cols='132' rows='50' style='border:1' name='json' id='glpi-singlesignon-json-debug' class='form-control'>";
+      echo str_replace('\/', '/', json_encode($item, JSON_PRETTY_PRINT));
+      echo "</textarea></div></td></tr>";
+      echo "</table>";
    }
 
    function showForm($ID, $options = []) {
@@ -116,14 +151,14 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "</td>";
       echo "<td>" . __('Comments') . "</td>";
       echo "<td>";
-      echo "<textarea name='comment' >" . $this->fields["comment"] . "</textarea>";
+      echo "<textarea name='comment' class='form-control'>" . $this->fields["comment"] . "</textarea>";
       echo "</td></tr>";
 
       $on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");';
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __sso('SSO Type') . "</td><td>";
-      self::dropdownType('type', ['value' => $this->fields["type"], 'on_change' => $on_change]);
+      self::dropdownType('type', ['value' => $this->fields["type"], 'on_change' => $on_change, 'class' => 'form-control']);
       echo "<td>" . __('Active') . "</td>";
       echo "<td>";
       Dropdown::showYesNo("is_active", $this->fields["is_active"]);
@@ -131,9 +166,9 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __sso('Client ID') . "</td>";
-      echo "<td><input type='text' style='width:96%' name='client_id' value='" . $this->fields["client_id"] . "'></td>";
+      echo "<td><input type='text' style='width:96%' name='client_id' value='" . $this->fields["client_id"] . "' class='form-control'></td>";
       echo "<td>" . __sso('Client Secret') . "</td>";
-      echo "<td><input type='text' style='width:96%' name='client_secret' value='" . $this->fields["client_secret"] . "'></td>";
+      echo "<td><input type='text' style='width:96%' name='client_secret' value='" . $this->fields["client_secret"] . "' class='form-control'></td>";
       echo "</tr>\n";
 
       $url_style = "";
@@ -144,28 +179,28 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __sso('Scope') . "</td>";
-      echo "<td><input type='text' style='width:96%' name='scope' value='" . $this->getScope() . "'></td>";
+      echo "<td><input type='text' style='width:96%' name='scope' value='" . $this->getScope() . "' class='form-control'></td>";
       echo "<td>" . __sso('Extra Options');
       echo "&nbsp;";
       Html::showToolTip(nl2br(__sso('Allows you to specify custom parameters for the SSO provider <strong>Authorize URL</strong>. Example: <code>prompt=login</code> to force login or <code>prompt=select_account</code> to force account selection (supported URL settings may vary by provider). You can specify additional parameters with the "&" delimiter.')));
       echo "</td>";
-      echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "'>";
+      echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "' class='form-control'>";
       echo "</td>";
       echo "</tr>\n";
 
       echo "<tr class='tab_bg_1 sso_url' $url_style>";
       echo "<td>" . __sso('Authorize URL') . "</td>";
-      echo "<td colspan='3'><input type='text' style='width:96%' name='url_authorize' value='" . $this->getAuthorizeUrl() . "'></td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='url_authorize' value='" . $this->getAuthorizeUrl() . "' class='form-control'></td>";
       echo "</tr>\n";
 
       echo "<tr class='tab_bg_1 sso_url' $url_style>";
       echo "<td>" . __sso('Access Token URL') . "</td>";
-      echo "<td colspan='3'><input type='text' style='width:96%' name='url_access_token' value='" . $this->getAccessTokenUrl() . "'></td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='url_access_token' value='" . $this->getAccessTokenUrl() . "' class='form-control'></td>";
       echo "</tr>\n";
 
       echo "<tr class='tab_bg_1 sso_url' $url_style>";
       echo "<td>" . __sso('Resource Owner Details URL') . "</td>";
-      echo "<td colspan='3'><input type='text' style='width:96%' name='url_resource_owner_details' value='" . $this->getResourceOwnerDetailsUrl() . "'></td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='url_resource_owner_details' value='" . $this->getResourceOwnerDetailsUrl() . "' class='form-control'></td>";
       echo "</tr>\n";
 
       echo "<tr class='tab_bg_1'>";
@@ -185,7 +220,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "&nbsp;";
       Html::showToolTip(nl2br(__sso('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces).')));
       echo "</td>";
-      echo "<td><input type='text' style='width:96%' name='authorized_domains' value='" . $this->fields["authorized_domains"] . "'></td>";
+      echo "<td><input type='text' style='width:96%' name='authorized_domains' value='" . $this->fields["authorized_domains"] . "' class='form-control'></td>";
       echo "</td></tr>\n";
 
       echo "<tr class='tab_bg_1'>";
