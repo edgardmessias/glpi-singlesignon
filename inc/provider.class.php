@@ -94,8 +94,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $ong;
    }
 
-   function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
-   {
+   function getTabNameForItem(CommonGLPI $item, $withtemplate = 0) {
       $tabs = [];
 
       $debug_mode = ($_SESSION['glpi_use_mode'] == Session::DEBUG_MODE);
@@ -106,14 +105,13 @@ class PluginSinglesignonProvider extends CommonDBTM {
       return $tabs;
    }
 
-   public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
-   {
-       switch ($tabnum) {
-           case 1:
-               $item->showFormDebug($item);
-               break;
-       }
-       return true;
+   public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0) {
+      switch ($tabnum) {
+         case 1:
+            $item->showFormDebug($item);
+            break;
+      }
+      return true;
    }
 
    function post_getEmpty() {
