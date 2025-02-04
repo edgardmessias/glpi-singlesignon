@@ -79,7 +79,7 @@ jobs:
             tag_name: ${{ steps.build_.outputs.tag }}
             release_name: | 
                       GLPI ${{ steps.build_.outputs.version_glpi }} : Version ${{ steps.build_.outputs.tag }} disponible / available
-            body : Version ${{ steps.build_.outputs.tag }} released for GLPI ${{ steps.build_.outputs.version_glpi }}. The [full changelog is available](https://github.com/edgardmessias/glpi-singlesignon/blob/${{ steps.build_.outputs.tag }}/CHANGELOG.md) for more details.
+            body : Version ${{ steps.build_.outputs.tag }} released for GLPI ${{ steps.build_.outputs.version_glpi }}. The [full changelog is available](https://github.com/edgardmessias/glpi-singlesignon/blob/master/CHANGELOG.md) for more details.
             draft: false
             prerelease: false
 
