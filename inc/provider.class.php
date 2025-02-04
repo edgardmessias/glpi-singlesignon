@@ -180,7 +180,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "<td><input type='text' style='width:96%' name='scope' value='" . $this->getScope() . "' class='form-control'></td>";
       echo "<td>" . __sso('Extra Options');
       echo "&nbsp;";
-      Html::showToolTip(nl2br(sprintf(__sso('Allows you to specify custom parameters for the SSO provider %s. Example: %s to force login or %s to force account selection (supported URL settings may vary by provider). You can specify additional parameters with the "&" delimiter.'), '<strong>' . __sso('Authorize URL') . '</strong>', '<code>prompt=login</code>', '<code>prompt=select_account</code>')));
+      Html::showToolTip(nl2br(sprintf(__sso('Allows you to specify custom parameters for the SSO provider %1$s. Example: %2$s to force login or %3$s to force account selection (supported URL settings may vary by provider). You can specify additional parameters with the "&" delimiter.'), '<strong>' . __sso('Authorize URL') . '</strong>', '<code>prompt=login</code>', '<code>prompt=select_account</code>')));
       echo "</td>";
       echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "' class='form-control'>";
       echo "</td>";
