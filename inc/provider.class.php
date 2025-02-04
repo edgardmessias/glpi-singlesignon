@@ -216,7 +216,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       echo "</td>";
       echo "<td>" . __sso('AuthorizedDomains');
       echo "&nbsp;";
-      Html::showToolTip(nl2br(__sso('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces).')));
+      Html::showToolTip(nl2br(__sso('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces) (optional).')));
       echo "</td>";
       echo "<td><input type='text' style='width:96%' name='authorized_domains' value='" . $this->fields["authorized_domains"] . "' class='form-control'></td>";
       echo "</td></tr>\n";
