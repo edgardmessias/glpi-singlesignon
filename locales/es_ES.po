@@ -1,188 +1,225 @@
-# Portuguese translations for singlesignon package.
-# Copyright (C) 2019 THE singlesignon'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# Automatically generated, 2019.
-#
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR glpi-singlesignon Development Team
+# This file is distributed under the same license as the singlesignon package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Eduardo Mozart de Oliveira <eduardomozart182@gmail.com>, 2025
+# 
+#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: singlesignon 1.3.3\n"
-"Report-Msgid-Bugs-To: https://github.com/edgardmessias/glpi-singlesignon/"
-"issues\n"
-"POT-Creation-Date: 2022-06-28 23:01-0300\n"
-"PO-Revision-Date: 2022-06-30 12:00-0300\n"
-"Last-Translator: Edgard Lorraine Messias <edgardmessias@gmail.com>\n"
-"Language-Team: none\n"
-"Language: es_ES\n"
+"Project-Id-Version: singlesignon\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-04 19:54+0000\n"
+"PO-Revision-Date: 2025-02-04 19:31+0000\n"
+"Last-Translator: Eduardo Mozart de Oliveira <eduardomozart182@gmail.com>, 2025\n"
+"Language-Team: Spanish (Spain) (https://app.transifex.com/eduardomozart/teams/204814/es_ES/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Language: es_ES\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
 
-#: front/callback.php:15
-msgid "Provider not defined."
-msgstr "Proveedor no definido."
+#: setup.php:33
+#, php-format
+msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
+msgstr ""
+"Por favor, cambie el nombre de la carpeta del plugin \"%s\" para "
+"\"singlesignon\""
 
-#: front/callback.php:21
-msgid "Provider not found."
-msgstr "Proveedor no encontrado."
-
-#: front/callback.php:25
-msgid "Provider not active."
-msgstr "Proveedor no activado."
-
-#: front/provider.form.php:61 front/provider.form.php:63 front/provider.php:8
-#: front/provider.php:10 inc/preference.class.php:64 inc/provider.class.php:59
-#: setup.php:40
+#: setup.php:67 front/provider.form.php:86 front/provider.form.php:88
+#: front/provider.php:33 front/provider.php:35 inc/preference.class.php:89
+#: inc/provider.class.php:84
 msgid "Single Sign-on"
 msgstr "Single Sign-on"
 
-#: inc/preference.class.php:147 inc/provider.class.php:52
+#: setup.php:84
+msgid "This plugin requires GLPI >= 0.85"
+msgstr "Este plugin requiere GLPI >= 0.85"
+
+#: front/callback.php:40
+msgid "Provider not defined."
+msgstr "Proveedor no definido."
+
+#: front/callback.php:46
+msgid "Provider not found."
+msgstr "Proveedor no encontrado."
+
+#: front/callback.php:50
+msgid "Provider not active."
+msgstr "Proveedor no activado."
+
+#: front/callback.php:108
+msgid "Automatic redirection, else click"
+msgstr ""
+
+#: inc/preference.class.php:172 inc/provider.class.php:77
 msgid "Single Sign-on Provider"
 msgstr "Proveedor de Single Sign-on"
 
-#: inc/preference.class.php:172
+#: inc/preference.class.php:197
 msgid "Linked accounts"
 msgstr "Cuentas vinculadas"
 
-#: inc/provider.class.php:100
+#: inc/provider.class.php:126
+msgid "JSON SSO provider representation"
+msgstr ""
+
+#: inc/provider.class.php:127
+msgid "Copy provider information"
+msgstr ""
+
+#: inc/provider.class.php:158
 msgid "SSO Type"
 msgstr "Tipo de SSO"
 
-#: inc/provider.class.php:108 inc/provider.class.php:445
+#: inc/provider.class.php:166 inc/provider.class.php:509
 msgid "Client ID"
 msgstr "Identificación del cliente"
 
-#: inc/provider.class.php:110 inc/provider.class.php:453
+#: inc/provider.class.php:168 inc/provider.class.php:517
 msgid "Client Secret"
 msgstr "Secreto del cliente"
 
-#: inc/provider.class.php:121 inc/provider.class.php:461
+#: inc/provider.class.php:179 inc/provider.class.php:525
 msgid "Scope"
 msgstr "Alcance"
 
-#: inc/provider.class.php:123 inc/provider.class.php:469
+#: inc/provider.class.php:181 inc/provider.class.php:533
 msgid "Extra Options"
 msgstr "Opciones adicionales"
 
-#: inc/provider.class.php:128 inc/provider.class.php:477
+#: inc/provider.class.php:183
+#, php-format
+msgid ""
+"Allows you to specify custom parameters for the SSO provider %1$s. Example: "
+"%2$s to force login or %3$s to force account selection (supported URL "
+"settings may vary by provider). You can specify additional parameters with "
+"the \"&\" delimiter."
+msgstr ""
+
+#: inc/provider.class.php:183 inc/provider.class.php:190
+#: inc/provider.class.php:541
 msgid "Authorize URL"
 msgstr "URL de autorización"
 
-#: inc/provider.class.php:133 inc/provider.class.php:485
+#: inc/provider.class.php:195 inc/provider.class.php:549
 msgid "Access Token URL"
 msgstr "URL del token de acceso"
 
-#: inc/provider.class.php:138 inc/provider.class.php:493
+#: inc/provider.class.php:200 inc/provider.class.php:557
 msgid "Resource Owner Details URL"
 msgstr "URL de detalles del propietario del recurso"
 
-#: inc/provider.class.php:145
+#: inc/provider.class.php:205
+msgid "IsDefault"
+msgstr ""
+
+#: inc/provider.class.php:207
 msgid "PopupAuth"
 msgstr ""
 
-#: inc/provider.class.php:151
+#: inc/provider.class.php:213
 msgid "SplitDomain"
 msgstr ""
 
-#: inc/provider.class.php:155
-#, fuzzy
+#: inc/provider.class.php:217
 msgid "AuthorizedDomains"
-msgstr "URL de autorización"
-
-#: inc/provider.class.php:157
-msgid "AuthorizedDomainsTooltip"
 msgstr ""
 
-#: inc/provider.class.php:246
+#: inc/provider.class.php:219
+msgid ""
+"Provide a list of domains allowed to log in through this provider (separated"
+" by commas, no spaces)."
+msgstr ""
+
+#: inc/provider.class.php:225
+msgid "Use Email as Login"
+msgstr ""
+
+#: inc/provider.class.php:228
+msgid "Split Name"
+msgstr ""
+
+#: inc/provider.class.php:316
 msgid "Callback URL"
 msgstr "URL de devolución de llamada"
 
-#: inc/provider.class.php:250
+#: inc/provider.class.php:320
 msgid "Test Single Sign-on"
 msgstr "Pruebar Single Sign-on"
 
-#: inc/provider.class.php:308
+#: inc/provider.class.php:379
 msgid "A Name is required"
 msgstr "Se requiere un nombre"
 
-#: inc/provider.class.php:314
+#: inc/provider.class.php:385
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "El \"%s\" es un tipo no válido"
 
-#: inc/provider.class.php:318
+#: inc/provider.class.php:389
 msgid "A Client ID is required"
 msgstr "Se requiere una identificación de cliente"
 
-#: inc/provider.class.php:322
+#: inc/provider.class.php:393
 msgid "A Client Secret is required"
 msgstr "Se requiere un secreto de cliente"
 
-#: inc/provider.class.php:327
+#: inc/provider.class.php:398
 msgid "An Authorize URL is required"
 msgstr "Se requiere una URL de autorización"
 
-#: inc/provider.class.php:329
+#: inc/provider.class.php:400
 msgid "The Authorize URL is invalid"
 msgstr "La URL de autorización no es válida"
 
-#: inc/provider.class.php:333
+#: inc/provider.class.php:404
 msgid "An Access Token URL is required"
 msgstr "Se requiere una URL de token de acceso"
 
-#: inc/provider.class.php:335
+#: inc/provider.class.php:406
 msgid "The Access Token URL is invalid"
 msgstr "La URL del token de acceso no es válida"
 
-#: inc/provider.class.php:339
+#: inc/provider.class.php:410
 msgid "A Resource Owner Details URL is required"
 msgstr "Se requiere una URL de detalles del propietario del recurso"
 
-#: inc/provider.class.php:341
+#: inc/provider.class.php:412
 msgid "The Resource Owner Details URL is invalid"
 msgstr "La URL de detalles del propietario del recurso no es válida"
 
-#: inc/provider.class.php:552
+#: inc/provider.class.php:634
 msgid "Generic"
 msgstr "Genérico"
 
-#: inc/provider.class.php:553
+#: inc/provider.class.php:635
 msgid "Azure"
 msgstr "Azure"
 
-#: inc/provider.class.php:554
+#: inc/provider.class.php:636
 msgid "Facebook"
 msgstr "Facebook"
 
-#: inc/provider.class.php:555
+#: inc/provider.class.php:637
 msgid "GitHub"
 msgstr "GitHub"
 
-#: inc/provider.class.php:556
+#: inc/provider.class.php:638
 msgid "Google"
 msgstr "Google"
 
-#: inc/provider.class.php:557
+#: inc/provider.class.php:639
 msgid "Instagram"
 msgstr "Instagram"
 
-#: inc/provider.class.php:558
+#: inc/provider.class.php:640
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
 
-#: inc/toolbox.class.php:166
+#: inc/toolbox.class.php:195
 #, php-format
 msgid "Login with %s"
 msgstr "Iniciar con %s"
-
-#: setup.php:8
-#, php-format
-msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
-msgstr "Por favor, cambie el nombre de la carpeta del plugin \"%s\" para \"singlesignon\""
-
-#: setup.php:57
-msgid "This plugin requires GLPI >= 0.85"
-msgstr "Este plugin requiere GLPI >= 0.85"
-
-#~ msgid "Run first: composer install"
-#~ msgstr "Execute primeiro: composer install"
