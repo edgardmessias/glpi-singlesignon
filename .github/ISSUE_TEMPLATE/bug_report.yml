@@ -72,7 +72,7 @@ body:
   - type: textarea
     attributes:
       label: Your GLPI setup information
-      description: Please copy and paste information you will find in GLPI in `Setup > General` menu, `System` tab.
+      description: Copy and paste the information you will find in GLPI debug mode in the `Setup > Single-Sign on` menu, `Debug` tab of your SSO provider.
     validations:
       required: false
   - type: textarea
