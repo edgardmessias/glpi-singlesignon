@@ -1,0 +1,233 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR glpi-singlesignon Development Team
+# This file is distributed under the same license as the singlesignon package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Sinan Doğan, 2025
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: singlesignon\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-04 21:23+0000\n"
+"PO-Revision-Date: 2025-02-04 20:49+0000\n"
+"Last-Translator: Sinan Doğan, 2025\n"
+"Language-Team: Turkish (Turkey) (https://app.transifex.com/eduardomozart/teams/204814/tr_TR/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: tr_TR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: setup.php:33
+#, php-format
+msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
+msgstr "Lütfen, \"%s\" eklenti klasörünü “singlesignon” olarak yeniden adlandırın"
+
+#: setup.php:67 front/provider.form.php:86 front/provider.form.php:88
+#: front/provider.php:33 front/provider.php:35 inc/preference.class.php:89
+#: inc/provider.class.php:84
+msgid "Single Sign-on"
+msgstr ""
+"Single Sign-on\n"
+" \n"
+" \n"
+" "
+
+#: setup.php:84
+msgid "This plugin requires GLPI >= 0.85"
+msgstr "Bu eklenti GLPI >= 0.85 gerektirir"
+
+#: front/callback.php:40
+msgid "Provider not defined."
+msgstr "Sağlayıcı tanımlanmamış."
+
+#: front/callback.php:46
+msgid "Provider not found."
+msgstr "Sağlayıcı bulunamadı."
+
+#: front/callback.php:50
+msgid "Provider not active."
+msgstr "Sağlayıcı aktif değil."
+
+#: front/callback.php:108
+msgid "Automatic redirection, else click"
+msgstr "Otomatik yönlendirme, aksi takdirde tıklayın"
+
+#: inc/preference.class.php:172 inc/provider.class.php:77
+msgid "Single Sign-on Provider"
+msgstr "Single Sign-on Sağlayıcı"
+
+#: inc/preference.class.php:197
+msgid "Linked accounts"
+msgstr "Bağlı hesaplar"
+
+#: inc/provider.class.php:126
+msgid "JSON SSO provider representation"
+msgstr "JSON SSO sağlayıcı temsili"
+
+#: inc/provider.class.php:127
+msgid "Copy provider information"
+msgstr "Sağlayıcı bilgilerini kopyala"
+
+#: inc/provider.class.php:158
+msgid "SSO Type"
+msgstr "SSO Tipi"
+
+#: inc/provider.class.php:166 inc/provider.class.php:509
+msgid "Client ID"
+msgstr "Client ID"
+
+#: inc/provider.class.php:168 inc/provider.class.php:517
+msgid "Client Secret"
+msgstr "Client Secret"
+
+#: inc/provider.class.php:179 inc/provider.class.php:525
+msgid "Scope"
+msgstr "Kapsam"
+
+#: inc/provider.class.php:181 inc/provider.class.php:533
+msgid "Extra Options"
+msgstr "Ekstra Seçenekler"
+
+#: inc/provider.class.php:183
+#, php-format
+msgid ""
+"Allows you to specify custom parameters for the SSO provider %1$s. Example: "
+"%2$s to force login or %3$s to force account selection (supported URL "
+"settings may vary by provider). You can specify additional parameters with "
+"the \"&\" delimiter."
+msgstr ""
+"%1$s SSO sağlayıcısı için özel parametreler belirlemenizi sağlar. Örnek: "
+"%2$s oturum açmaya zorlamak veya %3$s hesap seçimini zorlamak için "
+"(desteklenen URL ayarları sağlayıcıya göre değişebilir). “&” sınırlayıcısı "
+"ile ek parametreler belirtebilirsiniz."
+
+#: inc/provider.class.php:183 inc/provider.class.php:190
+#: inc/provider.class.php:541
+msgid "Authorize URL"
+msgstr "Yetkilendirme URL'si"
+
+#: inc/provider.class.php:195 inc/provider.class.php:549
+msgid "Access Token URL"
+msgstr "Erişim Belirteci URL'si"
+
+#: inc/provider.class.php:200 inc/provider.class.php:557
+msgid "Resource Owner Details URL"
+msgstr "Kaynak Sahibi Ayrıntıları URL"
+
+#: inc/provider.class.php:205
+msgid "IsDefault"
+msgstr "Varsayılan"
+
+#: inc/provider.class.php:207
+msgid "PopupAuth"
+msgstr "Açılır Pencere Giriş Ekranı"
+
+#: inc/provider.class.php:213
+msgid "SplitDomain"
+msgstr "Domaini Ayır"
+
+#: inc/provider.class.php:217
+msgid "AuthorizedDomains"
+msgstr "YetkiliAlanAdları"
+
+#: inc/provider.class.php:219
+msgid ""
+"Provide a list of domains allowed to log in through this provider (separated"
+" by commas, no spaces) (optional)."
+msgstr ""
+"Bu sağlayıcı üzerinden oturum açmasına izin verilen alan adlarının bir "
+"listesini sağlayın (virgülle ayrılmış, boşluksuz) (isteğe bağlı)."
+
+#: inc/provider.class.php:225
+msgid "Use Email as Login"
+msgstr "Giriş Olarak E-posta Kullanın"
+
+#: inc/provider.class.php:228
+msgid "Split Name"
+msgstr "Bölünmüş İsim"
+
+#: inc/provider.class.php:316
+msgid "Callback URL"
+msgstr "Geri Çağırma URL'si"
+
+#: inc/provider.class.php:320
+msgid "Test Single Sign-on"
+msgstr "Test Single Sign-on"
+
+#: inc/provider.class.php:379
+msgid "A Name is required"
+msgstr "Bir İsim Gerekli"
+
+#: inc/provider.class.php:385
+#, php-format
+msgid "The \"%s\" is a Invalid type"
+msgstr "\"%s\" Geçersiz bir türdür"
+
+#: inc/provider.class.php:389
+msgid "A Client ID is required"
+msgstr "Bir ClientID gereklidir."
+
+#: inc/provider.class.php:393
+msgid "A Client Secret is required"
+msgstr "Bir Client Secret gereklidir."
+
+#: inc/provider.class.php:398
+msgid "An Authorize URL is required"
+msgstr "Yetkilendirme URL'si gereklidir"
+
+#: inc/provider.class.php:400
+msgid "The Authorize URL is invalid"
+msgstr "Yetkilendirme URL'si geçersiz"
+
+#: inc/provider.class.php:404
+msgid "An Access Token URL is required"
+msgstr "Bir Erişim Belirteci URL'si gereklidir"
+
+#: inc/provider.class.php:406
+msgid "The Access Token URL is invalid"
+msgstr "Erişim Belirteci URL'si geçersiz"
+
+#: inc/provider.class.php:410
+msgid "A Resource Owner Details URL is required"
+msgstr "Bir Kaynak Sahibi Ayrıntıları URL'si gereklidir"
+
+#: inc/provider.class.php:412
+msgid "The Resource Owner Details URL is invalid"
+msgstr "Kaynak Sahibi Ayrıntıları URL'si geçersiz"
+
+#: inc/provider.class.php:634
+msgid "Generic"
+msgstr "Genel"
+
+#: inc/provider.class.php:635
+msgid "Azure"
+msgstr "Azure"
+
+#: inc/provider.class.php:636
+msgid "Facebook"
+msgstr "Facebook"
+
+#: inc/provider.class.php:637
+msgid "GitHub"
+msgstr "GitHub"
+
+#: inc/provider.class.php:638
+msgid "Google"
+msgstr "Google"
+
+#: inc/provider.class.php:639
+msgid "Instagram"
+msgstr "Instagram"
+
+#: inc/provider.class.php:640
+msgid "LinkdeIn"
+msgstr "LinkdeIn"
+
+#: inc/toolbox.class.php:195
+#, php-format
+msgid "Login with %s"
+msgstr "%s ile giriş yap"
