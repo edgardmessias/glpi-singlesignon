@@ -1493,6 +1493,19 @@ class PluginSinglesignonProvider extends CommonDBTM {
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_SSL_VERIFYPEER => false,
          ]);
+
+         // Issue 115: https://github.com/edgardmessias/glpi-singlesignon/issues/115
+         // $img will return a JSON when user have no profile picture
+         // To check whether user have one or not, we try to decode the $img using
+         // json_decode. If succeed, $img is a JSON. Hence we skip the img processing
+         // and return false.
+         // Note: It's actually better if we can check $img's return code. If it's not
+         //  200 OK then can just skip.
+         try {
+            $imgData = json_decode($img, true);
+            if (is_array($imgData)) return false;
+         } catch (\Exception $ex) {}
+
          if (!empty($img)) {
             /* if ($this->debug) {
             print_r($content);
