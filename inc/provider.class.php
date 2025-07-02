@@ -1300,12 +1300,19 @@ class PluginSinglesignonProvider extends CommonDBTM {
             $splitname = $this->fields['split_name'];
             $firstLastArray = ($splitname) ? preg_split('/ /', $resource_array['name'], 2) : preg_split('/ /', $resource_array['displayName'], 2);
 
+            $realname = '';
+            if (isset($resource_array['family_name'])) { $realname = $resource_array['family_name']; }
+            else { $realname = $firstLastArray[1]; }
+            $firstname = '';
+            if (isset($resource_array['given_name'])) { $firstname = $resource_array['given_name']; }
+            else { $firstname = $firstLastArray[0]; }
+
             $userPost = [
                'name' => $login,
                'add' => 1,
                'password' => '',
-               'realname' => $firstLastArray[1],
-               'firstname' => $firstLastArray[0],
+               'realname' => $realname,
+               'firstname' => $firstname,
                'api_token' => $tokenAPI,
                'api_token_date' => date("Y-m-d H:i:s"),
                'personal_token' => $tokenPersonnel,
