@@ -953,9 +953,12 @@ class Provider extends \CommonDBTM {
       }
 
       if (!isset($_GET['code'])) {
+         // Generate CSRF token for state parameter (OAuth security)
          $state = \Session::getNewCSRFToken();
+         
+         // Store redirect in session (not in state parameter)
          if (isset($_SESSION['redirect'])) {
-            $state .= "&redirect=" . $_SESSION['redirect'];
+            $_SESSION['glpi_singlesignon_redirect'] = $_SESSION['redirect'];
          }
          
          // Build the callback URL for OAuth redirect
@@ -985,13 +988,9 @@ class Provider extends \CommonDBTM {
          exit;
       }
 
-      if (isset($_GET['state']) && is_integer(strpos($_GET['state'], ";redirect="))) {
-         $pos_redirect  = strpos($_GET['state'], ";redirect=");
-         $state         = substr($_GET['state'], 0, $pos_redirect);
-         $_GET['state'] = substr($_GET['state'], $pos_redirect);
-      } else {
-         $state = isset($_GET['state']) ? $_GET['state'] : '';
-      }
+      // Extract state parameter (should contain only the CSRF token)
+      $state = isset($_GET['state']) ? $_GET['state'] : '';
+      
       // Check given state against previously stored one to mitigate CSRF attack
       \Session::checkCSRF([
          '_glpi_csrf_token' => $state,

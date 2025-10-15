@@ -89,12 +89,12 @@ if ($user_id || $signon_provider->login()) {
       $signon_provider->linkUser($user_id);
    }
 
-   $params = PluginSinglesignonToolbox::getCallbackParameters('q');
-
-   if (isset($params['redirect'])) {
-      $REDIRECT = '?redirect=' . $params['redirect'];
-   } else if (isset($_GET['state']) && is_integer(strpos($_GET['state'], ";redirect="))) {
-      $REDIRECT = '?' . substr($_GET['state'], strpos($_GET['state'], ";redirect=") + 1);
+   // Retrieve redirect from session (stored before OAuth flow)
+   if (isset($_SESSION['glpi_singlesignon_redirect'])) {
+      $REDIRECT = '?redirect=' . $_SESSION['glpi_singlesignon_redirect'];
+      unset($_SESSION['glpi_singlesignon_redirect']); // Clean up
+   } else if (isset($_GET['redirect'])) {
+      $REDIRECT = '?redirect=' . $_GET['redirect'];
    }
 
    $url_redirect = '';
