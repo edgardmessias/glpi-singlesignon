@@ -51,159 +51,120 @@ function plugin_singlesignon_install() {
 
    Config::setConfigurationValues('plugin:singlesignon', $current);
 
-   if (!sso_TableExists("glpi_plugin_singlesignon_providers")) {
-      $query = "CREATE TABLE `glpi_plugin_singlesignon_providers` (
-                  `id`                         int(11) NOT NULL auto_increment,
-                  `is_default`                 tinyint(1) NOT NULL DEFAULT '0',
-                  `popup`                      tinyint(1) NOT NULL DEFAULT '0',
-                  `split_domain`               tinyint(1) NOT NULL DEFAULT '0',
-                  `authorized_domains`         varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `type`                       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-                  `name`                       varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-                  `client_id`                  varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-                  `client_secret`              varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-                  `scope`                      varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `extra_options`              varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `url_authorize`              varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `url_access_token`           varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `url_resource_owner_details` varchar(255) COLLATE utf8_unicode_ci NULL,
-                  `is_active`                  tinyint(1) NOT NULL DEFAULT '0',
-                  `use_email_for_login`        tinyint(1) NOT NULL DEFAULT '0',
-                  `split_name`                 tinyint(1) NOT NULL DEFAULT '0',
-                  `is_deleted`                 tinyint(1) NOT NULL default '0',
-                  `comment`                    text COLLATE utf8_unicode_ci,
-                  `date_mod`                   timestamp NULL DEFAULT NULL,
-                  `date_creation`              timestamp NULL DEFAULT NULL,
-                  PRIMARY KEY (`id`),
-                  KEY `date_mod` (`date_mod`),
-                  KEY `date_creation` (`date_creation`)
-               ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
+   $providersTable = 'glpi_plugin_singlesignon_providers';
+   $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
 
-      if (!$DB->query($query)) {
-         throw new \RuntimeException('error creating glpi_plugin_singlesignon_providers ' . $DB->error());
-      }
+   $migration = new Migration(PLUGIN_SINGLESIGNON_VERSION);
+
+   if (!$DB->tableExists($providersTable)) {
+      $DB->doQuery(
+         "CREATE TABLE `$providersTable` (
+            `id`                         INT NOT NULL AUTO_INCREMENT,
+            `is_default`                 TINYINT(1) NOT NULL DEFAULT '0',
+            `popup`                      TINYINT(1) NOT NULL DEFAULT '0',
+            `split_domain`               TINYINT(1) NOT NULL DEFAULT '0',
+            `authorized_domains`         VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+            `type`                       VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `name`                       VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `client_id`                  VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `client_secret`              VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `scope`                      VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+            `extra_options`              VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+            `url_authorize`              VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+            `url_access_token`           VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+            `url_resource_owner_details` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+            `is_active`                  TINYINT(1) NOT NULL DEFAULT '0',
+            `use_email_for_login`        TINYINT(1) NOT NULL DEFAULT '0',
+            `split_name`                 TINYINT(1) NOT NULL DEFAULT '0',
+            `is_deleted`                 TINYINT(1) NOT NULL DEFAULT '0',
+            `comment`                    TEXT COLLATE utf8mb4_unicode_ci,
+            `date_mod`                   TIMESTAMP NULL DEFAULT NULL,
+            `date_creation`              TIMESTAMP NULL DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            KEY `date_mod` (`date_mod`),
+            KEY `date_creation` (`date_creation`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+      );
    } else {
-      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'is_default'";
-      $result = $DB->query($query);
-      if ($result === false) {
-         throw new \RuntimeException($DB->error());
-      }
-      if ($DB->numrows($result) != 1) {
-         if (!$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD is_default tinyint(1) NOT NULL DEFAULT '0'")) {
+      $migration->addField($providersTable, 'is_default', 'bool');
+      $migration->addField($providersTable, 'popup', 'bool');
+      $migration->addField($providersTable, 'split_domain', 'bool');
+      $migration->addField(
+         $providersTable,
+         'authorized_domains',
+         'string',
+         [
+            'nodefault' => true,
+            'null'      => true,
+         ]
+      );
+      $migration->addField($providersTable, 'use_email_for_login', 'bool');
+      $migration->addField($providersTable, 'split_name', 'bool');
+   }
 
-            throw new \RuntimeException($DB->error());
+   if (version_compare($currentVersion, '1.2.0', '<')) {
+      $migration->addField(
+         $providersTable,
+         'picture',
+         'string',
+         [
+            'nodefault' => true,
+            'null'      => true,
+         ]
+      );
+      $migration->addField(
+         $providersTable,
+         'bgcolor',
+         "varchar(7)",
+         [
+            'nodefault' => true,
+            'null'      => true,
+         ]
+      );
+      $migration->addField(
+         $providersTable,
+         'color',
+         "varchar(7)",
+         [
+            'nodefault' => true,
+            'null'      => true,
+         ]
+      );
+   }
 
-         }
+   if (version_compare($currentVersion, '1.3.0', '<') && !$DB->tableExists($providersUsersTable)) {
+      $DB->doQuery(
+         "CREATE TABLE `$providersUsersTable` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
+            `users_id` INT NOT NULL DEFAULT '0',
+            `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
+            UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+      );
+   }
 
-      }
+   if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => 'PluginSinglesignonProvider'])) {
+      $preferences = [
+         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 2, 'rank' => 1, 'users_id' => 0],
+         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 3, 'rank' => 2, 'users_id' => 0],
+         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 5, 'rank' => 4, 'users_id' => 0],
+         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 6, 'rank' => 5, 'users_id' => 0],
+         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 10, 'rank' => 6, 'users_id' => 0],
+      ];
 
-      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'popup'";
-      $result = $DB->query($query);
-      if ($result === false) {
-         throw new \RuntimeException($DB->error());
-      }
-      if ($DB->numrows($result) != 1) {
-         if (!$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD popup tinyint(1) NOT NULL DEFAULT '0'")) {
-
-            throw new \RuntimeException($DB->error());
-
-         }
-
-      }
-      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'split_domain'";
-      $result = $DB->query($query);
-      if ($result === false) {
-         throw new \RuntimeException($DB->error());
-      }
-      if ($DB->numrows($result) != 1) {
-         if (!$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD split_domain tinyint(1) NOT NULL DEFAULT '0'")) {
-
-            throw new \RuntimeException($DB->error());
-
-         }
-
-      }
-      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'authorized_domains'";
-      $result = $DB->query($query);
-      if ($result === false) {
-         throw new \RuntimeException($DB->error());
-      }
-      if ($DB->numrows($result) != 1) {
-         if (!$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD authorized_domains varchar(255) COLLATE utf8_unicode_ci NULL")) {
-
-            throw new \RuntimeException($DB->error());
-
-         }
-
-      }
-      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'use_email_for_login'";
-      $result = $DB->query($query);
-      if ($result === false) {
-         throw new \RuntimeException($DB->error());
-      }
-      if ($DB->numrows($result) != 1) {
-         if (!$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD use_email_for_login tinyint(1) NOT NULL DEFAULT '0'")) {
-
-            throw new \RuntimeException($DB->error());
-
-         }
-
-      }
-      $query = "SHOW COLUMNS FROM glpi_plugin_singlesignon_providers LIKE 'split_name'";
-      $result = $DB->query($query);
-      if ($result === false) {
-         throw new \RuntimeException($DB->error());
-      }
-      if ($DB->numrows($result) != 1) {
-         if (!$DB->query("ALTER TABLE glpi_plugin_singlesignon_providers ADD split_name tinyint(1) NOT NULL DEFAULT '0'")) {
-
-            throw new \RuntimeException($DB->error());
-
-         }
-
+      foreach ($preferences as $preference) {
+         $DB->insert('glpi_displaypreferences', $preference);
       }
    }
 
-   // add display preferences
-   $query_display_pref = "SELECT id
-      FROM glpi_displaypreferences
-      WHERE itemtype = 'PluginSinglesignonProvider'";
-   $res_display_pref = $DB->query($query_display_pref);
-   if ($DB->numrows($res_display_pref) == 0) {
-      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','2','1','0');");
-      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','3','2','0');");
-      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','5','4','0');");
-      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','6','5','0');");
-      $DB->query("INSERT INTO `glpi_displaypreferences` VALUES (NULL,'PluginSinglesignonProvider','10','6','0');");
-   }
+   $migration->executeMigration();
 
-   if (!sso_TableExists("glpi_plugin_singlesignon_providers_users") && version_compare($currentVersion, "1.2.0", '<')) {
-      $query = "ALTER TABLE `glpi_plugin_singlesignon_providers`
-                ADD `picture` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-                ADD `bgcolor` varchar(7) DEFAULT NULL,
-                ADD `color` varchar(7) DEFAULT NULL";
-      if (!$DB->query($query)) {
-         throw new \RuntimeException('error adding picture column ' . $DB->error());
-      }
-   }
-   if (!sso_TableExists("glpi_plugin_singlesignon_providers_users") && version_compare($currentVersion, "1.3.0", '<')) {
-      $query = "CREATE TABLE `glpi_plugin_singlesignon_providers_users` (
-         `id` int(11) NOT NULL AUTO_INCREMENT,
-         `plugin_singlesignon_providers_id` int(11) NOT NULL DEFAULT '0',
-         `users_id` int(11) NOT NULL DEFAULT '0',
-         `remote_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-         PRIMARY KEY (`id`),
-         UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
-         UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`)
-       ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
-      if (!$DB->query($query)) {
-         throw new \RuntimeException('error creating glpi_plugin_singlesignon_providers_users ' . $DB->error());
-      }
-   }
+   $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
+   Config::setConfigurationValues('plugin:singlesignon', $current);
 
-   Config::setConfigurationValues('plugin:singlesignon', [
-      'version' => PLUGIN_SINGLESIGNON_VERSION,
-   ]);
    return true;
 }
 
@@ -213,12 +174,15 @@ function plugin_singlesignon_uninstall() {
    $config = new Config();
    $config->deleteConfigurationValues('plugin:singlesignon');
 
-   // Old version tables
-   if (sso_TableExists("glpi_plugin_singlesignon_providers")) {
-      $query = "DROP TABLE `glpi_plugin_singlesignon_providers`";
-      if (!$DB->query($query)) {
-         throw new \RuntimeException('error deleting glpi_plugin_singlesignon_providers');
-      }
+   $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
+   $providersTable = 'glpi_plugin_singlesignon_providers';
+
+   if ($DB->tableExists($providersUsersTable)) {
+      $DB->dropTable($providersUsersTable, true);
+   }
+
+   if ($DB->tableExists($providersTable)) {
+      $DB->dropTable($providersTable, true);
    }
 
    return true;
