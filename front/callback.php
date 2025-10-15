@@ -29,6 +29,7 @@
 
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\NotFoundHttpException;
+use Glpi\Exception\SessionExpiredException;
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -77,7 +78,18 @@ if ($test) {
    exit();
 }
 
-$user_id = Session::getLoginUserID();
+$user_id = 0;
+$existing_user_id = Session::getLoginUserID();
+
+if ($existing_user_id) {
+   try {
+      Session::checkValidSessionId();
+      $user_id = (int)$existing_user_id;
+   } catch (SessionExpiredException $e) {
+      // treat stale session as anonymous and force a fresh login
+      $user_id = 0;
+   }
+}
 
 $REDIRECT = "";
 
