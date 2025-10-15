@@ -1,4 +1,7 @@
 <?php
 
-require_once __DIR__ . '/../src/ProviderUser.php';
+if (!class_exists('PluginSinglesignonProvider_User', false)) {
+   class PluginSinglesignonProvider_User extends \Glpi\Plugin\Singlesignon\ProviderUser {
+   }
+}
 
