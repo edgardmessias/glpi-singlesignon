@@ -56,7 +56,13 @@ class LoginRenderer
             'classic_url'   => $classicUrl,
         ]);
 
-        self::injectPopupScript($autoRedirectUrl);
+        if ($autoRedirectUrl !== null) {
+            echo '<iframe src="' . htmlspecialchars($autoRedirectUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" '
+                . 'style="display:none" title="singlesignon" '
+                . 'sandbox="allow-scripts allow-same-origin allow-forms"></iframe>';
+        }
+
+        self::injectPopupScript();
     }
 
     private static function buildButtonStyle(array $row): string
@@ -83,7 +89,7 @@ class LoginRenderer
         return $url . '?' . http_build_query($params);
     }
 
-    private static function injectPopupScript(?string $autoRedirectUrl = null): void
+    private static function injectPopupScript(): void
     {
         static $injected = false;
         if ($injected) {
@@ -93,15 +99,6 @@ class LoginRenderer
         $injected = true;
         $scriptLines = [];
         $scriptLines[] = 'window.addEventListener("DOMContentLoaded", () => {';
-
-        if ($autoRedirectUrl !== null) {
-            $redirectUrl = htmlspecialchars($autoRedirectUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-            $scriptLines[] = "    const autoRedirectUrl = '{$redirectUrl}';";
-            $scriptLines[] = "    if (!window.location.search.includes('noAUTO=1')) {";
-            $scriptLines[] = "        window.location.assign(autoRedirectUrl);";
-            $scriptLines[] = "        return;";
-            $scriptLines[] = '    }';
-        }
 
         $scriptLines[] = '    document.addEventListener("click", (event) => {';
         $scriptLines[] = '        const trigger = event.target.closest("[data-singlesignon-popup=\"true\"]");';
