@@ -953,8 +953,18 @@ class Provider extends \CommonDBTM {
       }
 
       if (!isset($_GET['code'])) {
+         // Ensure session is started before generating CSRF token
+         if (session_status() === PHP_SESSION_NONE) {
+            \Session::start();
+         }
+         
          // Generate CSRF token for state parameter (OAuth security)
          $state = \Session::getNewCSRFToken();
+         
+         // Debug logging
+         error_log("SSO: Generated CSRF token: " . $state);
+         error_log("SSO: Session ID: " . session_id());
+         error_log("SSO: Session tokens: " . print_r($_SESSION['glpicsrftokens'] ?? [], true));
          
          // Store redirect in session (not in state parameter)
          if (isset($_SESSION['redirect'])) {
@@ -990,6 +1000,12 @@ class Provider extends \CommonDBTM {
 
       // Extract state parameter (should contain only the CSRF token)
       $state = isset($_GET['state']) ? $_GET['state'] : '';
+      
+      // Debug logging
+      error_log("SSO: Validating CSRF token: " . $state);
+      error_log("SSO: Session ID: " . session_id());
+      error_log("SSO: Session tokens: " . print_r($_SESSION['glpicsrftokens'] ?? [], true));
+      error_log("SSO: Session data: " . print_r(array_keys($_SESSION), true));
       
       // Check given state against previously stored one to mitigate CSRF attack
       \Session::checkCSRF([
