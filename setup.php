@@ -44,11 +44,10 @@ if ($folder !== "singlesignon") {
    Session::addMessageAfterRedirect($msg, true, ERROR);
 }
 
-// Register stateless paths for OAuth callbacks (GLPI 11 requirement)
+// GLPI 11: No need to register callback as stateless
+// The callback needs session access to validate CSRF tokens stored during OAuth flow
 function plugin_singlesignon_boot() {
-   // Register callback.php as stateless to bypass CSRF checks
-   // OAuth callbacks come from external providers and don't have CSRF tokens
-   SessionManager::registerPluginStatelessPath('singlesignon', '#^/front/callback\.php#');
+   // No stateless registration needed - callback uses normal session
 }
 
 // Init the hooks of the plugins -Needed

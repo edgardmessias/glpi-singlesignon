@@ -25,8 +25,7 @@
  * ---------------------------------------------------------------------
  */
 
-// OAuth callback endpoint - registered as stateless in setup.php
-// Manual session start required to access CSRF tokens
+// OAuth callback endpoint - uses normal GLPI session to validate CSRF tokens
 
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\NotFoundHttpException;
@@ -37,9 +36,7 @@ error_reporting(E_ALL);
 
 include('../../../inc/includes.php');
 
-// Start session manually since this endpoint is stateless
-// This is needed to validate CSRF tokens stored during OAuth initiation
-Session::start();
+// Session is automatically started by GLPI for non-stateless endpoints
 
 $provider_id = PluginSinglesignonToolbox::getCallbackParameters('provider');
 
