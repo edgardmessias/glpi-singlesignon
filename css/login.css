@@ -1,6 +1,8 @@
 
 .singlesignon-login {
     margin-top: 1.5rem;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .singlesignon-login-title {
@@ -10,6 +12,9 @@
 
 .singlesignon-login-buttons {
     min-width: 22rem;
+    max-width: 28rem;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .singlesignon-login-button {
