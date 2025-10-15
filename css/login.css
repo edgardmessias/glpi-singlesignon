@@ -1,6 +1,15 @@
-.singlesignon-login-card {
+
+.singlesignon-login {
+    margin-top: 1.5rem;
+}
+
+.singlesignon-login-title {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.singlesignon-login-buttons {
     min-width: 22rem;
-    box-shadow: var(--tblr-shadow-lg);
 }
 
 .singlesignon-login-button {
@@ -21,5 +30,5 @@
 }
 
 .singlesignon-login-classic {
-    font-weight: 500;
+    margin-top: 1rem;
 }

@@ -1,8 +1,6 @@
-<div class="card singlesignon-login-card">
-    <div class="card-header text-center">
-        <h3 class="h4 mb-0">{{ title }}</h3>
-    </div>
-    <div class="card-body d-grid gap-2">
+<div class="singlesignon-login">
+    <h3 class="singlesignon-login-title text-center">{{ title }}</h3>
+    <div class="singlesignon-login-buttons d-grid gap-2">
         {% for button in buttons %}
             <a class="btn btn-outline-primary singlesignon-login-button" href="{{ button.href }}"
                {% if button.style %}style="{{ button.style }}"{% endif %}
@@ -14,8 +12,8 @@
             </a>
         {% endfor %}
     </div>
-    <div class="card-footer text-center">
-        <a class="btn btn-link singlesignon-login-classic" href="{{ classic_url }}">
+    <div class="singlesignon-login-classic text-center">
+        <a class="btn btn-link" href="{{ classic_url }}">
             {{ classic_label }}
         </a>
     </div>
