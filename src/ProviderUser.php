@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Glpi\Plugin\Singlesignon;
+namespace GlpiPlugin\Singlesignon;
 
 /**
  * ---------------------------------------------------------------------
@@ -38,5 +38,3 @@ class ProviderUser extends \CommonDBRelation {
    static public $itemtype_2 = 'User';
    static public $items_id_2 = 'users_id';
 }
-
-\class_alias(ProviderUser::class, 'PluginSinglesignonProvider_User');

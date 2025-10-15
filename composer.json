@@ -10,7 +10,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Glpi\\Plugin\\Singlesignon\\": "src/"
+            "GlpiPlugin\\Singlesignon\\": "src/"
         }
     },
     "autoload-dev": {

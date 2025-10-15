@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Glpi\Plugin\Singlesignon;
+namespace GlpiPlugin\Singlesignon;
 
 /**
  * ---------------------------------------------------------------------
@@ -238,5 +238,3 @@ class Preference extends \CommonDBTM {
       <?php
    }
 }
-
-\class_alias(Preference::class, 'PluginSinglesignonPreference');
