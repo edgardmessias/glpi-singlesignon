@@ -25,6 +25,7 @@
  * ---------------------------------------------------------------------
  */
 
+use Glpi\Http\SessionManager;
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Preference;
@@ -41,6 +42,13 @@ $folder = basename(dirname(__FILE__));
 if ($folder !== "singlesignon") {
    $msg = sprintf(__sso("Please, rename the plugin folder \"%s\" to \"singlesignon\""), $folder);
    Session::addMessageAfterRedirect($msg, true, ERROR);
+}
+
+// Register stateless paths for OAuth callbacks (GLPI 11 requirement)
+function plugin_singlesignon_boot() {
+   // Register callback.php as stateless to bypass CSRF checks
+   // OAuth callbacks come from external providers and don't have CSRF tokens
+   SessionManager::registerPluginStatelessPath('singlesignon', '#^/front/callback\.php#');
 }
 
 // Init the hooks of the plugins -Needed

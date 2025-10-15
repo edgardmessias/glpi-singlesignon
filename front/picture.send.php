@@ -25,6 +25,9 @@
  * ---------------------------------------------------------------------
  */
 
+use Glpi\Exception\Http\BadRequestHttpException;
+use Glpi\Exception\Http\NotFoundHttpException;
+
 include('../../../inc/includes.php');
 
 $provider = new PluginSinglesignonProvider();
@@ -32,20 +35,27 @@ $path = false;
 
 if (isset($_GET['id'])) { // docid for document
    if (!$provider->getFromDB($_GET['id'])) {
-      Html::displayErrorAndDie(__('Unknown file'), true);
+      $exception = new NotFoundHttpException();
+      $exception->setMessageToDisplay(__('Unknown file'));
+      throw $exception;
    }
 
    $path = $provider->fields['picture'];
 } else if (isset($_GET['path'])) {
    $path = $_GET['path'];
 } else {
-   Html::displayErrorAndDie(__('Invalid filename'), true);
+   $exception = new BadRequestHttpException();
+   $exception->setMessageToDisplay(__('Invalid filename'));
+   throw $exception;
 }
 
 $path = GLPI_PLUGIN_DOC_DIR . "/singlesignon/" . $path;
 
 if (!file_exists($path)) {
-   Html::displayErrorAndDie(__('File not found'), true); // Not found
+   $exception = new NotFoundHttpException();
+   $exception->setMessageToDisplay(__('File not found'));
+   throw $exception;
 }
 
-Toolbox::sendFile($path, "logo.png", null, true);
+// In GLPI 11, use getFileAsResponse() instead of deprecated sendFile()
+Toolbox::getFileAsResponse($path, "logo.png", null, true)->send();

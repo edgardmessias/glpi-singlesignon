@@ -947,7 +947,9 @@ class Provider extends \CommonDBTM {
 
          $error_description = isset($_GET['error_description']) ? $_GET['error_description'] : __("The action you have requested is not allowed.");
 
-         \Html::displayErrorAndDie(__($error_description), true);
+         $exception = new \Glpi\Exception\Http\BadRequestHttpException();
+         $exception->setMessageToDisplay(__($error_description));
+         throw $exception;
       }
 
       if (!isset($_GET['code'])) {

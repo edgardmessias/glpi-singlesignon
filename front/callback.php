@@ -25,8 +25,11 @@
  * ---------------------------------------------------------------------
  */
 
-//Disable CSRF token
-define('GLPI_USE_CSRF_CHECK', 0);
+// OAuth callback endpoint - registered as stateless in setup.php
+// Manual session start required to access CSRF tokens
+
+use Glpi\Exception\Http\BadRequestHttpException;
+use Glpi\Exception\Http\NotFoundHttpException;
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -34,20 +37,30 @@ error_reporting(E_ALL);
 
 include('../../../inc/includes.php');
 
+// Start session manually since this endpoint is stateless
+// This is needed to validate CSRF tokens stored during OAuth initiation
+Session::start();
+
 $provider_id = PluginSinglesignonToolbox::getCallbackParameters('provider');
 
 if (!$provider_id) {
-   Html::displayErrorAndDie(__sso("Provider not defined."), false);
+   $exception = new BadRequestHttpException();
+   $exception->setMessageToDisplay(__sso("Provider not defined."));
+   throw $exception;
 }
 
 $signon_provider = new PluginSinglesignonProvider();
 
 if (!$signon_provider->getFromDB($provider_id)) {
-   Html::displayErrorAndDie(__sso("Provider not found."), true);
+   $exception = new NotFoundHttpException();
+   $exception->setMessageToDisplay(__sso("Provider not found."));
+   throw $exception;
 }
 
 if (!$signon_provider->fields['is_active']) {
-   Html::displayErrorAndDie(__sso("Provider not active."), true);
+   $exception = new BadRequestHttpException();
+   $exception->setMessageToDisplay(__sso("Provider not active."));
+   throw $exception;
 }
 
 $signon_provider->checkAuthorization();
