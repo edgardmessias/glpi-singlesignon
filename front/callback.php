@@ -89,10 +89,10 @@ if ($user_id || $signon_provider->login()) {
       $signon_provider->linkUser($user_id);
    }
 
-   // Retrieve redirect from session (stored before OAuth flow)
-   if (isset($_SESSION['glpi_singlesignon_redirect'])) {
-      $REDIRECT = '?redirect=' . $_SESSION['glpi_singlesignon_redirect'];
-      unset($_SESSION['glpi_singlesignon_redirect']); // Clean up
+   // Retrieve redirect from cookie (stored before OAuth flow)
+   if (isset($_COOKIE['glpi_sso_redirect'])) {
+      $REDIRECT = '?redirect=' . $_COOKIE['glpi_sso_redirect'];
+      setcookie('glpi_sso_redirect', '', time() - 3600, '/'); // Clean up
    } else if (isset($_GET['redirect'])) {
       $REDIRECT = '?redirect=' . $_GET['redirect'];
    }
