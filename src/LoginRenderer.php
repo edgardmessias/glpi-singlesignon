@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Glpi\Plugin\Singlesignon;
+namespace GlpiPlugin\Singlesignon;
 
 use Glpi\Application\View\TemplateRenderer;
 

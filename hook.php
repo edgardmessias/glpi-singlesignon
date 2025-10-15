@@ -26,7 +26,7 @@
  */
 
 function plugin_singlesignon_display_login() {
-   \Glpi\Plugin\Singlesignon\LoginRenderer::display();
+   \GlpiPlugin\Singlesignon\LoginRenderer::display();
 }
 
 function plugin_singlesignon_install() {

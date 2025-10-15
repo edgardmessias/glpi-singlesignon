@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Glpi\Plugin\Singlesignon;
+namespace GlpiPlugin\Singlesignon;
 
 /**
  * ---------------------------------------------------------------------
@@ -258,5 +258,3 @@ class Toolbox {
       return $currentURL;
    }
 }
-
-\class_alias(Toolbox::class, 'PluginSinglesignonToolbox');

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Glpi\Plugin\Singlesignon;
+namespace GlpiPlugin\Singlesignon;
 
 /**
  * ---------------------------------------------------------------------
@@ -1566,5 +1566,3 @@ class Provider extends \CommonDBTM {
       return false;
    }
 }
-
-\class_alias(Provider::class, 'PluginSinglesignonProvider');
