@@ -32,7 +32,7 @@ namespace GlpiPlugin\Singlesignon;
 class Toolbox {
    /**
     * Generate a URL to callback
-    * Some providers don't accept query string, it convert to PATH
+    * GLPI 11: Use query params instead of PATH_INFO for compatibility
     * @global array $CFG_GLPI
     * @param integer $id
     * @param array $query
@@ -43,10 +43,12 @@ class Toolbox {
 
       $provider_id = (int)$row;
 
-      $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php/provider/' . $provider_id;
+      // GLPI 11: Use query string parameters instead of PATH_INFO
+      $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php?provider=' . $provider_id;
 
       if (!empty($query) && isset($query['redirect'])) {
          $_SESSION['redirect'] = $query['redirect'];
+         $url .= '&redirect=' . urlencode($query['redirect']);
       }
 
       return $url;
@@ -63,6 +65,16 @@ class Toolbox {
    public static function getCallbackParameters($name = null) {
       $data = [];
 
+      // GLPI 11: Try query string first, fallback to PATH_INFO for compatibility
+      if (isset($_GET[$name])) {
+         $value = $_GET[$name];
+         if ($name === "provider" || $name === "test") {
+            return intval($value);
+         }
+         return $value;
+      }
+
+      // Fallback to old PATH_INFO method
       if (isset($_SERVER['PATH_INFO'])) {
          $path_info = trim($_SERVER['PATH_INFO'], '/');
 
