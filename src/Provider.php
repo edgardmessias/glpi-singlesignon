@@ -957,13 +957,17 @@ class Provider extends \CommonDBTM {
          if (isset($_SESSION['redirect'])) {
             $state .= "&redirect=" . $_SESSION['redirect'];
          }
+         
+         // Build the callback URL for OAuth redirect
+         $callback_url = Toolbox::getBaseURL() . Toolbox::getCallbackUrl($this->fields['id']);
+         
          $params = [
             'client_id' => $this->getClientId(),
             'scope' => $this->getScope(),
             'state' => $state,
             'response_type' => 'code',
             'approval_prompt' => 'auto',
-            'redirect_uri' => Toolbox::getCurrentURL(),
+            'redirect_uri' => $callback_url,
          ];
          $extra_options = $this->getExtraOptions();
          if (is_array($extra_options)) {
@@ -1011,10 +1015,13 @@ class Provider extends \CommonDBTM {
          return false;
       }
 
+      // Build the callback URL for OAuth redirect (must match the one sent in authorization request)
+      $callback_url = Toolbox::getBaseURL() . Toolbox::getCallbackUrl($this->fields['id']);
+      
       $params = [
          'client_id' => $this->getClientId(),
          'client_secret' => $this->getClientSecret(),
-         'redirect_uri' => Toolbox::getCurrentURL(),
+         'redirect_uri' => $callback_url,
          'grant_type' => 'authorization_code',
          'code' => $this->_code,
       ];
