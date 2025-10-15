@@ -56,13 +56,7 @@ class LoginRenderer
             'classic_url'   => $classicUrl,
         ]);
 
-        if ($autoRedirectUrl !== null) {
-            echo '<iframe src="' . htmlspecialchars($autoRedirectUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" '
-                . 'style="display:none" title="singlesignon" '
-                . 'sandbox="allow-scripts allow-same-origin allow-forms"></iframe>';
-        }
-
-        self::injectPopupScript();
+        self::injectPopupScript($autoRedirectUrl);
     }
 
     private static function buildButtonStyle(array $row): string
@@ -89,7 +83,7 @@ class LoginRenderer
         return $url . '?' . http_build_query($params);
     }
 
-    private static function injectPopupScript(): void
+    private static function injectPopupScript(?string $autoRedirectUrl = null): void
     {
         static $injected = false;
         if ($injected) {
@@ -98,8 +92,19 @@ class LoginRenderer
 
         $injected = true;
         $scriptLines = [];
-        $scriptLines[] = 'window.addEventListener("DOMContentLoaded", () => {';
+        $autoRedirectJs = $autoRedirectUrl !== null
+            ? json_encode($autoRedirectUrl, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES)
+            : 'null';
 
+        $scriptLines[] = '(function() {';
+        $scriptLines[] = '    const autoRedirectUrl = ' . $autoRedirectJs . ';';
+        $scriptLines[] = '    if (autoRedirectUrl && !window.location.search.includes("noAUTO=1")) {';
+        $scriptLines[] = '        if (!window.singlesignonAutoRedirected) {';
+        $scriptLines[] = '            window.singlesignonAutoRedirected = true;';
+        $scriptLines[] = '            window.location.replace(autoRedirectUrl);';
+        $scriptLines[] = '            return;';
+        $scriptLines[] = '        }';
+        $scriptLines[] = '    }';
         $scriptLines[] = '    document.addEventListener("click", (event) => {';
         $scriptLines[] = '        const trigger = event.target.closest("[data-singlesignon-popup=\"true\"]");';
         $scriptLines[] = '        if (!trigger) {';
@@ -112,7 +117,7 @@ class LoginRenderer
         $scriptLines[] = '        const top = (window.innerHeight / 2) - (height / 2);';
         $scriptLines[] = '        window.open(trigger.getAttribute("href"), "singlesignon", `width=${width},height=${height},left=${left},top=${top}`);';
         $scriptLines[] = '    });';
-        $scriptLines[] = '});';
+        $scriptLines[] = '})();';
 
         echo '<script>' . implode("\n", $scriptLines) . '</script>';
     }
