@@ -48,7 +48,6 @@ class LoginRenderer
         $classicUrl = self::buildClassicLoginUrl();
 
         $renderer = TemplateRenderer::getInstance();
-        $renderer->addPath(__DIR__ . '/../templates', 'singlesignon');
 
         echo $renderer->render('@singlesignon/login/buttons.html.twig', [
             'buttons'       => $buttons,
