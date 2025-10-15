@@ -60,19 +60,19 @@ class Provider extends \CommonDBTM {
 
    public $debug = false;
 
-   public static function canCreate() {
+   public static function canCreate(): bool {
       return static::canUpdate();
    }
 
-   public static function canDelete() {
+   public static function canDelete(): bool {
       return static::canUpdate();
    }
 
-   public static function canPurge() {
+   public static function canPurge(): bool {
       return static::canUpdate();
    }
 
-   public static function canView() {
+   public static function canView(): bool {
       return static::canUpdate();
    }
 
