@@ -1,0 +1,22 @@
+<div class="card singlesignon-login-card">
+    <div class="card-header text-center">
+        <h3 class="h4 mb-0">{{ 'Single Sign-on'|trans({}, 'singlesignon') }}</h3>
+    </div>
+    <div class="card-body d-grid gap-2">
+        {% for button in buttons %}
+            <a class="btn btn-outline-primary singlesignon-login-button" href="{{ button.href }}"
+               {% if button.style %}style="{{ button.style }}"{% endif %}
+               {% if button.popup %}data-singlesignon-popup="true"{% endif %}>
+                {% if button.picture %}
+                    <img src="{{ button.picture }}" alt="" class="singlesignon-login-picture"/>
+                {% endif %}
+                <span>{{ button.label }}</span>
+            </a>
+        {% endfor %}
+    </div>
+    <div class="card-footer text-center">
+        <a class="btn btn-link singlesignon-login-classic" href="{{ classic_url }}">
+            {{ classic_label }}
+        </a>
+    </div>
+</div>

@@ -1,0 +1,25 @@
+.singlesignon-login-card {
+    min-width: 22rem;
+    box-shadow: var(--tblr-shadow-lg);
+}
+
+.singlesignon-login-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.singlesignon-login-button span {
+    flex: 1;
+}
+
+.singlesignon-login-picture {
+    max-height: 22px;
+    width: auto;
+}
+
+.singlesignon-login-classic {
+    font-weight: 500;
+}
