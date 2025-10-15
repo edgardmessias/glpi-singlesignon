@@ -1154,7 +1154,7 @@ class Provider extends \CommonDBTM {
          return false;
       }
 
-      $user = new User();
+      $user = new \User();
       //First: check linked user
       $id = \Plugin::doHookFunction("sso:find_user", $resource_array);
 
@@ -1173,7 +1173,7 @@ class Provider extends \CommonDBTM {
       }
 
       if ($remote_id) {
-         $link = new PluginSinglesignonProvider_User();
+         $link = new \PluginSinglesignonProvider_User();
          $condition = "`remote_id` = '{$remote_id}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
          if (version_compare(GLPI_VERSION, '9.4', '>=')) {
             $condition = [$condition];
@@ -1371,7 +1371,7 @@ class Provider extends \CommonDBTM {
                   $profils = $datasProfiles[0]['id'];
                   $entitie = $datasEntities[0]['id'];
 
-                  $profile   = new Profile_User();
+                  $profile   = new \Profile_User();
                   $userProfile['users_id'] = intval($user->fields['id']);
                   $userProfile['entities_id'] = intval($entitie);
                   $userProfile['is_recursive'] = 0;
@@ -1425,7 +1425,7 @@ class Provider extends \CommonDBTM {
       $DB->update('glpi_users', ['password' => \Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
       // Log-in using the generated password as if you were logging in using the login form
-      $auth = new Auth();
+      $auth = new \Auth();
       $authResult = $auth->login($user->fields['name'], $tempPassword);
 
       // Rollback password change
@@ -1435,7 +1435,7 @@ class Provider extends \CommonDBTM {
    }
 
    public function linkUser($user_id) {
-      $user = new User();
+      $user = new \User();
 
       if (!$user->getFromDB($user_id)) {
          return false;
@@ -1461,7 +1461,7 @@ class Provider extends \CommonDBTM {
          return false;
       }
 
-      $link = new PluginSinglesignonProvider_User();
+      $link = new \PluginSinglesignonProvider_User();
 
       // Unlink from another user
       $link->deleteByCriteria([
