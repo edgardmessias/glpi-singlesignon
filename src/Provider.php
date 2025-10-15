@@ -961,10 +961,15 @@ class Provider extends \CommonDBTM {
          // Generate CSRF token for state parameter (OAuth security)
          $state = \Session::getNewCSRFToken();
          
-         // Debug logging
-         error_log("SSO: Generated CSRF token: " . $state);
-         error_log("SSO: Session ID: " . session_id());
-         error_log("SSO: Session tokens: " . print_r($_SESSION['glpicsrftokens'] ?? [], true));
+         // Debug logging to file
+         $debug_log = GLPI_LOG_DIR . '/sso_debug.log';
+         $log_data = "[" . date('Y-m-d H:i:s') . "] GENERATION\n";
+         $log_data .= "Generated CSRF token: " . $state . "\n";
+         $log_data .= "Session ID: " . session_id() . "\n";
+         $log_data .= "Session tokens: " . print_r($_SESSION['glpicsrftokens'] ?? [], true) . "\n";
+         $log_data .= "Cookie sent: " . (isset($_COOKIE[session_name()]) ? 'YES' : 'NO') . "\n";
+         $log_data .= "Session cookie name: " . session_name() . "\n\n";
+         file_put_contents($debug_log, $log_data, FILE_APPEND);
          
          // Store redirect in session (not in state parameter)
          if (isset($_SESSION['redirect'])) {
@@ -1001,11 +1006,16 @@ class Provider extends \CommonDBTM {
       // Extract state parameter (should contain only the CSRF token)
       $state = isset($_GET['state']) ? $_GET['state'] : '';
       
-      // Debug logging
-      error_log("SSO: Validating CSRF token: " . $state);
-      error_log("SSO: Session ID: " . session_id());
-      error_log("SSO: Session tokens: " . print_r($_SESSION['glpicsrftokens'] ?? [], true));
-      error_log("SSO: Session data: " . print_r(array_keys($_SESSION), true));
+      // Debug logging to file
+      $debug_log = GLPI_LOG_DIR . '/sso_debug.log';
+      $log_data = "[" . date('Y-m-d H:i:s') . "] VALIDATION\n";
+      $log_data .= "Validating CSRF token: " . $state . "\n";
+      $log_data .= "Session ID: " . session_id() . "\n";
+      $log_data .= "Session tokens: " . print_r($_SESSION['glpicsrftokens'] ?? [], true) . "\n";
+      $log_data .= "Cookie received: " . (isset($_COOKIE[session_name()]) ? 'YES (' . $_COOKIE[session_name()] . ')' : 'NO') . "\n";
+      $log_data .= "Session cookie name: " . session_name() . "\n";
+      $log_data .= "Session keys: " . print_r(array_keys($_SESSION), true) . "\n\n";
+      file_put_contents($debug_log, $log_data, FILE_APPEND);
       
       // Check given state against previously stored one to mitigate CSRF attack
       \Session::checkCSRF([
