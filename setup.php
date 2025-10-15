@@ -25,6 +25,7 @@
  * ---------------------------------------------------------------------
  */
 
+use Glpi\Http\Firewall;
 use Glpi\Http\SessionManager;
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Singlesignon\LoginRenderer;
@@ -44,10 +45,13 @@ if ($folder !== "singlesignon") {
    Session::addMessageAfterRedirect($msg, true, ERROR);
 }
 
-// GLPI 11: No need to register callback as stateless
-// The callback needs session access to validate CSRF tokens stored during OAuth flow
-function plugin_singlesignon_boot() {
-   // No stateless registration needed - callback uses normal session
+// GLPI 11: allow the OAuth callback to run without an authenticated session
+function plugin_singlesignon_boot(): void {
+   Firewall::addPluginStrategyForLegacyScripts(
+      'singlesignon',
+      '#^/front/callback\\.php$#',
+      Firewall::STRATEGY_NO_CHECK
+   );
 }
 
 // Init the hooks of the plugins -Needed
