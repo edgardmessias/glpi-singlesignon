@@ -41,11 +41,11 @@ class Toolbox {
    public static function getCallbackUrl($row, $query = []) {
       global $CFG_GLPI;
 
-      $url = \Plugin::getPhpDir("singlesignon", false) . '/front/callback.php';
+      $provider_id = (int)$row;
 
-      $url .= "/provider/".$row;
+      $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php/provider/' . $provider_id;
 
-      if (!empty($query)) {
+      if (!empty($query) && isset($query['redirect'])) {
          $_SESSION['redirect'] = $query['redirect'];
       }
 
