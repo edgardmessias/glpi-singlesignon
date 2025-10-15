@@ -953,27 +953,38 @@ class Provider extends \CommonDBTM {
       }
 
       if (!isset($_GET['code'])) {
-         // Ensure session is started before generating CSRF token
-         if (session_status() === PHP_SESSION_NONE) {
-            \Session::start();
-         }
+         // Generate a random state for OAuth CSRF protection
+         // Note: We can't use GLPI session tokens here because the user is not authenticated yet
+         $state = bin2hex(random_bytes(32));
          
-         // Generate CSRF token for state parameter (OAuth security)
-         $state = \Session::getNewCSRFToken();
+         // Store state in a temporary way (using a cookie with short expiration)
+         setcookie(
+            'glpi_sso_state_' . $this->fields['id'],
+            $state,
+            [
+               'expires' => time() + 600, // 10 minutes
+               'path' => '/',
+               'domain' => '',
+               'secure' => true,
+               'httponly' => true,
+               'samesite' => 'Lax'
+            ]
+         );
          
-         // Debug logging to file
-         $debug_log = GLPI_LOG_DIR . '/sso_debug.log';
-         $log_data = "[" . date('Y-m-d H:i:s') . "] GENERATION\n";
-         $log_data .= "Generated CSRF token: " . $state . "\n";
-         $log_data .= "Session ID: " . session_id() . "\n";
-         $log_data .= "Session tokens: " . print_r($_SESSION['glpicsrftokens'] ?? [], true) . "\n";
-         $log_data .= "Cookie sent: " . (isset($_COOKIE[session_name()]) ? 'YES' : 'NO') . "\n";
-         $log_data .= "Session cookie name: " . session_name() . "\n\n";
-         file_put_contents($debug_log, $log_data, FILE_APPEND);
-         
-         // Store redirect in session (not in state parameter)
-         if (isset($_SESSION['redirect'])) {
-            $_SESSION['glpi_singlesignon_redirect'] = $_SESSION['redirect'];
+         // Store redirect if needed
+         if (isset($_GET['redirect'])) {
+            setcookie(
+               'glpi_sso_redirect',
+               $_GET['redirect'],
+               [
+                  'expires' => time() + 600,
+                  'path' => '/',
+                  'domain' => '',
+                  'secure' => true,
+                  'httponly' => true,
+                  'samesite' => 'Lax'
+               ]
+            );
          }
          
          // Build the callback URL for OAuth redirect
@@ -1003,24 +1014,22 @@ class Provider extends \CommonDBTM {
          exit;
       }
 
-      // Extract state parameter (should contain only the CSRF token)
+      // Extract state parameter
       $state = isset($_GET['state']) ? $_GET['state'] : '';
       
-      // Debug logging to file
-      $debug_log = GLPI_LOG_DIR . '/sso_debug.log';
-      $log_data = "[" . date('Y-m-d H:i:s') . "] VALIDATION\n";
-      $log_data .= "Validating CSRF token: " . $state . "\n";
-      $log_data .= "Session ID: " . session_id() . "\n";
-      $log_data .= "Session tokens: " . print_r($_SESSION['glpicsrftokens'] ?? [], true) . "\n";
-      $log_data .= "Cookie received: " . (isset($_COOKIE[session_name()]) ? 'YES (' . $_COOKIE[session_name()] . ')' : 'NO') . "\n";
-      $log_data .= "Session cookie name: " . session_name() . "\n";
-      $log_data .= "Session keys: " . print_r(array_keys($_SESSION), true) . "\n\n";
-      file_put_contents($debug_log, $log_data, FILE_APPEND);
+      // Verify state against the one stored in cookie (OAuth CSRF protection)
+      $cookie_name = 'glpi_sso_state_' . $this->fields['id'];
+      if (!isset($_COOKIE[$cookie_name]) || $_COOKIE[$cookie_name] !== $state) {
+         // Clean up cookie
+         setcookie($cookie_name, '', time() - 3600, '/');
+         
+         $exception = new \Glpi\Exception\Http\BadRequestHttpException();
+         $exception->setMessageToDisplay(__('Invalid state parameter. Please try again.'));
+         throw $exception;
+      }
       
-      // Check given state against previously stored one to mitigate CSRF attack
-      \Session::checkCSRF([
-         '_glpi_csrf_token' => $state,
-      ]);
+      // Clean up the state cookie after successful verification
+      setcookie($cookie_name, '', time() - 3600, '/');
 
       $this->_code = $_GET['code'];
 
