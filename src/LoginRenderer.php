@@ -95,7 +95,7 @@ class LoginRenderer
         $scriptLines[] = 'window.addEventListener("DOMContentLoaded", () => {';
 
         if ($autoRedirectUrl !== null) {
-            $redirectUrl = \Html::convertSpecialchars($autoRedirectUrl);
+            $redirectUrl = htmlspecialchars($autoRedirectUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             $scriptLines[] = "    const autoRedirectUrl = '{$redirectUrl}';";
             $scriptLines[] = "    if (!window.location.search.includes('noAUTO=1')) {";
             $scriptLines[] = "        window.location.assign(autoRedirectUrl);";
