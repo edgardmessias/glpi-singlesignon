@@ -19,6 +19,7 @@ class LoginRenderer
         }
 
         $buttons = [];
+        $autoRedirectUrl = null;
         foreach ($providers as $row) {
             $query = [];
             if (isset($_REQUEST['redirect']) && $_REQUEST['redirect'] !== '') {
@@ -27,9 +28,8 @@ class LoginRenderer
 
             $url = Toolbox::getCallbackUrl((int)$row['id'], $query);
 
-            if (Toolbox::isDefault($row) && !isset($_GET['noAUTO'])) {
-                \Html::redirect($url);
-                return;
+            if ($autoRedirectUrl === null && Toolbox::isDefault($row) && !isset($_GET['noAUTO'])) {
+                $autoRedirectUrl = $url;
             }
 
             $buttons[] = [
@@ -55,7 +55,7 @@ class LoginRenderer
             'classic_url'   => $classicUrl,
         ]);
 
-        self::injectPopupScript();
+        self::injectPopupScript($autoRedirectUrl);
     }
 
     private static function buildButtonStyle(array $row): string
@@ -82,7 +82,7 @@ class LoginRenderer
         return $url . '?' . http_build_query($params);
     }
 
-    private static function injectPopupScript(): void
+    private static function injectPopupScript(?string $autoRedirectUrl = null): void
     {
         static $injected = false;
         if ($injected) {
@@ -90,23 +90,32 @@ class LoginRenderer
         }
 
         $injected = true;
-        echo <<<'JS'
-<script>
-window.addEventListener('DOMContentLoaded', () => {
-    document.addEventListener('click', (event) => {
-        const trigger = event.target.closest('[data-singlesignon-popup="true"]');
-        if (!trigger) {
-            return;
+        $scriptLines = [];
+        $scriptLines[] = 'window.addEventListener("DOMContentLoaded", () => {';
+
+        if ($autoRedirectUrl !== null) {
+            $redirectUrl = \Html::convertSpecialchars($autoRedirectUrl);
+            $scriptLines[] = "    const autoRedirectUrl = '{$redirectUrl}';";
+            $scriptLines[] = "    if (!window.location.search.includes('noAUTO=1')) {";
+            $scriptLines[] = "        window.location.assign(autoRedirectUrl);";
+            $scriptLines[] = "        return;";
+            $scriptLines[] = '    }';
         }
-        event.preventDefault();
-        const width = 600;
-        const height = 800;
-        const left = (window.innerWidth / 2) - (width / 2);
-        const top = (window.innerHeight / 2) - (height / 2);
-        window.open(trigger.getAttribute('href'), 'singlesignon', `width=${width},height=${height},left=${left},top=${top}`);
-    });
-});
-</script>
-JS;
+
+        $scriptLines[] = '    document.addEventListener("click", (event) => {';
+        $scriptLines[] = '        const trigger = event.target.closest("[data-singlesignon-popup=\"true\"]");';
+        $scriptLines[] = '        if (!trigger) {';
+        $scriptLines[] = '            return;';
+        $scriptLines[] = '        }';
+        $scriptLines[] = '        event.preventDefault();';
+        $scriptLines[] = '        const width = 600;';
+        $scriptLines[] = '        const height = 800;';
+        $scriptLines[] = '        const left = (window.innerWidth / 2) - (width / 2);';
+        $scriptLines[] = '        const top = (window.innerHeight / 2) - (height / 2);';
+        $scriptLines[] = '        window.open(trigger.getAttribute("href"), "singlesignon", `width=${width},height=${height},left=${left},top=${top}`);';
+        $scriptLines[] = '    });';
+        $scriptLines[] = '});';
+
+        echo '<script>' . implode("\n", $scriptLines) . '</script>';
     }
 }
