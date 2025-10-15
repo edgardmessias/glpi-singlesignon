@@ -26,7 +26,6 @@
  */
 
 use Glpi\Http\Firewall;
-use Glpi\Http\SessionManager;
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Preference;

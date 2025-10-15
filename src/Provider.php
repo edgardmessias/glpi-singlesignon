@@ -953,38 +953,17 @@ class Provider extends \CommonDBTM {
       }
 
       if (!isset($_GET['code'])) {
-         // Generate a random state for OAuth CSRF protection
-         // Note: We can't use GLPI session tokens here because the user is not authenticated yet
-         $state = bin2hex(random_bytes(32));
-         
-         // Store state in a temporary way (using a cookie with short expiration)
-         setcookie(
-            'glpi_sso_state_' . $this->fields['id'],
-            $state,
-            [
-               'expires' => time() + 600, // 10 minutes
-               'path' => '/',
-               'domain' => '',
-               'secure' => true,
-               'httponly' => true,
-               'samesite' => 'Lax'
-            ]
-         );
-         
-         // Store redirect if needed
-         if (isset($_GET['redirect'])) {
-            setcookie(
-               'glpi_sso_redirect',
-               $_GET['redirect'],
-               [
-                  'expires' => time() + 600,
-                  'path' => '/',
-                  'domain' => '',
-                  'secure' => true,
-                  'httponly' => true,
-                  'samesite' => 'Lax'
-               ]
-            );
+         if (session_status() === PHP_SESSION_NONE) {
+            \Session::start();
+         }
+
+         // Generate CSRF token for OAuth state parameter and remember redirect in session
+         $state = \Session::getNewCSRFToken();
+
+         if (isset($_SESSION['redirect'])) {
+            $_SESSION['glpi_singlesignon_redirect'] = $_SESSION['redirect'];
+         } elseif (isset($_GET['redirect'])) {
+            $_SESSION['glpi_singlesignon_redirect'] = $_GET['redirect'];
          }
          
          // Build the callback URL for OAuth redirect
@@ -1016,20 +995,11 @@ class Provider extends \CommonDBTM {
 
       // Extract state parameter
       $state = isset($_GET['state']) ? $_GET['state'] : '';
-      
-      // Verify state against the one stored in cookie (OAuth CSRF protection)
-      $cookie_name = 'glpi_sso_state_' . $this->fields['id'];
-      if (!isset($_COOKIE[$cookie_name]) || $_COOKIE[$cookie_name] !== $state) {
-         // Clean up cookie
-         setcookie($cookie_name, '', time() - 3600, '/');
-         
-         $exception = new \Glpi\Exception\Http\BadRequestHttpException();
-         $exception->setMessageToDisplay(__('Invalid state parameter. Please try again.'));
-         throw $exception;
-      }
-      
-      // Clean up the state cookie after successful verification
-      setcookie($cookie_name, '', time() - 3600, '/');
+
+      // Validate state against stored CSRF token
+      \Session::checkCSRF([
+         '_glpi_csrf_token' => $state,
+      ]);
 
       $this->_code = $_GET['code'];
 
