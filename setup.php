@@ -25,7 +25,10 @@
  * ---------------------------------------------------------------------
  */
 
-define('PLUGIN_SINGLESIGNON_VERSION', '1.4.0');
+use Glpi\Http\Firewall;
+
+
+define('PLUGIN_SINGLESIGNON_VERSION', '1.3.5');
 
 $folder = basename(dirname(__FILE__));
 
@@ -59,6 +62,12 @@ function plugin_init_singlesignon() {
    $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
       'config'  => 'PluginSinglesignonProvider',
    ];
+
+   // Make the callback page public again. 
+   Firewall::addPluginStrategyForLegacyScripts('singlesignon', '#^/front/callback.php$#', Firewall::STRATEGY_NO_CHECK);
+
+
+
 }
 
 // Get the name and the version of the plugin - Needed
