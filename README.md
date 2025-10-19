@@ -13,7 +13,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * Install and activate the plugin.
 
 # Usage
- * Go to `Configuration > Single Sign-On` and add a provider. You can find an explanation of the main configuration parameters [here](https://github.com/edgardmessias/glpi-singlesignon/wiki/Plugin-Provider-Options).
+ * Go to `Configuration > Single Sign-On` and add a provider
  * To test, do logout and try login with links below login page `Login with <name>`
 
 # Available providers
@@ -30,7 +30,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
 If your preferred language is missing. You can add your own [translation on Transifex service](https://app.transifex.com/eduardomozart/glpi-singlesignon/languages/).
 
 # Adding a new release
-To create a new release of this plugin automatically through GitHub Actions (Workflow), edit the file ``plugin.xml`` to include the new version tag, GLPI compatible version and download URL and create a new branch. Remember to edit the ``setup.php`` file for the new plugin version.
+To create a new release of this plugin automatically through GitHub Actions (Workflow), edit the file ``plugin.xml`` to include the new version tag, GLPI compatible version and download URL and create a new branch.
 
 # Screenshots
 

@@ -44,7 +44,6 @@ function plugin_singlesignon_display_login() {
       if (isset($_REQUEST['redirect'])) {
          $query['redirect'] = $_REQUEST['redirect'];
       }
-
       $url = PluginSinglesignonToolbox::getCallbackUrl($row['id'], $query);
       $isDefault = PluginSinglesignonToolbox::isDefault($row);
       if ($isDefault && !isset($_GET["noAUTO"])) {

@@ -56,19 +56,19 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
    public $debug = false;
 
-   public static function canCreate() {
+   public static function canCreate(): bool {
       return static::canUpdate();
    }
 
-   public static function canDelete() {
+   public static function canDelete(): bool {
       return static::canUpdate();
    }
 
-   public static function canPurge() {
+   public static function canPurge(): bool {
       return static::canUpdate();
    }
 
-   public static function canView() {
+   public static function canView(): bool {
       return static::canUpdate();
    }
 
@@ -79,7 +79,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
 
    /**
     * @see CommonGLPI::getMenuName()
-    * */
+     */
    static function getMenuName() {
       return __sso('Single Sign-on');
    }
@@ -957,8 +957,10 @@ class PluginSinglesignonProvider extends CommonDBTM {
             'state' => $state,
             'response_type' => 'code',
             'approval_prompt' => 'auto',
-            'redirect_uri' => PluginSinglesignonToolbox::getCurrentURL(),
+            //'redirect_uri' => PluginSinglesignonToolbox::getCurrentURL(),
+            'redirect_uri' => PluginSinglesignonToolbox::getCallbackUrl($this->fields['id']),
          ];
+
          $extra_options = $this->getExtraOptions();
          if (is_array($extra_options)) {
             $params = array_merge($params, $extra_options);
@@ -974,7 +976,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
          header('Location: ' . $url);
          exit;
       }
-
       if (isset($_GET['state']) && is_integer(strpos($_GET['state'], ";redirect="))) {
          $pos_redirect  = strpos($_GET['state'], ";redirect=");
          $state         = substr($_GET['state'], 0, $pos_redirect);
@@ -1146,7 +1147,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       }
 
       $remote_id = false;
-      $remote_id_fields = ['id', 'username', 'sub'];
+      $remote_id_fields = ['id', 'preferred_username', 'username', 'sub'];
 
       foreach ($remote_id_fields as $field) {
          if (isset($resource_array[$field]) && !empty($resource_array[$field])) {
@@ -1209,7 +1210,7 @@ class PluginSinglesignonProvider extends CommonDBTM {
       if ($email && $use_email) {
          $login = $email;
       } else {
-         $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
+         $login_fields = ['preferred_username', 'userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
 
          foreach ($login_fields as $field) {
             if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
@@ -1250,8 +1251,6 @@ class PluginSinglesignonProvider extends CommonDBTM {
          $bOk = false;
       }
 
-      // var_dump($bOk);
-      // die();
 
       // If the user does not exist in the database and the provider is google
       if (static::getClientType() == "google" && !$bOk) {

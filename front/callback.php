@@ -24,7 +24,6 @@
  * @link      https://github.com/edgardmessias/glpi-singlesignon/
  * ---------------------------------------------------------------------
  */
-
 //Disable CSRF token
 define('GLPI_USE_CSRF_CHECK', 0);
 
@@ -34,8 +33,8 @@ error_reporting(E_ALL);
 
 include('../../../inc/includes.php');
 
-$provider_id = PluginSinglesignonToolbox::getCallbackParameters('provider');
 
+$provider_id = (int) PluginSinglesignonToolbox::getCallbackParameters('provider');
 if (!$provider_id) {
    Html::displayErrorAndDie(__sso("Provider not defined."), false);
 }
@@ -49,7 +48,6 @@ if (!$signon_provider->getFromDB($provider_id)) {
 if (!$signon_provider->fields['is_active']) {
    Html::displayErrorAndDie(__sso("Provider not active."), true);
 }
-
 $signon_provider->checkAuthorization();
 
 $test = PluginSinglesignonToolbox::getCallbackParameters('test');

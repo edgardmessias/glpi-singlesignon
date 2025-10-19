@@ -37,7 +37,9 @@ class PluginSinglesignonToolbox {
    public static function getCallbackUrl($row, $query = []) {
       global $CFG_GLPI;
 
-      $url = Plugin::getPhpDir("singlesignon", false) . '/front/callback.php';
+      $url = PluginSinglesignonToolbox::getBaseURL();
+
+      $url .= Plugin::getPhpDir("singlesignon", false) . '/front/callback.php';
 
       $url .= "/provider/".$row;
 
@@ -58,9 +60,8 @@ class PluginSinglesignonToolbox {
 
    public static function getCallbackParameters($name = null) {
       $data = [];
-
-      if (isset($_SERVER['PATH_INFO'])) {
-         $path_info = trim($_SERVER['PATH_INFO'], '/');
+      if (isset($_SERVER['REQUEST_URI'])) {
+         $path_info = trim($_SERVER['REQUEST_URI'], '/');
 
          $parts = explode('/', $path_info);
 
@@ -86,7 +87,6 @@ class PluginSinglesignonToolbox {
             }
          }
       }
-
       if (!isset($data[$name])) {
          return null;
       }
