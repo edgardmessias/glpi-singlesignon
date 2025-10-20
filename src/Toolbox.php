@@ -43,12 +43,12 @@ class Toolbox {
 
       $provider_id = (int)$row;
 
-      // GLPI 11: Use query string parameters instead of PATH_INFO
-      $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php?provider=' . $provider_id;
+      // Build PATH_INFO style callback to stay compatible with providers that reject query strings
+      $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php';
+      $url .= '/provider/' . $provider_id;
 
       if (!empty($query) && isset($query['redirect'])) {
          $_SESSION['redirect'] = $query['redirect'];
-         $url .= '&redirect=' . urlencode($query['redirect']);
       }
 
       return $url;
