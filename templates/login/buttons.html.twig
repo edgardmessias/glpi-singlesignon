@@ -19,27 +19,34 @@
     </div>
 </div>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const params = new URLSearchParams(window.location.search);
-    const container = document.getElementById('singlesignon-container');
-    if (!container) {
-        return;
-    }
-    const formColumn = document.querySelector('.row.justify-content-center .col-md-5');
-    const pluginColumn = container.closest('.col-auto');
-    if (params.get('noAUTO') === '1') {
-        if (pluginColumn) {
-            pluginColumn.style.display = 'block';
+(function () {
+    const updateLayout = () => {
+        const params = new URLSearchParams(window.location.search);
+        const container = document.getElementById('singlesignon-container');
+        if (!container) {
+            return;
         }
-        return;
+        const formColumn = document.querySelector('.row.justify-content-center .col-md-5');
+        const pluginColumn = container.closest('.col-auto');
+        if (params.get('noAUTO') === '1') {
+            if (pluginColumn) {
+                pluginColumn.style.display = 'block';
+            }
+            return;
+        }
+        if (formColumn) {
+            formColumn.style.display = 'none';
+        }
+        if (pluginColumn) {
+            pluginColumn.classList.remove('col-auto', 'px-2', 'text-center');
+            pluginColumn.classList.add('col-12', 'col-md-6', 'd-flex', 'justify-content-center');
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateLayout);
+    } else {
+        updateLayout();
     }
-    if (formColumn) {
-        formColumn.style.display = 'none';
-    }
-    if (pluginColumn) {
-        pluginColumn.classList.remove('col-auto', 'px-2', 'text-center');
-        pluginColumn.classList.add('col-12', 'col-md-6');
-        pluginColumn.classList.add('d-flex', 'justify-content-center');
-    }
-});
+})();
 </script>
