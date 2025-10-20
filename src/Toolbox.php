@@ -74,9 +74,32 @@ class Toolbox {
          return $value;
       }
 
-      // Fallback to old PATH_INFO method
-      if (isset($_SERVER['PATH_INFO'])) {
-         $path_info = trim($_SERVER['PATH_INFO'], '/');
+      // Fallback to PATH_INFO (or derive it when the webserver strips it)
+      $candidates = [];
+      foreach (['PATH_INFO', 'ORIG_PATH_INFO'] as $server_key) {
+         if (!empty($_SERVER[$server_key]) && $_SERVER[$server_key] !== '/') {
+            $candidates[] = $_SERVER[$server_key];
+         }
+      }
+
+      if (empty($candidates) && isset($_SERVER['REQUEST_URI'])) {
+         $request_path = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
+         $script_name  = $_SERVER['SCRIPT_NAME'] ?? '';
+
+         if ($script_name !== '' && strpos($request_path, $script_name) === 0) {
+            $derived = substr($request_path, strlen($script_name));
+            if ($derived !== false && $derived !== '') {
+               $candidates[] = $derived;
+            }
+         }
+      }
+
+      foreach ($candidates as $path_candidate) {
+         $path_info = trim($path_candidate, '/');
+
+         if ($path_info === '') {
+            continue;
+         }
 
          $parts = explode('/', $path_info);
 
@@ -85,21 +108,22 @@ class Toolbox {
          foreach ($parts as $part) {
             if ($key === null) {
                $key = $part;
-            } else {
-               if ($key === "provider" || $key === "test") {
-                  $part = intval($part);
-               } else {
-                  $tmp = base64_decode($part);
-                  parse_str($tmp, $part);
-               }
-
-               if ($key === $name) {
-                  return $part;
-               }
-
-               $data[$key] = $part;
-               $key = null;
+               continue;
             }
+
+            if ($key === "provider" || $key === "test") {
+               $part = intval($part);
+            } else {
+               $tmp = base64_decode($part);
+               parse_str($tmp, $part);
+            }
+
+            if ($key === $name) {
+               return $part;
+            }
+
+            $data[$key] = $part;
+            $key = null;
          }
       }
 
