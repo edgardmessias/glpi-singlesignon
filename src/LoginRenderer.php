@@ -19,7 +19,6 @@ class LoginRenderer
         }
 
         $buttons = [];
-        $autoRedirectUrl = null;
         foreach ($providers as $row) {
             $query = [];
             if (isset($_REQUEST['redirect']) && $_REQUEST['redirect'] !== '') {
@@ -27,10 +26,6 @@ class LoginRenderer
             }
 
             $url = Toolbox::getCallbackUrl((int)$row['id'], $query);
-
-            if ($autoRedirectUrl === null && Toolbox::isDefault($row) && !isset($_GET['noAUTO'])) {
-                $autoRedirectUrl = $url;
-            }
 
             $buttons[] = [
                 'href'    => $url,
@@ -56,7 +51,7 @@ class LoginRenderer
             'classic_url'   => $classicUrl,
         ]);
 
-        self::injectPopupScript($autoRedirectUrl);
+        self::injectPopupScript();
     }
 
     private static function buildButtonStyle(array $row): string
@@ -83,7 +78,7 @@ class LoginRenderer
         return $url . '?' . http_build_query($params);
     }
 
-    private static function injectPopupScript(?string $autoRedirectUrl = null): void
+    private static function injectPopupScript(): void
     {
         static $injected = false;
         if ($injected) {
@@ -92,19 +87,8 @@ class LoginRenderer
 
         $injected = true;
         $scriptLines = [];
-        $autoRedirectJs = $autoRedirectUrl !== null
-            ? json_encode($autoRedirectUrl, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES)
-            : 'null';
 
         $scriptLines[] = '(function() {';
-        $scriptLines[] = '    const autoRedirectUrl = ' . $autoRedirectJs . ';';
-        $scriptLines[] = '    if (autoRedirectUrl && !window.location.search.includes("noAUTO=1")) {';
-        $scriptLines[] = '        if (!window.singlesignonAutoRedirected) {';
-        $scriptLines[] = '            window.singlesignonAutoRedirected = true;';
-        $scriptLines[] = '            window.location.replace(autoRedirectUrl);';
-        $scriptLines[] = '            return;';
-        $scriptLines[] = '        }';
-        $scriptLines[] = '    }';
         $scriptLines[] = '    document.addEventListener("click", (event) => {';
         $scriptLines[] = '        const trigger = event.target.closest("[data-singlesignon-popup=\"true\"]");';
         $scriptLines[] = '        if (!trigger) {';
