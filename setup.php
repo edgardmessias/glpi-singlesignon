@@ -73,8 +73,6 @@ function plugin_init_singlesignon() {
 
    $PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN]['singlesignon'] = [LoginRenderer::class, 'display'];
 
-   $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['singlesignon'] = 'css/login.css';
-
    $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
       'config'  => Provider::class,
    ];
