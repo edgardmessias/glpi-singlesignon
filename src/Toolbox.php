@@ -94,57 +94,10 @@ class Toolbox {
          return $value;
       }
 
-      // Fallback to PATH_INFO (or derive it when the webserver strips it)
-      $candidates = [];
-      foreach (['PATH_INFO', 'ORIG_PATH_INFO'] as $server_key) {
-         if (!empty($_SERVER[$server_key]) && $_SERVER[$server_key] !== '/') {
-            $candidates[] = $_SERVER[$server_key];
-         }
-      }
-
-      if (isset($_SERVER['REQUEST_URI'])) {
-         $request_path = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
-         $request_path = $normalizePath($request_path);
-
-         $script_candidates = [];
-         $script_name = $normalizePath($_SERVER['SCRIPT_NAME'] ?? '');
-         if ($script_name !== '') {
-            $script_candidates[] = $script_name;
-         }
-         $php_self = $normalizePath($_SERVER['PHP_SELF'] ?? '');
-         if ($php_self !== '' && $php_self !== $script_name) {
-            $script_candidates[] = $php_self;
-         }
-
-         // Fallback for routed setups (GLPI 11 public front controller)
-         $plugin_script = $normalizePath(\Plugin::getPhpDir("singlesignon", false) . '/front/callback.php');
-         if ($plugin_script !== '' && !in_array($plugin_script, $script_candidates)) {
-            $script_candidates[] = $plugin_script;
-         }
-
-         foreach ($script_candidates as $candidate) {
-            if ($candidate === '') {
-               continue;
-            }
-
-            if (strpos($request_path, $candidate) === 0) {
-               $derived = substr($request_path, strlen($candidate));
-            } else {
-               $derived = '';
-            }
-
-            if ($derived !== false && $derived !== '') {
-               $candidates[] = $derived;
-            }
-         }
-
-         // Direct regex match in case SCRIPT_NAME does not map to the plugin path
-         if ($plugin_script !== '' && preg_match('#' . preg_quote($plugin_script, '#') . '(/.*)$#', $request_path, $matches)) {
-            $candidates[] = $matches[1];
-         } else if (preg_match('#/front/callback\.php(/.*)$#', $request_path, $matches)) {
-            $candidates[] = $matches[1];
-         }
-      }
+      // Build candidate PATH_INFO values. Some servers (PHP-FPM, reverse proxies, GLPI 11 routers)
+      // strip PATH_INFO, so we recompute it from REQUEST_URI to keep backward compatibility.
+      $server = $_SERVER ?? [];
+      $candidates = self::collectCallbackPathCandidates($server, $normalizePath);
 
       foreach ($candidates as $path_candidate) {
          $path_info = trim($path_candidate, '/');
@@ -179,11 +132,15 @@ class Toolbox {
          }
       }
 
+      if ($name === null) {
+         return $data;
+      }
+
       if (!isset($data[$name])) {
          return null;
       }
 
-      return $data;
+      return $data[$name];
    }
 
    public static function startsWith($haystack, $needle) {
@@ -344,5 +301,72 @@ class Toolbox {
          $currentURL .= $_SERVER["PATH_INFO"];
       }
       return $currentURL;
+   }
+
+   /**
+    * Collect possible PATH_INFO values from server globals.
+    *
+    * @param array         $server
+    * @param callable      $normalizePath
+    *
+    * @return array
+    */
+   private static function collectCallbackPathCandidates(array $server, callable $normalizePath): array {
+      $candidates = [];
+
+      foreach (['PATH_INFO', 'ORIG_PATH_INFO'] as $server_key) {
+         if (!empty($server[$server_key]) && $server[$server_key] !== '/') {
+            $candidates[] = $server[$server_key];
+         }
+      }
+
+      if (!isset($server['REQUEST_URI'])) {
+         return array_values(array_unique($candidates));
+      }
+
+      $request_path = explode('?', $server['REQUEST_URI'], 2)[0];
+      $request_path = $normalizePath($request_path);
+
+      $script_candidates = [];
+      $script_name = $normalizePath($server['SCRIPT_NAME'] ?? null);
+      if ($script_name !== '') {
+         $script_candidates[] = $script_name;
+      }
+
+      $php_self = $normalizePath($server['PHP_SELF'] ?? null);
+      if ($php_self !== '' && $php_self !== $script_name) {
+         $script_candidates[] = $php_self;
+      }
+
+      $plugin_script = $normalizePath(\Plugin::getPhpDir("singlesignon", false) . '/front/callback.php');
+      if ($plugin_script !== '' && !in_array($plugin_script, $script_candidates)) {
+         $script_candidates[] = $plugin_script;
+      }
+
+      foreach ($script_candidates as $candidate) {
+         if ($candidate === '') {
+            continue;
+         }
+
+         if (strpos($request_path, $candidate) === 0) {
+            $derived = substr($request_path, strlen($candidate));
+            if ($derived !== false && $derived !== '') {
+               $candidates[] = $derived;
+            }
+         }
+      }
+
+      // Direct regex match in case SCRIPT_NAME does not map to the plugin path
+      if ($plugin_script !== '' && preg_match('#' . preg_quote($plugin_script, '#') . '(/.*)$#', $request_path, $matches)) {
+         $candidates[] = $matches[1];
+      } else if (preg_match('#/front/callback\.php(/.*)$#', $request_path, $matches)) {
+         $candidates[] = $matches[1];
+      }
+
+      $filtered = array_filter($candidates, static function ($candidate) {
+         return $candidate !== '' && $candidate !== '/';
+      });
+
+      return array_values(array_unique($filtered));
    }
 }
