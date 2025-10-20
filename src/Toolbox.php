@@ -64,6 +64,26 @@ class Toolbox {
 
    public static function getCallbackParameters($name = null) {
       $data = [];
+      global $CFG_GLPI;
+      $root_doc = $CFG_GLPI['root_doc'] ?? '';
+
+      $normalizePath = static function ($path) use ($root_doc) {
+         if ($path === null) {
+            return '';
+         }
+
+         $path = (string)$path;
+
+         if ($path === '') {
+            return '';
+         }
+
+         if ($root_doc && $root_doc !== '/' && strpos($path, $root_doc) === 0) {
+            $path = substr($path, strlen($root_doc));
+         }
+
+         return $path;
+      };
 
       // GLPI 11: Try query string first, fallback to PATH_INFO for compatibility
       if (isset($_GET[$name])) {
@@ -82,15 +102,47 @@ class Toolbox {
          }
       }
 
-      if (empty($candidates) && isset($_SERVER['REQUEST_URI'])) {
+      if (isset($_SERVER['REQUEST_URI'])) {
          $request_path = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
-         $script_name  = $_SERVER['SCRIPT_NAME'] ?? '';
+         $request_path = $normalizePath($request_path);
 
-         if ($script_name !== '' && strpos($request_path, $script_name) === 0) {
-            $derived = substr($request_path, strlen($script_name));
+         $script_candidates = [];
+         $script_name = $normalizePath($_SERVER['SCRIPT_NAME'] ?? '');
+         if ($script_name !== '') {
+            $script_candidates[] = $script_name;
+         }
+         $php_self = $normalizePath($_SERVER['PHP_SELF'] ?? '');
+         if ($php_self !== '' && $php_self !== $script_name) {
+            $script_candidates[] = $php_self;
+         }
+
+         // Fallback for routed setups (GLPI 11 public front controller)
+         $plugin_script = $normalizePath(\Plugin::getPhpDir("singlesignon", false) . '/front/callback.php');
+         if ($plugin_script !== '' && !in_array($plugin_script, $script_candidates)) {
+            $script_candidates[] = $plugin_script;
+         }
+
+         foreach ($script_candidates as $candidate) {
+            if ($candidate === '') {
+               continue;
+            }
+
+            if (strpos($request_path, $candidate) === 0) {
+               $derived = substr($request_path, strlen($candidate));
+            } else {
+               $derived = '';
+            }
+
             if ($derived !== false && $derived !== '') {
                $candidates[] = $derived;
             }
+         }
+
+         // Direct regex match in case SCRIPT_NAME does not map to the plugin path
+         if ($plugin_script !== '' && preg_match('#' . preg_quote($plugin_script, '#') . '(/.*)$#', $request_path, $matches)) {
+            $candidates[] = $matches[1];
+         } else if (preg_match('#/front/callback\.php(/.*)$#', $request_path, $matches)) {
+            $candidates[] = $matches[1];
          }
       }
 
