@@ -29,8 +29,21 @@
         const formColumn = document.querySelector('.row.justify-content-center .col-md-5');
         const pluginColumn = container.closest('.col-auto');
         if (params.get('noAUTO') === '1') {
+            const classicLink = container.querySelector('.singlesignon-login-classic');
+            if (classicLink) {
+                classicLink.remove();
+            }
+            if (formColumn) {
+                const header = formColumn.querySelector('.card-header');
+                container.classList.add('mb-4');
+                if (header) {
+                    formColumn.insertBefore(container, header);
+                } else {
+                    formColumn.prepend(container);
+                }
+            }
             if (pluginColumn) {
-                pluginColumn.style.display = 'block';
+                pluginColumn.style.display = 'none';
             }
             return;
         }
