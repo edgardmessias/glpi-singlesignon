@@ -86,7 +86,7 @@ class Preference extends \CommonDBTM {
       }
    }
 
-   function getTabNameForItem(CommonGLPI $item, $withtemplate = 0) {
+   function getTabNameForItem(\CommonGLPI $item, $withtemplate = 0) {
       switch (get_class($item)) {
          case 'Preference':
          case 'User':
@@ -96,7 +96,7 @@ class Preference extends \CommonDBTM {
       }
    }
 
-   static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0) {
+   static function displayTabContentForItem(\CommonGLPI $item, $tabnum = 1, $withtemplate = 0) {
       switch (get_class($item)) {
          case 'User':
             $prefer = new self($item->fields['id']);
@@ -112,7 +112,7 @@ class Preference extends \CommonDBTM {
       return true;
    }
 
-   function showFormUser(CommonGLPI $item) {
+   function showFormUser(\CommonGLPI $item) {
       global $CFG_GLPI;
 
       if (!\User::canView()) {
@@ -142,7 +142,7 @@ class Preference extends \CommonDBTM {
       \Html::closeForm();
    }
 
-   function showFormPreference(CommonGLPI $item) {
+   function showFormPreference(\CommonGLPI $item) {
       $user = new User();
       if (!$user->can($this->user_id, READ) && ($this->user_id != \Session::getLoginUserID())) {
          return false;
@@ -171,7 +171,7 @@ class Preference extends \CommonDBTM {
       \Html::closeForm();
    }
 
-   function showFormDefault(CommonGLPI $item) {
+   function showFormDefault(\CommonGLPI $item) {
       echo "<tr class='tab_bg_2'>";
       echo "<td> " . \__sso('Single Sign-on Provider') . "</td><td>";
 
