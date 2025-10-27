@@ -1401,20 +1401,19 @@ class Provider extends \CommonDBTM {
 
       $this->syncOAuthPhoto($user);
 
-      // Create fake auth
-      // phpcs:disable
-      /* $auth = new Auth();
-      $auth->user = $user;
-      $auth->auth_succeded = true;
-      $auth->extauth = 1;
-      $auth->user_present = 1;
-      $auth->user->fields['authtype'] = \Auth::DB_GLPI;
+      if (($user->fields['authtype'] ?? null) == \Auth::LDAP) {
+         // Let GLPI reuse the LDAP session instead of forcing a temporary password
+         $auth = new \Auth();
+         $auth->user = $user;
+         $auth->auth_succeded = true;
+         $auth->extauth = 1;
+         $auth->user_present = 1;
+         $auth->user->fields['authtype'] = \Auth::DB_GLPI;
 
-      \Session::init($auth);
+         \Session::init($auth);
 
-      // Return false if the profile is not defined in \Session::init($auth)
-      return $auth->auth_succeded; */
-      // phpcs:enable
+         return $auth->auth_succeded;
+      }
 
       global $DB;
 
@@ -1510,7 +1509,7 @@ class Provider extends \CommonDBTM {
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_SSL_VERIFYPEER => false,
          ]);
-         if (!empty($img)) {
+         if (!empty($img) && !str_starts_with($img, '{"error"')) {
             /* if ($this->debug) {
             print_r($content);
             } */
