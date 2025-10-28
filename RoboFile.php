@@ -152,6 +152,22 @@ class RoboFile extends \Robo\Tasks {
       $this->compile_locales();
    }
 
+   /**
+    * Run PHP_CodeSniffer using the project ruleset.
+    */
+   public function lint() {
+      return $this->taskExec('vendor/bin/phpcs')->run();
+   }
+
+   /**
+    * Fix coding standards violations where possible.
+    *
+    * @command lint:fix
+    */
+   public function lintFix() {
+      return $this->taskExec('vendor/bin/phpcbf')->run();
+   }
+
    public function build() {
       $this->_remove(["$this->name.zip", "$this->name.tgz"]);
 
