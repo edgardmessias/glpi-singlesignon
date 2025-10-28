@@ -1,5 +1,7 @@
 <?php
 
+use GlpiPlugin\Singlesignon\LoginRenderer;
+
 /**
  * ---------------------------------------------------------------------
  * SingleSignOn is a plugin which allows to use SSO for auth
@@ -25,40 +27,42 @@
  * ---------------------------------------------------------------------
  */
 
-function plugin_singlesignon_display_login() {
-   \GlpiPlugin\Singlesignon\LoginRenderer::display();
+function plugin_singlesignon_display_login()
+{
+    LoginRenderer::display();
 }
 
-function plugin_singlesignon_install() {
-   /* @var $DB DB */
-   global $DB;
+function plugin_singlesignon_install()
+{
+    /* @var $DB DB */
+    global $DB;
 
-   $currentVersion = '0.0.0';
+    $currentVersion = '0.0.0';
 
-   $default = [];
+    $default = [];
 
-   $current = Config::getConfigurationValues('plugin:singlesignon');
+    $current = Config::getConfigurationValues('plugin:singlesignon');
 
-   if (isset($current['version'])) {
-      $currentVersion = $current['version'];
-   }
+    if (isset($current['version'])) {
+        $currentVersion = $current['version'];
+    }
 
-   foreach ($default as $key => $value) {
-      if (!isset($current[$key])) {
-         $current[$key] = $value;
-      }
-   }
+    foreach ($default as $key => $value) {
+        if (!isset($current[$key])) {
+            $current[$key] = $value;
+        }
+    }
 
-   Config::setConfigurationValues('plugin:singlesignon', $current);
+    Config::setConfigurationValues('plugin:singlesignon', $current);
 
-   $providersTable = 'glpi_plugin_singlesignon_providers';
-   $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
+    $providersTable = 'glpi_plugin_singlesignon_providers';
+    $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
 
-   $migration = new Migration(PLUGIN_SINGLESIGNON_VERSION);
+    $migration = new Migration(PLUGIN_SINGLESIGNON_VERSION);
 
-   if (!$DB->tableExists($providersTable)) {
-      $DB->doQuery(
-         "CREATE TABLE `$providersTable` (
+    if (!$DB->tableExists($providersTable)) {
+        $DB->doQuery(
+            "CREATE TABLE `$providersTable` (
             `id`                         INT NOT NULL AUTO_INCREMENT,
             `is_default`                 TINYINT(1) NOT NULL DEFAULT '0',
             `popup`                      TINYINT(1) NOT NULL DEFAULT '0',
@@ -84,57 +88,57 @@ function plugin_singlesignon_install() {
             KEY `date_mod` (`date_mod`),
             KEY `date_creation` (`date_creation`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-      );
-   } else {
-      $migration->addField($providersTable, 'is_default', 'bool');
-      $migration->addField($providersTable, 'popup', 'bool');
-      $migration->addField($providersTable, 'split_domain', 'bool');
-      $migration->addField(
-         $providersTable,
-         'authorized_domains',
-         'string',
-         [
-            'nodefault' => true,
-            'null'      => true,
-         ]
-      );
-      $migration->addField($providersTable, 'use_email_for_login', 'bool');
-      $migration->addField($providersTable, 'split_name', 'bool');
-   }
+        );
+    } else {
+        $migration->addField($providersTable, 'is_default', 'bool');
+        $migration->addField($providersTable, 'popup', 'bool');
+        $migration->addField($providersTable, 'split_domain', 'bool');
+        $migration->addField(
+            $providersTable,
+            'authorized_domains',
+            'string',
+            [
+                'nodefault' => true,
+                'null'      => true,
+            ]
+        );
+        $migration->addField($providersTable, 'use_email_for_login', 'bool');
+        $migration->addField($providersTable, 'split_name', 'bool');
+    }
 
-   if (version_compare($currentVersion, '1.2.0', '<')) {
-      $migration->addField(
-         $providersTable,
-         'picture',
-         'string',
-         [
-            'nodefault' => true,
-            'null'      => true,
-         ]
-      );
-      $migration->addField(
-         $providersTable,
-         'bgcolor',
-         "varchar(7)",
-         [
-            'nodefault' => true,
-            'null'      => true,
-         ]
-      );
-      $migration->addField(
-         $providersTable,
-         'color',
-         "varchar(7)",
-         [
-            'nodefault' => true,
-            'null'      => true,
-         ]
-      );
-   }
+    if (version_compare($currentVersion, '1.2.0', '<')) {
+        $migration->addField(
+            $providersTable,
+            'picture',
+            'string',
+            [
+                'nodefault' => true,
+                'null'      => true,
+            ]
+        );
+        $migration->addField(
+            $providersTable,
+            'bgcolor',
+            "varchar(7)",
+            [
+                'nodefault' => true,
+                'null'      => true,
+            ]
+        );
+        $migration->addField(
+            $providersTable,
+            'color',
+            "varchar(7)",
+            [
+                'nodefault' => true,
+                'null'      => true,
+            ]
+        );
+    }
 
-   if (version_compare($currentVersion, '1.3.0', '<') && !$DB->tableExists($providersUsersTable)) {
-      $DB->doQuery(
-         "CREATE TABLE `$providersUsersTable` (
+    if (version_compare($currentVersion, '1.3.0', '<') && !$DB->tableExists($providersUsersTable)) {
+        $DB->doQuery(
+            "CREATE TABLE `$providersUsersTable` (
             `id` INT NOT NULL AUTO_INCREMENT,
             `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
             `users_id` INT NOT NULL DEFAULT '0',
@@ -143,47 +147,48 @@ function plugin_singlesignon_install() {
             UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
             UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-      );
-   }
+        );
+    }
 
-   if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => 'PluginSinglesignonProvider'])) {
-      $preferences = [
-         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 2, 'rank' => 1, 'users_id' => 0],
-         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 3, 'rank' => 2, 'users_id' => 0],
-         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 5, 'rank' => 4, 'users_id' => 0],
-         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 6, 'rank' => 5, 'users_id' => 0],
-         ['itemtype' => 'PluginSinglesignonProvider', 'num' => 10, 'rank' => 6, 'users_id' => 0],
-      ];
+    if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => 'PluginSinglesignonProvider'])) {
+        $preferences = [
+            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 2, 'rank' => 1, 'users_id' => 0],
+            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 3, 'rank' => 2, 'users_id' => 0],
+            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 5, 'rank' => 4, 'users_id' => 0],
+            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 6, 'rank' => 5, 'users_id' => 0],
+            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 10, 'rank' => 6, 'users_id' => 0],
+        ];
 
-      foreach ($preferences as $preference) {
-         $DB->insert('glpi_displaypreferences', $preference);
-      }
-   }
+        foreach ($preferences as $preference) {
+            $DB->insert('glpi_displaypreferences', $preference);
+        }
+    }
 
-   $migration->executeMigration();
+    $migration->executeMigration();
 
-   $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
-   Config::setConfigurationValues('plugin:singlesignon', $current);
+    $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
+    Config::setConfigurationValues('plugin:singlesignon', $current);
 
-   return true;
+    return true;
 }
 
-function plugin_singlesignon_uninstall() {
-   global $DB;
+function plugin_singlesignon_uninstall()
+{
+    global $DB;
 
-   $config = new Config();
-   $config->deleteConfigurationValues('plugin:singlesignon');
+    $config = new Config();
+    $config->deleteConfigurationValues('plugin:singlesignon');
 
-   $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
-   $providersTable = 'glpi_plugin_singlesignon_providers';
+    $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
+    $providersTable = 'glpi_plugin_singlesignon_providers';
 
-   if ($DB->tableExists($providersUsersTable)) {
-      $DB->dropTable($providersUsersTable, true);
-   }
+    if ($DB->tableExists($providersUsersTable)) {
+        $DB->dropTable($providersUsersTable, true);
+    }
 
-   if ($DB->tableExists($providersTable)) {
-      $DB->dropTable($providersTable, true);
-   }
+    if ($DB->tableExists($providersTable)) {
+        $DB->dropTable($providersTable, true);
+    }
 
-   return true;
+    return true;
 }

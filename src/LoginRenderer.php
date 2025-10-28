@@ -25,12 +25,12 @@ class LoginRenderer
                 $query['redirect'] = $_REQUEST['redirect'];
             }
 
-            $url = Toolbox::getCallbackUrl((int)$row['id'], $query);
+            $url = Toolbox::getCallbackUrl((int) $row['id'], $query);
 
             $buttons[] = [
                 'href'    => $url,
                 'label'   => sprintf(\__sso('Login with %s'), $row['name']),
-                'popup'   => (bool)$row['popup'],
+                'popup'   => (bool) $row['popup'],
                 'style'   => self::buildButtonStyle($row),
                 'picture' => $row['picture'] ? Toolbox::getPictureUrl($row['picture']) : null,
             ];

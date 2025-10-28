@@ -42,23 +42,23 @@ include('../../../inc/includes.php');
 $provider_id = PluginSinglesignonToolbox::getCallbackParameters('provider');
 
 if (!$provider_id) {
-   $exception = new BadRequestHttpException();
-   $exception->setMessageToDisplay(__sso("Provider not defined."));
-   throw $exception;
+    $exception = new BadRequestHttpException();
+    $exception->setMessageToDisplay(__sso("Provider not defined."));
+    throw $exception;
 }
 
 $signon_provider = new PluginSinglesignonProvider();
 
 if (!$signon_provider->getFromDB($provider_id)) {
-   $exception = new NotFoundHttpException();
-   $exception->setMessageToDisplay(__sso("Provider not found."));
-   throw $exception;
+    $exception = new NotFoundHttpException();
+    $exception->setMessageToDisplay(__sso("Provider not found."));
+    throw $exception;
 }
 
 if (!$signon_provider->fields['is_active']) {
-   $exception = new BadRequestHttpException();
-   $exception->setMessageToDisplay(__sso("Provider not active."));
-   throw $exception;
+    $exception = new BadRequestHttpException();
+    $exception->setMessageToDisplay(__sso("Provider not active."));
+    throw $exception;
 }
 
 $signon_provider->checkAuthorization();
@@ -66,69 +66,69 @@ $signon_provider->checkAuthorization();
 $test = PluginSinglesignonToolbox::getCallbackParameters('test');
 
 if ($test) {
-   $signon_provider->debug = true;
-   Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
-   echo '<div class="left spaced">';
-   echo '<pre>';
-   echo "### BEGIN ###\n";
-   $signon_provider->getResourceOwner();
-   echo "### END ###";
-   echo '</pre>';
-   Html::nullFooter();
-   exit();
+    $signon_provider->debug = true;
+    Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
+    echo '<div class="left spaced">';
+    echo '<pre>';
+    echo "### BEGIN ###\n";
+    $signon_provider->getResourceOwner();
+    echo "### END ###";
+    echo '</pre>';
+    Html::nullFooter();
+    exit();
 }
 
 $user_id = 0;
 $existing_user_id = Session::getLoginUserID();
 
 if ($existing_user_id) {
-   try {
-      Session::checkValidSessionId();
-      $user_id = (int)$existing_user_id;
-   } catch (SessionExpiredException $e) {
-      // treat stale session as anonymous and force a fresh login
-      $user_id = 0;
-   }
+    try {
+        Session::checkValidSessionId();
+        $user_id = (int) $existing_user_id;
+    } catch (SessionExpiredException $e) {
+        // treat stale session as anonymous and force a fresh login
+        $user_id = 0;
+    }
 }
 
 $REDIRECT = "";
 
 if ($user_id || $signon_provider->login()) {
 
-   $user_id = $user_id ?: Session::getLoginUserID();
+    $user_id = $user_id ?: Session::getLoginUserID();
 
-   if ($user_id) {
-      $signon_provider->linkUser($user_id);
-   }
+    if ($user_id) {
+        $signon_provider->linkUser($user_id);
+    }
 
-   // Retrieve redirect stored during authorization step
-   if (isset($_SESSION['glpi_singlesignon_redirect'])) {
-      $REDIRECT = '?redirect=' . $_SESSION['glpi_singlesignon_redirect'];
-      unset($_SESSION['glpi_singlesignon_redirect']);
-   } else if (isset($_GET['redirect'])) {
-      $REDIRECT = '?redirect=' . $_GET['redirect'];
-   }
+    // Retrieve redirect stored during authorization step
+    if (isset($_SESSION['glpi_singlesignon_redirect'])) {
+        $REDIRECT = '?redirect=' . $_SESSION['glpi_singlesignon_redirect'];
+        unset($_SESSION['glpi_singlesignon_redirect']);
+    } elseif (isset($_GET['redirect'])) {
+        $REDIRECT = '?redirect=' . $_GET['redirect'];
+    }
 
-   $url_redirect = '';
+    $url_redirect = '';
 
-   if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
-      if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-         $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/helpdesk.public.php?create_ticket=1";
-      } else {
-         $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/helpdesk.public.php$REDIRECT";
-      }
-   } else {
-      if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-         $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/ticket.form.php";
-      } else {
-         $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/central.php$REDIRECT";
-      }
-   }
+    if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
+        if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
+            $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/helpdesk.public.php?create_ticket=1";
+        } else {
+            $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/helpdesk.public.php$REDIRECT";
+        }
+    } else {
+        if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
+            $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/ticket.form.php";
+        } else {
+            $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/central.php$REDIRECT";
+        }
+    }
 
-   Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
-   echo '<div class="center spaced"><a href="' . $url_redirect . '">' .
-   __sso('Automatic redirection, else click') . '</a>';
-   echo '<script type="text/javascript">
+    Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
+    echo '<div class="center spaced"><a href="' . $url_redirect . '">'
+    . __sso('Automatic redirection, else click') . '</a>';
+    echo '<script type="text/javascript">
          if (window.opener) {
            window.opener.location="' . $url_redirect . '";
            window.close();
@@ -136,10 +136,10 @@ if ($user_id || $signon_provider->login()) {
            window.location="' . $url_redirect . '";
          }
        </script></div>';
-   Html::nullFooter();
-   exit();
+    Html::nullFooter();
+    exit();
 
-   // Auth::redirectIfAuthenticated();
+    // Auth::redirectIfAuthenticated();
 
 }
 
@@ -147,8 +147,8 @@ if ($user_id || $signon_provider->login()) {
 Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
 echo '<div class="center b">' . __('User not authorized to connect in GLPI') . '<br><br>';
 // Logout whit noAUto to manage auto_login with errors
-echo '<a href="' . PluginSinglesignonToolbox::getBaseURL() . '/front/logout.php?noAUTO=1' .
-str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';
+echo '<a href="' . PluginSinglesignonToolbox::getBaseURL() . '/front/logout.php?noAUTO=1'
+. str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';
 echo '<script type="text/javascript">
    if (window.opener) {
       $(".singlesignon").on("click", function (e) {
