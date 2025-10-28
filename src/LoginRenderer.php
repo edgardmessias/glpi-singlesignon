@@ -19,6 +19,8 @@ class LoginRenderer
         }
 
         $buttons = [];
+        $autoLoginAllowed = self::isAutoLoginAllowed();
+
         foreach ($providers as $row) {
             $query = [];
             if (isset($_REQUEST['redirect']) && $_REQUEST['redirect'] !== '') {
@@ -26,6 +28,10 @@ class LoginRenderer
             }
 
             $url = Toolbox::getCallbackUrl((int) $row['id'], $query);
+
+            if ($autoLoginAllowed && self::shouldAutoLoginWithProvider($row)) {
+                self::redirectToProvider($url);
+            }
 
             $buttons[] = [
                 'href'    => $url,
@@ -104,5 +110,39 @@ class LoginRenderer
         $scriptLines[] = '})();';
 
         echo '<script>' . implode("\n", $scriptLines) . '</script>';
+    }
+
+    private static function shouldAutoLoginWithProvider(array $row): bool
+    {
+        if (empty($row['is_default'])) {
+            return false;
+        }
+
+        if (!empty($row['popup'])) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static function isAutoLoginAllowed(): bool
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+            return false;
+        }
+
+        $noAuto = $_GET['noAUTO'] ?? null;
+
+        if ($noAuto !== null && $noAuto !== '0') {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static function redirectToProvider(string $url): never
+    {
+        // Html::redirect() throws RedirectException; execution will not continue after this line.
+        \Html::redirect($url);
     }
 }
