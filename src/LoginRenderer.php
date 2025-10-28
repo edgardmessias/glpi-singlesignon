@@ -11,7 +11,7 @@ class LoginRenderer
     public static function display(): void
     {
         $provider = new Provider();
-        $condition = ['`is_active` = 1'];
+        $condition = ['`is_active` = 1', '`is_deleted` = 0'];
         $providers = $provider->find($condition, 'is_default DESC, name ASC');
 
         if (empty($providers)) {
