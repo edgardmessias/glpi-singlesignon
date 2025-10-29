@@ -25,6 +25,7 @@
  * ---------------------------------------------------------------------
  */
 
+use Robo\Tasks;
 use Symfony\Component\Finder\Finder;
 
 /**
@@ -32,173 +33,205 @@ use Symfony\Component\Finder\Finder;
  *
  * @see http://robo.li/
  */
-class RoboFile extends \Robo\Tasks {
+class RoboFile extends Tasks
+{
+    protected $name = "singlesignon";
+    protected $issues = "https://github.com/edgardmessias/glpi-singlesignon/issues";
 
-   protected $name = "singlesignon";
-   protected $issues = "https://github.com/edgardmessias/glpi-singlesignon/issues";
+    protected function getLocaleFiles()
+    {
+        $finder = new Finder();
+        $finder
+           ->files()
+           ->name('*.po')
+           ->in('locales');
 
-   protected function getLocaleFiles() {
-      $finder = new Finder();
-      $finder
-         ->files()
-         ->name('*.po')
-         ->in('locales');
+        $files = [];
+        foreach ($finder as $file) {
+            $files[] = str_replace('\\', '/', $file->getRelativePathname());
+        }
 
-      $files = [];
-      foreach ($finder as $file) {
-         $files[] = str_replace('\\', '/', $file->getRelativePathname());
-      }
+        return $files;
+    }
 
-      return $files;
-   }
+    public function compile_locales()
+    {
+        $files = $this->getLocaleFiles();
 
-   public function compile_locales() {
-      $files = $this->getLocaleFiles();
+        foreach ($files as $file) {
+            $lang = basename($file, ".po");
 
-      foreach ($files as $file) {
-         $lang = basename($file, ".po");
+            $this->taskExec('msgfmt')->args([
+                "locales/$lang.po",
+                "-o",
+                "locales/$lang.mo",
+            ])->run();
+        }
+    }
 
-         $this->taskExec('msgfmt')->args([
-            "locales/$lang.po",
-            "-o",
-            "locales/$lang.mo",
-         ])->run();
-      }
-   }
+    public function update_locales()
+    {
+        $finder = new Finder();
+        $finder
+           ->files()
+           ->name('*.php')
+           ->in(__DIR__)
+           ->exclude([
+               'vendor',
+           ])
+           ->sortByName();
 
-   public function update_locales() {
-      $finder = new Finder();
-      $finder
-         ->files()
-         ->name('*.php')
-         ->in(__DIR__)
-         ->exclude([
-            'vendor'
-         ])
-         ->sortByName();
+        if (!$finder->hasResults()) {
+            return false;
+        }
 
-      if (!$finder->hasResults()) {
-         return false;
-      }
+        $args = [];
 
-      $args = [];
+        foreach ($finder as $file) {
+            $args[] = str_replace('\\', '/', $file->getRelativePathname());
+        }
 
-      foreach ($finder as $file) {
-         $args[] = str_replace('\\', '/', $file->getRelativePathname());
-      }
+        $args[] = '-D';
+        $args[] = '.';
+        $args[] = '-o';
+        $args[] = "locales/{$this->name}.pot";
+        $args[] = '-L';
+        $args[] = 'PHP';
+        $args[] = '--add-comments=TRANS';
+        $args[] = '--from-code=UTF-8';
+        $args[] = '--force-po';
+        $args[] = '--keyword=__sso';
+        $args[] = "--package-name={$this->name}";
 
-      $args[] = '-D';
-      $args[] = '.';
-      $args[] = '-o';
-      $args[] = "locales/{$this->name}.pot";
-      $args[] = '-L';
-      $args[] = 'PHP';
-      $args[] = '--add-comments=TRANS';
-      $args[] = '--from-code=UTF-8';
-      $args[] = '--force-po';
-      $args[] = '--keyword=__sso';
-      $args[] = "--package-name={$this->name}";
+        if ($this->issues) {
+            $args[] = "--msgid-bugs-address={$this->issues}";
+        }
 
-      if ($this->issues) {
-         $args[] = "--msgid-bugs-address={$this->issues}";
-      }
+        try {
+            $content = file_get_contents('setup.php');
+            $name = 'PLUGIN_' . strtoupper($this->name) . '_VERSION';
+            preg_match("/'$name',\s*'([\w\.]+)'/", $content, $matches);
+            $args[] = '--package-version=' . $matches[1];
+        } catch (Exception $ex) {
+            echo $ex->getMessage();
+        }
 
-      try {
-         $content = file_get_contents('setup.php');
-         $name = 'PLUGIN_' . strtoupper($this->name) . '_VERSION';
-         preg_match("/'$name',\s*'([\w\.]+)'/", $content, $matches);
-         $args[] = '--package-version=' . $matches[1];
-      } catch (\Exception $ex) {
-         echo $ex->getMessage();
-      }
+        putenv("LANG=C");
 
-      putenv("LANG=C");
+        $this->taskExec('xgettext')->args($args)->run();
 
-      $this->taskExec('xgettext')->args($args)->run();
+        $this->taskReplaceInFile("locales/{$this->name}.pot")
+           ->from('CHARSET')
+           ->to('UTF-8')
+           ->run();
 
-      $this->taskReplaceInFile("locales/{$this->name}.pot")
-         ->from('CHARSET')
-         ->to('UTF-8')
-         ->run();
-
-      $this->taskExec('msginit')->args([
-         '--no-translator',
-         '-i',
-         "locales/{$this->name}.pot",
-         '-l',
-         'en_GB.UTF8',
-         '-o',
-         'locales/en_GB.po',
-      ])->run();
-
-      $files = $this->getLocaleFiles();
-
-      foreach ($files as $file) {
-         $lang = basename($file, ".po");
-
-         if ($lang === "en_GB") {
-            continue;
-         }
-
-         $this->taskExec('msgmerge')->args([
-            "--update",
-            "locales/$lang.po",
+        $this->taskExec('msginit')->args([
+            '--no-translator',
+            '-i',
             "locales/{$this->name}.pot",
-            "--lang=$lang",
-            "--backup=off",
-         ])->run();
-      }
+            '-l',
+            'en_GB.UTF8',
+            '-o',
+            'locales/en_GB.po',
+        ])->run();
 
-      $this->compile_locales();
-   }
+        $files = $this->getLocaleFiles();
 
-   public function build() {
-      $this->_remove(["$this->name.zip", "$this->name.tgz"]);
+        foreach ($files as $file) {
+            $lang = basename($file, ".po");
 
-      $this->compile_locales();
+            if ($lang === "en_GB") {
+                continue;
+            }
 
-      $tmpPath = $this->_tmpDir();
+            $this->taskExec('msgmerge')->args([
+                "--update",
+                "locales/$lang.po",
+                "locales/{$this->name}.pot",
+                "--lang=$lang",
+                "--backup=off",
+            ])->run();
+        }
 
-      $exclude = glob(__DIR__ . '/.*');
-      $exclude[] = 'plugin.xml';
-      $exclude[] = 'RoboFile.php';
-      $exclude[] = 'screenshots';
-      $exclude[] = 'tools';
-      $exclude[] = 'vendor';
-      $exclude[] = "$this->name.zip";
-      $exclude[] = "$this->name.tgz";
+        $this->compile_locales();
+    }
 
-      $this->taskCopyDir([__DIR__ => $tmpPath])
-         ->exclude($exclude)
-         ->run();
+    /**
+     * Run php-cs-fixer in dry-run mode (lint).
+     */
+    public function lint()
+    {
+        return $this->taskExec('vendor/bin/php-cs-fixer')->args([
+            'fix',
+            '--diff',
+            '--dry-run',
+            '--allow-risky=yes',
+            '--allow-unsupported-php-version=yes',
+        ])->run();
+    }
 
-      $composer_file = "$tmpPath/composer.json";
-      if (file_exists($composer_file)) {
-         $hasDep = false;
-         try {
-            $data = json_decode(file_get_contents($composer_file), true);
-            $hasDep = isset($data['require']) && count($data['require']) > 0;
-         } catch (\Exception $ex) {
-            $hasDep = true;
-         }
+    /**
+     * Fix coding standards violations where possible.
+     *
+     * @command lint:fix
+     */
+    public function lintFix()
+    {
+        return $this->taskExec('vendor/bin/php-cs-fixer')->args([
+            'fix',
+            '--allow-risky=yes',
+            '--allow-unsupported-php-version=yes',
+        ])->run();
+    }
 
-         if ($hasDep) {
-            $this->taskComposerInstall()
-               ->workingDir($tmpPath)
-               ->noDev()
-               ->run();
-         }
-      }
+    public function build()
+    {
+        $this->_remove(["$this->name.zip", "$this->name.tgz"]);
 
-      $this->_remove("$tmpPath/composer.lock");
+        $this->compile_locales();
 
-      // Pack
-      $this->taskPack("$this->name.zip")
-         ->addDir($this->name, $tmpPath)
-         ->run();
+        $tmpPath = $this->_tmpDir();
 
-      $this->taskPack("$this->name.tgz")
-         ->addDir($this->name, $tmpPath)
-         ->run();
-   }
+        $exclude = glob(__DIR__ . '/.*');
+        $exclude[] = 'plugin.xml';
+        $exclude[] = 'RoboFile.php';
+        $exclude[] = 'screenshots';
+        $exclude[] = 'tools';
+        $exclude[] = 'vendor';
+        $exclude[] = "$this->name.zip";
+        $exclude[] = "$this->name.tgz";
+
+        $this->taskCopyDir([__DIR__ => $tmpPath])
+           ->exclude($exclude)
+           ->run();
+
+        $composer_file = "$tmpPath/composer.json";
+        if (file_exists($composer_file)) {
+            $hasDep = false;
+            try {
+                $data = json_decode(file_get_contents($composer_file), true);
+                $hasDep = isset($data['require']) && count($data['require']) > 0;
+            } catch (Exception $ex) {
+                $hasDep = true;
+            }
+
+            if ($hasDep) {
+                $this->taskComposerInstall()
+                   ->workingDir($tmpPath)
+                   ->noDev()
+                   ->run();
+            }
+        }
+
+        $this->_remove("$tmpPath/composer.lock");
+
+        // Pack
+        $this->taskPack("$this->name.zip")
+           ->addDir($this->name, $tmpPath)
+           ->run();
+
+        $this->taskPack("$this->name.tgz")
+           ->addDir($this->name, $tmpPath)
+           ->run();
+    }
 }
