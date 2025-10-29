@@ -2,7 +2,7 @@
     <h3 class="singlesignon-login-title text-center">{{ title }}</h3>
     <div class="singlesignon-login-buttons d-grid gap-2">
         {% for button in buttons %}
-            <a class="btn btn-outline-primary singlesignon-login-button" href="{{ button.href }}"
+            <a class="btn btn-primary singlesignon-login-button" href="{{ button.href }}"
                {% if button.style %}style="{{ button.style }}"{% endif %}
                {% if button.popup %}data-singlesignon-popup="true"{% endif %}>
                 {% if button.picture %}
