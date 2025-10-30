@@ -34,6 +34,27 @@ function plugin_singlesignon_display_login()
 
 function plugin_singlesignon_post_init()
 {
+    // Don't execute in CLI mode
+    if (PHP_SAPI === 'cli' || !isset($_SERVER['REQUEST_URI'])) {
+        return;
+    }
+    
+    // Don't inject on asset requests (JS, CSS, images, etc.)
+    $uri = $_SERVER['REQUEST_URI'];
+    if (preg_match('/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico|json|xml)(\?|$)/i', $uri)) {
+        return;
+    }
+    
+    // Don't inject on AJAX or asset directories
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+        strpos($uri, '/ajax/') !== false ||
+        strpos($uri, '/js/') !== false ||
+        strpos($uri, '/css/') !== false ||
+        strpos($uri, '/pics/') !== false ||
+        strpos($uri, '/files/') !== false) {
+        return;
+    }
+    
     // If user logged in via SSO, inject data for logout redirect script
     if (isset($_SESSION['glpi_sso_login']) && $_SESSION['glpi_sso_login']) {
         $plugin_logout = Plugin::getWebDir('singlesignon') . '/front/logout.php';
