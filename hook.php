@@ -136,7 +136,7 @@ function plugin_singlesignon_install()
         );
     }
 
-    if (version_compare($currentVersion, '1.3.0', '<') && !$DB->tableExists($providersUsersTable)) {
+    if (!$DB->tableExists($providersUsersTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersUsersTable` (
             `id` INT NOT NULL AUTO_INCREMENT,
