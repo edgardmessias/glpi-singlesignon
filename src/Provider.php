@@ -1354,14 +1354,30 @@ class Provider extends \CommonDBTM
                 $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
                 $splitname = $this->fields['split_name'];
-                $firstLastArray = ($splitname) ? preg_split('/ /', $resource_array['name'], 2) : preg_split('/ /', $resource_array['displayName'], 2);
+                
+                // Determine which name field to use
+                $nameToSplit = '';
+                if ($splitname && !empty($resource_array['name'])) {
+                    $nameToSplit = $resource_array['name'];
+                } elseif (!empty($resource_array['displayName'])) {
+                    $nameToSplit = $resource_array['displayName'];
+                }
+                
+                // Split name or use fallback values
+                $realname = '';
+                $firstname = '';
+                if (!empty($nameToSplit)) {
+                    $firstLastArray = preg_split('/ /', $nameToSplit, 2);
+                    $firstname = $firstLastArray[0] ?? '';
+                    $realname = $firstLastArray[1] ?? '';
+                }
 
                 $userPost = [
                     'name' => $login,
                     'add' => 1,
                     'password' => '',
-                    'realname' => $firstLastArray[1],
-                    'firstname' => $firstLastArray[0],
+                    'realname' => $realname,
+                    'firstname' => $firstname,
                     'api_token' => $tokenAPI,
                     'api_token_date' => date("Y-m-d H:i:s"),
                     'personal_token' => $tokenPersonnel,
