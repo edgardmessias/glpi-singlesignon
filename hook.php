@@ -34,34 +34,10 @@ function plugin_singlesignon_display_login()
 
 function plugin_singlesignon_post_init()
 {
-    global $CFG_GLPI;
-    
-    // Only inject script on HTML pages (not AJAX, JS files, CSS files, etc.)
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
-        isset($_SERVER['SCRIPT_NAME']) && (
-            strpos($_SERVER['SCRIPT_NAME'], '.js') !== false ||
-            strpos($_SERVER['SCRIPT_NAME'], '.css') !== false ||
-            strpos($_SERVER['REQUEST_URI'], '/ajax/') !== false ||
-            strpos($_SERVER['REQUEST_URI'], '/js/') !== false ||
-            strpos($_SERVER['REQUEST_URI'], '/css/') !== false
-        )) {
-        return;
-    }
-    
-    // If user logged in via SSO, redirect logout to plugin's logout to preserve noAUTO
+    // If user logged in via SSO, inject data for logout redirect script
     if (isset($_SESSION['glpi_sso_login']) && $_SESSION['glpi_sso_login']) {
         $plugin_logout = Plugin::getWebDir('singlesignon') . '/front/logout.php';
-        echo "<script type='text/javascript'>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Modify all logout links to use plugin logout
-            document.querySelectorAll('a[href*=\"/front/logout.php\"]').forEach(function(link) {
-                var href = link.getAttribute('href');
-                if (href && href.indexOf('plugins/singlesignon') === -1) {
-                    link.setAttribute('href', '{$plugin_logout}');
-                }
-            });
-        });
-        </script>";
+        echo '<div id="singlesignon-plugin-data" data-logout-url="' . htmlspecialchars($plugin_logout, ENT_QUOTES, 'UTF-8') . '" style="display:none;"></div>';
     }
 }
 
