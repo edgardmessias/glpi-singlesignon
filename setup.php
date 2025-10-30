@@ -79,6 +79,8 @@ function plugin_init_singlesignon()
     $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
         'config'  => Provider::class,
     ];
+
+    $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = 'plugin_singlesignon_post_init';
 }
 
 // Get the name and the version of the plugin - Needed

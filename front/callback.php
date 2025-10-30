@@ -99,6 +99,8 @@ if ($user_id || $signon_provider->login()) {
 
     if ($user_id) {
         $signon_provider->linkUser($user_id);
+        // Mark session as SSO login to prevent auto-login after logout
+        $_SESSION['glpi_sso_login'] = true;
     }
 
     // Retrieve redirect stored during authorization step
@@ -146,9 +148,14 @@ if ($user_id || $signon_provider->login()) {
 // we have done at least a good login? No, we exit.
 Html::nullHeader("Login", PluginSinglesignonToolbox::getBaseURL() . '/index.php');
 echo '<div class="center b">' . __('User not authorized to connect in GLPI') . '<br><br>';
-// Logout whit noAUto to manage auto_login with errors
-echo '<a href="' . PluginSinglesignonToolbox::getBaseURL() . '/front/logout.php?noAUTO=1'
-. str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';
+
+// Build redirect URL with noAUTO parameter
+$login_url = PluginSinglesignonToolbox::getBaseURL() . '/index.php?noAUTO=1';
+if (!empty($REDIRECT)) {
+    $login_url .= str_replace("?", "&", $REDIRECT);
+}
+
+echo '<a href="' . $login_url . '" class="singlesignon">' . __('Log in again') . '</a></div>';
 echo '<script type="text/javascript">
    if (window.opener) {
       $(".singlesignon").on("click", function (e) {
