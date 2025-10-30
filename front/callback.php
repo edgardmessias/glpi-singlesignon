@@ -99,6 +99,8 @@ if ($user_id || $signon_provider->login()) {
 
     if ($user_id) {
         $signon_provider->linkUser($user_id);
+        // Mark session as SSO login to prevent auto-login after logout
+        $_SESSION['glpi_sso_login'] = true;
     }
 
     // Retrieve redirect stored during authorization step

@@ -56,10 +56,12 @@ class LoginRenderer
         $renderer = TemplateRenderer::getInstance();
 
         echo $renderer->render('@singlesignon/login/buttons.html.twig', [
-            'title'         => \__sso('Single Sign-on'),
-            'buttons'       => $buttons,
-            'classic_label' => \__sso('Use GLPI login form'),
-            'classic_url'   => $classicUrl,
+            'title'              => \__sso('Single Sign-on'),
+            'buttons'            => $buttons,
+            'classic_label'      => \__sso('Use GLPI login form'),
+            'classic_url'        => $classicUrl,
+            'auto_login_allowed' => $autoLoginAllowed,
+            'has_auto_popup'     => $autoLoginPopup !== null,
         ]);
 
         if ($autoLoginUrl !== null) {
