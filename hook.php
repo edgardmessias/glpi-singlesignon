@@ -36,6 +36,18 @@ function plugin_singlesignon_post_init()
 {
     global $CFG_GLPI;
     
+    // Only inject script on HTML pages (not AJAX, JS files, CSS files, etc.)
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
+        isset($_SERVER['SCRIPT_NAME']) && (
+            strpos($_SERVER['SCRIPT_NAME'], '.js') !== false ||
+            strpos($_SERVER['SCRIPT_NAME'], '.css') !== false ||
+            strpos($_SERVER['REQUEST_URI'], '/ajax/') !== false ||
+            strpos($_SERVER['REQUEST_URI'], '/js/') !== false ||
+            strpos($_SERVER['REQUEST_URI'], '/css/') !== false
+        )) {
+        return;
+    }
+    
     // If user logged in via SSO, redirect logout to plugin's logout to preserve noAUTO
     if (isset($_SESSION['glpi_sso_login']) && $_SESSION['glpi_sso_login']) {
         $plugin_logout = Plugin::getWebDir('singlesignon') . '/front/logout.php';
