@@ -84,7 +84,7 @@ function plugin_init_singlesignon()
     
     // Add JavaScript file for logout redirect
     // Always load the file - it checks if SSO data element exists before running
-    $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['singlesignon'][] = 'css/logout-redirect.js';
+    $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['singlesignon'][] = 'js/logout-redirect.js';
 }
 
 // Get the name and the version of the plugin - Needed
