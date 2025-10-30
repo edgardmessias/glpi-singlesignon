@@ -81,11 +81,6 @@ function plugin_init_singlesignon()
     ];
 
     $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = 'plugin_singlesignon_post_init';
-    
-    // Add JavaScript file for logout redirect
-    // Always load the file - it checks if SSO data element exists before running
-    // TEMPORARY: using css/ directory while testing .htaccess solution
-    $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['singlesignon'][] = 'css/logout-redirect.js';
 }
 
 // Get the name and the version of the plugin - Needed
