@@ -55,10 +55,25 @@ function plugin_singlesignon_post_init()
         return;
     }
     
-    // If user logged in via SSO, inject data for logout redirect script
+    // If user logged in via SSO, inject script to redirect logout links
     if (isset($_SESSION['glpi_sso_login']) && $_SESSION['glpi_sso_login']) {
         $plugin_logout = Plugin::getWebDir('singlesignon') . '/front/logout.php';
-        echo '<div id="singlesignon-plugin-data" data-logout-url="' . htmlspecialchars($plugin_logout, ENT_QUOTES, 'UTF-8') . '" style="display:none;"></div>';
+        $plugin_logout_js = json_encode($plugin_logout, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+        
+        echo '<script type="text/javascript">
+(function() {
+    "use strict";
+    var pluginLogout = ' . $plugin_logout_js . ';
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll("a[href*=\'/front/logout.php\']").forEach(function(link) {
+            var href = link.getAttribute("href");
+            if (href && href.indexOf("plugins/singlesignon") === -1) {
+                link.setAttribute("href", pluginLogout);
+            }
+        });
+    });
+})();
+</script>';
     }
 }
 
