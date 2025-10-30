@@ -81,6 +81,11 @@ function plugin_init_singlesignon()
     ];
 
     $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = 'plugin_singlesignon_post_init';
+    
+    // Add JavaScript file for logout redirect (only if user logged in via SSO)
+    if (isset($_SESSION['glpi_sso_login']) && $_SESSION['glpi_sso_login']) {
+        $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['singlesignon'][] = 'js/logout-redirect.js';
+    }
 }
 
 // Get the name and the version of the plugin - Needed
