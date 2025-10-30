@@ -30,28 +30,7 @@
 </div>
 {% else %}
 {# noAUTO=1 mode: show SSO above GLPI form #}
-<script>
-(function() {
-    const container = document.getElementById('singlesignon-container');
-    const formColumn = document.querySelector('.row.justify-content-center .col-md-5');
-    const pluginColumn = container ? container.closest('.col-auto') : null;
-    
-    if (container && formColumn) {
-        const header = formColumn.querySelector('.card-header');
-        container.classList.add('mb-4');
-        if (header) {
-            formColumn.insertBefore(container, header);
-        } else {
-            formColumn.prepend(container);
-        }
-    }
-    
-    if (pluginColumn) {
-        pluginColumn.style.display = 'none';
-    }
-})();
-</script>
-<div class="singlesignon-login" id="singlesignon-container">
+<div class="singlesignon-login mb-4" id="singlesignon-container" style="display: none;">
     <h3 class="singlesignon-login-title text-center">{{ title }}</h3>
     <div class="singlesignon-login-buttons d-grid gap-2">
         {% for button in buttons %}
@@ -66,4 +45,25 @@
         {% endfor %}
     </div>
 </div>
+<script>
+(function() {
+    const container = document.getElementById('singlesignon-container');
+    const formColumn = document.querySelector('.row.justify-content-center .col-md-5');
+    const pluginColumn = container ? container.closest('.col-auto') : null;
+    
+    if (container && formColumn) {
+        const header = formColumn.querySelector('.card-header');
+        if (header) {
+            formColumn.insertBefore(container, header);
+        } else {
+            formColumn.prepend(container);
+        }
+        container.style.display = '';
+    }
+    
+    if (pluginColumn) {
+        pluginColumn.style.display = 'none';
+    }
+})();
+</script>
 {% endif %}
