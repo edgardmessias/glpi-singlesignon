@@ -1,0 +1,65 @@
+<div class="singlesignon-login" id="singlesignon-container">
+    <h3 class="singlesignon-login-title text-center">{{ title }}</h3>
+    <div class="singlesignon-login-buttons d-grid gap-2">
+        {% for button in buttons %}
+            <a class="btn btn-outline-primary singlesignon-login-button" href="{{ button.href }}"
+               {% if button.style %}style="{{ button.style }}"{% endif %}
+               {% if button.popup %}data-singlesignon-popup="true"{% endif %}>
+                {% if button.picture %}
+                    <img src="{{ button.picture }}" alt="" class="singlesignon-login-picture"/>
+                {% endif %}
+                <span>{{ button.label }}</span>
+            </a>
+        {% endfor %}
+    </div>
+    <div class="singlesignon-login-classic text-center">
+        <a class="btn btn-link" href="{{ classic_url }}">
+            {{ classic_label }}
+        </a>
+    </div>
+</div>
+<script>
+(function () {
+    const updateLayout = () => {
+        const params = new URLSearchParams(window.location.search);
+        const container = document.getElementById('singlesignon-container');
+        if (!container) {
+            return;
+        }
+        const formColumn = document.querySelector('.row.justify-content-center .col-md-5');
+        const pluginColumn = container.closest('.col-auto');
+        if (params.get('noAUTO') === '1') {
+            const classicLink = container.querySelector('.singlesignon-login-classic');
+            if (classicLink) {
+                classicLink.remove();
+            }
+            if (formColumn) {
+                const header = formColumn.querySelector('.card-header');
+                container.classList.add('mb-4');
+                if (header) {
+                    formColumn.insertBefore(container, header);
+                } else {
+                    formColumn.prepend(container);
+                }
+            }
+            if (pluginColumn) {
+                pluginColumn.style.display = 'none';
+            }
+            return;
+        }
+        if (formColumn) {
+            formColumn.style.display = 'none';
+        }
+        if (pluginColumn) {
+            pluginColumn.classList.remove('col-auto', 'px-2', 'text-center');
+            pluginColumn.classList.add('col-12', 'col-md-6', 'd-flex', 'justify-content-center');
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateLayout);
+    } else {
+        updateLayout();
+    }
+})();
+</script>

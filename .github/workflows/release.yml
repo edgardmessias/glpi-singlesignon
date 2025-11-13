@@ -16,7 +16,7 @@ jobs:
       runs-on: ubuntu-latest
       steps:
           - name: Checkout code
-            uses: actions/checkout@v2
+            uses: actions/checkout@v4
 
           - name: 🏷️ Create/update tag
             uses: actions/github-script@v7
@@ -61,7 +61,7 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - name: Checkout code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v4
           
         - name: Build project # This would actually build your project, using zip for an example artifact
           id: build_

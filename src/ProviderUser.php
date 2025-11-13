@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+namespace GlpiPlugin\Singlesignon;
+
 /**
  * ---------------------------------------------------------------------
  * SingleSignOn is a plugin which allows to use SSO for auth
@@ -25,37 +29,12 @@
  * ---------------------------------------------------------------------
  */
 
-use Glpi\Exception\Http\BadRequestHttpException;
-use Glpi\Exception\Http\NotFoundHttpException;
+class ProviderUser extends \CommonDBRelation {
 
-include('../../../inc/includes.php');
+   // From CommonDBRelation
+   static public $itemtype_1   = 'PluginSinglesignonProvider';
+   static public $items_id_1   = 'plugin_singlesignon_providers_id';
 
-$provider = new PluginSinglesignonProvider();
-$path = false;
-
-if (isset($_GET['id'])) { // docid for document
-   if (!$provider->getFromDB($_GET['id'])) {
-      $exception = new NotFoundHttpException();
-      $exception->setMessageToDisplay(__('Unknown file'));
-      throw $exception;
-   }
-
-   $path = $provider->fields['picture'];
-} else if (isset($_GET['path'])) {
-   $path = $_GET['path'];
-} else {
-   $exception = new BadRequestHttpException();
-   $exception->setMessageToDisplay(__('Invalid filename'));
-   throw $exception;
+   static public $itemtype_2 = 'User';
+   static public $items_id_2 = 'users_id';
 }
-
-$path = GLPI_PLUGIN_DOC_DIR . "/singlesignon/" . $path;
-
-if (!file_exists($path)) {
-   $exception = new NotFoundHttpException();
-   $exception->setMessageToDisplay(__('File not found'));
-   throw $exception;
-}
-
-// In GLPI 11, use getFileAsResponse() instead of deprecated sendFile()
-Toolbox::getFileAsResponse($path, "logo.png", null, true)->send();

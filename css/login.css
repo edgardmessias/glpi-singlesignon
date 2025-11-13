@@ -1,0 +1,39 @@
+
+.singlesignon-login {
+    margin-top: 1.5rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.singlesignon-login-title {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.singlesignon-login-buttons {
+    min-width: 22rem;
+    max-width: 28rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.singlesignon-login-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.singlesignon-login-button span {
+    flex: 1;
+}
+
+.singlesignon-login-picture {
+    max-height: 22px;
+    width: auto;
+}
+
+.singlesignon-login-classic {
+    margin-top: 1rem;
+}

@@ -25,8 +25,11 @@
  * ---------------------------------------------------------------------
  */
 
-//Disable CSRF token
-define('GLPI_USE_CSRF_CHECK', 0);
+// OAuth callback endpoint - uses normal GLPI session to validate CSRF tokens
+
+use Glpi\Exception\Http\BadRequestHttpException;
+use Glpi\Exception\Http\NotFoundHttpException;
+use Glpi\Exception\SessionExpiredException;
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -34,20 +37,28 @@ error_reporting(E_ALL);
 
 include('../../../inc/includes.php');
 
+// Session is automatically started by GLPI for non-stateless endpoints
+
 $provider_id = PluginSinglesignonToolbox::getCallbackParameters('provider');
 
 if (!$provider_id) {
-   Html::displayErrorAndDie(__sso("Provider not defined."), false);
+   $exception = new BadRequestHttpException();
+   $exception->setMessageToDisplay(__sso("Provider not defined."));
+   throw $exception;
 }
 
 $signon_provider = new PluginSinglesignonProvider();
 
 if (!$signon_provider->getFromDB($provider_id)) {
-   Html::displayErrorAndDie(__sso("Provider not found."), true);
+   $exception = new NotFoundHttpException();
+   $exception->setMessageToDisplay(__sso("Provider not found."));
+   throw $exception;
 }
 
 if (!$signon_provider->fields['is_active']) {
-   Html::displayErrorAndDie(__sso("Provider not active."), true);
+   $exception = new BadRequestHttpException();
+   $exception->setMessageToDisplay(__sso("Provider not active."));
+   throw $exception;
 }
 
 $signon_provider->checkAuthorization();
@@ -67,7 +78,18 @@ if ($test) {
    exit();
 }
 
-$user_id = Session::getLoginUserID();
+$user_id = 0;
+$existing_user_id = Session::getLoginUserID();
+
+if ($existing_user_id) {
+   try {
+      Session::checkValidSessionId();
+      $user_id = (int)$existing_user_id;
+   } catch (SessionExpiredException $e) {
+      // treat stale session as anonymous and force a fresh login
+      $user_id = 0;
+   }
+}
 
 $REDIRECT = "";
 
@@ -79,12 +101,12 @@ if ($user_id || $signon_provider->login()) {
       $signon_provider->linkUser($user_id);
    }
 
-   $params = PluginSinglesignonToolbox::getCallbackParameters('q');
-
-   if (isset($params['redirect'])) {
-      $REDIRECT = '?redirect=' . $params['redirect'];
-   } else if (isset($_GET['state']) && is_integer(strpos($_GET['state'], ";redirect="))) {
-      $REDIRECT = '?' . substr($_GET['state'], strpos($_GET['state'], ";redirect=") + 1);
+   // Retrieve redirect stored during authorization step
+   if (isset($_SESSION['glpi_singlesignon_redirect'])) {
+      $REDIRECT = '?redirect=' . $_SESSION['glpi_singlesignon_redirect'];
+      unset($_SESSION['glpi_singlesignon_redirect']);
+   } else if (isset($_GET['redirect'])) {
+      $REDIRECT = '?redirect=' . $_GET['redirect'];
    }
 
    $url_redirect = '';

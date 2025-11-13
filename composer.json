@@ -2,25 +2,32 @@
     "name": "edgardmessias/glpi-singlesignon",
     "description": "Single Sign-On (OAuth) for GLPI",
     "license": "GPL-3.0-or-later",
+    "require": {
+        "php": ">=8.2"
+    },
     "require-dev": {
-        "consolidation/robo": "^1.4",
-        "glpi-project/coding-standard": "^0.8",
-        "pear/archive_tar": "^1.4",
-        "phpcompatibility/php-compatibility": "^9.3",
-        "squizlabs/php_codesniffer": "^3.5"
+        "glpi-project/tools": "^0.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "GlpiPlugin\\Singlesignon\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Glpi\\Tools\\": "../../tools/src/"
+        }
     },
     "scripts": {
-        "lint": "phpcs",
-        "lint:fix": "phpcbf",
-        "make-release": "robo build",
-        "update-locales": "robo update_locales"
+        "lint": "vendor/bin/robo lint",
+        "lint:fix": "vendor/bin/robo lint:fix",
+        "make-release": "vendor/bin/robo build",
+        "update-locales": "vendor/bin/robo update_locales"
     },
     "config": {
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
-        },
+        "optimize-autoloader": true,
         "platform": {
-            "php": "7.1.2"
+            "php": "8.2.99"
         },
         "sort-packages": true
     }
