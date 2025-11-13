@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-04 21:23+0000\n"
+"POT-Creation-Date: 2025-11-13 12:45+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,74 +17,91 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: setup.php:33
+#: setup.php:43
 #, php-format
 msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
 msgstr ""
 
-#: setup.php:67 front/provider.form.php:86 front/provider.form.php:88
-#: front/provider.php:33 front/provider.php:35 inc/preference.class.php:89
-#: inc/provider.class.php:84
+#: setup.php:84 front/provider.form.php:86 front/provider.form.php:88
+#: front/provider.php:33 front/provider.php:35 src/LoginRenderer.php:48
+#: src/Preference.php:93 src/Provider.php:88
 msgid "Single Sign-on"
 msgstr ""
 
-#: setup.php:84
-msgid "This plugin requires GLPI >= 0.85"
+#: setup.php:101
+msgid "This plugin requires GLPI >= 11.0.0"
 msgstr ""
 
-#: front/callback.php:40
-msgid "Provider not defined."
+#: setup.php:106
+msgid "This plugin is not yet validated for this GLPI version"
+msgstr ""
+
+#: setup.php:111
+msgid "This plugin requires PHP >= 8.2"
 msgstr ""
 
 #: front/callback.php:46
+msgid "Provider not defined."
+msgstr ""
+
+#: front/callback.php:54
 msgid "Provider not found."
 msgstr ""
 
-#: front/callback.php:50
+#: front/callback.php:60
 msgid "Provider not active."
 msgstr ""
 
-#: front/callback.php:108
+#: front/callback.php:130
 msgid "Automatic redirection, else click"
 msgstr ""
 
-#: inc/preference.class.php:172 inc/provider.class.php:77
+#: src/LoginRenderer.php:32 src/Toolbox.php:244
+#, php-format
+msgid "Login with %s"
+msgstr ""
+
+#: src/LoginRenderer.php:50
+msgid "Use GLPI login form"
+msgstr ""
+
+#: src/Preference.php:176 src/Provider.php:81
 msgid "Single Sign-on Provider"
 msgstr ""
 
-#: inc/preference.class.php:197
+#: src/Preference.php:201
 msgid "Linked accounts"
 msgstr ""
 
-#: inc/provider.class.php:126
+#: src/Provider.php:130
 msgid "JSON SSO provider representation"
 msgstr ""
 
-#: inc/provider.class.php:127
+#: src/Provider.php:131
 msgid "Copy provider information"
 msgstr ""
 
-#: inc/provider.class.php:158
+#: src/Provider.php:162
 msgid "SSO Type"
 msgstr ""
 
-#: inc/provider.class.php:166 inc/provider.class.php:509
+#: src/Provider.php:170 src/Provider.php:513
 msgid "Client ID"
 msgstr ""
 
-#: inc/provider.class.php:168 inc/provider.class.php:517
+#: src/Provider.php:172 src/Provider.php:521
 msgid "Client Secret"
 msgstr ""
 
-#: inc/provider.class.php:179 inc/provider.class.php:525
+#: src/Provider.php:183 src/Provider.php:529
 msgid "Scope"
 msgstr ""
 
-#: inc/provider.class.php:181 inc/provider.class.php:533
+#: src/Provider.php:185 src/Provider.php:537
 msgid "Extra Options"
 msgstr ""
 
-#: inc/provider.class.php:183
+#: src/Provider.php:187
 #, php-format
 msgid ""
 "Allows you to specify custom parameters for the SSO provider %1$s. Example: "
@@ -93,127 +110,121 @@ msgid ""
 "the \"&\" delimiter."
 msgstr ""
 
-#: inc/provider.class.php:183 inc/provider.class.php:190
-#: inc/provider.class.php:541
+#: src/Provider.php:187 src/Provider.php:194 src/Provider.php:545
 msgid "Authorize URL"
 msgstr ""
 
-#: inc/provider.class.php:195 inc/provider.class.php:549
+#: src/Provider.php:199 src/Provider.php:553
 msgid "Access Token URL"
 msgstr ""
 
-#: inc/provider.class.php:200 inc/provider.class.php:557
+#: src/Provider.php:204 src/Provider.php:561
 msgid "Resource Owner Details URL"
 msgstr ""
 
-#: inc/provider.class.php:205
+#: src/Provider.php:209
 msgid "IsDefault"
 msgstr ""
 
-#: inc/provider.class.php:207
+#: src/Provider.php:211
 msgid "PopupAuth"
 msgstr ""
 
-#: inc/provider.class.php:213
+#: src/Provider.php:217
 msgid "SplitDomain"
 msgstr ""
 
-#: inc/provider.class.php:217
+#: src/Provider.php:221
 msgid "AuthorizedDomains"
 msgstr ""
 
-#: inc/provider.class.php:219
+#: src/Provider.php:223
 msgid ""
 "Provide a list of domains allowed to log in through this provider (separated "
 "by commas, no spaces) (optional)."
 msgstr ""
 
-#: inc/provider.class.php:225
+#: src/Provider.php:229
 msgid "Use Email as Login"
 msgstr ""
 
-#: inc/provider.class.php:228
+#: src/Provider.php:232
 msgid "Split Name"
 msgstr ""
 
-#: inc/provider.class.php:316
+#: src/Provider.php:320
 msgid "Callback URL"
 msgstr ""
 
-#: inc/provider.class.php:320
+#: src/Provider.php:324
 msgid "Test Single Sign-on"
 msgstr ""
 
-#: inc/provider.class.php:379
+#: src/Provider.php:383
 msgid "A Name is required"
 msgstr ""
 
-#: inc/provider.class.php:385
+#: src/Provider.php:389
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr ""
 
-#: inc/provider.class.php:389
+#: src/Provider.php:393
 msgid "A Client ID is required"
 msgstr ""
 
-#: inc/provider.class.php:393
+#: src/Provider.php:397
 msgid "A Client Secret is required"
 msgstr ""
 
-#: inc/provider.class.php:398
+#: src/Provider.php:402
 msgid "An Authorize URL is required"
 msgstr ""
 
-#: inc/provider.class.php:400
+#: src/Provider.php:404
 msgid "The Authorize URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:404
+#: src/Provider.php:408
 msgid "An Access Token URL is required"
 msgstr ""
 
-#: inc/provider.class.php:406
+#: src/Provider.php:410
 msgid "The Access Token URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:410
+#: src/Provider.php:414
 msgid "A Resource Owner Details URL is required"
 msgstr ""
 
-#: inc/provider.class.php:412
+#: src/Provider.php:416
 msgid "The Resource Owner Details URL is invalid"
 msgstr ""
 
-#: inc/provider.class.php:634
+#: src/Provider.php:638
 msgid "Generic"
 msgstr ""
 
-#: inc/provider.class.php:635
+#: src/Provider.php:639
 msgid "Azure"
 msgstr ""
 
-#: inc/provider.class.php:636
+#: src/Provider.php:640
 msgid "Facebook"
 msgstr ""
 
-#: inc/provider.class.php:637
+#: src/Provider.php:641
 msgid "GitHub"
 msgstr ""
 
-#: inc/provider.class.php:638
+#: src/Provider.php:642
 msgid "Google"
 msgstr ""
 
-#: inc/provider.class.php:639
+#: src/Provider.php:643
 msgid "Instagram"
 msgstr ""
 
-#: inc/provider.class.php:640
+#: src/Provider.php:644
 msgid "LinkdeIn"
-msgstr ""
-
-#: inc/toolbox.class.php:195
-#, php-format
-msgid "Login with %s"
 msgstr ""
