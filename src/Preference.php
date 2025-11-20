@@ -46,7 +46,7 @@ class Preference extends \CommonDBTM {
    }
 
    public function loadProviders() {
-      $signon_provider = new PluginSinglesignonProvider();
+      $signon_provider = new Provider();
 
       $condition = '`is_active` = 1';
       if (version_compare(GLPI_VERSION, '9.4', '>=')) {
@@ -54,7 +54,7 @@ class Preference extends \CommonDBTM {
       }
       $this->providers = $signon_provider->find($condition);
 
-      $provider_user = new PluginSinglesignonProvider_User();
+      $provider_user = new \PluginSinglesignonProvider_User();
 
       $condition = "`users_id` = {$this->user_id}";
       if (version_compare(GLPI_VERSION, '9.4', '>=')) {
@@ -73,7 +73,7 @@ class Preference extends \CommonDBTM {
          return false;
       }
 
-      $provider_user = new PluginSinglesignonProvider_User();
+      $provider_user = new \PluginSinglesignonProvider_User();
       $condition = "`users_id` = {$this->user_id} AND `id` IN (" . implode(',', $ids) . ")";
       if (version_compare(GLPI_VERSION, '9.4', '>=')) {
          $condition = [$condition];
@@ -143,7 +143,7 @@ class Preference extends \CommonDBTM {
    }
 
    function showFormPreference(\CommonGLPI $item) {
-      $user = new User();
+      $user = new \User();
       if (!$user->can($this->user_id, READ) && ($this->user_id != \Session::getLoginUserID())) {
          return false;
       }
@@ -201,8 +201,8 @@ class Preference extends \CommonDBTM {
          echo "<tr><th colspan='2'>" . \__sso('Linked accounts') . "</th></tr>";
 
          foreach ($this->providers_users as $pu) {
-            /** @var PluginSinglesignonProvider */
-            $provider = PluginSinglesignonProvider::getById($pu['plugin_singlesignon_providers_id']);
+            /** @var Provider */
+            $provider = Provider::getById($pu['plugin_singlesignon_providers_id']);
 
             echo "<tr><td>";
             echo $provider->fields['name'] . ' (ID:' . $pu['remote_id'] . ')';

@@ -59,7 +59,7 @@ function plugin_singlesignon_install() {
    if (!$DB->tableExists($providersTable)) {
       $DB->doQuery(
          "CREATE TABLE `$providersTable` (
-            `id`                         INT NOT NULL AUTO_INCREMENT,
+            `id`                         INT UNSIGNED NOT NULL AUTO_INCREMENT,
             `is_default`                 TINYINT(1) NOT NULL DEFAULT '0',
             `popup`                      TINYINT(1) NOT NULL DEFAULT '0',
             `split_domain`               TINYINT(1) NOT NULL DEFAULT '0',
@@ -132,18 +132,88 @@ function plugin_singlesignon_install() {
       );
    }
 
+   // Version 1.6.0 migrations
+   if (version_compare($currentVersion, '1.6.0', '<')) {
+      // Add SSL verification options
+      $migration->addField($providersTable, 'ssl_verifyhost', 'bool', [
+         'value' => 1,  // Default to enabled for security
+      ]);
+      $migration->addField($providersTable, 'ssl_verifypeer', 'bool', [
+         'value' => 1,  // Default to enabled for security
+      ]);
+
+      // Add group-based access control fields
+      $migration->addField(
+         $providersTable,
+         'allowed_groups',
+         'text',
+         [
+            'nodefault' => true,
+            'null'      => true,
+         ]
+      );
+
+      // Add custom groups claim field
+      $migration->addField(
+         $providersTable,
+         'groups_claim',
+         'string',
+         [
+            'nodefault' => true,
+            'null'      => true,
+         ]
+      );
+
+      // Fix signed INT to UNSIGNED for GLPI 11 compliance
+      $columns = $DB->listFields($providersTable);
+      if (isset($columns['id']) && isset($columns['id']['Type'])) {
+         if (stripos($columns['id']['Type'], 'unsigned') === false) {
+            $DB->doQuery("ALTER TABLE `$providersTable` MODIFY `id` INT UNSIGNED NOT NULL AUTO_INCREMENT");
+         }
+      }
+   }
+
+   // Create the providers_users linking table if it doesn't exist
+   // This table is needed to link OAuth remote_id to GLPI users
    if (version_compare($currentVersion, '1.3.0', '<') && !$DB->tableExists($providersUsersTable)) {
       $DB->doQuery(
          "CREATE TABLE `$providersUsersTable` (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
-            `users_id` INT NOT NULL DEFAULT '0',
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            `users_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
             PRIMARY KEY (`id`),
             UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
             UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
       );
+   } else {
+      // Table exists - check if columns need to be updated to UNSIGNED
+      // This auto-fixes the GLPI 11 deprecation warning about signed integers
+      $columns = $DB->listFields($providersUsersTable);
+
+      $needsUpdate = false;
+      $columnsToUpdate = ['id', 'plugin_singlesignon_providers_id', 'users_id'];
+
+      foreach ($columnsToUpdate as $column) {
+         if (isset($columns[$column]) && isset($columns[$column]['Type'])) {
+            // Check if the column type contains 'unsigned' (case insensitive)
+            if (stripos($columns[$column]['Type'], 'unsigned') === false) {
+               $needsUpdate = true;
+               break;
+            }
+         }
+      }
+
+      if ($needsUpdate) {
+         // Update columns to UNSIGNED to fix GLPI 11 deprecation warnings
+         $DB->doQuery(
+            "ALTER TABLE `$providersUsersTable`
+               MODIFY `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+               MODIFY `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
+               MODIFY `users_id` INT UNSIGNED NOT NULL DEFAULT '0'"
+         );
+      }
    }
 
    if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => 'PluginSinglesignonProvider'])) {
@@ -173,6 +243,9 @@ function plugin_singlesignon_uninstall() {
 
    $config = new Config();
    $config->deleteConfigurationValues('plugin:singlesignon');
+
+   // Explicitly remove plugin config from database to ensure clean uninstall
+   $DB->delete('glpi_configs', ['context' => 'plugin:singlesignon']);
 
    $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
    $providersTable = 'glpi_plugin_singlesignon_providers';
