@@ -38,28 +38,29 @@ function plugin_singlesignon_post_init()
     if (PHP_SAPI === 'cli' || !isset($_SERVER['REQUEST_URI'])) {
         return;
     }
-    
+
     // Don't inject on asset requests (JS, CSS, images, etc.)
     $uri = $_SERVER['REQUEST_URI'];
     if (preg_match('/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico|json|xml)(\?|$)/i', $uri)) {
         return;
     }
-    
+
     // Don't inject on AJAX or asset directories
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ||
-        strpos($uri, '/ajax/') !== false ||
-        strpos($uri, '/js/') !== false ||
-        strpos($uri, '/css/') !== false ||
-        strpos($uri, '/pics/') !== false ||
-        strpos($uri, '/files/') !== false) {
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+        || strpos($uri, '/ajax/') !== false
+        || strpos($uri, '/js/') !== false
+        || strpos($uri, '/css/') !== false
+        || strpos($uri, '/pics/') !== false
+        || strpos($uri, '/files/') !== false) {
         return;
     }
-    
+
     // If user logged in via SSO, inject script to redirect logout links
     if (isset($_SESSION['glpi_sso_login']) && $_SESSION['glpi_sso_login']) {
         $plugin_logout = Plugin::getWebDir('singlesignon') . '/front/logout.php';
         $plugin_logout_js = json_encode($plugin_logout, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-        
+
+
         echo '<script type="text/javascript">
 (function() {
     "use strict";

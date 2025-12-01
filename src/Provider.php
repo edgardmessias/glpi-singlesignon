@@ -1354,7 +1354,7 @@ class Provider extends \CommonDBTM
                 $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
                 $splitname = $this->fields['split_name'];
-                
+
                 // Determine which name field to use
                 $nameToSplit = '';
                 if ($splitname && !empty($resource_array['name'])) {
@@ -1362,7 +1362,7 @@ class Provider extends \CommonDBTM
                 } elseif (!empty($resource_array['displayName'])) {
                     $nameToSplit = $resource_array['displayName'];
                 }
-                
+
                 // Split name or use fallback values
                 $realname = '';
                 $firstname = '';
