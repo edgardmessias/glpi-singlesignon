@@ -1,8 +1,18 @@
+{% if auto_login_allowed %}
+{# Auto-login mode: hide GLPI form, show SSO centered #}
+<script>
+(function() {
+    const formColumn = document.querySelector('.row.justify-content-center .col-md-5');
+    if (formColumn) {
+        formColumn.style.display = 'none';
+    }
+})();
+</script>
 <div class="singlesignon-login" id="singlesignon-container">
     <h3 class="singlesignon-login-title text-center">{{ title }}</h3>
     <div class="singlesignon-login-buttons d-grid gap-2">
         {% for button in buttons %}
-            <a class="btn btn-outline-primary singlesignon-login-button" href="{{ button.href }}"
+            <a class="btn btn-primary singlesignon-login-button" href="{{ button.href }}"
                {% if button.style %}style="{{ button.style }}"{% endif %}
                {% if button.popup %}data-singlesignon-popup="true"{% endif %}>
                 {% if button.picture %}
@@ -18,48 +28,42 @@
         </a>
     </div>
 </div>
+{% else %}
+{# noAUTO=1 mode: show SSO above GLPI form #}
+<div class="singlesignon-login mb-4" id="singlesignon-container" style="display: none;">
+    <h3 class="singlesignon-login-title text-center">{{ title }}</h3>
+    <div class="singlesignon-login-buttons d-grid gap-2">
+        {% for button in buttons %}
+            <a class="btn btn-primary singlesignon-login-button" href="{{ button.href }}"
+               {% if button.style %}style="{{ button.style }}"{% endif %}
+               {% if button.popup %}data-singlesignon-popup="true"{% endif %}>
+                {% if button.picture %}
+                    <img src="{{ button.picture }}" alt="" class="singlesignon-login-picture"/>
+                {% endif %}
+                <span>{{ button.label }}</span>
+            </a>
+        {% endfor %}
+    </div>
+</div>
 <script>
-(function () {
-    const updateLayout = () => {
-        const params = new URLSearchParams(window.location.search);
-        const container = document.getElementById('singlesignon-container');
-        if (!container) {
-            return;
+(function() {
+    const container = document.getElementById('singlesignon-container');
+    const formColumn = document.querySelector('.row.justify-content-center .col-md-5');
+    const pluginColumn = container ? container.closest('.col-auto') : null;
+    
+    if (container && formColumn) {
+        const header = formColumn.querySelector('.card-header');
+        if (header) {
+            formColumn.insertBefore(container, header);
+        } else {
+            formColumn.prepend(container);
         }
-        const formColumn = document.querySelector('.row.justify-content-center .col-md-5');
-        const pluginColumn = container.closest('.col-auto');
-        if (params.get('noAUTO') === '1') {
-            const classicLink = container.querySelector('.singlesignon-login-classic');
-            if (classicLink) {
-                classicLink.remove();
-            }
-            if (formColumn) {
-                const header = formColumn.querySelector('.card-header');
-                container.classList.add('mb-4');
-                if (header) {
-                    formColumn.insertBefore(container, header);
-                } else {
-                    formColumn.prepend(container);
-                }
-            }
-            if (pluginColumn) {
-                pluginColumn.style.display = 'none';
-            }
-            return;
-        }
-        if (formColumn) {
-            formColumn.style.display = 'none';
-        }
-        if (pluginColumn) {
-            pluginColumn.classList.remove('col-auto', 'px-2', 'text-center');
-            pluginColumn.classList.add('col-12', 'col-md-6', 'd-flex', 'justify-content-center');
-        }
-    };
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', updateLayout);
-    } else {
-        updateLayout();
+        container.style.display = '';
+    }
+    
+    if (pluginColumn) {
+        pluginColumn.style.display = 'none';
     }
 })();
 </script>
+{% endif %}

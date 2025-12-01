@@ -6,6 +6,8 @@
         "php": ">=8.2"
     },
     "require-dev": {
+        "consolidation/robo": "^4.0",
+        "friendsofphp/php-cs-fixer": "^3.86",
         "glpi-project/tools": "^0.8"
     },
     "autoload": {
@@ -19,8 +21,8 @@
         }
     },
     "scripts": {
-        "lint": "vendor/bin/robo lint",
-        "lint:fix": "vendor/bin/robo lint:fix",
+        "lint": "vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes --allow-unsupported-php-version=yes",
+        "lint:fix": "vendor/bin/php-cs-fixer fix --allow-risky=yes --allow-unsupported-php-version=yes",
         "make-release": "vendor/bin/robo build",
         "update-locales": "vendor/bin/robo update_locales"
     },

@@ -29,195 +29,203 @@ namespace GlpiPlugin\Singlesignon;
  * ---------------------------------------------------------------------
  */
 
-class Preference extends \CommonDBTM {
+class Preference extends \CommonDBTM
+{
+    protected static $notable = true;
+    public static $rightname = '';
 
-   static protected $notable = true;
-   static $rightname = '';
+    // Provider data
+    public $user_id = null;
+    public $providers = [];
+    public $providers_users = [];
 
-   // Provider data
-   public $user_id = null;
-   public $providers = [];
-   public $providers_users = [];
+    public function __construct($user_id = null)
+    {
+        parent::__construct();
 
-   public function __construct($user_id = null) {
-      parent::__construct();
+        $this->user_id = $user_id;
+    }
 
-      $this->user_id = $user_id;
-   }
+    public function loadProviders()
+    {
+        $signon_provider = new PluginSinglesignonProvider();
 
-   public function loadProviders() {
-      $signon_provider = new PluginSinglesignonProvider();
+        $condition = '`is_active` = 1';
+        if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+            $condition = [$condition];
+        }
+        $this->providers = $signon_provider->find($condition);
 
-      $condition = '`is_active` = 1';
-      if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-         $condition = [$condition];
-      }
-      $this->providers = $signon_provider->find($condition);
+        $provider_user = new PluginSinglesignonProvider_User();
 
-      $provider_user = new PluginSinglesignonProvider_User();
+        $condition = "`users_id` = {$this->user_id}";
+        if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+            $condition = [$condition];
+        }
+        $this->providers_users = $provider_user->find($condition);
+    }
 
-      $condition = "`users_id` = {$this->user_id}";
-      if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-         $condition = [$condition];
-      }
-      $this->providers_users = $provider_user->find($condition);
-   }
+    public function update(array $input, $history = 1, $options = [])
+    {
+        if (!isset($input['_remove_sso']) || !is_array($input['_remove_sso'])) {
+            return false;
+        }
 
-   public function update(array $input, $history = 1, $options = []) {
-      if (!isset($input['_remove_sso']) || !is_array($input['_remove_sso'])) {
-         return false;
-      }
+        $ids = $input['_remove_sso'];
+        if (empty($ids)) {
+            return false;
+        }
 
-      $ids = $input['_remove_sso'];
-      if (empty($ids)) {
-         return false;
-      }
+        $provider_user = new PluginSinglesignonProvider_User();
+        $condition = "`users_id` = {$this->user_id} AND `id` IN (" . implode(',', $ids) . ")";
+        if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+            $condition = [$condition];
+        }
 
-      $provider_user = new PluginSinglesignonProvider_User();
-      $condition = "`users_id` = {$this->user_id} AND `id` IN (" . implode(',', $ids) . ")";
-      if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-         $condition = [$condition];
-      }
+        $providers_users = $provider_user->find($condition);
 
-      $providers_users = $provider_user->find($condition);
+        foreach ($providers_users as $pu) {
+            $provider_user->delete($pu);
+        }
+    }
 
-      foreach ($providers_users as $pu) {
-         $provider_user->delete($pu);
-      }
-   }
-
-   function getTabNameForItem(\CommonGLPI $item, $withtemplate = 0) {
-      switch (get_class($item)) {
-         case 'Preference':
-         case 'User':
-            return [1 => \__sso('Single Sign-on')];
-         default:
-            return '';
-      }
-   }
-
-   static function displayTabContentForItem(\CommonGLPI $item, $tabnum = 1, $withtemplate = 0) {
-      switch (get_class($item)) {
-         case 'User':
-            $prefer = new self($item->fields['id']);
-            $prefer->loadProviders();
-            $prefer->showFormUser($item);
-            break;
-         case 'Preference':
-            $prefer = new self(\Session::getLoginUserID());
-            $prefer->loadProviders();
-            $prefer->showFormPreference($item);
-            break;
-      }
-      return true;
-   }
-
-   function showFormUser(\CommonGLPI $item) {
-      global $CFG_GLPI;
-
-      if (!\User::canView()) {
-         return false;
-      }
-      $canedit = \Session::haveRight(\User::$rightname, UPDATE);
-      if ($canedit) {
-         echo "<form name='form' action=\"" . Toolbox::getBaseURL() . \Plugin::getPhpDir("singlesignon", false) . "/front/user.form.php\" method='post'>";
-      }
-      echo \Html::hidden('user_id', ['value' => $this->user_id]);
-
-      echo "<div class='center' id='tabsbody'>";
-      echo "<table class='tab_cadre_fixe'>";
-
-      echo "<tr><th colspan='4'>" . __('Settings') . "</th></tr>";
-
-      $this->showFormDefault($item);
-
-      if ($canedit) {
-         echo "<tr class='tab_bg_2'>";
-         echo "<td colspan='4' class='center'>";
-         echo "<input type='submit' name='update' class='submit' value=\"" . _sx('button', 'Save') . "\">";
-         echo "</td></tr>";
-      }
-
-      echo "</table></div>";
-      \Html::closeForm();
-   }
-
-   function showFormPreference(\CommonGLPI $item) {
-      $user = new User();
-      if (!$user->can($this->user_id, READ) && ($this->user_id != \Session::getLoginUserID())) {
-         return false;
-      }
-      $canedit = $this->user_id == \Session::getLoginUserID();
-
-      if ($canedit) {
-         echo "<form name='form' action=\"" . \Toolbox::getItemTypeFormURL(__CLASS__) . "\" method='post'>";
-      }
-
-      echo "<div class='center' id='tabsbody'>";
-      echo "<table class='tab_cadre_fixe'>";
-
-      echo "<tr><th colspan='4'>" . __('Settings') . "</th></tr>";
-
-      $this->showFormDefault($item);
-
-      if ($canedit) {
-         echo "<tr class='tab_bg_2'>";
-         echo "<td colspan='4' class='center'>";
-         echo "<input type='submit' name='update' class='submit' value=\"" . _sx('button', 'Save') . "\">";
-         echo "</td></tr>";
-      }
-
-      echo "</table></div>";
-      \Html::closeForm();
-   }
-
-   function showFormDefault(\CommonGLPI $item) {
-      echo "<tr class='tab_bg_2'>";
-      echo "<td> " . \__sso('Single Sign-on Provider') . "</td><td>";
-
-      foreach ($this->providers as $p) {
-         switch (get_class($item)) {
-            case 'User':
-               $redirect = $item->getFormURLWithID($this->user_id, true);
-               break;
+    public function getTabNameForItem(\CommonGLPI $item, $withtemplate = 0)
+    {
+        switch (get_class($item)) {
             case 'Preference':
-               $redirect = $item->getSearchURL(false);
-               break;
+            case 'User':
+                return [1 => \__sso('Single Sign-on')];
             default:
-               $redirect = '';
-         }
+                return '';
+        }
+    }
 
-         $url = Toolbox::getCallbackUrl($p['id'], ['redirect' => $redirect]);
+    public static function displayTabContentForItem(\CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    {
+        switch (get_class($item)) {
+            case 'User':
+                $prefer = new self($item->fields['id']);
+                $prefer->loadProviders();
+                $prefer->showFormUser($item);
+                break;
+            case 'Preference':
+                $prefer = new self(\Session::getLoginUserID());
+                $prefer->loadProviders();
+                $prefer->showFormPreference($item);
+                break;
+        }
+        return true;
+    }
 
-         echo Toolbox::renderButton($url, $p);
-         echo " ";
-      }
+    public function showFormUser(\CommonGLPI $item)
+    {
+        global $CFG_GLPI;
 
-      echo "</td></tr>";
+        if (!\User::canView()) {
+            return false;
+        }
+        $canedit = \Session::haveRight(\User::$rightname, UPDATE);
+        if ($canedit) {
+            echo "<form name='form' action=\"" . Toolbox::getBaseURL() . \Plugin::getPhpDir("singlesignon", false) . "/front/user.form.php\" method='post'>";
+        }
+        echo \Html::hidden('user_id', ['value' => $this->user_id]);
 
-      echo "<tr class='tab_bg_2'>";
+        echo "<div class='center' id='tabsbody'>";
+        echo "<table class='tab_cadre_fixe'>";
 
-      if (!empty($this->providers_users)) {
-         echo "<tr><th colspan='2'>" . \__sso('Linked accounts') . "</th></tr>";
+        echo "<tr><th colspan='4'>" . __('Settings') . "</th></tr>";
 
-         foreach ($this->providers_users as $pu) {
-            /** @var PluginSinglesignonProvider */
-            $provider = PluginSinglesignonProvider::getById($pu['plugin_singlesignon_providers_id']);
+        $this->showFormDefault($item);
 
-            echo "<tr><td>";
-            echo $provider->fields['name'] . ' (ID:' . $pu['remote_id'] . ')';
-            echo "</td><td>";
-            echo \Html::getCheckbox([
-               'title' => __('Clear'),
-               'name'  => "_remove_sso[]",
-               'value'  => $pu['id'],
-            ]);
-            echo "&nbsp;" . __('Clear');
+        if ($canedit) {
+            echo "<tr class='tab_bg_2'>";
+            echo "<td colspan='4' class='center'>";
+            echo "<input type='submit' name='update' class='submit' value=\"" . _sx('button', 'Save') . "\">";
             echo "</td></tr>";
-         }
-      }
+        }
 
-      ?>
+        echo "</table></div>";
+        \Html::closeForm();
+    }
+
+    public function showFormPreference(\CommonGLPI $item)
+    {
+        $user = new User();
+        if (!$user->can($this->user_id, READ) && ($this->user_id != \Session::getLoginUserID())) {
+            return false;
+        }
+        $canedit = $this->user_id == \Session::getLoginUserID();
+
+        if ($canedit) {
+            echo "<form name='form' action=\"" . \Toolbox::getItemTypeFormURL(__CLASS__) . "\" method='post'>";
+        }
+
+        echo "<div class='center' id='tabsbody'>";
+        echo "<table class='tab_cadre_fixe'>";
+
+        echo "<tr><th colspan='4'>" . __('Settings') . "</th></tr>";
+
+        $this->showFormDefault($item);
+
+        if ($canedit) {
+            echo "<tr class='tab_bg_2'>";
+            echo "<td colspan='4' class='center'>";
+            echo "<input type='submit' name='update' class='submit' value=\"" . _sx('button', 'Save') . "\">";
+            echo "</td></tr>";
+        }
+
+        echo "</table></div>";
+        \Html::closeForm();
+    }
+
+    public function showFormDefault(\CommonGLPI $item)
+    {
+        echo "<tr class='tab_bg_2'>";
+        echo "<td> " . \__sso('Single Sign-on Provider') . "</td><td>";
+
+        foreach ($this->providers as $p) {
+            switch (get_class($item)) {
+                case 'User':
+                    $redirect = $item->getFormURLWithID($this->user_id, true);
+                    break;
+                case 'Preference':
+                    $redirect = $item->getSearchURL(false);
+                    break;
+                default:
+                    $redirect = '';
+            }
+
+            $url = Toolbox::getCallbackUrl($p['id'], ['redirect' => $redirect]);
+
+            echo Toolbox::renderButton($url, $p);
+            echo " ";
+        }
+
+        echo "</td></tr>";
+
+        echo "<tr class='tab_bg_2'>";
+
+        if (!empty($this->providers_users)) {
+            echo "<tr><th colspan='2'>" . \__sso('Linked accounts') . "</th></tr>";
+
+            foreach ($this->providers_users as $pu) {
+                /** @var PluginSinglesignonProvider */
+                $provider = PluginSinglesignonProvider::getById($pu['plugin_singlesignon_providers_id']);
+
+                echo "<tr><td>";
+                echo $provider->fields['name'] . ' (ID:' . $pu['remote_id'] . ')';
+                echo "</td><td>";
+                echo \Html::getCheckbox([
+                    'title' => __('Clear'),
+                    'name'  => "_remove_sso[]",
+                    'value'  => $pu['id'],
+                ]);
+                echo "&nbsp;" . __('Clear');
+                echo "</td></tr>";
+            }
+        }
+
+        ?>
       <script type="text/javascript">
          $(document).ready(function() {
 
@@ -236,5 +244,5 @@ class Preference extends \CommonDBTM {
          });
       </script>
       <?php
-   }
+    }
 }
