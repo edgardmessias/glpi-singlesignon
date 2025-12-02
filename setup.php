@@ -30,6 +30,7 @@ use Glpi\Plugin\Hooks;
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Preference;
 use GlpiPlugin\Singlesignon\Provider;
+
 define('PLUGIN_SINGLESIGNON_VERSION', '1.5.1');
 
 // Minimal GLPI version, inclusive
@@ -40,103 +41,113 @@ define('PLUGIN_SINGLESIGNON_MAX_GLPI', '11.0.99');
 $folder = basename(dirname(__FILE__));
 
 if ($folder !== "singlesignon") {
-   $msg = sprintf(__sso("Please, rename the plugin folder \"%s\" to \"singlesignon\""), $folder);
-   Session::addMessageAfterRedirect($msg, true, ERROR);
+    $msg = sprintf(__sso("Please, rename the plugin folder \"%s\" to \"singlesignon\""), $folder);
+    Session::addMessageAfterRedirect($msg, true, ERROR);
 }
 
 // GLPI 11: allow the OAuth callback to run without an authenticated session
-function plugin_singlesignon_boot(): void {
-   Firewall::addPluginStrategyForLegacyScripts(
-      'singlesignon',
-      '#^/front/callback\\.php$#',
-      Firewall::STRATEGY_NO_CHECK
-   );
+function plugin_singlesignon_boot(): void
+{
+    Firewall::addPluginStrategyForLegacyScripts(
+        'singlesignon',
+        '#^/front/callback\\.php$#',
+        Firewall::STRATEGY_NO_CHECK
+    );
 }
 
 // Init the hooks of the plugins -Needed
-function plugin_init_singlesignon() {
-   global $PLUGIN_HOOKS;
+function plugin_init_singlesignon()
+{
+    global $PLUGIN_HOOKS;
 
-   $autoload = __DIR__ . '/vendor/autoload.php';
+    $autoload = __DIR__ . '/vendor/autoload.php';
 
-   if (file_exists($autoload)) {
-      include_once $autoload;
-   }
+    if (file_exists($autoload)) {
+        include_once $autoload;
+    }
 
-   Plugin::registerClass(Preference::class, [
-      'addtabon' => ['Preference', 'User']
-   ]);
+    Plugin::registerClass(Preference::class, [
+        'addtabon' => ['Preference', 'User'],
+    ]);
 
-   Plugin::registerClass(Provider::class);
+    Plugin::registerClass(Provider::class);
 
-   $PLUGIN_HOOKS['config_page']['singlesignon'] = 'front/provider.php';
+    $PLUGIN_HOOKS['config_page']['singlesignon'] = 'front/provider.php';
 
-   $PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN]['singlesignon'] = [LoginRenderer::class, 'display'];
+    $PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN]['singlesignon'] = [LoginRenderer::class, 'display'];
 
-   $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
-      'config'  => Provider::class,
-   ];
+    $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
+        'config'  => Provider::class,
+    ];
+
+    $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = 'plugin_singlesignon_post_init';
 }
 
 // Get the name and the version of the plugin - Needed
-function plugin_version_singlesignon() {
-   return [
-      'name'           => __sso('Single Sign-on'),
-      'version'        => PLUGIN_SINGLESIGNON_VERSION,
-      'author'         => 'Edgard Lorraine Messias',
-      'license'        => 'GPLv3+',
-      'homepage'       => 'https://github.com/edgardmessias/glpi-singlesignon',
-      'requirements'   => [
-         'glpi' => [
-            'min' => PLUGIN_SINGLESIGNON_MIN_GLPI,
-            'max' => PLUGIN_SINGLESIGNON_MAX_GLPI,
-         ],
-      ],
-   ];
+function plugin_version_singlesignon()
+{
+    return [
+        'name'           => __sso('Single Sign-on'),
+        'version'        => PLUGIN_SINGLESIGNON_VERSION,
+        'author'         => 'Edgard Lorraine Messias',
+        'license'        => 'GPLv3+',
+        'homepage'       => 'https://github.com/edgardmessias/glpi-singlesignon',
+        'requirements'   => [
+            'glpi' => [
+                'min' => PLUGIN_SINGLESIGNON_MIN_GLPI,
+                'max' => PLUGIN_SINGLESIGNON_MAX_GLPI,
+            ],
+        ],
+    ];
 }
 
 // Optional : check prerequisites before install : may print errors or add to message after redirect
-function plugin_singlesignon_check_prerequisites() {
-   if (version_compare(GLPI_VERSION, PLUGIN_SINGLESIGNON_MIN_GLPI, '<')) {
-      echo __sso("This plugin requires GLPI >= 11.0.0");
-      return false;
-   }
+function plugin_singlesignon_check_prerequisites()
+{
+    if (version_compare(GLPI_VERSION, PLUGIN_SINGLESIGNON_MIN_GLPI, '<')) {
+        echo __sso("This plugin requires GLPI >= 11.0.0");
+        return false;
+    }
 
-   if (version_compare(GLPI_VERSION, PLUGIN_SINGLESIGNON_MAX_GLPI, '>=')) {
-      echo __sso("This plugin is not yet validated for this GLPI version");
-      return false;
-   }
+    if (version_compare(GLPI_VERSION, PLUGIN_SINGLESIGNON_MAX_GLPI, '>=')) {
+        echo __sso("This plugin is not yet validated for this GLPI version");
+        return false;
+    }
 
-   if (version_compare(PHP_VERSION, '8.2', '<')) {
-      echo __sso("This plugin requires PHP >= 8.2");
-      return false;
-   }
+    if (version_compare(PHP_VERSION, '8.2', '<')) {
+        echo __sso("This plugin requires PHP >= 8.2");
+        return false;
+    }
 
-   return true;
+    return true;
 }
 
-function plugin_singlesignon_check_config() {
-   return true;
+function plugin_singlesignon_check_config()
+{
+    return true;
 }
 
-function __sso($str) {
-   return __($str, 'singlesignon');
+function __sso($str)
+{
+    return __($str, 'singlesignon');
 }
 
-function sso_TableExists($table) {
-   if (function_exists("TableExists")) {
-      return TableExists($table);
-   }
+function sso_TableExists($table)
+{
+    if (function_exists("TableExists")) {
+        return TableExists($table);
+    }
 
-   global $DB;
-   return $DB->TableExists($table);
+    global $DB;
+    return $DB->TableExists($table);
 }
 
-function sso_FieldExists($table, $field, $usecache = true) {
-   if (function_exists("FieldExists")) {
-      return FieldExists($table);
-   }
+function sso_FieldExists($table, $field, $usecache = true)
+{
+    if (function_exists("FieldExists")) {
+        return FieldExists($table);
+    }
 
-   global $DB;
-   return $DB->FieldExists($table, $field, $usecache);
+    global $DB;
+    return $DB->FieldExists($table, $field, $usecache);
 }

@@ -29,12 +29,12 @@ namespace GlpiPlugin\Singlesignon;
  * ---------------------------------------------------------------------
  */
 
-class ProviderUser extends \CommonDBRelation {
+class ProviderUser extends \CommonDBRelation
+{
+    // From CommonDBRelation
+    public static $itemtype_1   = 'PluginSinglesignonProvider';
+    public static $items_id_1   = 'plugin_singlesignon_providers_id';
 
-   // From CommonDBRelation
-   static public $itemtype_1   = 'PluginSinglesignonProvider';
-   static public $items_id_1   = 'plugin_singlesignon_providers_id';
-
-   static public $itemtype_2 = 'User';
-   static public $items_id_2 = 'users_id';
+    public static $itemtype_2 = 'User';
+    public static $items_id_2 = 'users_id';
 }

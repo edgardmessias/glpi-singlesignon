@@ -4,7 +4,7 @@
  * ---------------------------------------------------------------------
  * SingleSignOn is a plugin which allows to use SSO for auth
  * ---------------------------------------------------------------------
- * Copyright (C) 2022 Edgard
+ * Copyright (C) 2025
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,24 +19,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * ---------------------------------------------------------------------
- * @copyright Copyright © 2021 - 2022 Edgard
- * @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
- * @link      https://github.com/edgardmessias/glpi-singlesignon/
- * ---------------------------------------------------------------------
  */
 
-include('../../../inc/includes.php');
+$finder = PhpCsFixer\Finder::create()
+   ->in(__DIR__)
+   ->exclude([
+      'vendor',
+      'node_modules',
+      'screenshots',
+      'tools',
+   ]);
 
-Session::checkRight(User::$rightname, UPDATE);
-
-if (isset($_POST["update"]) && isset($_POST["user_id"])) {
-
-    $prefer = new PluginSinglesignonPreference((int) $_POST["user_id"]);
-    $prefer->loadProviders();
-
-    $prefer->update($_POST);
-
-    Html::back();
-} else {
-    Html::back();
-}
+return (new PhpCsFixer\Config())
+   ->setUnsupportedPhpVersionAllowed(true)
+   ->setCacheFile('.php-cs-fixer.cache')
+   ->setRiskyAllowed(true)
+   ->setRules([
+      '@PER-CS3.0' => true,
+      '@PHP84Migration' => true,
+      'fully_qualified_strict_types' => ['import_symbols' => true],
+      'ordered_imports' => ['imports_order' => ['class', 'const', 'function']],
+      'no_unused_imports' => true,
+      'heredoc_indentation' => false,
+      'new_expression_parentheses' => false,
+   ])
+   ->setFinder($finder);

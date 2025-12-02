@@ -27,16 +27,9 @@
 
 include('../../../inc/includes.php');
 
-Session::checkRight(User::$rightname, UPDATE);
+// Set noAUTO in session before redirecting to GLPI logout
+// This ensures that after logout, the user won't be auto-logged in again
+$_SESSION['noAUTO'] = 1;
 
-if (isset($_POST["update"]) && isset($_POST["user_id"])) {
-
-    $prefer = new PluginSinglesignonPreference((int) $_POST["user_id"]);
-    $prefer->loadProviders();
-
-    $prefer->update($_POST);
-
-    Html::back();
-} else {
-    Html::back();
-}
+// Redirect to GLPI's standard logout
+Html::redirect($CFG_GLPI["root_doc"] . "/front/logout.php");
