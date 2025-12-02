@@ -226,12 +226,49 @@ class Provider extends \CommonDBTM {
       echo "</td></tr>\n";
 
       echo "<tr class='tab_bg_1'>";
+      echo "<td>" . \__sso('Allowed Groups');
+      echo "&nbsp;";
+      \Html::showToolTip(nl2br(\__sso('Restrict login to users in specific OAuth groups. Enter group names or IDs separated by commas (e.g., admin,developers,staff). Leave empty to allow all users. The user must belong to at least one of the specified groups.')));
+      echo "</td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='allowed_groups' value='" . ($this->fields["allowed_groups"] ?? '') . "' class='form-control' placeholder='admin,developers,staff'></td>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
       echo "<td>" . \__sso("Use Email as Login") . "<td>";
       \Dropdown::showYesNo("use_email_for_login", $this->fields["use_email_for_login"]);
       echo "</td>";
       echo "<td>" . \__sso('Split Name') . "<td>";
       \Dropdown::showYesNo("split_name", $this->fields["split_name"]);
       echo "</td>";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<th colspan='4'>" . \__sso('Advanced Settings') . "</th>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . \__sso('SSL Verify Host');
+      echo "&nbsp;";
+      \Html::showToolTip(nl2br(\__sso('Verify the SSL certificate hostname. Disable only for testing with self-signed certificates.')));
+      echo "</td>";
+      echo "<td>";
+      \Dropdown::showYesNo("ssl_verifyhost", $this->fields["ssl_verifyhost"] ?? 1);
+      echo "</td>";
+      echo "<td>" . \__sso('SSL Verify Peer');
+      echo "&nbsp;";
+      \Html::showToolTip(nl2br(\__sso('Verify the SSL certificate authenticity. Disable only for testing with self-signed certificates.')));
+      echo "</td>";
+      echo "<td>";
+      \Dropdown::showYesNo("ssl_verifypeer", $this->fields["ssl_verifypeer"] ?? 1);
+      echo "</td>";
+      echo "</tr>\n";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . \__sso('Groups Claim Name');
+      echo "&nbsp;";
+      \Html::showToolTip(nl2br(\__sso('Override the claim name used to extract user groups from the OAuth response. Supports dot notation for nested fields (e.g., "realm_access.roles", "custom.groups"). Leave empty to use default claim names (groups, roles, realm_access.roles).')));
+      echo "</td>";
+      echo "<td colspan='3'><input type='text' style='width:96%' name='groups_claim' value='" . ($this->fields["groups_claim"] ?? '') . "' class='form-control' placeholder='groups'></td>";
+      echo "</tr>\n";
 
       echo "<tr class='tab_bg_1'>";
       echo "<th colspan='4'>" . __('Personalization') . "</th>";
@@ -344,6 +381,14 @@ class Provider extends \CommonDBTM {
       }
 
       return true;
+   }
+
+   public function getEmpty() {
+      parent::getEmpty();
+
+      // Set secure defaults for new providers
+      $this->fields['ssl_verifyhost'] = 1;
+      $this->fields['ssl_verifypeer'] = 1;
    }
 
    function prepareInputForAdd($input) {
@@ -864,6 +909,16 @@ class Provider extends \CommonDBTM {
          $fields['scope'] = $value;
       }
 
+      // For generic OAuth providers, ensure 'openid' scope is included
+      // This is required for the userinfo endpoint to work properly
+      if ($type === 'generic' && !empty($fields['scope'])) {
+         $scopes = explode(' ', $fields['scope']);
+         if (!in_array('openid', $scopes)) {
+            array_unshift($scopes, 'openid');
+            $fields['scope'] = implode(' ', $scopes);
+         }
+      }
+
       $fields = \Plugin::doHookFunction("sso:scope", $fields);
 
       return $fields['scope'];
@@ -1040,8 +1095,8 @@ class Provider extends \CommonDBTM {
          ],
          CURLOPT_POST => true,
          CURLOPT_POSTFIELDS => http_build_query($params),
-         CURLOPT_SSL_VERIFYHOST => false,
-         CURLOPT_SSL_VERIFYPEER => false,
+         CURLOPT_SSL_VERIFYHOST => (bool)($this->fields['ssl_verifyhost'] ?? true),
+         CURLOPT_SSL_VERIFYPEER => (bool)($this->fields['ssl_verifypeer'] ?? true),
       ]);
 
       if ($this->debug) {
@@ -1098,25 +1153,56 @@ class Provider extends \CommonDBTM {
 
       $headers = \Plugin::doHookFunction("sso:resource_owner_header", $headers);
 
-      $content = \Toolbox::callCurl($url, [
-         CURLOPT_HTTPHEADER => $headers,
-         CURLOPT_SSL_VERIFYHOST => false,
-         CURLOPT_SSL_VERIFYPEER => false,
-      ]);
+      if ($this->debug) {
+         print_r("Headers:\n");
+         print_r($headers);
+         print_r("\n");
+      }
+
+      $ch = curl_init($url);
+      curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+      curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, (bool)($this->fields['ssl_verifyhost'] ?? true));
+      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, (bool)($this->fields['ssl_verifypeer'] ?? true));
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+      $content = curl_exec($ch);
+      $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+      $curl_error = curl_error($ch);
+      // curl_close() is deprecated in PHP 8.0+ - handles are auto-closed
 
       if ($this->debug) {
          print_r("\ngetResourceOwner:\n");
+         print_r("\nHTTP Status Code: " . $http_code . "\n");
+         if ($curl_error) {
+            print_r("CURL Error: " . $curl_error . "\n");
+         }
+         print_r("Raw content from userinfo endpoint:\n");
+         print_r($content);
+         print_r("\n");
+         print_r("Content length: " . strlen($content) . "\n");
       }
 
       try {
          $data = json_decode($content, true);
          if ($this->debug) {
+            print_r("\nDecoded data:\n");
             print_r($data);
          }
+
+         // Check if json_decode failed
+         if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
+            if ($this->debug) {
+               print_r("\nJSON decode error: " . json_last_error_msg() . "\n");
+            }
+            return false;
+         }
+
          $this->_resource_owner = $data;
       } catch (\Exception $ex) {
          if ($this->debug) {
-            print_r($content);
+            print_r("\nException occurred:\n");
+            print_r($ex->getMessage());
+            print_r("\n");
          }
          return false;
       }
@@ -1128,8 +1214,8 @@ class Provider extends \CommonDBTM {
          $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
          $content = \Toolbox::callCurl($email_url, [
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => (bool)($this->fields['ssl_verifyhost'] ?? true),
+            CURLOPT_SSL_VERIFYPEER => (bool)($this->fields['ssl_verifypeer'] ?? true),
          ]);
 
          try {
@@ -1147,11 +1233,129 @@ class Provider extends \CommonDBTM {
       return $this->_resource_owner;
    }
 
+   /**
+    * Extract user groups from OAuth resource response
+    * Supports custom claim names with dot notation
+    *
+    * @param array $resource_array The OAuth resource owner data
+    * @return array Array of group names
+    */
+   protected function extractUserGroups($resource_array) {
+      $groups = [];
+
+      // Check if a custom groups claim is configured
+      if (!empty($this->fields['groups_claim'])) {
+         $claim_path = $this->fields['groups_claim'];
+
+         if ($this->debug) {
+            print_r("\nUsing custom groups claim: $claim_path\n");
+         }
+
+         // Support dot notation for nested fields (e.g., "realm_access.roles")
+         $keys = explode('.', $claim_path);
+         $value = $resource_array;
+
+         foreach ($keys as $key) {
+            if (isset($value[$key])) {
+               $value = $value[$key];
+            } else {
+               $value = null;
+               break;
+            }
+         }
+
+         if ($value !== null) {
+            if (is_array($value)) {
+               $groups = array_merge($groups, $value);
+            } elseif (is_string($value)) {
+               // Support comma or space-separated strings
+               $groups = array_merge($groups, preg_split('/[,\s]+/', $value));
+            }
+         }
+
+         if ($this->debug) {
+            print_r("Groups from custom claim: ");
+            var_dump($groups);
+         }
+
+         // If custom claim is configured, only use that claim
+         if (!empty($groups)) {
+            return array_values(array_filter(array_unique($groups), function($group) {
+               return !empty($group);
+            }));
+         }
+      }
+
+      // Fall back to checking standard group field names
+      $group_fields = ['groups', 'roles', 'group', 'role'];
+
+      foreach ($group_fields as $field) {
+         if (isset($resource_array[$field])) {
+            if (is_array($resource_array[$field])) {
+               $groups = array_merge($groups, $resource_array[$field]);
+            } elseif (is_string($resource_array[$field])) {
+               $groups = array_merge($groups, preg_split('/[,\s]+/', $resource_array[$field]));
+            }
+         }
+      }
+
+      // Keycloak-specific: realm_access.roles
+      if (isset($resource_array['realm_access']['roles']) && is_array($resource_array['realm_access']['roles'])) {
+         $groups = array_merge($groups, $resource_array['realm_access']['roles']);
+      }
+
+      // Keycloak-specific: resource_access.{client_id}.roles
+      if (isset($resource_array['resource_access']) && is_array($resource_array['resource_access'])) {
+         foreach ($resource_array['resource_access'] as $client_roles) {
+            if (isset($client_roles['roles']) && is_array($client_roles['roles'])) {
+               $groups = array_merge($groups, $client_roles['roles']);
+            }
+         }
+      }
+
+      // Remove duplicates, empty values, and reindex array
+      return array_values(array_filter(array_unique($groups), function($group) {
+         return !empty($group);
+      }));
+   }
+
    public function findUser() {
       $resource_array = $this->getResourceOwner();
 
       if (!$resource_array) {
          return false;
+      }
+
+      // Check group-based access control
+      if (!empty($this->fields['allowed_groups'])) {
+         $allowed_groups = array_map('trim', explode(',', $this->fields['allowed_groups']));
+         $user_groups = $this->extractUserGroups($resource_array);
+
+         if ($this->debug) {
+            print_r("\nGroup-based access control enabled\n");
+            print_r("Allowed groups: ");
+            var_dump($allowed_groups);
+            print_r("User groups: ");
+            var_dump($user_groups);
+         }
+
+         $has_access = false;
+         foreach ($user_groups as $user_group) {
+            if (in_array($user_group, $allowed_groups)) {
+               $has_access = true;
+               if ($this->debug) {
+                  print_r("Access granted - user is in group: $user_group\n");
+               }
+               break;
+            }
+         }
+
+         if (!$has_access) {
+            if ($this->debug) {
+               print_r("Access denied - user is not in any allowed group\n");
+            }
+            return false;
+         }
       }
 
       $user = new \User();
@@ -1173,20 +1377,35 @@ class Provider extends \CommonDBTM {
       }
 
       if ($remote_id) {
-         $link = new \PluginSinglesignonProvider_User();
-         $condition = "`remote_id` = '{$remote_id}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
-         if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-            $condition = [$condition];
-         }
-         $links = $link->find($condition);
-         if (!empty($links) && $first = reset($links)) {
-            $id = $first['users_id'];
-         }
+         try {
+            $link = new \PluginSinglesignonProvider_User();
+            $condition = "`remote_id` = '{$remote_id}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
 
-         $remote_id;
+            if (version_compare(GLPI_VERSION, '9.4', '>=')) {
+               $condition = [$condition];
+            }
+
+            $links = $link->find($condition);
+
+            if (!empty($links) && $first = reset($links)) {
+               $id = $first['users_id'];
+               if ($this->debug) {
+                  print_r("Found user by remote_id link: $id\n");
+               }
+            }
+         } catch (\Exception $ex) {
+            if ($this->debug) {
+               print_r("\nException during remote_id lookup:\n");
+               print_r($ex->getMessage());
+               print_r("\n");
+            }
+         }
       }
 
       if (is_numeric($id) && $user->getFromDB($id)) {
+         if ($this->debug) {
+            print_r("User found by ID, returning\n");
+         }
          return $user;
       }
 
@@ -1239,6 +1458,9 @@ class Provider extends \CommonDBTM {
                }
 
                if (!$isAuthorized) {
+                  if ($this->debug) {
+                     print_r("\nLogin not authorized by domain restriction\n");
+                  }
                   return false;
                }
                if ($split) {
@@ -1251,6 +1473,9 @@ class Provider extends \CommonDBTM {
       }
 
       if ($login && $user->getFromDBbyName($login)) {
+         if ($this->debug) {
+            print_r("User found by login name, returning\n");
+         }
          return $user;
       }
 
@@ -1262,16 +1487,19 @@ class Provider extends \CommonDBTM {
 
       $bOk = true;
       if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
+         if ($this->debug) {
+            print_r("User found by email, returning\n");
+         }
          return $user;
       } else {
          $bOk = false;
       }
 
-      // var_dump($bOk);
-      // die();
-
       // If the user does not exist in the database and the provider is google
       if (static::getClientType() == "google" && !$bOk) {
+         if ($this->debug) {
+            print_r("\nAttempting to create user for Google provider\n");
+         }
          // Generates an api token and a personal token... probably not necessary
          $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
          $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
@@ -1309,20 +1537,49 @@ class Provider extends \CommonDBTM {
 
       // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
       if (static::getClientType() == "generic" && !$bOk) {
+         if ($this->debug) {
+            print_r("\nAttempting to create user for Generic provider\n");
+         }
          try {
             // Generates an api token and a personal token... probably not necessary
             $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
             $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
             $splitname = $this->fields['split_name'];
-            $firstLastArray = ($splitname) ? preg_split('/ /', $resource_array['name'], 2) : preg_split('/ /', $resource_array['displayName'], 2);
+            $firstname = '';
+            $realname = '';
+
+            // Try to get name from various fields
+            if ($splitname && isset($resource_array['name']) && !empty($resource_array['name'])) {
+               $firstLastArray = preg_split('/ /', $resource_array['name'], 2);
+               $firstname = $firstLastArray[0];
+               $realname = isset($firstLastArray[1]) ? $firstLastArray[1] : '';
+            } else if (isset($resource_array['displayName']) && !empty($resource_array['displayName'])) {
+               $firstLastArray = preg_split('/ /', $resource_array['displayName'], 2);
+               $firstname = $firstLastArray[0];
+               $realname = isset($firstLastArray[1]) ? $firstLastArray[1] : '';
+            } else if (isset($resource_array['given_name']) && isset($resource_array['family_name'])) {
+               // OpenID Connect standard claims
+               $firstname = $resource_array['given_name'];
+               $realname = $resource_array['family_name'];
+            } else if (isset($resource_array['preferred_username'])) {
+               // Fallback: use preferred_username as firstname
+               $firstname = $resource_array['preferred_username'];
+               $realname = '';
+            } else if ($login) {
+               // The user will have empty realname if no other info is available
+            }
+
+            if ($this->debug) {
+               print_r("\nUser creation - firstname: $firstname, realname: $realname\n");
+            }
 
             $userPost = [
                'name' => $login,
                'add' => 1,
                'password' => '',
-               'realname' => $firstLastArray[1],
-               'firstname' => $firstLastArray[0],
+               'realname' => $realname,
+               'firstname' => $firstname,
                'api_token' => $tokenAPI,
                'api_token_date' => date("Y-m-d H:i:s"),
                'personal_token' => $tokenPersonnel,
@@ -1347,7 +1604,12 @@ class Provider extends \CommonDBTM {
             //$user->check(-1, CREATE, $userPost);
             $newID = $user->add($userPost);
 
-            // var_dump($newID);
+            if (!$newID) {
+               if ($this->debug) {
+                  print_r("\nUser creation failed!\n");
+               }
+               return false;
+            }
 
             $profils = 0;
             // Verification default profiles exist in the entity
@@ -1355,6 +1617,9 @@ class Provider extends \CommonDBTM {
             // In this case, we retrieve a profile and an entity and assign these values ​​to it.
             // The administrator can change these values ​​later.
             if (0 == \Profile::getDefault()) {
+               if ($this->debug) {
+                  print_r("\nNo default profile found, assigning first available profile\n");
+               }
                // No default profiles
                // Profile recovery and assignment
                global $DB;
@@ -1367,9 +1632,19 @@ class Provider extends \CommonDBTM {
                foreach ($DB->request('glpi_entities') as $data) {
                   array_push($datasEntities, $data);
                }
+
+               if ($this->debug) {
+                  print_r("Available profiles: " . count($datasProfiles) . "\n");
+                  print_r("Available entities: " . count($datasEntities) . "\n");
+               }
+
                if (count($datasProfiles) > 0 && count($datasEntities) > 0) {
                   $profils = $datasProfiles[0]['id'];
                   $entitie = $datasEntities[0]['id'];
+
+                  if ($this->debug) {
+                     print_r("Assigning profile ID: $profils, entity ID: $entitie\n");
+                  }
 
                   $profile   = new \Profile_User();
                   $userProfile['users_id'] = intval($user->fields['id']);
@@ -1377,16 +1652,46 @@ class Provider extends \CommonDBTM {
                   $userProfile['is_recursive'] = 0;
                   $userProfile['profiles_id'] = intval($profils);
                   $userProfile['add'] = "Ajouter";
-                  $profile->add($userProfile);
+                  $profileResult = $profile->add($userProfile);
+
+                  if ($this->debug) {
+                     print_r("Profile assignment result: ");
+                     var_dump($profileResult);
+                  }
+
+                  if (!$profileResult) {
+                     if ($this->debug) {
+                        print_r("Profile assignment failed!\n");
+                     }
+                     return false;
+                  }
                } else {
+                  if ($this->debug) {
+                     print_r("No profiles or entities available!\n");
+                  }
                   return false;
+               }
+            } else {
+               if ($this->debug) {
+                  print_r("\nDefault profile exists, will be assigned automatically\n");
                }
             }
 
             return $user;
          } catch (\Exception $ex) {
+            if ($this->debug) {
+               print_r("\nException during user creation:\n");
+               print_r($ex->getMessage());
+               print_r("\n");
+               print_r($ex->getTraceAsString());
+               print_r("\n");
+            }
             return false;
          }
+      }
+
+      if ($this->debug) {
+         print_r("\nReached end of findUser() - no user found or created\n");
       }
 
       return false;
@@ -1507,8 +1812,8 @@ class Provider extends \CommonDBTM {
          $photo_url = "https://graph.microsoft.com/v1.0/me/photo/\$value";
          $img = \Toolbox::callCurl($photo_url, [
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => (bool)($this->fields['ssl_verifyhost'] ?? true),
+            CURLOPT_SSL_VERIFYPEER => (bool)($this->fields['ssl_verifypeer'] ?? true),
          ]);
          if (!empty($img)) {
             /* if ($this->debug) {
