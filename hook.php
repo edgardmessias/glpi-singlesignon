@@ -60,8 +60,10 @@ function plugin_singlesignon_post_init()
         $plugin_logout = Plugin::getWebDir('singlesignon') . '/front/logout.php';
         $plugin_logout_js = json_encode($plugin_logout, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
-
-        echo '<script type="text/javascript">
+        // Use output buffering to inject script at the end of the page
+        // This prevents breaking the document structure and TinyMCE initialization
+        ob_start(function ($buffer) use ($plugin_logout_js) {
+            $script = '<script type="text/javascript">
 (function() {
     "use strict";
     var pluginLogout = ' . $plugin_logout_js . ';
@@ -75,6 +77,18 @@ function plugin_singlesignon_post_init()
     });
 })();
 </script>';
+
+            // Inject before closing body tag
+            $pos = strripos($buffer, '</body>');
+            if ($pos !== false) {
+                $buffer = substr_replace($buffer, $script . "\n", $pos, 0);
+            } else {
+                // Fallback: append at the end if no </body> tag found
+                $buffer .= $script;
+            }
+
+            return $buffer;
+        });
     }
 }
 
