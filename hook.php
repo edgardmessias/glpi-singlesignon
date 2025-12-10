@@ -63,6 +63,14 @@ function plugin_singlesignon_post_init()
         // Use output buffering to inject script at the end of the page
         // This prevents breaking the document structure and TinyMCE initialization
         ob_start(function ($buffer) use ($plugin_logout_js) {
+            // Check if the response is HTML by looking for a closing body tag
+            // This prevents breaking JSON/XML responses
+            $pos = strripos($buffer, '</body>');
+            if ($pos === false) {
+                // Not an HTML page - don't inject anything
+                return $buffer;
+            }
+
             $script = '<script type="text/javascript">
 (function() {
     "use strict";
@@ -79,13 +87,7 @@ function plugin_singlesignon_post_init()
 </script>';
 
             // Inject before closing body tag
-            $pos = strripos($buffer, '</body>');
-            if ($pos !== false) {
-                $buffer = substr_replace($buffer, $script . "\n", $pos, 0);
-            } else {
-                // Fallback: append at the end if no </body> tag found
-                $buffer .= $script;
-            }
+            $buffer = substr_replace($buffer, $script . "\n", $pos, 0);
 
             return $buffer;
         });
