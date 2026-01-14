@@ -30,7 +30,7 @@ use Glpi\Plugin\Hooks;
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Preference;
 use GlpiPlugin\Singlesignon\Provider;
-define('PLUGIN_SINGLESIGNON_VERSION', '1.5.1');
+define('PLUGIN_SINGLESIGNON_VERSION', '1.6.0');
 
 // Minimal GLPI version, inclusive
 define('PLUGIN_SINGLESIGNON_MIN_GLPI', '11.0.0');
@@ -76,6 +76,9 @@ function plugin_init_singlesignon() {
    $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
       'config'  => Provider::class,
    ];
+
+   // Make the picture.send.php page public again.
+   Firewall::addPluginStrategyForLegacyScripts('singlesignon', '#^/front/picture.send.php$#', Firewall::STRATEGY_NO_CHECK);
 }
 
 // Get the name and the version of the plugin - Needed

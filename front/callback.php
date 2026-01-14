@@ -111,7 +111,11 @@ if ($user_id || $signon_provider->login()) {
 
    $url_redirect = '';
 
-   if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
+   // Check if session profile is set
+   if (!isset($_SESSION["glpiactiveprofile"]) || !isset($_SESSION["glpiactiveprofile"]["interface"])) {
+      // Default to central page
+      $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/central.php$REDIRECT";
+   } else if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
       if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
          $url_redirect = PluginSinglesignonToolbox::getBaseURL() . "/front/helpdesk.public.php?create_ticket=1";
       } else {

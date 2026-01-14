@@ -32,7 +32,7 @@ class LoginRenderer
                 'label'   => sprintf(\__sso('Login with %s'), $row['name']),
                 'popup'   => (bool)$row['popup'],
                 'style'   => self::buildButtonStyle($row),
-                'picture' => $row['picture'] ? Toolbox::getPictureUrl($row['picture']) : null,
+                'picture' => isset($row['picture']) && $row['picture'] ? Toolbox::getPictureUrl($row['picture']) : null,
             ];
         }
 
