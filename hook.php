@@ -187,3 +187,48 @@ function plugin_singlesignon_uninstall() {
 
    return true;
 }
+
+/**
+ * GLPI 11 compatibility: inject SSO logout redirect via ADD_JAVASCRIPT hook
+ * instead of echoing a <script> tag during POST_INIT, which would fire before
+ * the DOCTYPE declaration and put the browser into Quirks Mode — breaking
+ * TinyMCE and the @mention feature.
+ *
+ * @see https://github.com/edgardmessias/glpi-singlesignon/issues/150
+ */
+function plugin_singlesignon_post_init()
+{
+    global $PLUGIN_HOOKS;
+
+    if (PHP_SAPI === 'cli' || !isset($_SERVER['REQUEST_URI'])) {
+        return;
+    }
+
+    $uri = $_SERVER['REQUEST_URI'];
+
+    // Skip static assets and AJAX requests
+    if (preg_match('/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico|json|xml)(\?|$)/i', $uri)) {
+        return;
+    }
+    if (
+        isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+        || strpos($uri, '/ajax/') !== false
+        || strpos($uri, '/js/') !== false
+        || strpos($uri, '/css/') !== false
+        || strpos($uri, '/pics/') !== false
+        || strpos($uri, '/files/') !== false
+    ) {
+        return;
+    }
+
+    if (isset($_SESSION['glpi_sso_login']) && $_SESSION['glpi_sso_login']) {
+        if (!isset($PLUGIN_HOOKS[\Glpi\Plugin\Hooks::ADD_JAVASCRIPT]['singlesignon'])) {
+            $PLUGIN_HOOKS[\Glpi\Plugin\Hooks::ADD_JAVASCRIPT]['singlesignon'] = [];
+        } elseif (!is_array($PLUGIN_HOOKS[\Glpi\Plugin\Hooks::ADD_JAVASCRIPT]['singlesignon'])) {
+            $PLUGIN_HOOKS[\Glpi\Plugin\Hooks::ADD_JAVASCRIPT]['singlesignon'] = [
+                $PLUGIN_HOOKS[\Glpi\Plugin\Hooks::ADD_JAVASCRIPT]['singlesignon']
+            ];
+        }
+        $PLUGIN_HOOKS[\Glpi\Plugin\Hooks::ADD_JAVASCRIPT]['singlesignon'][] = 'js/sso_logout.js';
+    }
+}
