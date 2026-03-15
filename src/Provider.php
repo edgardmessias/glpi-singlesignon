@@ -958,7 +958,8 @@ class Provider extends \CommonDBTM {
          }
 
          // Generate CSRF token for OAuth state parameter and remember redirect in session
-         $state = \Session::getNewCSRFToken();
+         $state = \Session::getNewCSRFToken(true); // standalone token avoids single-use consumption issues
+         $_SESSION['glpi_sso_oauth_state_' . $this->fields['id']] = $state;
 
          if (isset($_SESSION['redirect'])) {
             $_SESSION['glpi_singlesignon_redirect'] = $_SESSION['redirect'];
@@ -996,10 +997,19 @@ class Provider extends \CommonDBTM {
       // Extract state parameter
       $state = isset($_GET['state']) ? $_GET['state'] : '';
 
-      // Validate state against stored CSRF token
-      \Session::checkCSRF([
-         '_glpi_csrf_token' => $state,
-      ]);
+      // Validate OAuth state: use dedicated session variable first to avoid
+      // single-use CSRF token being consumed before callback is reached.
+      $session_key = 'glpi_sso_oauth_state_' . $this->fields['id'];
+      $stored_state = $_SESSION[$session_key] ?? null;
+      unset($_SESSION[$session_key]);
+      if ($stored_state !== null && hash_equals($stored_state, $state)) {
+         // State validated via dedicated session variable
+      } else {
+         // Fall back to standard CSRF check for backward compatibility
+         \Session::checkCSRF([
+            '_glpi_csrf_token' => $state,
+         ]);
+      }
 
       $this->_code = $_GET['code'];
 
