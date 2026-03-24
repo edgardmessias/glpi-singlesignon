@@ -1,9 +1,8 @@
-# Spanish (Spain) translations for the SingleSignOn GLPI plugin.
+# Spanish (Colombia) translations for the SingleSignOn GLPI plugin.
 # Copyright (C) 2022 glpi-singlesignon Development Team
 # This file is distributed under the same license as the singlesignon package.
 #
 # Translators:
-# Eduardo Mozart de Oliveira <eduardomozart182@gmail.com>, 2025
 # Esteban Esquivel <esteban.esquivel@mava.com.co>, 2026
 #
 msgid ""
@@ -13,17 +12,17 @@ msgstr ""
 "POT-Creation-Date: 2025-11-13 12:45+0000\n"
 "PO-Revision-Date: 2026-03-24 21:00+0000\n"
 "Last-Translator: Esteban Esquivel <esteban.esquivel@mava.com.co>\n"
-"Language-Team: Spanish (Spain) (https://app.transifex.com/eduardomozart/teams/204814/es_ES/)\n"
+"Language-Team: Spanish (Colombia)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: es_ES\n"
+"Language: es_CO\n"
 "Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
 
 #: setup.php:43
 #, php-format
 msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
-msgstr "Por favor, cambie el nombre de la carpeta del plugin \"%s\" a \"singlesignon\""
+msgstr "Por favor, renombre la carpeta del plugin \"%s\" a \"singlesignon\""
 
 #: setup.php:84 front/provider.form.php:86 front/provider.form.php:88
 #: front/provider.php:33 front/provider.php:35 src/LoginRenderer.php:48
@@ -107,7 +106,7 @@ msgstr "Opciones adicionales"
 #: src/Provider.php:187
 #, php-format
 msgid "Allows you to specify custom parameters for the SSO provider %1$s. Example: %2$s to force login or %3$s to force account selection (supported URL settings may vary by provider). You can specify additional parameters with the \"&\" delimiter."
-msgstr "Permite especificar parámetros personalizados para el proveedor SSO %1$s. Ejemplo: %2$s para forzar el inicio de sesión o %3$s para forzar la selección de cuenta (la configuración de URL admitida puede variar según el proveedor). Puede especificar parámetros adicionales con el delimitador \"&\"."
+msgstr "Permite especificar parámetros personalizados para el proveedor SSO %1$s. Ejemplo: %2$s para forzar el inicio de sesión o %3$s para forzar la selección de cuenta (la configuración de URL soportada puede variar según el proveedor). Puede especificar parámetros adicionales con el delimitador \"&\"."
 
 #: src/Provider.php:187 src/Provider.php:194 src/Provider.php:545
 msgid "Authorize URL"
