@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the singlesignon package.
 #
 # Translators:
-# Esteban Esquivel <esteban.esquivel@mava.com.co>, 2026
+# Esteban Esquivel, 2026
 #
 msgid ""
 msgstr ""
