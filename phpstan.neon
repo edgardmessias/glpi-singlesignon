@@ -1,0 +1,24 @@
+includes:
+    - ../../vendor/glpi-project/phpstan-glpi/extension.neon
+    - ../../vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - ../../vendor/thecodingmachine/phpstan-safe-rule/phpstan-safe-rule.neon
+
+parameters:
+    level: 5
+    paths:
+        - front
+        - src
+        - hook.php
+        - report.php
+        - setup.php
+        - stat.php
+    scanDirectories:
+        - ../../src
+    bootstrapFiles:
+        - ../../stubs/glpi_constants.php
+        - ../../vendor/autoload.php
+        - setup.php
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        - message: "#.*always true#"
+        - message: "#Unreachable statement#"
