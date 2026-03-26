@@ -26,6 +26,7 @@
  */
 
 use Glpi\Event;
+use GlpiPlugin\Singlesignon\Provider;
 
 include('../../../inc/includes.php');
 
@@ -35,7 +36,7 @@ if (!isset($_GET["id"])) {
     $_GET["id"] = "";
 }
 
-$provider = new PluginSinglesignonProvider();
+$provider = new Provider();
 
 if (isset($_POST["add"])) {
     $provider->check(-1, CREATE, $_POST);
@@ -83,7 +84,7 @@ if (isset($_POST["add"])) {
 } elseif (isset($_POST["purge"])) {
     $provider->check($_POST["id"], PURGE);
 
-    $provider->delete($_POST, 1);
+    $provider->delete($_POST, true);
     Event::log(
         $_POST["id"],
         "singlesignon",

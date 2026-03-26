@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use function Safe\base64_decode;
+use function Safe\mkdir;
+use function Safe\preg_match;
+use function Safe\realpath;
+use function Safe\rename;
+use function Safe\unlink;
+
 /**
  * ---------------------------------------------------------------------
  * SingleSignOn is a plugin which allows to use SSO for auth
@@ -35,7 +42,7 @@ class Toolbox
      * Generate a URL to callback
      * GLPI 11: Use query params instead of PATH_INFO for compatibility
      * @global array $CFG_GLPI
-     * @param integer $id
+     * @param int $row Provider identifier
      * @param array $query
      * @return string
      */
@@ -100,7 +107,7 @@ class Toolbox
 
         // Build candidate PATH_INFO values. Some servers (PHP-FPM, reverse proxies, GLPI 11 routers)
         // strip PATH_INFO, so we recompute it from REQUEST_URI to keep backward compatibility.
-        $server = $_SERVER ?? [];
+        $server = $_SERVER;
         $candidates = self::collectCallbackPathCandidates($server, $normalizePath);
 
         foreach ($candidates as $path_candidate) {
@@ -123,7 +130,12 @@ class Toolbox
                 if ($key === "provider" || $key === "test") {
                     $part = intval($part);
                 } else {
-                    $tmp = base64_decode($part);
+                    try {
+                        $tmp = base64_decode($part, true);
+                    } catch (\Throwable $e) {
+                        $key = null;
+                        continue;
+                    }
                     parse_str($tmp, $part);
                 }
 
@@ -155,9 +167,7 @@ class Toolbox
 
     public static function getPictureUrl($path)
     {
-        global $CFG_GLPI;
-
-        $path = \Html::cleanInputText($path); // prevent xss
+        $path = rawurlencode((string) $path);
 
         if (empty($path)) {
             return null;
@@ -188,15 +198,17 @@ class Toolbox
             $i++;
         } while (file_exists($dest));
         // If the base directory does not exists, create it
-        if (!is_dir($basePath) && !mkdir($basePath)) {
-            return false;
-        }
-        // If the sub directory does not exists, create the sub directory
-        if (!is_dir($basePath . '/' . $subdirectory) && !mkdir($basePath . '/' . $subdirectory)) {
-            return false;
-        }
+        try {
+            if (!is_dir($basePath)) {
+                mkdir($basePath);
+            }
+            // If the sub directory does not exists, create the sub directory
+            if (!is_dir($basePath . '/' . $subdirectory)) {
+                mkdir($basePath . '/' . $subdirectory);
+            }
 
-        if (!rename($src, $dest)) {
+            rename($src, $dest);
+        } catch (\Throwable $e) {
             return false;
         }
 
@@ -212,12 +224,23 @@ class Toolbox
             return false;
         }
 
-        $fullpath = realpath($fullpath);
-        if (!static::startsWith($fullpath, realpath($basePath))) {
+        try {
+            $fullpath = realpath($fullpath);
+            $baseRealPath = realpath($basePath);
+        } catch (\Throwable $e) {
             return false;
         }
 
-        return @unlink($fullpath);
+        if (!static::startsWith($fullpath, $baseRealPath)) {
+            return false;
+        }
+
+        try {
+            unlink($fullpath);
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     public static function renderButton($url, $data, $class = 'oauth-login')
@@ -356,13 +379,9 @@ class Toolbox
         }
 
         foreach ($script_candidates as $candidate) {
-            if ($candidate === '') {
-                continue;
-            }
-
             if (strpos($request_path, $candidate) === 0) {
                 $derived = substr($request_path, strlen($candidate));
-                if ($derived !== false && $derived !== '') {
+                if ($derived !== '') {
                     $candidates[] = $derived;
                 }
             }

@@ -25,6 +25,8 @@
  * ---------------------------------------------------------------------
  */
 
+use GlpiPlugin\Singlesignon\Provider;
+
 include('../../../inc/includes.php');
 
 Session::checkRight("config", UPDATE);
@@ -38,6 +40,6 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
 
 //checkTypeRight('PluginExampleExample',"r");
 
-Search::show('PluginSinglesignonProvider');
+Search::show(Provider::class);
 
 Html::footer();

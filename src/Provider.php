@@ -4,6 +4,17 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use function Safe\file_get_contents;
+use function Safe\fclose;
+use function Safe\fopen;
+use function Safe\fwrite;
+use function Safe\json_decode;
+use function Safe\json_encode;
+use function Safe\mkdir;
+use function Safe\preg_match;
+use function Safe\preg_split;
+use function Safe\sha1_file;
+
 /**
  * ---------------------------------------------------------------------
  * SingleSignOn is a plugin which allows to use SSO for auth
@@ -121,7 +132,9 @@ class Provider extends \CommonDBTM
     {
         switch ($tabnum) {
             case 1:
-                $item->showFormDebug($item);
+                if ($item instanceof self) {
+                    $item->showFormDebug($item);
+                }
                 break;
         }
         return true;
@@ -383,7 +396,7 @@ class Provider extends \CommonDBTM
      *
      * @param array $input Input data
      *
-     * @return array
+     * @return array|bool
      */
     private function prepareInput($input)
     {
@@ -1210,7 +1223,7 @@ class Provider extends \CommonDBTM
         }
 
         if ($remote_id) {
-            $link = new \PluginSinglesignonProvider_User();
+            $link = new ProviderUser();
             $condition = "`remote_id` = '{$remote_id}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
             if (version_compare(GLPI_VERSION, '9.4', '>=')) {
                 $condition = [$condition];
@@ -1219,8 +1232,6 @@ class Provider extends \CommonDBTM
             if (!empty($links) && $first = reset($links)) {
                 $id = $first['users_id'];
             }
-
-            $remote_id;
         }
 
         if (is_numeric($id) && $user->getFromDB($id)) {
@@ -1369,7 +1380,7 @@ class Provider extends \CommonDBTM
                 // Set the office location from Office 365 user as entity for the GLPI new user if they names match
                 if (isset($resource_array['officeLocation'])) {
                     global $DB;
-                    foreach ($DB->request('glpi_entities') as $entity) {
+                    foreach ($DB->request(['FROM' => 'glpi_entities']) as $entity) {
                         if ($entity['name'] == $resource_array['officeLocation']) {
                             $userPost['entities_id'] = $entity['id'];
                             break;
@@ -1397,11 +1408,11 @@ class Provider extends \CommonDBTM
                     global $DB;
 
                     $datasProfiles = [];
-                    foreach ($DB->request('glpi_profiles') as $data) {
+                    foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
                         array_push($datasProfiles, $data);
                     }
                     $datasEntities = [];
-                    foreach ($DB->request('glpi_entities') as $data) {
+                    foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
                         array_push($datasEntities, $data);
                     }
                     if (count($datasProfiles) > 0 && count($datasEntities) > 0) {
@@ -1500,7 +1511,7 @@ class Provider extends \CommonDBTM
             return false;
         }
 
-        $link = new \PluginSinglesignonProvider_User();
+        $link = new ProviderUser();
 
         // Unlink from another user
         $link->deleteByCriteria([

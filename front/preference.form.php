@@ -25,13 +25,15 @@
  * ---------------------------------------------------------------------
  */
 
+use GlpiPlugin\Singlesignon\Preference;
+
 include('../../../inc/includes.php');
 
 Session::checkLoginUser();
 
 if (isset($_POST["update"])) {
 
-    $prefer = new PluginSinglesignonPreference(Session::getLoginUserID());
+    $prefer = new Preference(Session::getLoginUserID());
     $prefer->loadProviders();
 
     $prefer->update($_POST);

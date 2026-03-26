@@ -36,7 +36,7 @@ class LoginRenderer
             ];
         }
 
-        if (empty($buttons)) {
+        if (count($buttons) === 0) {
             return;
         }
 

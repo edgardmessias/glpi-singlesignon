@@ -27,10 +27,11 @@
 
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\NotFoundHttpException;
+use GlpiPlugin\Singlesignon\Provider;
 
 include('../../../inc/includes.php');
 
-$provider = new PluginSinglesignonProvider();
+$provider = new Provider();
 $path = false;
 
 if (isset($_GET['id'])) { // docid for document
