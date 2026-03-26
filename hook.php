@@ -1,5 +1,7 @@
 <?php
 
+use GlpiPlugin\Singlesignon\Provider;
+
 /**
  * ---------------------------------------------------------------------
  * SingleSignOn is a plugin which allows to use SSO for auth
@@ -140,13 +142,13 @@ function plugin_singlesignon_install()
         );
     }
 
-    if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => 'PluginSinglesignonProvider'])) {
+    if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => Provider::class])) {
         $preferences = [
-            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 2, 'rank' => 1, 'users_id' => 0],
-            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 3, 'rank' => 2, 'users_id' => 0],
-            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 5, 'rank' => 4, 'users_id' => 0],
-            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 6, 'rank' => 5, 'users_id' => 0],
-            ['itemtype' => 'PluginSinglesignonProvider', 'num' => 10, 'rank' => 6, 'users_id' => 0],
+            ['itemtype' => Provider::class, 'num' => 2, 'rank' => 1, 'users_id' => 0],
+            ['itemtype' => Provider::class, 'num' => 3, 'rank' => 2, 'users_id' => 0],
+            ['itemtype' => Provider::class, 'num' => 5, 'rank' => 4, 'users_id' => 0],
+            ['itemtype' => Provider::class, 'num' => 6, 'rank' => 5, 'users_id' => 0],
+            ['itemtype' => Provider::class, 'num' => 10, 'rank' => 6, 'users_id' => 0],
         ];
 
         foreach ($preferences as $preference) {

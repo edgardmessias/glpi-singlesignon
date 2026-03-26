@@ -109,7 +109,7 @@ if (isset($_POST["add"])) {
     Html::back();
 } else {
     if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
-        Html::header(__sso('Single Sign-on'), $_SERVER['PHP_SELF'], "config", \GlpiPlugin\Singlesignon\Provider::class, "");
+        Html::header(__sso('Single Sign-on'), $_SERVER['PHP_SELF'], "config", Provider::class, "");
     } else {
         Html::helpHeader(__sso('Single Sign-on'), $_SERVER['PHP_SELF']);
     }
