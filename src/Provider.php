@@ -1037,7 +1037,7 @@ class Provider extends \CommonDBTM
             $url .= $glue . http_build_query($params);
 
             header('Location: ' . $url);
-            exit;
+            return false;
         }
 
         // Extract state parameter

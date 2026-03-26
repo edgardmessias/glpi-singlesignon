@@ -30,6 +30,7 @@ use Glpi\Plugin\Hooks;
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Preference;
 use GlpiPlugin\Singlesignon\Provider;
+
 use function Safe\define;
 
 define('PLUGIN_SINGLESIGNON_VERSION', '1.5.1');

@@ -32,6 +32,7 @@ use Glpi\Exception\Http\NotFoundHttpException;
 use Glpi\Exception\SessionExpiredException;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Toolbox;
+
 use function Safe\ini_set;
 
 ini_set('display_errors', '1');
@@ -64,7 +65,9 @@ if (!$signon_provider->fields['is_active']) {
     throw $exception;
 }
 
-$signon_provider->checkAuthorization();
+if (!$signon_provider->checkAuthorization()) {
+    return;
+}
 
 $test = Toolbox::getCallbackParameters('test');
 
@@ -78,7 +81,7 @@ if ($test) {
     echo "### END ###";
     echo '</pre>';
     Html::nullFooter();
-    exit();
+    return;
 }
 
 $user_id = 0;
@@ -140,13 +143,13 @@ if ($user_id || $signon_provider->login()) {
          }
        </script></div>';
     Html::nullFooter();
-    exit();
+    return;
 
     // Auth::redirectIfAuthenticated();
 
 }
 
-// we have done at least a good login? No, we exit.
+// we have done at least a good login? No, we return.
 Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');
 echo '<div class="center b">' . __('User not authorized to connect in GLPI') . '<br><br>';
 // Logout whit noAUto to manage auto_login with errors
@@ -163,4 +166,4 @@ echo '<script type="text/javascript">
    }
 </script>';
 Html::nullFooter();
-exit();
+return;
