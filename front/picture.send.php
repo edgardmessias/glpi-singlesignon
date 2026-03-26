@@ -34,27 +34,27 @@ $provider = new PluginSinglesignonProvider();
 $path = false;
 
 if (isset($_GET['id'])) { // docid for document
-   if (!$provider->getFromDB($_GET['id'])) {
-      $exception = new NotFoundHttpException();
-      $exception->setMessageToDisplay(__('Unknown file'));
-      throw $exception;
-   }
+    if (!$provider->getFromDB($_GET['id'])) {
+        $exception = new NotFoundHttpException();
+        $exception->setMessageToDisplay(__('Unknown file'));
+        throw $exception;
+    }
 
-   $path = $provider->fields['picture'];
-} else if (isset($_GET['path'])) {
-   $path = $_GET['path'];
+    $path = $provider->fields['picture'];
+} elseif (isset($_GET['path'])) {
+    $path = $_GET['path'];
 } else {
-   $exception = new BadRequestHttpException();
-   $exception->setMessageToDisplay(__('Invalid filename'));
-   throw $exception;
+    $exception = new BadRequestHttpException();
+    $exception->setMessageToDisplay(__('Invalid filename'));
+    throw $exception;
 }
 
 $path = GLPI_PLUGIN_DOC_DIR . "/singlesignon/" . $path;
 
 if (!file_exists($path)) {
-   $exception = new NotFoundHttpException();
-   $exception->setMessageToDisplay(__('File not found'));
-   throw $exception;
+    $exception = new NotFoundHttpException();
+    $exception->setMessageToDisplay(__('File not found'));
+    throw $exception;
 }
 
 // In GLPI 11, use getFileAsResponse() instead of deprecated sendFile()

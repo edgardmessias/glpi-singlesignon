@@ -31,12 +31,12 @@ Session::checkRight(User::$rightname, UPDATE);
 
 if (isset($_POST["update"]) && isset($_POST["user_id"])) {
 
-   $prefer = new PluginSinglesignonPreference((int) $_POST["user_id"]);
-   $prefer->loadProviders();
+    $prefer = new PluginSinglesignonPreference((int) $_POST["user_id"]);
+    $prefer->loadProviders();
 
-   $prefer->update($_POST);
+    $prefer->update($_POST);
 
-   Html::back();
+    Html::back();
 } else {
-   Html::back();
+    Html::back();
 }

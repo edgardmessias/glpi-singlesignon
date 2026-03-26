@@ -9,9 +9,7 @@ parameters:
         - front
         - src
         - hook.php
-        - report.php
         - setup.php
-        - stat.php
     scanDirectories:
         - ../../src
     bootstrapFiles:
