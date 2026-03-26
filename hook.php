@@ -21,7 +21,7 @@
  * @link      https://github.com/edgardmessias/glpi-singlesignon/
  * ---------------------------------------------------------------------
  */
-
+use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Provider;
 
 /**
@@ -51,7 +51,7 @@ use GlpiPlugin\Singlesignon\Provider;
 
 function plugin_singlesignon_display_login()
 {
-    \GlpiPlugin\Singlesignon\LoginRenderer::display();
+    LoginRenderer::display();
 }
 
 function plugin_singlesignon_install()

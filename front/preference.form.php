@@ -24,7 +24,7 @@
 
 use GlpiPlugin\Singlesignon\Preference;
 
-include('../../../inc/includes.php');
+include(__DIR__ . '/../../../inc/includes.php');
 
 Session::checkLoginUser();
 

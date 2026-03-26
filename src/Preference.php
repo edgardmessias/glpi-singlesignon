@@ -69,7 +69,7 @@ class Preference extends \CommonDBTM
         }
 
         $ids = $input['_remove_sso'];
-        if (empty($ids)) {
+        if ($ids === []) {
             return false;
         }
 
@@ -156,7 +156,7 @@ class Preference extends \CommonDBTM
         $canedit = $this->user_id == \Session::getLoginUserID();
 
         if ($canedit) {
-            echo "<form name='form' action=\"" . \Toolbox::getItemTypeFormURL(__CLASS__) . "\" method='post'>";
+            echo "<form name='form' action=\"" . \Toolbox::getItemTypeFormURL(self::class) . "\" method='post'>";
         }
 
         echo "<div class='center' id='tabsbody'>";

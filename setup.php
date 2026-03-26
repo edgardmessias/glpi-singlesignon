@@ -37,7 +37,7 @@ define('PLUGIN_SINGLESIGNON_MIN_GLPI', '11.0.0');
 // Maximum GLPI version, exclusive
 define('PLUGIN_SINGLESIGNON_MAX_GLPI', '11.0.99');
 
-$folder = basename(dirname(__FILE__));
+$folder = basename(__DIR__);
 
 if ($folder !== "singlesignon") {
     $msg = sprintf(__sso("Please, rename the plugin folder \"%s\" to \"singlesignon\""), $folder);

@@ -21,7 +21,7 @@
  * @link      https://github.com/edgardmessias/glpi-singlesignon/
  * ---------------------------------------------------------------------
  */
-
+use Robo\Tasks;
 use Symfony\Component\Finder\Finder;
 
 /**
@@ -29,7 +29,7 @@ use Symfony\Component\Finder\Finder;
  *
  * @see http://robo.li/
  */
-class RoboFile extends \Robo\Tasks
+class RoboFile extends Tasks
 {
     protected $name = "singlesignon";
     protected $issues = "https://github.com/edgardmessias/glpi-singlesignon/issues";
@@ -108,7 +108,7 @@ class RoboFile extends \Robo\Tasks
             $name = 'PLUGIN_' . strtoupper($this->name) . '_VERSION';
             preg_match("/'$name',\s*'([\w\.]+)'/", $content, $matches);
             $args[] = '--package-version=' . $matches[1];
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             echo $ex->getMessage();
         }
 
@@ -179,7 +179,7 @@ class RoboFile extends \Robo\Tasks
             try {
                 $data = json_decode(file_get_contents($composer_file), true);
                 $hasDep = isset($data['require']) && count($data['require']) > 0;
-            } catch (\Exception $ex) {
+            } catch (Exception $ex) {
                 $hasDep = true;
             }
 

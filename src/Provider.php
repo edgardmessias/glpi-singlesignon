@@ -26,6 +26,19 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use CommonDBTM;
+use CommonGLPI;
+use Session;
+use Html;
+use Dropdown;
+use Toolbox;
+use Plugin;
+use Glpi\Exception\Http\BadRequestHttpException;
+use Exception;
+use User;
+use Profile;
+use Profile_User;
+use Auth;
 use function Safe\file_get_contents;
 use function Safe\fclose;
 use function Safe\fopen;
@@ -37,7 +50,7 @@ use function Safe\preg_match;
 use function Safe\preg_split;
 use function Safe\sha1_file;
 
-class Provider extends \CommonDBTM
+class Provider extends CommonDBTM
 {
     // From CommonDBTM
     public $dohistory = true;
@@ -107,17 +120,17 @@ class Provider extends \CommonDBTM
 
         $ong = [];
         $this->addDefaultFormTab($ong);
-        $this->addStandardTab(__CLASS__, $ong, $options);
+        $this->addStandardTab(self::class, $ong, $options);
         $this->addStandardTab('Log', $ong, $options);
 
         return $ong;
     }
 
-    public function getTabNameForItem(\CommonGLPI $item, $withtemplate = 0)
+    public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         $tabs = [];
 
-        $debug_mode = ($_SESSION['glpi_use_mode'] == \Session::DEBUG_MODE);
+        $debug_mode = ($_SESSION['glpi_use_mode'] == Session::DEBUG_MODE);
         if ($debug_mode) {
             $tabs[1] =  __('Debug');
         }
@@ -125,7 +138,7 @@ class Provider extends \CommonDBTM
         return $tabs;
     }
 
-    public static function displayTabContentForItem(\CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
         switch ($tabnum) {
             case 1:
@@ -145,7 +158,7 @@ class Provider extends \CommonDBTM
 
     public function showFormDebug($item, $options = [])
     {
-        \Html::requireJS('clipboard');
+        Html::requireJS('clipboard');
         $item->fields['client_secret'] = substr($item->fields['client_secret'], 0, 3) . '... (' . strlen($item->fields['client_secret']) . ')';
         echo "<table class='tab_cadre_fixe'>";
         echo "<tr><th>" . \__sso('JSON SSO provider representation') . "</th></tr>";
@@ -171,7 +184,7 @@ class Provider extends \CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Name') . "</td>";
         echo "<td>";
-        echo \Html::input("name", ['value' => $this->fields["name"], 'class' => 'form-control']);
+        echo Html::input("name", ['value' => $this->fields["name"], 'class' => 'form-control']);
         echo "</td>";
         echo "<td>" . __('Comments') . "</td>";
         echo "<td>";
@@ -185,7 +198,7 @@ class Provider extends \CommonDBTM
         self::dropdownType('type', ['value' => $this->fields["type"], 'on_change' => $on_change, 'class' => 'form-control']);
         echo "<td>" . __('Active') . "</td>";
         echo "<td>";
-        \Dropdown::showYesNo("is_active", $this->fields["is_active"]);
+        Dropdown::showYesNo("is_active", $this->fields["is_active"]);
         echo "</td></tr>\n";
 
         echo "<tr class='tab_bg_1'>";
@@ -206,7 +219,7 @@ class Provider extends \CommonDBTM
         echo "<td><input type='text' style='width:96%' name='scope' value='" . $this->getScope() . "' class='form-control'></td>";
         echo "<td>" . \__sso('Extra Options');
         echo "&nbsp;";
-        \Html::showToolTip(nl2br(sprintf(\__sso('Allows you to specify custom parameters for the SSO provider %1$s. Example: %2$s to force login or %3$s to force account selection (supported URL settings may vary by provider). You can specify additional parameters with the "&" delimiter.'), '<strong>' . \__sso('Authorize URL') . '</strong>', '<code>prompt=login</code>', '<code>prompt=select_account</code>')));
+        Html::showToolTip(nl2br(sprintf(\__sso('Allows you to specify custom parameters for the SSO provider %1$s. Example: %2$s to force login or %3$s to force account selection (supported URL settings may vary by provider). You can specify additional parameters with the "&" delimiter.'), '<strong>' . \__sso('Authorize URL') . '</strong>', '<code>prompt=login</code>', '<code>prompt=select_account</code>')));
         echo "</td>";
         echo "<td><input type='text' style='width:96%' name='extra_options' value='" . $this->fields["extra_options"] . "' class='form-control'>";
         echo "</td>";
@@ -229,30 +242,30 @@ class Provider extends \CommonDBTM
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('IsDefault', 'singlesignon') . "</td><td>";
-        \Dropdown::showYesNo("is_default", $this->fields["is_default"]);
+        Dropdown::showYesNo("is_default", $this->fields["is_default"]);
         echo "<td>" . \__sso('PopupAuth') . "</td>";
         echo "<td>";
-        \Dropdown::showYesNo("popup", $this->fields["popup"]);
+        Dropdown::showYesNo("popup", $this->fields["popup"]);
         echo "</td></tr>\n";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . \__sso('SplitDomain') . "</td>";
         echo "<td>";
-        \Dropdown::showYesNo("split_domain", $this->fields["split_domain"]);
+        Dropdown::showYesNo("split_domain", $this->fields["split_domain"]);
         echo "</td>";
         echo "<td>" . \__sso('AuthorizedDomains');
         echo "&nbsp;";
-        \Html::showToolTip(nl2br(\__sso('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces) (optional).')));
+        Html::showToolTip(nl2br(\__sso('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces) (optional).')));
         echo "</td>";
         echo "<td><input type='text' style='width:96%' name='authorized_domains' value='" . $this->fields["authorized_domains"] . "' class='form-control'></td>";
         echo "</td></tr>\n";
 
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . \__sso("Use Email as Login") . "<td>";
-        \Dropdown::showYesNo("use_email_for_login", $this->fields["use_email_for_login"]);
+        Dropdown::showYesNo("use_email_for_login", $this->fields["use_email_for_login"]);
         echo "</td>";
         echo "<td>" . \__sso('Split Name') . "<td>";
-        \Dropdown::showYesNo("split_name", $this->fields["split_name"]);
+        Dropdown::showYesNo("split_name", $this->fields["split_name"]);
         echo "</td>";
 
         echo "<tr class='tab_bg_1'>";
@@ -262,14 +275,14 @@ class Provider extends \CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . __('Background color') . "</td>";
         echo "<td>";
-        \Html::showColorField(
+        Html::showColorField(
             'bgcolor',
             [
                 'value'  => $this->fields['bgcolor'],
             ],
         );
         echo "&nbsp;";
-        echo \Html::getCheckbox([
+        echo Html::getCheckbox([
             'title' => __('Clear'),
             'name'  => '_blank_bgcolor',
             'checked' => empty($this->fields['bgcolor']),
@@ -278,14 +291,14 @@ class Provider extends \CommonDBTM
         echo "</td>";
         echo "<td>" . __('Color') . "</td>";
         echo "<td>";
-        \Html::showColorField(
+        Html::showColorField(
             'color',
             [
                 'value'  => $this->fields['color'],
             ],
         );
         echo "&nbsp;";
-        echo \Html::getCheckbox([
+        echo Html::getCheckbox([
             'title' => __('Clear'),
             'name'  => '_blank_color',
             'checked' => empty($this->fields['color']),
@@ -298,7 +311,7 @@ class Provider extends \CommonDBTM
         echo "<td>" . __('Picture') . "</td>";
         echo "<td colspan='3'>";
         if (!empty($this->fields['picture'])) {
-            echo \Html::image(Toolbox::getPictureUrl($this->fields['picture']), [
+            echo Html::image(Toolbox::getPictureUrl($this->fields['picture']), [
                 'style' => '
                max-width: 100px;
                max-height: 100px;
@@ -308,13 +321,13 @@ class Provider extends \CommonDBTM
                 'class' => 'picture_square',
             ]);
             echo "&nbsp;";
-            echo \Html::getCheckbox([
+            echo Html::getCheckbox([
                 'title' => __('Clear'),
                 'name'  => '_blank_picture',
             ]);
             echo "&nbsp;" . __('Clear');
         } else {
-            echo \Html::file([
+            echo Html::file([
                 'name'       => 'picture',
                 'onlyimages' => true,
             ]);
@@ -445,7 +458,7 @@ class Provider extends \CommonDBTM
 
         if (count($error_detected)) {
             foreach ($error_detected as $error) {
-                \Session::addMessageAfterRedirect(
+                Session::addMessageAfterRedirect(
                     $error,
                     true,
                     ERROR,
@@ -476,7 +489,7 @@ class Provider extends \CommonDBTM
             if ($dest = Toolbox::savePicture(GLPI_TMP_DIR . '/' . $picture)) {
                 $input['picture'] = $dest;
             } else {
-                \Session::addMessageAfterRedirect(__('Unable to save picture file.'), true, ERROR);
+                Session::addMessageAfterRedirect(__('Unable to save picture file.'), true, ERROR);
             }
 
             if (array_key_exists('picture', $this->fields)) {
@@ -499,7 +512,7 @@ class Provider extends \CommonDBTM
             unset($opt['id']);
             if (isset($options[$optid])) {
                 $message = "Duplicate key $optid ({$options[$optid]['name']}/{$opt['name']}) in " . get_class($this) . " searchOptions!";
-                \Toolbox::logDebug($message);
+                Toolbox::logDebug($message);
             }
             foreach ($opt as $k => $v) {
                 $options[$optid][$k] = $v;
@@ -686,7 +699,7 @@ class Provider extends \CommonDBTM
     {
         $tab = static::getTypes();
         // Return $value if not defined
-        return (isset($tab[$value]) ? $tab[$value] : $value);
+        return ($tab[$value] ?? $value);
     }
 
     /**
@@ -722,7 +735,7 @@ class Provider extends \CommonDBTM
 
         $items += self::getTypes();
 
-        return \Dropdown::showFromArray($name, $items, $params);
+        return Dropdown::showFromArray($name, $items, $params);
     }
 
     /**
@@ -847,7 +860,7 @@ class Provider extends \CommonDBTM
     public static function getDefault($type, $key, $default = null)
     {
         if (static::$default === null) {
-            $content = file_get_contents(dirname(__FILE__) . '/../providers.json');
+            $content = file_get_contents(__DIR__ . '/../providers.json');
             static::$default = json_decode($content, true);
         }
 
@@ -903,7 +916,7 @@ class Provider extends \CommonDBTM
             $fields['scope'] = $value;
         }
 
-        $fields = \Plugin::doHookFunction("sso:scope", $fields);
+        $fields = Plugin::doHookFunction("sso:scope", $fields);
 
         return $fields['scope'];
     }
@@ -933,7 +946,7 @@ class Provider extends \CommonDBTM
             $fields['url_authorize'] = $value;
         }
 
-        $fields = \Plugin::doHookFunction("sso:url_authorize", $fields);
+        $fields = Plugin::doHookFunction("sso:url_authorize", $fields);
 
         return $fields['url_authorize'];
     }
@@ -950,7 +963,7 @@ class Provider extends \CommonDBTM
             $fields['url_access_token'] = $value;
         }
 
-        $fields = \Plugin::doHookFunction("sso:url_access_token", $fields);
+        $fields = Plugin::doHookFunction("sso:url_access_token", $fields);
 
         return $fields['url_access_token'];
     }
@@ -968,7 +981,7 @@ class Provider extends \CommonDBTM
             $fields['url_resource_owner_details'] = $value;
         }
 
-        $fields = \Plugin::doHookFunction("sso:url_resource_owner_details", $fields);
+        $fields = Plugin::doHookFunction("sso:url_resource_owner_details", $fields);
 
         $url = $fields['url_resource_owner_details'];
 
@@ -989,20 +1002,20 @@ class Provider extends \CommonDBTM
 
         if (isset($_GET['error'])) {
 
-            $error_description = isset($_GET['error_description']) ? $_GET['error_description'] : __("The action you have requested is not allowed.");
+            $error_description = $_GET['error_description'] ?? __("The action you have requested is not allowed.");
 
-            $exception = new \Glpi\Exception\Http\BadRequestHttpException();
+            $exception = new BadRequestHttpException();
             $exception->setMessageToDisplay(__($error_description));
             throw $exception;
         }
 
         if (!isset($_GET['code'])) {
             if (session_status() === PHP_SESSION_NONE) {
-                \Session::start();
+                Session::start();
             }
 
             // Generate CSRF token for OAuth state parameter and remember redirect in session
-            $state = \Session::getNewCSRFToken();
+            $state = Session::getNewCSRFToken();
 
             if (isset($_SESSION['redirect'])) {
                 $_SESSION['glpi_singlesignon_redirect'] = $_SESSION['redirect'];
@@ -1026,11 +1039,11 @@ class Provider extends \CommonDBTM
                 $params = array_merge($params, $extra_options);
             }
 
-            $params = \Plugin::doHookFunction("sso:authorize_params", $params);
+            $params = Plugin::doHookFunction("sso:authorize_params", $params);
 
             $url = $this->getAuthorizeUrl();
 
-            $glue = strstr($url, '?') === false ? '?' : '&';
+            $glue = !str_contains($url, '?') ? '?' : '&';
             $url .= $glue . http_build_query($params);
 
             header('Location: ' . $url);
@@ -1038,10 +1051,10 @@ class Provider extends \CommonDBTM
         }
 
         // Extract state parameter
-        $state = isset($_GET['state']) ? $_GET['state'] : '';
+        $state = $_GET['state'] ?? '';
 
         // Validate state against stored CSRF token
-        \Session::checkCSRF([
+        Session::checkCSRF([
             '_glpi_csrf_token' => $state,
         ]);
 
@@ -1075,11 +1088,11 @@ class Provider extends \CommonDBTM
             'code' => $this->_code,
         ];
 
-        $params = \Plugin::doHookFunction("sso:access_token_params", $params);
+        $params = Plugin::doHookFunction("sso:access_token_params", $params);
 
         $url = $this->getAccessTokenUrl();
 
-        $content = \Toolbox::callCurl($url, [
+        $content = Toolbox::callCurl($url, [
             CURLOPT_HTTPHEADER => [
                 "Accept: application/json",
             ],
@@ -1110,7 +1123,7 @@ class Provider extends \CommonDBTM
                 return false;
             }
             $this->_token = $data['access_token'];
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             if ($this->debug) {
                 print_r($content);
             }
@@ -1142,9 +1155,9 @@ class Provider extends \CommonDBTM
             "Authorization:Bearer $token",
         ];
 
-        $headers = \Plugin::doHookFunction("sso:resource_owner_header", $headers);
+        $headers = Plugin::doHookFunction("sso:resource_owner_header", $headers);
 
-        $content = \Toolbox::callCurl($url, [
+        $content = Toolbox::callCurl($url, [
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_SSL_VERIFYPEER => false,
@@ -1160,7 +1173,7 @@ class Provider extends \CommonDBTM
                 print_r($data);
             }
             $this->_resource_owner = $data;
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             if ($this->debug) {
                 print_r($content);
             }
@@ -1172,7 +1185,7 @@ class Provider extends \CommonDBTM
                 print_r("\nlinkedin:\n");
             }
             $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
-            $content = \Toolbox::callCurl($email_url, [
+            $content = Toolbox::callCurl($email_url, [
                 CURLOPT_HTTPHEADER => $headers,
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_SSL_VERIFYPEER => false,
@@ -1185,7 +1198,7 @@ class Provider extends \CommonDBTM
                 }
 
                 $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
-            } catch (\Exception $ex) {
+            } catch (Exception $ex) {
                 return false;
             }
         }
@@ -1201,9 +1214,9 @@ class Provider extends \CommonDBTM
             return false;
         }
 
-        $user = new \User();
+        $user = new User();
         //First: check linked user
-        $id = \Plugin::doHookFunction("sso:find_user", $resource_array);
+        $id = Plugin::doHookFunction("sso:find_user", $resource_array);
 
         if (is_numeric($id) && $user->getFromDB($id)) {
             return $user;
@@ -1249,9 +1262,9 @@ class Provider extends \CommonDBTM
         foreach ($email_fields as $field) {
             if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
                 $email = $resource_array[$field];
-                $isAuthorized = empty($authorizedDomains);
+                $isAuthorized = $authorizedDomains === [];
                 foreach ($authorizedDomains as $authorizedDomain) {
-                    if (preg_match("/{$authorizedDomain}$/i", $email)) {
+                    if (preg_match("/{$authorizedDomain}$/i", $email) !== 0) {
                         $isAuthorized = true;
                     }
                 }
@@ -1276,9 +1289,9 @@ class Provider extends \CommonDBTM
             foreach ($login_fields as $field) {
                 if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
                     $login = $resource_array[$field];
-                    $isAuthorized = empty($authorizedDomains);
+                    $isAuthorized = $authorizedDomains === [];
                     foreach ($authorizedDomains as $authorizedDomain) {
-                        if (preg_match("/{$authorizedDomain}$/i", $login)) {
+                        if (preg_match("/{$authorizedDomain}$/i", $login) !== 0) {
                             $isAuthorized = true;
                         }
                     }
@@ -1399,24 +1412,24 @@ class Provider extends \CommonDBTM
                 // If no default profile exists, the user will not be able to log in.
                 // In this case, we retrieve a profile and an entity and assign these values ​​to it.
                 // The administrator can change these values ​​later.
-                if (0 == \Profile::getDefault()) {
+                if (0 == Profile::getDefault()) {
                     // No default profiles
                     // Profile recovery and assignment
                     global $DB;
 
                     $datasProfiles = [];
                     foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
-                        array_push($datasProfiles, $data);
+                        $datasProfiles[] = $data;
                     }
                     $datasEntities = [];
                     foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
-                        array_push($datasEntities, $data);
+                        $datasEntities[] = $data;
                     }
                     if (count($datasProfiles) > 0 && count($datasEntities) > 0) {
                         $profils = $datasProfiles[0]['id'];
                         $entitie = $datasEntities[0]['id'];
 
-                        $profile   = new \Profile_User();
+                        $profile   = new Profile_User();
                         $userProfile['users_id'] = intval($user->fields['id']);
                         $userProfile['entities_id'] = intval($entitie);
                         $userProfile['is_recursive'] = 0;
@@ -1429,7 +1442,7 @@ class Provider extends \CommonDBTM
                 }
 
                 return $user;
-            } catch (\Exception $ex) {
+            } catch (Exception $ex) {
                 return false;
             }
         }
@@ -1468,10 +1481,10 @@ class Provider extends \CommonDBTM
 
         // Set a random password for the current user
         $tempPassword = bin2hex(random_bytes(64));
-        $DB->update('glpi_users', ['password' => \Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+        $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
         // Log-in using the generated password as if you were logging in using the login form
-        $auth = new \Auth();
+        $auth = new Auth();
         $authResult = $auth->login($user->fields['name'], $tempPassword);
 
         // Rollback password change
@@ -1482,7 +1495,7 @@ class Provider extends \CommonDBTM
 
     public function linkUser($user_id)
     {
-        $user = new \User();
+        $user = new User();
 
         if (!$user->getFromDB($user_id)) {
             return false;
@@ -1542,18 +1555,17 @@ class Provider extends \CommonDBTM
             "Authorization:Bearer $token",
         ];
 
-        $headers = \Plugin::doHookFunction("sso:resource_owner_picture", $headers);
+        $headers = Plugin::doHookFunction("sso:resource_owner_picture", $headers);
 
         if ($this->debug) {
             print_r("\nsyncOAuthPhoto:\n");
         }
 
         //get picture content (base64) in Azure
-        if (preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url)) {
-            array_push($headers, "Content-Type:image/jpeg; charset=utf-8");
-
+        if (preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url) !== 0) {
+            $headers[] = "Content-Type:image/jpeg; charset=utf-8";
             $photo_url = "https://graph.microsoft.com/v1.0/me/photo/\$value";
-            $img = \Toolbox::callCurl($photo_url, [
+            $img = Toolbox::callCurl($photo_url, [
                 CURLOPT_HTTPHEADER => $headers,
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_SSL_VERIFYPEER => false,
@@ -1568,11 +1580,7 @@ class Provider extends \CommonDBTM
                 $sub       = substr($filename, -2); /* 2 hex digit */
                 $file      = GLPI_PICTURE_DIR . "/{$sub}/{$filename}.jpg";
 
-                if (array_key_exists('picture', $user->fields)) {
-                    $oldfile = GLPI_PICTURE_DIR . "/" . $user->fields["picture"];
-                } else {
-                    $oldfile = null;
-                }
+                $oldfile = array_key_exists('picture', $user->fields) ? GLPI_PICTURE_DIR . "/" . $user->fields["picture"] : null;
 
                 //update picture if not exist or changed
                 if (empty($user->fields["picture"])
@@ -1591,7 +1599,7 @@ class Provider extends \CommonDBTM
 
                     //save thumbnail
                     $thumb = GLPI_PICTURE_DIR . "/{$sub}/{$filename}_min.jpg";
-                    \Toolbox::resizePicture($file, $thumb);
+                    Toolbox::resizePicture($file, $thumb);
 
                     $user->fields['picture'] = "{$sub}/{$filename}.jpg";
                     $success = $user->updateInDB(['picture']);

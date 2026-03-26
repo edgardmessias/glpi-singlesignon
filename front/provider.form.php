@@ -25,7 +25,7 @@
 use Glpi\Event;
 use GlpiPlugin\Singlesignon\Provider;
 
-include('../../../inc/includes.php');
+include(__DIR__ . '/../../../inc/includes.php');
 
 Session::checkRight("config", UPDATE);
 

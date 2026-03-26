@@ -26,6 +26,10 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Throwable;
+use Plugin;
+use Document;
+use Html;
 use function Safe\base64_decode;
 use function Safe\mkdir;
 use function Safe\preg_match;
@@ -62,11 +66,7 @@ class Toolbox
 
     public static function isDefault($row, $query = [])
     {
-
-        if ($row['is_default'] == 1) {
-            return true;
-        }
-        return false;
+        return $row['is_default'] == 1;
     }
 
     public static function getCallbackParameters($name = null)
@@ -86,7 +86,7 @@ class Toolbox
                 return '';
             }
 
-            if ($root_doc && $root_doc !== '/' && strpos($path, $root_doc) === 0) {
+            if ($root_doc && $root_doc !== '/' && str_starts_with($path, $root_doc)) {
                 $path = substr($path, strlen($root_doc));
             }
 
@@ -129,7 +129,7 @@ class Toolbox
                 } else {
                     try {
                         $tmp = base64_decode($part, true);
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         $key = null;
                         continue;
                     }
@@ -170,13 +170,13 @@ class Toolbox
             return null;
         }
 
-        return self::getBaseURL() . \Plugin::getPhpDir("singlesignon", false) . '/front/picture.send.php?path=' . $path;
+        return self::getBaseURL() . Plugin::getPhpDir("singlesignon", false) . '/front/picture.send.php?path=' . $path;
     }
 
     public static function savePicture($src, $uniq_prefix = "")
     {
 
-        if (function_exists('Document::isImage') && !\Document::isImage($src)) {
+        if (function_exists('Document::isImage') && !Document::isImage($src)) {
             return false;
         }
 
@@ -205,7 +205,7 @@ class Toolbox
             }
 
             rename($src, $dest);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
 
@@ -224,7 +224,7 @@ class Toolbox
         try {
             $fullpath = realpath($fullpath);
             $baseRealPath = realpath($basePath);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
 
@@ -235,7 +235,7 @@ class Toolbox
         try {
             unlink($fullpath);
             return true;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }
@@ -255,13 +255,13 @@ class Toolbox
         if ((isset($data['color']) && $data['color'])) {
             $style .= 'color: ' . $data['color'] . ';';
         }
-        if ($style) {
+        if ($style !== '' && $style !== '0') {
             $btn .= ' style="' . $style . '"';
         }
         $btn .= '>';
 
         if (isset($data['picture']) && $data['picture']) {
-            $btn .= \Html::image(
+            $btn .= Html::image(
                 static::getPictureUrl($data['picture']),
                 [
                     'style' => 'max-height: 20px;margin-right: 4px',
@@ -370,13 +370,13 @@ class Toolbox
             $script_candidates[] = $php_self;
         }
 
-        $plugin_script = $normalizePath(\Plugin::getPhpDir("singlesignon", false) . '/front/callback.php');
+        $plugin_script = $normalizePath(Plugin::getPhpDir("singlesignon", false) . '/front/callback.php');
         if ($plugin_script !== '' && !in_array($plugin_script, $script_candidates)) {
             $script_candidates[] = $plugin_script;
         }
 
         foreach ($script_candidates as $candidate) {
-            if (strpos($request_path, $candidate) === 0) {
+            if (str_starts_with($request_path, $candidate)) {
                 $derived = substr($request_path, strlen($candidate));
                 if ($derived !== '') {
                     $candidates[] = $derived;
@@ -387,13 +387,11 @@ class Toolbox
         // Direct regex match in case SCRIPT_NAME does not map to the plugin path
         if ($plugin_script !== '' && preg_match('#' . preg_quote($plugin_script, '#') . '(/.*)$#', $request_path, $matches)) {
             $candidates[] = $matches[1];
-        } elseif (preg_match('#/front/callback\.php(/.*)$#', $request_path, $matches)) {
+        } elseif (preg_match('#/front/callback\.php(/.*)$#', $request_path, $matches) !== 0) {
             $candidates[] = $matches[1];
         }
 
-        $filtered = array_filter($candidates, static function ($candidate) {
-            return $candidate !== '' && $candidate !== '/';
-        });
+        $filtered = array_filter($candidates, static fn($candidate) => $candidate !== '' && $candidate !== '/');
 
         return array_values(array_unique($filtered));
     }

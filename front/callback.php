@@ -36,7 +36,7 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-include('../../../inc/includes.php');
+include(__DIR__ . '/../../../inc/includes.php');
 
 // Session is automatically started by GLPI for non-stateless endpoints
 
@@ -120,12 +120,10 @@ if ($user_id || $signon_provider->login()) {
         } else {
             $url_redirect = Toolbox::getBaseURL() . "/front/helpdesk.public.php$REDIRECT";
         }
+    } elseif ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
+        $url_redirect = Toolbox::getBaseURL() . "/front/ticket.form.php";
     } else {
-        if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-            $url_redirect = Toolbox::getBaseURL() . "/front/ticket.form.php";
-        } else {
-            $url_redirect = Toolbox::getBaseURL() . "/front/central.php$REDIRECT";
-        }
+        $url_redirect = Toolbox::getBaseURL() . "/front/central.php$REDIRECT";
     }
 
     Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');

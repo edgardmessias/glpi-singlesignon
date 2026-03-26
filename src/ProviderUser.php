@@ -26,7 +26,9 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-class ProviderUser extends \CommonDBRelation
+use CommonDBRelation;
+
+class ProviderUser extends CommonDBRelation
 {
     // From CommonDBRelation
     public static $itemtype_1   = 'PluginSinglesignonProvider';
