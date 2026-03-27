@@ -19,9 +19,27 @@
         }
     },
     "scripts": {
-        "lint": "vendor/bin/robo lint",
-        "lint:fix": "vendor/bin/robo lint:fix",
+        "license-check:fix": "./vendor/bin/licence-headers-check --fix --header-file ./tools/HEADER",
+        "license-check": "./vendor/bin/licence-headers-check --header-file ./tools/HEADER",
+        "lint": [
+            "composer license-check",
+            "composer rector",
+            "composer php-cs-fixer",
+            "composer phpstan",
+            "composer psalm"
+        ],
+        "lint:fix": [
+            "composer license-check:fix",
+            "composer rector:fix",
+            "composer php-cs-fixer:fix"
+        ],
         "make-release": "vendor/bin/robo build",
+        "php-cs-fixer:fix": "../../vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php",
+        "php-cs-fixer": "../../vendor/bin/php-cs-fixer check --config=.php-cs-fixer.php",
+        "phpstan": "../../vendor/bin/phpstan analyse --memory-limit=2G",
+        "psalm": "../../vendor/bin/psalm",
+        "rector:fix": "../../vendor/bin/rector process",
+        "rector": "../../vendor/bin/rector process --dry-run",
         "update-locales": "vendor/bin/robo update_locales"
     },
     "config": {

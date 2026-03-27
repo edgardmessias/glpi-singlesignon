@@ -40,7 +40,7 @@ define('PLUGIN_SINGLESIGNON_MAX_GLPI', '11.0.99');
 $folder = basename(__DIR__);
 
 if ($folder !== "singlesignon") {
-    $msg = sprintf(__sso("Please, rename the plugin folder \"%s\" to \"singlesignon\""), $folder);
+    $msg = sprintf(__s_sso("Please, rename the plugin folder \"%s\" to \"singlesignon\""), $folder);
     Session::addMessageAfterRedirect($msg, true, ERROR);
 }
 
@@ -58,12 +58,6 @@ function plugin_singlesignon_boot(): void
 function plugin_init_singlesignon()
 {
     global $PLUGIN_HOOKS;
-
-    $autoload = __DIR__ . '/vendor/autoload.php';
-
-    if (file_exists($autoload)) {
-        include_once $autoload;
-    }
 
     Plugin::registerClass(Preference::class, [
         'addtabon' => ['Preference', 'User'],
@@ -102,17 +96,17 @@ function plugin_version_singlesignon()
 function plugin_singlesignon_check_prerequisites()
 {
     if (version_compare(GLPI_VERSION, PLUGIN_SINGLESIGNON_MIN_GLPI, '<')) {
-        echo __sso("This plugin requires GLPI >= 11.0.0");
+        echo htmlspecialchars(__sso("This plugin requires GLPI >= 11.0.0"), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         return false;
     }
 
     if (version_compare(GLPI_VERSION, PLUGIN_SINGLESIGNON_MAX_GLPI, '>=')) {
-        echo __sso("This plugin is not yet validated for this GLPI version");
+        echo htmlspecialchars(__sso("This plugin is not yet validated for this GLPI version"), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         return false;
     }
 
     if (version_compare(PHP_VERSION, '8.2', '<')) {
-        echo __sso("This plugin requires PHP >= 8.2");
+        echo htmlspecialchars(__sso("This plugin requires PHP >= 8.2"), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         return false;
     }
 
@@ -127,4 +121,9 @@ function plugin_singlesignon_check_config()
 function __sso($str)
 {
     return __($str, 'singlesignon');
+}
+
+function __s_sso($str)
+{
+    return __s($str, 'singlesignon');
 }

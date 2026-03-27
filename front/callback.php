@@ -94,7 +94,7 @@ if ($existing_user_id) {
     }
 }
 
-$REDIRECT = "";
+$REDIRECT = '';
 
 if ($user_id || $signon_provider->login()) {
 
@@ -104,12 +104,18 @@ if ($user_id || $signon_provider->login()) {
         $signon_provider->linkUser($user_id);
     }
 
-    // Retrieve redirect stored during authorization step
+    // Retrieve redirect stored during authorization step, validating it
+    $redirect_target = '';
     if (isset($_SESSION['glpi_singlesignon_redirect'])) {
-        $REDIRECT = '?redirect=' . $_SESSION['glpi_singlesignon_redirect'];
+        $redirect_target = (string) $_SESSION['glpi_singlesignon_redirect'];
         unset($_SESSION['glpi_singlesignon_redirect']);
     } elseif (isset($_GET['redirect'])) {
-        $REDIRECT = '?redirect=' . $_GET['redirect'];
+        $redirect_target = (string) $_GET['redirect'];
+    }
+
+    // Only allow internal redirects starting with "/" and encode them safely
+    if ($redirect_target !== '' && str_starts_with($redirect_target, '/')) {
+        $REDIRECT = '?redirect=' . rawurlencode($redirect_target);
     }
 
     $url_redirect = '';
@@ -126,15 +132,18 @@ if ($user_id || $signon_provider->login()) {
         $url_redirect = Toolbox::getBaseURL() . "/front/central.php$REDIRECT";
     }
 
+    $url_redirect_html = htmlspecialchars($url_redirect, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $url_redirect_js = json_encode($url_redirect, JSON_THROW_ON_ERROR);
+
     Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');
-    echo '<div class="center spaced"><a href="' . $url_redirect . '">' .
+    echo '<div class="center spaced"><a href="' . $url_redirect_html . '">' .
     __sso('Automatic redirection, else click') . '</a>';
     echo '<script type="text/javascript">
          if (window.opener) {
-           window.opener.location="' . $url_redirect . '";
+           window.opener.location=' . $url_redirect_js . ';
            window.close();
          } else {
-           window.location="' . $url_redirect . '";
+           window.location=' . $url_redirect_js . ';
          }
        </script></div>';
     Html::nullFooter();
@@ -146,10 +155,10 @@ if ($user_id || $signon_provider->login()) {
 
 // we have done at least a good login? No, we return.
 Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');
-echo '<div class="center b">' . __('User not authorized to connect in GLPI') . '<br><br>';
+echo '<div class="center b">' . __s('User not authorized to connect in GLPI') . '<br><br>';
 // Logout whit noAUto to manage auto_login with errors
 echo '<a href="' . Toolbox::getBaseURL() . '/front/logout.php?noAUTO=1' .
-str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __('Log in again') . '</a></div>';
+str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __s('Log in again') . '</a></div>';
 echo '<script type="text/javascript">
    if (window.opener) {
       $(".singlesignon").on("click", function (e) {

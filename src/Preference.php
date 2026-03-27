@@ -132,7 +132,7 @@ class Preference extends \CommonDBTM
         echo "<div class='center' id='tabsbody'>";
         echo "<table class='tab_cadre_fixe'>";
 
-        echo "<tr><th colspan='4'>" . __('Settings') . "</th></tr>";
+        echo "<tr><th colspan='4'>" . htmlspecialchars(__s('Settings'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</th></tr>";
 
         $this->showFormDefault($item);
 
@@ -162,7 +162,7 @@ class Preference extends \CommonDBTM
         echo "<div class='center' id='tabsbody'>";
         echo "<table class='tab_cadre_fixe'>";
 
-        echo "<tr><th colspan='4'>" . __('Settings') . "</th></tr>";
+        echo "<tr><th colspan='4'>" . htmlspecialchars(__s('Settings'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</th></tr>";
 
         $this->showFormDefault($item);
 
@@ -219,7 +219,7 @@ class Preference extends \CommonDBTM
                     'name'  => "_remove_sso[]",
                     'value'  => $pu['id'],
                 ]);
-                echo "&nbsp;" . __('Clear');
+                echo "&nbsp;" . __s('Clear');
                 echo "</td></tr>";
             }
         }

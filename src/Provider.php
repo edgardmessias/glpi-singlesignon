@@ -39,6 +39,8 @@ use User;
 use Profile;
 use Profile_User;
 use Auth;
+use GlpiPlugin\Singlesignon\Toolbox as SinglesignonToolbox;
+
 use function Safe\file_get_contents;
 use function Safe\fclose;
 use function Safe\fopen;
@@ -182,11 +184,11 @@ class Provider extends CommonDBTM
         }
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Name') . "</td>";
+        echo "<td>" . __s('Name') . "</td>";
         echo "<td>";
         echo Html::input("name", ['value' => $this->fields["name"], 'class' => 'form-control']);
         echo "</td>";
-        echo "<td>" . __('Comments') . "</td>";
+        echo "<td>" . __s('Comments') . "</td>";
         echo "<td>";
         echo "<textarea name='comment' class='form-control'>" . $this->fields["comment"] . "</textarea>";
         echo "</td></tr>";
@@ -196,7 +198,7 @@ class Provider extends CommonDBTM
         echo "<tr class='tab_bg_1'>";
         echo "<td>" . \__sso('SSO Type') . "</td><td>";
         self::dropdownType('type', ['value' => $this->fields["type"], 'on_change' => $on_change, 'class' => 'form-control']);
-        echo "<td>" . __('Active') . "</td>";
+        echo "<td>" . __s('Active') . "</td>";
         echo "<td>";
         Dropdown::showYesNo("is_active", $this->fields["is_active"]);
         echo "</td></tr>\n";
@@ -241,7 +243,7 @@ class Provider extends CommonDBTM
         echo "</tr>\n";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('IsDefault', 'singlesignon') . "</td><td>";
+        echo "<td>" . __s('IsDefault', 'singlesignon') . "</td><td>";
         Dropdown::showYesNo("is_default", $this->fields["is_default"]);
         echo "<td>" . \__sso('PopupAuth') . "</td>";
         echo "<td>";
@@ -269,11 +271,11 @@ class Provider extends CommonDBTM
         echo "</td>";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<th colspan='4'>" . __('Personalization') . "</th>";
+        echo "<th colspan='4'>" . __s('Personalization') . "</th>";
         echo "</tr>\n";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Background color') . "</td>";
+        echo "<td>" . __s('Background color') . "</td>";
         echo "<td>";
         Html::showColorField(
             'bgcolor',
@@ -287,9 +289,9 @@ class Provider extends CommonDBTM
             'name'  => '_blank_bgcolor',
             'checked' => empty($this->fields['bgcolor']),
         ]);
-        echo "&nbsp;" . __('Clear');
+        echo "&nbsp;" . __s('Clear');
         echo "</td>";
-        echo "<td>" . __('Color') . "</td>";
+        echo "<td>" . __s('Color') . "</td>";
         echo "<td>";
         Html::showColorField(
             'color',
@@ -303,12 +305,12 @@ class Provider extends CommonDBTM
             'name'  => '_blank_color',
             'checked' => empty($this->fields['color']),
         ]);
-        echo "&nbsp;" . __('Clear');
+        echo "&nbsp;" . __s('Clear');
         echo "</td>";
         echo "</tr>\n";
 
         echo "<tr class='tab_bg_1'>";
-        echo "<td>" . __('Picture') . "</td>";
+        echo "<td>" . __s('Picture') . "</td>";
         echo "<td colspan='3'>";
         if (!empty($this->fields['picture'])) {
             echo Html::image(Toolbox::getPictureUrl($this->fields['picture']), [
@@ -325,7 +327,7 @@ class Provider extends CommonDBTM
                 'title' => __('Clear'),
                 'name'  => '_blank_picture',
             ]);
-            echo "&nbsp;" . __('Clear');
+            echo "&nbsp;" . __s('Clear');
         } else {
             echo Html::file([
                 'name'       => 'picture',
@@ -346,11 +348,11 @@ class Provider extends CommonDBTM
 
         if ($ID) {
             echo "<tr class='tab_bg_1'>";
-            echo "<th colspan='4'>" . __('Test') . "</th>";
+            echo "<th colspan='4'>" . __s('Test') . "</th>";
             echo "</tr>\n";
 
-            $url = Toolbox::getCallbackUrl($ID);
-            $fullUrl = Toolbox::getBaseURL() . $url;
+            $url = SinglesignonToolbox::getCallbackUrl($ID);
+            $fullUrl = SinglesignonToolbox::getBaseURL() . $url;
             echo "<tr class='tab_bg_1'>";
             echo "<td>" . \__sso('Callback URL') . "</td>";
             echo "<td colspan='3'><a id='singlesignon_callbackurl' href='$fullUrl' data-url='$url'>$fullUrl</a></td>";
@@ -419,40 +421,40 @@ class Provider extends CommonDBTM
         }
 
         if (!isset($input['name']) || empty($input['name'])) {
-            $error_detected[] = \__sso('A Name is required');
+            $error_detected[] = \__s_sso('A Name is required');
         }
 
         if (empty($type)) {
-            $error_detected[] = __('An item type is required');
+            $error_detected[] = __s('An item type is required');
         } elseif (!isset(static::getTypes()[$type])) {
-            $error_detected[] = sprintf(\__sso('The "%s" is a Invalid type'), $type);
+            $error_detected[] = sprintf(\__s_sso('The "%s" is a Invalid type'), $type);
         }
 
         if (!isset($input['client_id']) || empty($input['client_id'])) {
-            $error_detected[] = \__sso('A Client ID is required');
+            $error_detected[] = \__s_sso('A Client ID is required');
         }
 
         if (!isset($input['client_secret']) || empty($input['client_secret'])) {
-            $error_detected[] = \__sso('A Client Secret is required');
+            $error_detected[] = \__s_sso('A Client Secret is required');
         }
 
         if ($type === 'generic') {
             if (!isset($input['url_authorize']) || empty($input['url_authorize'])) {
-                $error_detected[] = \__sso('An Authorize URL is required');
+                $error_detected[] = \__s_sso('An Authorize URL is required');
             } elseif (!filter_var($input['url_authorize'], FILTER_VALIDATE_URL)) {
-                $error_detected[] = \__sso('The Authorize URL is invalid');
+                $error_detected[] = \__s_sso('The Authorize URL is invalid');
             }
 
             if (!isset($input['url_access_token']) || empty($input['url_access_token'])) {
-                $error_detected[] = \__sso('An Access Token URL is required');
+                $error_detected[] = \__s_sso('An Access Token URL is required');
             } elseif (!filter_var($input['url_access_token'], FILTER_VALIDATE_URL)) {
-                $error_detected[] = \__sso('The Access Token URL is invalid');
+                $error_detected[] = \__s_sso('The Access Token URL is invalid');
             }
 
             if (!isset($input['url_resource_owner_details']) || empty($input['url_resource_owner_details'])) {
-                $error_detected[] = \__sso('A Resource Owner Details URL is required');
+                $error_detected[] = \__s_sso('A Resource Owner Details URL is required');
             } elseif (!filter_var($input['url_resource_owner_details'], FILTER_VALIDATE_URL)) {
-                $error_detected[] = \__sso('The Resource Owner Details URL is invalid');
+                $error_detected[] = \__s_sso('The Resource Owner Details URL is invalid');
             }
         }
 
@@ -489,7 +491,7 @@ class Provider extends CommonDBTM
             if ($dest = Toolbox::savePicture(GLPI_TMP_DIR . '/' . $picture)) {
                 $input['picture'] = $dest;
             } else {
-                Session::addMessageAfterRedirect(__('Unable to save picture file.'), true, ERROR);
+                Session::addMessageAfterRedirect(__s('Unable to save picture file.'), true, ERROR);
             }
 
             if (array_key_exists('picture', $this->fields)) {
@@ -789,10 +791,10 @@ class Provider extends CommonDBTM
 
        switch ($ma->getAction()) {
           case 'DoIt':
-             echo "&nbsp;<input type='hidden' name='toto' value='1'>" . \Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __('Write in item history', 'example');
+             echo "&nbsp;<input type='hidden' name='toto' value='1'>" . \Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __s('Write in item history', 'example');
              return true;
           case 'do_nothing':
-             echo "&nbsp;" . \Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __('but do nothing :)', 'example');
+             echo "&nbsp;" . \Html::submit(_x('button', 'Post'), ['name' => 'massiveaction']) . " " . __s('but do nothing :)', 'example');
              return true;
        }
        return parent::showMassiveActionsSubForm($ma);
@@ -1024,7 +1026,7 @@ class Provider extends CommonDBTM
             }
 
             // Build the callback URL for OAuth redirect
-            $callback_url = Toolbox::getBaseURL() . Toolbox::getCallbackUrl($this->fields['id']);
+            $callback_url = SinglesignonToolbox::getBaseURL() . SinglesignonToolbox::getCallbackUrl($this->fields['id']);
 
             $params = [
                 'client_id' => $this->getClientId(),
@@ -1078,7 +1080,7 @@ class Provider extends CommonDBTM
         }
 
         // Build the callback URL for OAuth redirect (must match the one sent in authorization request)
-        $callback_url = Toolbox::getBaseURL() . Toolbox::getCallbackUrl($this->fields['id']);
+        $callback_url = SinglesignonToolbox::getBaseURL() . SinglesignonToolbox::getCallbackUrl($this->fields['id']);
 
         $params = [
             'client_id' => $this->getClientId(),
