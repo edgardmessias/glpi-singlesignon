@@ -66,9 +66,23 @@ if (!$signon_provider->checkAuthorization()) {
     return;
 }
 
-$test = Toolbox::getCallbackParameters('test');
+/**
+ * The "glpi_singlesignon_test" cookie is used to signal that this callback request is a test for the Single Sign-On (SSO) integration.
+ * When set (by the test button in the provider configuration UI), this triggers debug output for developers or administrators
+ * so they can inspect the SSO flow and returned data without performing an actual login.
+ * The cookie is deleted after use to avoid repeated debug output.
+ */
+$test_cookie = isset($_COOKIE['glpi_singlesignon_test']) && $_COOKIE['glpi_singlesignon_test'] === '1';
 
-if ($test) {
+if ($test_cookie) {
+    setcookie('glpi_singlesignon_test', '', [
+        'expires' => time() - 3600,
+        'path' => '/',
+        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => false,
+        'samesite' => 'Lax',
+    ]);
+    unset($_COOKIE['glpi_singlesignon_test']);
     $signon_provider->debug = true;
     Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');
     echo '<div class="left spaced">';

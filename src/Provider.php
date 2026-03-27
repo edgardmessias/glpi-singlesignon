@@ -368,8 +368,8 @@ class Provider extends CommonDBTM
          $("[name=test_singlesignon]").on("click", function (e) {
             e.preventDefault();
 
-            // Im not sure why /test/1 is added here, I got a problem with the redirect_uri because its added after /provider/id
-            var url   = $("#singlesignon_callbackurl").attr("data-url"); // + "/test/1";
+            document.cookie = "glpi_singlesignon_test=1; path=/; SameSite=Lax";
+            var url   = $("#singlesignon_callbackurl").attr("data-url");
             var left  = ($(window).width()/2)-(600/2);
             var top   = ($(window).height()/2)-(800/2);
             var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
@@ -1094,6 +1094,7 @@ class Provider extends CommonDBTM
 
         $url = $this->getAccessTokenUrl();
 
+        $msgerr = null;
         $content = Toolbox::callCurl($url, [
             CURLOPT_HTTPHEADER => [
                 "Accept: application/json",
@@ -1102,7 +1103,12 @@ class Provider extends CommonDBTM
             CURLOPT_POSTFIELDS => http_build_query($params),
             CURLOPT_SSL_VERIFYHOST => false,
             CURLOPT_SSL_VERIFYPEER => false,
-        ]);
+        ], $msgerr);
+
+        if ($msgerr) {
+            print_r("\ngetAccessToken error: " . $msgerr . "\n");
+            return false;
+        }
 
         if ($this->debug) {
             print_r("\ngetAccessToken:\n");
@@ -1127,6 +1133,7 @@ class Provider extends CommonDBTM
             $this->_token = $data['access_token'];
         } catch (Exception $ex) {
             if ($this->debug) {
+                print_r("\ngetAccessToken exception: " . $ex->getMessage() . "\n");
                 print_r($content);
             }
             return false;

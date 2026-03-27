@@ -97,7 +97,7 @@ class Toolbox
         // GLPI 11: Try query string first, fallback to PATH_INFO for compatibility
         if (isset($_GET[$name])) {
             $value = $_GET[$name];
-            if ($name === "provider" || $name === "test") {
+            if ($name === "provider") {
                 return intval($value);
             }
             return $value;
@@ -125,7 +125,7 @@ class Toolbox
                     continue;
                 }
 
-                if ($key === "provider" || $key === "test") {
+                if ($key === "provider") {
                     $part = intval($part);
                 } else {
                     try {
