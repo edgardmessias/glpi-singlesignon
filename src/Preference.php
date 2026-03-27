@@ -53,7 +53,7 @@ class Preference extends \CommonDBTM
         }
         $this->providers = $signon_provider->find($condition);
 
-        $provider_user = new ProviderUser();
+        $provider_user = new Provider_User();
 
         $condition = "`users_id` = {$this->user_id}";
         if (version_compare(GLPI_VERSION, '9.4', '>=')) {
@@ -73,7 +73,7 @@ class Preference extends \CommonDBTM
             return false;
         }
 
-        $provider_user = new ProviderUser();
+        $provider_user = new Provider_User();
         $condition = "`users_id` = {$this->user_id} AND `id` IN (" . implode(',', $ids) . ")";
         if (version_compare(GLPI_VERSION, '9.4', '>=')) {
             $condition = [$condition];

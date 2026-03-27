@@ -1242,7 +1242,7 @@ class Provider extends CommonDBTM
         }
 
         if ($remote_id) {
-            $link = new ProviderUser();
+            $link = new Provider_User();
             $condition = "`remote_id` = '{$remote_id}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
             if (version_compare(GLPI_VERSION, '9.4', '>=')) {
                 $condition = [$condition];
@@ -1536,7 +1536,7 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        $link = new ProviderUser();
+        $link = new Provider_User();
 
         // Unlink from another user
         $link->deleteByCriteria([

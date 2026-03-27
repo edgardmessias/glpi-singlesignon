@@ -294,7 +294,7 @@ class Toolbox
         } elseif (isset($_SERVER["HTTPS"])) {
             $baseURL = ($_SERVER["HTTPS"] == "on") ? "https://" : "http://";
         } else {
-            $baseURL = "http://";
+            $baseURL = "https://";
         }
 
         if (isset($_SERVER["HTTP_X_FORWARDED_HOST"])) {
