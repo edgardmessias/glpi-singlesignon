@@ -1467,7 +1467,13 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        $this->syncOAuthPhoto($user);
+        try {
+            $this->syncOAuthPhoto($user);
+        } catch (Exception $ex) {
+            if ($this->debug) {
+                print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
+            }
+        }
 
         // Create fake auth
         // phpcs:disable
