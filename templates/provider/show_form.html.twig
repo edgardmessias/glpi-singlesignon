@@ -1,0 +1,111 @@
+{#
+ # ---------------------------------------------------------------------
+ # SingleSignOn is a plugin which allows to use SSO for auth
+ # ---------------------------------------------------------------------
+ # Copyright (C) 2026 Edgard
+ # This program is free software: you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation, either version 3 of the License, or
+ # (at your option) any later version.
+ # This program is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ # ---------------------------------------------------------------------
+ # @copyright Copyright © 2021 - 2026 Edgard
+ # @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ # @link      https://github.com/edgardmessias/glpi-singlesignon/
+ # ---------------------------------------------------------------------
+ #}
+
+{% import '@singlesignon/provider/macros/table_rows.html.twig' as rows %}
+{% import '@singlesignon/provider/macros/html_fields.html.twig' as h %}
+
+{% set no_echo = { display: false } %}
+{% set sso_row_attrs = provider.fields.type != 'generic' ? 'style="display: none;"' : '' %}
+{% set picture_style = 'max-width: 100px; max-height: 100px; background-image: linear-gradient(45deg, #b0b0b0 25%, transparent 25%), linear-gradient(-45deg, #b0b0b0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #b0b0b0 75%), linear-gradient(-45deg, transparent 75%, #b0b0b0 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;' %}
+
+{% set _tip_extra = call('nl2br', [call('sprintf', [
+   __('Allows you to specify custom parameters for the SSO provider %1$s. Example: %2$s to force login or %3$s to force account selection (supported URL settings may vary by provider). You can specify additional parameters with the "&" delimiter.', 'singlesignon'),
+   '<strong>' ~ __('Authorize URL', 'singlesignon') ~ '</strong>',
+   '<code>prompt=login</code>',
+   '<code>prompt=select_account</code>'
+])]) %}
+{% set _tip_domains = call('nl2br', [__('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces) (optional).', 'singlesignon')]) %}
+
+{% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");' %}
+
+{{ rows.row_two_pairs('tab_bg_1', __('Name'), h.text('name', provider.fields.name|default(''), false)|raw, __('Comments'), call('Html::textarea', [{
+   name: 'comment',
+   value: provider.fields.comment|default(''),
+   rows: 5,
+   cols: 60,
+   display: false,
+   enable_richtext: false,
+   enable_fileupload: false
+}])|raw)|raw }}
+
+{{ rows.row_two_pairs('tab_bg_1', __('SSO Type', 'singlesignon'), call(['GlpiPlugin\\Singlesignon\\Provider', 'dropdownType'], ['type', {
+   value: provider.fields.type|default('generic'),
+   on_change: type_on_change,
+   class: 'form-control',
+   display: false
+}])|raw, __('Active'), call('Dropdown::showYesNo', ['is_active', provider.fields.is_active|default(0), -1, no_echo|merge({width: '65px'})])|raw)|raw }}
+
+{{ rows.row_two_pairs('tab_bg_1', __('Client ID', 'singlesignon'), h.text('client_id', provider.fields.client_id|default(''), true)|raw, __('Client Secret', 'singlesignon'), h.text('client_secret', provider.fields.client_secret|default(''), true)|raw)|raw }}
+
+<tr class="tab_bg_1">
+    <td>{{ __('Scope', 'singlesignon') }}</td>
+    <td>{{ h.text('scope', call([provider, 'getScope'], []), true)|raw }}</td>
+    <td>{{ __('Extra Options', 'singlesignon') }}&nbsp;{{ call('Html::showToolTip', [_tip_extra, no_echo])|raw }}</td>
+    <td>{{ h.text('extra_options', provider.fields.extra_options|default(''), true)|raw }}</td>
+</tr>
+
+{{ rows.row_full_width('tab_bg_1 sso_url', __('Authorize URL', 'singlesignon'), h.text('url_authorize', call([provider, 'getAuthorizeUrl'], []), true)|raw, sso_row_attrs)|raw }}
+{{ rows.row_full_width('tab_bg_1 sso_url', __('Access Token URL', 'singlesignon'), h.text('url_access_token', call([provider, 'getAccessTokenUrl'], []), true)|raw, sso_row_attrs)|raw }}
+{{ rows.row_full_width('tab_bg_1 sso_url', __('Resource Owner Details URL', 'singlesignon'), h.text('url_resource_owner_details', call([provider, 'getResourceOwnerDetailsUrl'], []), true)|raw, sso_row_attrs)|raw }}
+
+{{ rows.row_two_pairs('tab_bg_1', __('IsDefault', 'singlesignon'), call('Dropdown::showYesNo', ['is_default', provider.fields.is_default|default(0), -1, no_echo|merge({width: '65px'})])|raw, __('PopupAuth', 'singlesignon'), call('Dropdown::showYesNo', ['popup', provider.fields.popup|default(0), -1, no_echo|merge({width: '65px'})])|raw)|raw }}
+
+<tr class="tab_bg_1">
+    <td>{{ __('SplitDomain', 'singlesignon') }}</td>
+    <td>{{ call('Dropdown::showYesNo', ['split_domain', provider.fields.split_domain|default(0), -1, no_echo|merge({width: '65px'})])|raw }}</td>
+    <td>{{ __('AuthorizedDomains', 'singlesignon') }}&nbsp;{{ call('Html::showToolTip', [_tip_domains, no_echo])|raw }}</td>
+    <td>{{ h.text('authorized_domains', provider.fields.authorized_domains|default(''), true)|raw }}</td>
+</tr>
+
+{{ rows.row_two_pairs('tab_bg_1', __('Use Email as Login', 'singlesignon'), call('Dropdown::showYesNo', ['use_email_for_login', provider.fields.use_email_for_login|default(0), -1, no_echo|merge({width: '65px'})])|raw, __('Split Name', 'singlesignon'), call('Dropdown::showYesNo', ['split_name', provider.fields.split_name|default(0), -1, no_echo|merge({width: '65px'})])|raw)|raw }}
+
+{{ rows.section_header(__('Personalization'))|raw }}
+
+{{ rows.row_two_pairs('tab_bg_1', __('Background color'),
+   call('Html::showColorField', ['bgcolor', {value: provider.fields.bgcolor|default(''), display: false}])|raw ~ '&nbsp;' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '&nbsp;' ~ __('Clear')|e,
+   __('Color'),
+   call('Html::showColorField', ['color', {value: provider.fields.color|default(''), display: false}])|raw ~ '&nbsp;' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', checked: (provider.fields.color|default('')) == ''}])|raw ~ '&nbsp;' ~ __('Clear')|e
+)|raw }}
+
+{% if provider.fields.picture|default('') is not empty %}
+    {% set picture_row = call('Html::image', [call(['Toolbox', 'getPictureUrl'], [provider.fields.picture]), {style: picture_style, class: 'picture_square'}])|raw ~ '&nbsp;' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture'}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
+{% else %}
+    {% set picture_row = call('Html::file', [{name: 'picture', onlyimages: true, display: false}])|raw %}
+{% endif %}
+{{ rows.row_full_width('tab_bg_1', __('Picture'), picture_row, '')|raw }}
+
+<script type="text/javascript">
+$("[name=bgcolor]").on("change", function () {
+   $("[name=_blank_bgcolor]").prop("checked", false).attr("checked", false);
+});
+$("[name=color]").on("change", function () {
+   $("[name=_blank_color]").prop("checked", false).attr("checked", false);
+});
+</script>
+
+{% if provider_id %}
+    {% set cb_path = call(['GlpiPlugin\\Singlesignon\\Toolbox', 'getCallbackUrl'], [provider_id]) %}
+    {% set cb_full = call(['GlpiPlugin\\Singlesignon\\Toolbox', 'getBaseURL'], []) ~ cb_path %}
+    {% set cb_link = '<a id="singlesignon_callbackurl" href="' ~ cb_full|e('html_attr') ~ '" data-url="' ~ cb_path|e('html_attr') ~ '">' ~ cb_full|e ~ '</a>' %}
+    {{ rows.section_header(__('Test'))|raw }}
+    {{ rows.row_full_width('tab_bg_1', __('Callback URL', 'singlesignon'), cb_link, '')|raw }}
+{% endif %}

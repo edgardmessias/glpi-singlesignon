@@ -72,8 +72,6 @@ class LoginRenderer
             'classic_label' => \__sso('Use GLPI login form'),
             'classic_url'   => $classicUrl,
         ]);
-
-        self::injectPopupScript();
     }
 
     private static function buildButtonStyle(array $row): string
@@ -98,33 +96,5 @@ class LoginRenderer
         }
 
         return $url . '?' . http_build_query($params);
-    }
-
-    private static function injectPopupScript(): void
-    {
-        static $injected = false;
-        if ($injected) {
-            return;
-        }
-
-        $injected = true;
-        $scriptLines = [];
-
-        $scriptLines[] = '(function() {';
-        $scriptLines[] = '    document.addEventListener("click", (event) => {';
-        $scriptLines[] = '        const trigger = event.target.closest("[data-singlesignon-popup=\"true\"]");';
-        $scriptLines[] = '        if (!trigger) {';
-        $scriptLines[] = '            return;';
-        $scriptLines[] = '        }';
-        $scriptLines[] = '        event.preventDefault();';
-        $scriptLines[] = '        const width = 600;';
-        $scriptLines[] = '        const height = 800;';
-        $scriptLines[] = '        const left = (window.innerWidth / 2) - (width / 2);';
-        $scriptLines[] = '        const top = (window.innerHeight / 2) - (height / 2);';
-        $scriptLines[] = '        window.open(trigger.getAttribute("href"), "singlesignon", `width=${width},height=${height},left=${left},top=${top}`);';
-        $scriptLines[] = '    });';
-        $scriptLines[] = '})();';
-
-        echo '<script>' . implode("\n", $scriptLines) . '</script>';
     }
 }

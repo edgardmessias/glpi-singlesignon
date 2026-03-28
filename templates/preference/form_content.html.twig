@@ -1,0 +1,72 @@
+{#
+ # ---------------------------------------------------------------------
+ # SingleSignOn is a plugin which allows to use SSO for auth
+ # ---------------------------------------------------------------------
+ # Copyright (C) 2026 Edgard
+ # This program is free software: you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation, either version 3 of the License, or
+ # (at your option) any later version.
+ # This program is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ # ---------------------------------------------------------------------
+ # @copyright Copyright © 2021 - 2026 Edgard
+ # @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ # @link      https://github.com/edgardmessias/glpi-singlesignon/
+ # ---------------------------------------------------------------------
+ #}
+
+{{ call('Html::hidden', ['user_id', {value: user_id}])|raw }}
+
+<div class="center" id="tabsbody">
+    <table class="tab_cadre_fixe">
+        <tr><th colspan="4">{{ __('Settings') }}</th></tr>
+
+        <tr class="tab_bg_2">
+            <td>{{ __('Single Sign-on Provider', 'singlesignon') }}</td>
+            <td colspan="3">{{ provider_buttons_html|raw }}</td>
+        </tr>
+
+        {% if linked_accounts is not empty %}
+            <tr class="tab_bg_2">
+                <th colspan="4">{{ __('Linked accounts', 'singlesignon') }}</th>
+            </tr>
+            {% for row in linked_accounts %}
+                <tr class="tab_bg_2">
+                    <td colspan="2">{{ row.provider_name|e }} (ID:{{ row.remote_id|e }})</td>
+                    <td colspan="2">
+                        {{ call('Html::getCheckbox', [{title: __('Clear'), name: '_remove_sso[]', value: row.pu_id}])|raw }}
+                        &nbsp;{{ __('Clear') }}
+                    </td>
+                </tr>
+            {% endfor %}
+        {% endif %}
+
+        {% if canedit %}
+            <tr class="tab_bg_2">
+                <td colspan="4" class="center">
+                    <input type="submit" name="update" class="submit" value="{{ call('_sx', ['button', 'Save'])|e('html_attr') }}">
+                </td>
+            </tr>
+        {% endif %}
+    </table>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $(document).on("click", ".singlesignon.oauth-login", function (e) {
+        e.preventDefault();
+        var url = $(this).attr("href");
+        var left = ($(window).width() / 2) - (600 / 2);
+        var top = ($(window).height() / 2) - (800 / 2);
+        var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
+        if (window.focus) {
+            newWindow.focus();
+        }
+    });
+});
+</script>

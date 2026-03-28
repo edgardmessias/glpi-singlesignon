@@ -26,7 +26,15 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-class Preference extends \CommonDBTM
+use CommonDBTM;
+use CommonGLPI;
+use Glpi\Application\View\TemplateRenderer;
+use Html;
+use Plugin;
+use Session;
+use User;
+
+class Preference extends CommonDBTM
 {
     protected static $notable = true;
     public static $rightname = '';
@@ -88,7 +96,7 @@ class Preference extends \CommonDBTM
         return true;
     }
 
-    public function getTabNameForItem(\CommonGLPI $item, $withtemplate = 0)
+    public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         switch (get_class($item)) {
             case 'Preference':
@@ -99,7 +107,7 @@ class Preference extends \CommonDBTM
         }
     }
 
-    public static function displayTabContentForItem(\CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
         switch (get_class($item)) {
             case 'User':
@@ -108,7 +116,7 @@ class Preference extends \CommonDBTM
                 $prefer->showFormUser($item);
                 break;
             case 'Preference':
-                $prefer = new self(\Session::getLoginUserID());
+                $prefer = new self(Session::getLoginUserID());
                 $prefer->loadProviders();
                 $prefer->showFormPreference($item);
                 break;
@@ -116,132 +124,88 @@ class Preference extends \CommonDBTM
         return true;
     }
 
-    public function showFormUser(\CommonGLPI $item)
+    public function showFormUser(CommonGLPI $item)
     {
-        global $CFG_GLPI;
-
-        if (!\User::canView()) {
+        if (!User::canView()) {
             return false;
         }
-        $canedit = \Session::haveRight(\User::$rightname, UPDATE);
+        $canedit = Session::haveRight(User::$rightname, UPDATE);
         if ($canedit) {
-            echo "<form name='form' action=\"" . Toolbox::getBaseURL() . \Plugin::getPhpDir("singlesignon", false) . "/front/user.form.php\" method='post'>";
+            $action = Toolbox::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/user.form.php';
+            echo '<form name="form" action="' . htmlspecialchars($action, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" method="post">';
         }
-        echo \Html::hidden('user_id', ['value' => $this->user_id]);
-
-        echo "<div class='center' id='tabsbody'>";
-        echo "<table class='tab_cadre_fixe'>";
-
-        echo "<tr><th colspan='4'>" . htmlspecialchars(__s('Settings'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</th></tr>";
-
-        $this->showFormDefault($item);
-
+        echo $this->renderPreferenceFormContent($item, $canedit);
         if ($canedit) {
-            echo "<tr class='tab_bg_2'>";
-            echo "<td colspan='4' class='center'>";
-            echo "<input type='submit' name='update' class='submit' value=\"" . _sx('button', 'Save') . "\">";
-            echo "</td></tr>";
+            Html::closeForm();
         }
 
-        echo "</table></div>";
-        \Html::closeForm();
+        return true;
     }
 
-    public function showFormPreference(\CommonGLPI $item)
+    public function showFormPreference(CommonGLPI $item)
     {
-        $user = new \User();
-        if (!$user->can($this->user_id, READ) && ($this->user_id != \Session::getLoginUserID())) {
+        $user = new User();
+        if (!$user->can($this->user_id, READ) && ($this->user_id != Session::getLoginUserID())) {
             return false;
         }
-        $canedit = $this->user_id == \Session::getLoginUserID();
-
+        $canedit = $this->user_id == Session::getLoginUserID();
         if ($canedit) {
-            echo "<form name='form' action=\"" . \Toolbox::getItemTypeFormURL(self::class) . "\" method='post'>";
+            $action = \Toolbox::getItemTypeFormURL(self::class);
+            echo '<form name="form" action="' . htmlspecialchars($action, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" method="post">';
+        }
+        echo $this->renderPreferenceFormContent($item, $canedit);
+        if ($canedit) {
+            Html::closeForm();
         }
 
-        echo "<div class='center' id='tabsbody'>";
-        echo "<table class='tab_cadre_fixe'>";
-
-        echo "<tr><th colspan='4'>" . htmlspecialchars(__s('Settings'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</th></tr>";
-
-        $this->showFormDefault($item);
-
-        if ($canedit) {
-            echo "<tr class='tab_bg_2'>";
-            echo "<td colspan='4' class='center'>";
-            echo "<input type='submit' name='update' class='submit' value=\"" . _sx('button', 'Save') . "\">";
-            echo "</td></tr>";
-        }
-
-        echo "</table></div>";
-        \Html::closeForm();
+        return true;
     }
 
-    public function showFormDefault(\CommonGLPI $item)
+    private function renderPreferenceFormContent(CommonGLPI $item, bool $canedit): string
     {
-        echo "<tr class='tab_bg_2'>";
-        echo "<td> " . \__sso('Single Sign-on Provider') . "</td><td>";
+        return TemplateRenderer::getInstance()->render('@singlesignon/preference/form_content.html.twig', [
+            'user_id'               => (int) $this->user_id,
+            'provider_buttons_html' => $this->buildProviderButtonsHtml($item),
+            'linked_accounts'       => $this->buildLinkedAccountsForTwig(),
+            'canedit'               => $canedit,
+        ]);
+    }
 
+    private function buildProviderButtonsHtml(CommonGLPI $item): string
+    {
+        $redirect = match (get_class($item)) {
+            'User'       => $item->getFormURLWithID($this->user_id, true),
+            'Preference' => $item->getSearchURL(false),
+            default      => '',
+        };
+
+        $html = '';
         foreach ($this->providers as $p) {
-            switch (get_class($item)) {
-                case 'User':
-                    $redirect = $item->getFormURLWithID($this->user_id, true);
-                    break;
-                case 'Preference':
-                    $redirect = $item->getSearchURL(false);
-                    break;
-                default:
-                    $redirect = '';
-            }
-
-            $url = Toolbox::getCallbackUrl($p['id'], ['redirect' => $redirect]);
-
-            echo Toolbox::renderButton($url, $p);
-            echo " ";
+            $url = Toolbox::getCallbackUrl((int) $p['id'], ['redirect' => $redirect]);
+            $html .= Toolbox::renderButton($url, $p) . ' ';
         }
 
-        echo "</td></tr>";
+        return $html;
+    }
 
-        echo "<tr class='tab_bg_2'>";
-
-        if (!empty($this->providers_users)) {
-            echo "<tr><th colspan='2'>" . \__sso('Linked accounts') . "</th></tr>";
-
-            foreach ($this->providers_users as $pu) {
-                /** @var Provider $provider */
-                $provider = Provider::getById($pu['plugin_singlesignon_providers_id']);
-
-                echo "<tr><td>";
-                echo $provider->fields['name'] . ' (ID:' . $pu['remote_id'] . ')';
-                echo "</td><td>";
-                echo \Html::getCheckbox([
-                    'title' => __('Clear'),
-                    'name'  => "_remove_sso[]",
-                    'value'  => $pu['id'],
-                ]);
-                echo "&nbsp;" . __s('Clear');
-                echo "</td></tr>";
+    /**
+     * @return list<array{provider_name: string, remote_id: string, pu_id: int}>
+     */
+    private function buildLinkedAccountsForTwig(): array
+    {
+        $rows = [];
+        foreach ($this->providers_users as $pu) {
+            $provider = Provider::getById((int) $pu['plugin_singlesignon_providers_id']);
+            if ($provider === false) {
+                continue;
             }
+            $rows[] = [
+                'provider_name' => (string) $provider->fields['name'],
+                'remote_id'     => (string) $pu['remote_id'],
+                'pu_id'         => (int) $pu['id'],
+            ];
         }
 
-        ?>
-      <script type="text/javascript">
-         $(document).ready(function() {
-
-            // On click, open a popup
-            $(document).on("click", ".singlesignon.oauth-login", function(e) {
-               e.preventDefault();
-
-               var url = $(this).attr("href");
-               var left = ($(window).width() / 2) - (600 / 2);
-               var top = ($(window).height() / 2) - (800 / 2);
-               var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
-               if (window.focus) {
-                  newWindow.focus();
-               }
-            });
-         });
-      </script>
-      <?php
+        return $rows;
     }
 }

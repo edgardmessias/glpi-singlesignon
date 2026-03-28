@@ -1,0 +1,36 @@
+{#
+ # ---------------------------------------------------------------------
+ # SingleSignOn is a plugin which allows to use SSO for auth
+ # ---------------------------------------------------------------------
+ # Copyright (C) 2026 Edgard
+ # This program is free software: you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation, either version 3 of the License, or
+ # (at your option) any later version.
+ # This program is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ # ---------------------------------------------------------------------
+ # @copyright Copyright © 2021 - 2026 Edgard
+ # @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ # @link      https://github.com/edgardmessias/glpi-singlesignon/
+ # ---------------------------------------------------------------------
+ #}
+
+<script type="text/javascript">
+$("[name=test_singlesignon]").on("click", function (e) {
+   e.preventDefault();
+
+   document.cookie = "glpi_singlesignon_test=1; path=/; SameSite=Lax";
+   var url   = $("#singlesignon_callbackurl").attr("data-url");
+   var left  = ($(window).width()/2)-(600/2);
+   var top   = ($(window).height()/2)-(800/2);
+   var newWindow = window.open(url, "singlesignon", "width=600,height=800,left=" + left + ",top=" + top);
+   if (window.focus) {
+      newWindow.focus();
+   }
+});
+</script>
