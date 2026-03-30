@@ -26,10 +26,66 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Plugin;
 use Glpi\Application\View\TemplateRenderer;
+use Glpi\Kernel\Kernel;
+use Glpi\Plugin\Hooks;
+use Twig\Loader\FilesystemLoader;
+use Twig\TwigFunction;
 
 class LoginRenderer
 {
+    /**
+     * Plugin-specific login output hook (does not use {@see Hooks::DISPLAY_LOGIN}).
+     * Other plugins keep using {@see Hooks::DISPLAY_LOGIN} without interference from this layout.
+     */
+    public const HOOK_LOGIN_BLOCK = 'plugin_singlesignon_login_block';
+
+    /**
+     * {@see Hooks::POST_INIT}: prepend login template override and register Twig globals after all
+     * plugins have registered {@see Hooks::DISPLAY_LOGIN}.
+     */
+    public static function onPostInit(): void
+    {
+        $env = TemplateRenderer::getInstance()->getEnvironment();
+
+        $dir = Plugin::getPhpDir('singlesignon') . '/templates-override';
+        if (is_dir($dir)) {
+            $loader = $env->getLoader();
+            if ($loader instanceof FilesystemLoader) {
+                $loader->prependPath($dir);
+            }
+        }
+
+        global $PLUGIN_HOOKS;
+        $other_display_login = isset($PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN])
+            && is_array($PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN])
+            && count($PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN]) > 0;
+
+        $env->addGlobal('plugin_singlesignon_has_active_provider', self::hasActiveProviders());
+        $env->addGlobal('plugin_singlesignon_other_display_login', $other_display_login);
+
+        $env->addFunction(new TwigFunction('__sso', '__sso'));
+    }
+
+    public static function hasActiveProviders(): bool
+    {
+        $provider = new Provider();
+
+        return count($provider->find(['`is_active` = 1'])) > 0;
+    }
+
+    /**
+     * Delete compiled Twig cache ({@see TemplateRenderer} uses {@see Kernel::getCacheRootDir()}/templates).
+     */
+    public static function clearTwigTemplateCache(): void
+    {
+        $dir = Kernel::getCacheRootDir() . '/templates';
+        if (is_dir($dir)) {
+            \Toolbox::deleteDir($dir);
+        }
+    }
+
     public static function display(): void
     {
         $provider = new Provider();
@@ -66,11 +122,12 @@ class LoginRenderer
 
         $renderer = TemplateRenderer::getInstance();
 
+        $showClassicLink = !isset($_GET['noAUTO']) || (string) $_GET['noAUTO'] !== '1';
+
         echo $renderer->render('@singlesignon/login/buttons.html.twig', [
-            'title'         => \__sso('Single Sign-on'),
-            'buttons'       => $buttons,
-            'classic_label' => \__sso('Use GLPI login form'),
-            'classic_url'   => $classicUrl,
+            'buttons'           => $buttons,
+            'classic_url'       => $classicUrl,
+            'show_classic_link' => $showClassicLink,
         ]);
     }
 

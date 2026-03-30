@@ -165,8 +165,6 @@ class Provider extends CommonDBTM
         $item->fields['client_secret'] = substr($item->fields['client_secret'], 0, 3) . '... (' . strlen($item->fields['client_secret']) . ')';
         $json = str_replace('\/', '/', json_encode($item, JSON_PRETTY_PRINT));
         echo TemplateRenderer::getInstance()->render('@singlesignon/provider/show_form_debug.html.twig', [
-            'title_json' => \__sso('JSON SSO provider representation'),
-            'copy_label' => \__sso('Copy provider information'),
             'json_pretty' => $json,
         ]);
     }

@@ -22,6 +22,7 @@
  * ---------------------------------------------------------------------
  */
 
+
 use Glpi\Http\Firewall;
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Singlesignon\LoginRenderer;
@@ -59,15 +60,16 @@ function plugin_init_singlesignon()
 {
     global $PLUGIN_HOOKS;
 
+
     Plugin::registerClass(Preference::class, [
         'addtabon' => ['Preference', 'User'],
     ]);
 
     Plugin::registerClass(Provider::class);
 
-    $PLUGIN_HOOKS['config_page']['singlesignon'] = 'front/provider.php';
-
-    $PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN]['singlesignon'] = [LoginRenderer::class, 'display'];
+    $PLUGIN_HOOKS[Hooks::CONFIG_PAGE]['singlesignon'] = 'front/provider.php';
+    $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = [LoginRenderer::class, 'onPostInit'];
+    $PLUGIN_HOOKS[LoginRenderer::HOOK_LOGIN_BLOCK]['singlesignon'] = [LoginRenderer::class, 'display'];
 
     $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
         'config'  => Provider::class,

@@ -1,0 +1,140 @@
+{#
+ # ---------------------------------------------------------------------
+ # SingleSignOn is a plugin which allows to use SSO for auth
+ # ---------------------------------------------------------------------
+ # Copyright (C) 2026 Edgard
+ # This program is free software: you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation, either version 3 of the License, or
+ # (at your option) any later version.
+ # This program is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ # ---------------------------------------------------------------------
+ # @copyright Copyright © 2021 - 2026 Edgard
+ # @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ # @link      https://github.com/edgardmessias/glpi-singlesignon/
+ # ---------------------------------------------------------------------
+ #}
+
+{% extends 'layout/page_card_notlogged.html.twig' %}
+
+{% block content_block %}
+    {# Matches previous JS: classic form first when noAUTO=1, else SSO column is primary #}
+    {% set sso_login_form = (noAuto ?? '') == '1' %}
+    <form action="{{ path('front/login.php') }}" method="post" autocomplete="off" data-submit-once>
+        <input type="hidden" name="noAUTO" value="{{ noAuto }}"/>
+        <input type="hidden" name="redirect" value="{{ redirect }}"/>
+        <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}"/>
+        {% if text_login|length > 0 %}
+            <div class="rich_text_container text-center">
+                {{ text_login|safe_html }}
+            </div>
+        {% endif %}
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                {% if plugin_singlesignon_has_active_provider %}
+                    <div class="mb-4 text-center">
+                        {{ call_plugin_hook(constant('GlpiPlugin\\Singlesignon\\LoginRenderer::HOOK_LOGIN_BLOCK')) }}
+                    </div>
+                {% endif %}
+                {% if sso_login_form or not plugin_singlesignon_has_active_provider %}
+                    <div class="card-header mb-4">
+                        <h2 class="mx-auto">{{ __('Login to your account') }}</h2>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="login_name">{{ __('Login') }}</label>
+                        <input type="text" class="form-control" id="login_name" name="login_name" placeholder="" tabindex="1"/>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex">
+                            <label class="form-label" for="login_password">
+                                {{ __('Password') }}
+                            </label>
+
+                            {% if show_lost_password %}
+                                <span class="ms-auto form-label-description forgot_password {{ config('display_login_source') ? 'd-none' : '' }}">
+                                    <a href="{{ path('front/lostpassword.php?lostpassword=1') }}">
+                                        {{ __('Forgotten password?') }}
+                                    </a>
+                                </span>
+                                {% if config('display_login_source') %}
+                                    <script>
+                                        $(() => {
+                                            if ($('select[name="auth"]').val() === 'local') {
+                                                $('.forgot_password').removeClass('d-none');
+                                            }
+                                            $('select[name="auth"]').on('change', function () {
+                                                if ($(this).val() === 'local') {
+                                                    $('.forgot_password').removeClass('d-none');
+                                                } else {
+                                                    $('.forgot_password').addClass('d-none');
+                                                }
+                                            });
+                                        });
+                                    </script>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <input type="password" class="form-control" id="login_password" name="login_password" placeholder="" autocomplete="off" tabindex="2"/>
+                    </div>
+
+                    {% if config('display_login_source') %}
+                        <div class="mb-3">
+                            <label class="form-label" for="dropdown_auth{{ rand }}">{{ __('Login source') }}</label>
+                            {{ auth_dropdown_login|raw }}
+                        </div>
+                    {% endif %}
+
+                    {% if config('login_remember_time') %}
+                        <div class="mb-2">
+                            <label class="form-check" for="login_remember">
+                                <input type="checkbox" class="form-check-input" id="login_remember" name="login_remember" {{ config('login_remember_default') ? 'checked' : '' }}/>
+                                <span class="form-check-label">{{ __('Remember me') }}</span>
+                            </label>
+                        </div>
+                    {% endif %}
+
+                    <div class="form-footer">
+                        <button type="submit" name="submit" class="btn btn-primary w-100" tabindex="3">
+                            {{ __('Sign in') }}
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if right_panel %}
+                <div class="col-auto px-2 text-center">
+                    {{ call_plugin_hook(constant('Glpi\\Plugin\\Hooks::DISPLAY_LOGIN')) }}
+                </div>
+            {% endif %}
+        </div>
+        {% if config('use_public_faq') %}
+            <div class="text-center mt-4 border-top">
+                <a class="btn btn-outline-secondary mt-4" href="{{ path('front/helpdesk.faq.php') }}">
+                    <i class="ti ti-help"></i>&nbsp;
+                    {{ __('FAQ') }}
+                </a>
+            </div>
+        {% endif %}
+    </form>
+{% endblock %}
+
+{% block footer_block %}
+    {{ copyright_message|raw }}
+
+    {% if must_call_cron %}
+        <div style="background-image: url('{{ path('/front/cron.php') }}');"></div>
+    {% endif %}
+{% endblock %}
+
+{% block javascript_block %}
+    <script type="text/javascript">
+        $(function () {
+            $('#login_name').focus();
+        });
+    </script>
+{% endblock %}

@@ -21,13 +21,9 @@
  * @link      https://github.com/edgardmessias/glpi-singlesignon/
  * ---------------------------------------------------------------------
  */
+
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Provider;
-
-function plugin_singlesignon_display_login()
-{
-    LoginRenderer::display();
-}
 
 function plugin_singlesignon_install()
 {
@@ -179,5 +175,24 @@ function plugin_singlesignon_uninstall()
         $DB->dropTable($providersTable, true);
     }
 
+    // Ensure the Twig cache is cleared when the plugin is uninstalled to avoid errors.
+    LoginRenderer::clearTwigTemplateCache();
+
     return true;
+}
+
+/**
+ * Ensure the Twig cache is cleared when the plugin is activated to avoid errors.
+ */
+function plugin_singlesignon_activate(): void
+{
+    LoginRenderer::clearTwigTemplateCache();
+}
+
+/**
+ * Ensure the Twig cache is cleared when the plugin is deactivated to avoid errors.
+ */
+function plugin_singlesignon_deactivate(): void
+{
+    LoginRenderer::clearTwigTemplateCache();
 }
