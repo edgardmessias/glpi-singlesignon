@@ -101,10 +101,15 @@ class Preference extends CommonDBTM
         switch (get_class($item)) {
             case 'Preference':
             case 'User':
-                return [1 => __('Single Sign-on', 'singlesignon')];
+                return [1 => self::createTabEntry(__('Single Sign-on', 'singlesignon'), 0, null, self::getIcon())];
             default:
                 return '';
         }
+    }
+
+    public static function getIcon()
+    {
+        return 'ti ti-user-shield';
     }
 
     public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)

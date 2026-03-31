@@ -135,7 +135,7 @@ class Provider extends CommonDBTM
 
         $debug_mode = ($_SESSION['glpi_use_mode'] == Session::DEBUG_MODE);
         if ($debug_mode) {
-            $tabs[1] =  __('Debug');
+            $tabs[1] = self::createTabEntry(__('Debug'), 0, self::class, 'ti ti-bug');
         }
 
         return $tabs;
@@ -670,7 +670,7 @@ class Provider extends CommonDBTM
 
     public static function getIcon()
     {
-        return "fas fa-user-lock";
+        return 'ti ti-lock';
     }
 
     public static function getDefault($type, $key, $default = null)
