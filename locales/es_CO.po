@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-31 08:47-0300\n"
+"POT-Creation-Date: 2026-03-31 16:58-0300\n"
 "PO-Revision-Date: 2026-03-24 21:00+0000\n"
 "Last-Translator: Esteban Esquivel <esteban.esquivel@mava.com.co>\n"
 "Language-Team: Spanish (Colombia)\n"
@@ -22,15 +22,19 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:83 \src\Preference.php:104 \src\Provider.php:118
+#: \setup.php:86 \src\Preference.php:105 \src\Provider.php:117
 msgid "Single Sign-on"
 msgstr "Single Sign-on"
 
-#: \templates\login\buttons.html.twig
+#: \templates\override\pages\login.html.twig
 msgid "Use GLPI login form"
 msgstr "Usar el formulario de inicio de sesión de GLPI"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:110
+#: \templates\override\pages\login.html.twig
+msgid "Use Single Sign-on"
+msgstr "Usar Single Sign-on"
+
+#: \templates\preference\form_content.html.twig \src\Provider.php:109
 msgid "Single Sign-on Provider"
 msgstr "Proveedor de Single Sign-on"
 
@@ -52,7 +56,7 @@ msgstr ""
 "proveedor). Puede especificar parámetros adicionales con el delimitador "
 "\"&\"."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:402
+#: \templates\provider\show_form.html.twig \src\Provider.php:401
 msgid "Authorize URL"
 msgstr "URL de autorización"
 
@@ -68,27 +72,27 @@ msgstr ""
 msgid "SSO Type"
 msgstr "Tipo de SSO"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:370
+#: \templates\provider\show_form.html.twig \src\Provider.php:369
 msgid "Client ID"
 msgstr "ID de cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:378
+#: \templates\provider\show_form.html.twig \src\Provider.php:377
 msgid "Client Secret"
 msgstr "Secreto de cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:386
+#: \templates\provider\show_form.html.twig \src\Provider.php:385
 msgid "Scope"
 msgstr "Alcance"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:394
+#: \templates\provider\show_form.html.twig \src\Provider.php:393
 msgid "Extra Options"
 msgstr "Opciones adicionales"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:410
+#: \templates\provider\show_form.html.twig \src\Provider.php:409
 msgid "Access Token URL"
 msgstr "URL del token de acceso"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:418
+#: \templates\provider\show_form.html.twig \src\Provider.php:417
 msgid "Resource Owner Details URL"
 msgstr "URL de detalles del propietario del recurso"
 
@@ -152,97 +156,97 @@ msgstr "Usuario no autorizado para conectarse en GLPI"
 msgid "Log in again"
 msgstr "Iniciar sesión nuevamente"
 
-#: \setup.php:44
+#: \setup.php:43
 #, php-format
 msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
 msgstr "Por favor, renombre la carpeta del plugin \"%s\" a \"singlesignon\""
 
-#: \setup.php:101
+#: \setup.php:104
 msgid "This plugin requires GLPI >= 11.0.0"
 msgstr "Este plugin requiere GLPI >= 11.0.0"
 
-#: \setup.php:106
+#: \setup.php:109
 msgid "This plugin is not yet validated for this GLPI version"
 msgstr "Este plugin aún no ha sido validado para esta versión de GLPI"
 
-#: \setup.php:111
+#: \setup.php:114
 msgid "This plugin requires PHP >= 8.2"
 msgstr "Este plugin requiere PHP >= 8.2"
 
-#: \src\LoginRenderer.php:108 \src\Toolbox.php:274
+#: \src\LoginRenderer.php:103 \src\ToolboxPlugin.php:274
 #, php-format
 msgid "Login with %s"
 msgstr "Iniciar sesión con %s"
 
-#: \src\Provider.php:188
+#: \src\Provider.php:187
 msgid "Test Single Sign-on"
 msgstr "Probar Single Sign-on"
 
-#: \src\Provider.php:238
+#: \src\Provider.php:237
 msgid "A Name is required"
 msgstr "Se requiere un nombre"
 
-#: \src\Provider.php:244
+#: \src\Provider.php:243
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "El \"%s\" es un tipo no válido"
 
-#: \src\Provider.php:248
+#: \src\Provider.php:247
 msgid "A Client ID is required"
 msgstr "Se requiere un ID de cliente"
 
-#: \src\Provider.php:252
+#: \src\Provider.php:251
 msgid "A Client Secret is required"
 msgstr "Se requiere un secreto de cliente"
 
-#: \src\Provider.php:257
+#: \src\Provider.php:256
 msgid "An Authorize URL is required"
 msgstr "Se requiere una URL de autorización"
 
-#: \src\Provider.php:259
+#: \src\Provider.php:258
 msgid "The Authorize URL is invalid"
 msgstr "La URL de autorización no es válida"
 
-#: \src\Provider.php:263
+#: \src\Provider.php:262
 msgid "An Access Token URL is required"
 msgstr "Se requiere una URL de token de acceso"
 
-#: \src\Provider.php:265
+#: \src\Provider.php:264
 msgid "The Access Token URL is invalid"
 msgstr "La URL del token de acceso no es válida"
 
-#: \src\Provider.php:269
+#: \src\Provider.php:268
 msgid "A Resource Owner Details URL is required"
 msgstr "Se requiere una URL de detalles del propietario del recurso"
 
-#: \src\Provider.php:271
+#: \src\Provider.php:270
 msgid "The Resource Owner Details URL is invalid"
 msgstr "La URL de detalles del propietario del recurso no es válida"
 
-#: \src\Provider.php:498
+#: \src\Provider.php:497
 msgid "Generic"
 msgstr "Genérico"
 
-#: \src\Provider.php:499
+#: \src\Provider.php:498
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:500
+#: \src\Provider.php:499
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:501
+#: \src\Provider.php:500
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:502
+#: \src\Provider.php:501
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:503
+#: \src\Provider.php:502
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:504
+#: \src\Provider.php:503
 msgid "LinkdeIn"
 msgstr "LinkedIn"

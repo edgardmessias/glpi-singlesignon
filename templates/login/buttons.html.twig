@@ -22,25 +22,26 @@
 
 <div class="singlesignon-login">
     <h3 class="singlesignon-login-title text-center">{{ __('Single Sign-on', 'singlesignon') }}</h3>
-    <div class="singlesignon-login-buttons d-grid gap-2">
+    <div class="singlesignon-login-buttons d-grid gap-2" role="list">
         {% for button in buttons %}
-            <a class="btn btn-outline-primary singlesignon-login-button" href="{{ button.href }}"
+            <a class="btn singlesignon-login-button {{ button.picture ? 'singlesignon-login-button--picture' : 'singlesignon-login-button--icon' }}" href="{{ button.href }}"
                {% if button.style %}style="{{ button.style }}"{% endif %}
-               {% if button.popup %}data-singlesignon-popup="true"{% endif %}>
+               {% if button.popup %}data-singlesignon-popup="true"{% endif %}
+               role="listitem">
+                <span class="singlesignon-login-visual" aria-hidden="true">
                 {% if button.picture %}
                     <img src="{{ button.picture }}" alt="" class="singlesignon-login-picture"/>
+                {% else %}
+                    <i class="ti ti-lock"></i>
                 {% endif %}
-                <span>{{ button.label }}</span>
+                </span>
+                <span class="singlesignon-login-label">{{ button.label }}</span>
+                <span class="singlesignon-login-arrow" aria-hidden="true">
+                    <i class="ti ti-chevron-right"></i>
+                </span>
             </a>
         {% endfor %}
     </div>
-    {% if show_classic_link %}
-        <div class="singlesignon-login-classic text-center">
-            <a class="btn btn-link" href="{{ classic_url }}">
-                {{ __('Use GLPI login form', 'singlesignon') }}
-            </a>
-        </div>
-    {% endif %}
 </div>
 {# OAuth popup: anchors with data-singlesignon-popup #}
 <script>

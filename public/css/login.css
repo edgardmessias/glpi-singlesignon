@@ -1,0 +1,224 @@
+/*!
+ * ---------------------------------------------------------------------
+ * SingleSignOn is a plugin which allows to use SSO for auth
+ * ---------------------------------------------------------------------
+ * Copyright (C) 2026 Edgard
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * ---------------------------------------------------------------------
+ * @copyright Copyright © 2021 - 2026 Edgard
+ * @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ * @link      https://github.com/edgardmessias/glpi-singlesignon/
+ * ---------------------------------------------------------------------
+ */
+
+.singlesignon-auth-stack,
+.singlesignon-login {
+    --sso-surface: rgba(255, 255, 255, 0.85);
+    --sso-border: rgba(17, 24, 39, 0.08);
+    --sso-shadow: 0 14px 30px -22px rgba(15, 23, 42, 0.65);
+    --sso-title: #1f2937;
+    --sso-text: #4b5563;
+    --sso-muted: #6b7280;
+    --sso-button-bg: rgba(255, 255, 255, 0.9);
+    --sso-button-border: rgba(17, 24, 39, 0.12);
+    --sso-button-hover: rgba(37, 99, 235, 0.08);
+    --sso-button-focus: rgba(59, 130, 246, 0.35);
+    --sso-accent: #2563eb;
+}
+
+.singlesignon-login {
+    margin: 1.5rem auto 0;
+    padding: 1.15rem 1rem 1rem;
+    border: 1px solid var(--sso-border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, var(--sso-surface) 100%);
+    box-shadow: var(--sso-shadow);
+}
+
+.singlesignon-login-title {
+    margin-bottom: 0.85rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--sso-title);
+    letter-spacing: 0.01em;
+}
+
+.singlesignon-login-buttons {
+    width: min(100%, 29rem);
+    margin: 0 auto;
+}
+
+.singlesignon-login-button {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.72rem 0.9rem;
+    border: 1px solid var(--sso-button-border);
+    border-radius: 12px;
+    background-color: var(--sso-button-bg);
+    color: var(--sso-text);
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 3px 10px -8px rgba(15, 23, 42, 0.4);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.singlesignon-login-button:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--sso-accent) 35%, var(--sso-button-border));
+    background-color: var(--sso-button-hover);
+    box-shadow: 0 12px 20px -18px rgba(15, 23, 42, 0.8);
+    color: var(--sso-text);
+}
+
+.singlesignon-login-button:focus-visible {
+    outline: 0;
+    border-color: color-mix(in srgb, var(--sso-accent) 45%, var(--sso-button-border));
+    box-shadow: 0 0 0 0.18rem var(--sso-button-focus);
+}
+
+.singlesignon-login-visual {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    color: var(--sso-accent);
+    background: color-mix(in srgb, var(--sso-accent) 12%, transparent);
+}
+
+.singlesignon-login-button--picture .singlesignon-login-visual {
+    background: transparent;
+}
+
+.singlesignon-login-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.singlesignon-login-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.55;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.singlesignon-login-arrow i {
+    display: block;
+    line-height: 1;
+}
+
+.singlesignon-login-button:hover .singlesignon-login-arrow,
+.singlesignon-login-button:focus-visible .singlesignon-login-arrow {
+    transform: translateX(2px);
+    opacity: 0.85;
+}
+
+.singlesignon-login-picture {
+    display: block;
+    max-height: 20px;
+    max-width: 20px;
+    width: auto;
+}
+
+.singlesignon-login-classic {
+    margin-top: 0.95rem;
+}
+
+.singlesignon-login-classic .btn-link {
+    color: var(--sso-muted);
+    text-decoration: none;
+    font-size: 0.92rem;
+}
+
+.singlesignon-login-classic .btn-link:hover,
+.singlesignon-login-classic .btn-link:focus-visible {
+    color: var(--sso-accent);
+    text-decoration: underline;
+}
+
+.singlesignon-auth-stack {
+    width: 100%;
+}
+
+.singlesignon-auth-pane {
+    will-change: transform, opacity;
+    width: 100%;
+}
+
+.singlesignon-auth-section--oauth {
+    margin-bottom: 0;
+}
+
+.singlesignon-auth-section--oauth .singlesignon-login {
+    margin-top: 0;
+}
+
+.singlesignon-auth-section--classic {
+    padding: 1rem 1rem 0.95rem;
+    border: 1px solid color-mix(in srgb, var(--sso-border) 92%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--sso-button-bg) 88%, transparent);
+}
+
+.singlesignon-classic-title {
+    margin-bottom: 1rem !important;
+}
+
+.singlesignon-classic-title h2 {
+    font-size: 1.08rem;
+    font-weight: 650;
+}
+
+@media (prefers-color-scheme: dark) {
+    .singlesignon-auth-stack,
+    .singlesignon-login {
+        --sso-surface: rgba(17, 24, 39, 0.86);
+        --sso-border: rgba(255, 255, 255, 0.12);
+        --sso-shadow: 0 18px 34px -24px rgba(2, 6, 23, 0.95);
+        --sso-title: #f3f4f6;
+        --sso-text: #e5e7eb;
+        --sso-muted: #cbd5e1;
+        --sso-button-bg: rgba(15, 23, 42, 0.8);
+        --sso-button-border: rgba(255, 255, 255, 0.18);
+        --sso-button-hover: rgba(37, 99, 235, 0.2);
+        --sso-button-focus: rgba(96, 165, 250, 0.42);
+        --sso-accent: #60a5fa;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .singlesignon-login {
+        padding: 1rem 0.8rem 0.9rem;
+    }
+
+    .singlesignon-login-button {
+        padding: 0.66rem 0.75rem;
+        gap: 0.6rem;
+    }
+
+    .singlesignon-login-visual {
+        width: 1.85rem;
+        height: 1.85rem;
+    }
+
+    .singlesignon-auth-section--classic {
+        padding: 0.9rem 0.8rem 0.85rem;
+    }
+}

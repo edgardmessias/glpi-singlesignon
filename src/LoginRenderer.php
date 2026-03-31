@@ -29,18 +29,12 @@ namespace GlpiPlugin\Singlesignon;
 use Plugin;
 use Glpi\Application\View\TemplateRenderer;
 use Glpi\Kernel\Kernel;
-use Glpi\Plugin\Hooks;
 use Toolbox;
 use Twig\Loader\FilesystemLoader;
+use Twig\TwigFunction;
 
 class LoginRenderer
 {
-    /**
-     * Plugin-specific login output hook (does not use {@see Hooks::DISPLAY_LOGIN}).
-     * Other plugins keep using {@see Hooks::DISPLAY_LOGIN} without interference from this layout.
-     */
-    public const HOOK_LOGIN_BLOCK = 'plugin_singlesignon_login_block';
-
     /**
      * {@see Hooks::POST_INIT}: prepend login template override and register Twig globals after all
      * plugins have registered {@see Hooks::DISPLAY_LOGIN}.
@@ -49,7 +43,7 @@ class LoginRenderer
     {
         $env = TemplateRenderer::getInstance()->getEnvironment();
 
-        $dir = Plugin::getPhpDir('singlesignon') . '/templates-override';
+        $dir = Plugin::getPhpDir('singlesignon') . '/templates/override';
         if (is_dir($dir)) {
             $loader = $env->getLoader();
             if ($loader instanceof FilesystemLoader) {
@@ -57,13 +51,12 @@ class LoginRenderer
             }
         }
 
-        global $PLUGIN_HOOKS;
-        $other_display_login = isset($PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN])
-            && is_array($PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN])
-            && count($PLUGIN_HOOKS[Hooks::DISPLAY_LOGIN]) > 0;
+        $env->addFunction(new TwigFunction('plugin_singlesignon_render_buttons', fn() => self::renderButtons(), ['is_safe' => ['html']]));
 
-        $env->addGlobal('plugin_singlesignon_has_active_provider', self::hasActiveProviders());
-        $env->addGlobal('plugin_singlesignon_other_display_login', $other_display_login);
+        $env->addFunction(new TwigFunction('plugin_singlesignon_get_login_mode', function () {
+            $mode = $_COOKIE['singlesignon_login_mode'] ?? 'oauth';
+            return in_array($mode, ['oauth', 'classic'], true) ? $mode : 'oauth';
+        }));
     }
 
     public static function hasActiveProviders(): bool
@@ -84,14 +77,14 @@ class LoginRenderer
         }
     }
 
-    public static function display(): void
+    public static function renderButtons()
     {
         $provider = new Provider();
         $condition = ['`is_active` = 1'];
         $providers = $provider->find($condition, 'is_default DESC, name ASC');
 
         if (empty($providers)) {
-            return;
+            return '';
         }
 
         $buttons = [];
@@ -113,19 +106,13 @@ class LoginRenderer
         }
 
         if (count($buttons) === 0) {
-            return;
+            return '';
         }
-
-        $classicUrl = self::buildClassicLoginUrl();
 
         $renderer = TemplateRenderer::getInstance();
 
-        $showClassicLink = !isset($_GET['noAUTO']) || (string) $_GET['noAUTO'] !== '1';
-
-        echo $renderer->render('@singlesignon/login/buttons.html.twig', [
-            'buttons'           => $buttons,
-            'classic_url'       => $classicUrl,
-            'show_classic_link' => $showClassicLink,
+        return $renderer->render('@singlesignon/login/buttons.html.twig', [
+            'buttons' => $buttons,
         ]);
     }
 
@@ -142,14 +129,4 @@ class LoginRenderer
         return implode(';', $styles);
     }
 
-    private static function buildClassicLoginUrl(): string
-    {
-        $url = ToolboxPlugin::getCurrentURL();
-        $params = ['noAUTO' => 1];
-        if (isset($_REQUEST['redirect']) && $_REQUEST['redirect'] !== '') {
-            $params['redirect'] = $_REQUEST['redirect'];
-        }
-
-        return $url . '?' . http_build_query($params);
-    }
 }

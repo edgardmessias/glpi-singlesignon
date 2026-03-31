@@ -1,0 +1,233 @@
+{#
+ # ---------------------------------------------------------------------
+ # SingleSignOn is a plugin which allows to use SSO for auth
+ # ---------------------------------------------------------------------
+ # Copyright (C) 2026 Edgard
+ # This program is free software: you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation, either version 3 of the License, or
+ # (at your option) any later version.
+ # This program is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ # ---------------------------------------------------------------------
+ # @copyright Copyright © 2021 - 2026 Edgard
+ # @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ # @link      https://github.com/edgardmessias/glpi-singlesignon/
+ # ---------------------------------------------------------------------
+ #}
+
+{% extends 'layout/page_card_notlogged.html.twig' %}
+
+{% block content_block %}
+    {% set singlesignon_oauth_html = plugin_singlesignon_render_buttons() %}
+    {% set sso_has_active_provider = singlesignon_oauth_html is not empty %}
+    {% set can_switch_auth_mode = sso_has_active_provider %}
+    {% set sso_cookie_mode = plugin_singlesignon_get_login_mode() %}
+    {% set sso_initial_mode = (can_switch_auth_mode and sso_cookie_mode == 'oauth') ? 'oauth' : 'classic' %}
+    <form action="{{ path('front/login.php') }}" method="post" autocomplete="off" data-submit-once>
+        <input type="hidden" name="noAUTO" value="{{ noAuto }}"/>
+        <input type="hidden" name="redirect" value="{{ redirect }}"/>
+        <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}"/>
+        {% if text_login|length > 0 %}
+            <div class="rich_text_container text-center">
+                {{ text_login|safe_html }}
+            </div>
+        {% endif %}
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="singlesignon-auth-stack {% if sso_has_active_provider %}is-oauth-available{% endif %}" data-sso-default-mode="{{ sso_initial_mode }}">
+                    {% if sso_has_active_provider %}
+                        <section class="singlesignon-auth-section singlesignon-auth-section--oauth singlesignon-auth-pane text-center" data-sso-pane="oauth" {% if sso_initial_mode != 'oauth' %}style="display:none"{% endif %}>
+                            {{ singlesignon_oauth_html|raw }}
+                            <div class="singlesignon-login-classic text-center">
+                                <a class="btn btn-link" href="#" data-sso-switch="classic">
+                                    {{ __('Use GLPI login form', 'singlesignon') }}
+                                </a>
+                            </div>
+                        </section>
+                    {% endif %}
+
+                        <section class="singlesignon-auth-section singlesignon-auth-section--classic singlesignon-auth-pane" data-sso-pane="classic" {% if sso_initial_mode != 'classic' %}style="display:none"{% endif %}>
+                            <div class="card-header mb-4 singlesignon-classic-title">
+                                <h2 class="mx-auto">{{ __('Login to your account') }}</h2>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="login_name">{{ __('Login') }}</label>
+                                <input type="text" class="form-control" id="login_name" name="login_name" placeholder="" tabindex="1"/>
+                            </div>
+                            <div class="mb-4">
+                                <div class="d-flex">
+                                    <label class="form-label" for="login_password">
+                                        {{ __('Password') }}
+                                    </label>
+
+                                    {% if show_lost_password %}
+                                        <span class="ms-auto form-label-description forgot_password {{ config('display_login_source') ? 'd-none' : '' }}">
+                                            <a href="{{ path('front/lostpassword.php?lostpassword=1') }}">
+                                                {{ __('Forgotten password?') }}
+                                            </a>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <input type="password" class="form-control" id="login_password" name="login_password" placeholder="" autocomplete="off" tabindex="2"/>
+                            </div>
+
+                            {% if config('display_login_source') %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="dropdown_auth{{ rand }}">{{ __('Login source') }}</label>
+                                    {{ auth_dropdown_login|raw }}
+                                </div>
+                            {% endif %}
+
+                            {% if config('login_remember_time') %}
+                                <div class="mb-2">
+                                    <label class="form-check" for="login_remember">
+                                        <input type="checkbox" class="form-check-input" id="login_remember" name="login_remember" {{ config('login_remember_default') ? 'checked' : '' }}/>
+                                        <span class="form-check-label">{{ __('Remember me') }}</span>
+                                    </label>
+                                </div>
+                            {% endif %}
+
+                            <div class="form-footer">
+                                <button type="submit" name="submit" class="btn btn-primary w-100" tabindex="3">
+                                    {{ __('Sign in') }}
+                                </button>
+                            </div>
+
+                            {% if can_switch_auth_mode %}
+                                <div class="singlesignon-login-classic text-center">
+                                    <a class="btn btn-link" href="#" data-sso-switch="oauth">
+                                        {{ __('Use Single Sign-on', 'singlesignon') }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </section>
+                </div>
+            </div>
+
+            {% if right_panel %}
+                <div class="col-auto px-2 text-center">
+                    {{ call_plugin_hook(constant('Glpi\\Plugin\\Hooks::DISPLAY_LOGIN')) }}
+                </div>
+            {% endif %}
+        </div>
+        {% if config('use_public_faq') %}
+            <div class="text-center mt-4 border-top">
+                <a class="btn btn-outline-secondary mt-4" href="{{ path('front/helpdesk.faq.php') }}">
+                    <i class="ti ti-help"></i>&nbsp;
+                    {{ __('FAQ') }}
+                </a>
+            </div>
+        {% endif %}
+    </form>
+{% endblock %}
+
+{% block footer_block %}
+    {{ copyright_message|raw }}
+
+    {% if must_call_cron %}
+        <div style="background-image: url('{{ path('/front/cron.php') }}');"></div>
+    {% endif %}
+{% endblock %}
+
+{% block javascript_block %}
+    <script type="text/javascript">
+        $(function () {
+            const cookieName = 'singlesignon_login_mode';
+            const stack = document.querySelector('.singlesignon-auth-stack');
+            const oauthPane = document.querySelector('[data-sso-pane="oauth"]');
+            const classicPane = document.querySelector('[data-sso-pane="classic"]');
+            let isAnimating = false;
+
+            const getCookie = (name) => {
+                const prefix = `${name}=`;
+                const cookie = document.cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith(prefix));
+                return cookie ? decodeURIComponent(cookie.substring(prefix.length)) : null;
+            };
+
+            const setCookie = (name, value) => {
+                document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; SameSite=Lax`;
+            };
+
+            const setMode = (mode, animate = true) => {
+                if (!stack) {
+                    return;
+                }
+                if (isAnimating) {
+                    return;
+                }
+
+                const hasOauth = stack.classList.contains('is-oauth-available');
+                const nextMode = (mode === 'classic' || !hasOauth) ? 'classic' : 'oauth';
+                const targetPane = nextMode === 'classic' ? classicPane : oauthPane;
+                const currentPane = nextMode === 'classic' ? oauthPane : classicPane;
+                setCookie(cookieName, nextMode);
+
+                if (animate && currentPane && targetPane && currentPane.style.display !== 'none') {
+                    isAnimating = true;
+                    const direction = nextMode === 'classic' ? -1 : 1;
+                    currentPane.animate(
+                        [
+                            { opacity: 1, transform: 'translateX(0)' },
+                            { opacity: 0, transform: `translateX(${direction * 24}px)` },
+                        ],
+                        { duration: 240, easing: 'ease' },
+                    ).onfinish = () => {
+                        currentPane.style.display = 'none';
+                        targetPane.style.display = '';
+                        targetPane.animate(
+                            [
+                                { opacity: 0, transform: `translateX(${direction * -24}px)` },
+                                { opacity: 1, transform: 'translateX(0)' },
+                            ],
+                            { duration: 240, easing: 'ease' },
+                        ).onfinish = () => {
+                            isAnimating = false;
+                        };
+                    };
+                } else {
+                    if (targetPane) {
+                        targetPane.style.display = '';
+                    }
+                    if (currentPane) {
+                        currentPane.style.display = 'none';
+                    }
+                    isAnimating = false;
+                }
+
+                if (nextMode === 'classic') {
+                    $('#login_name').focus();
+                }
+            };
+
+            document.addEventListener('click', (event) => {
+                const switchLink = event.target.closest('[data-sso-switch]');
+                if (!switchLink) {
+                    return;
+                }
+
+                event.preventDefault();
+                setMode(switchLink.getAttribute('data-sso-switch') || 'oauth');
+            });
+
+            const authSource = $('select[name="auth"]');
+            if (authSource.length > 0) {
+                const forgotPassword = $('.forgot_password');
+                const syncForgotPassword = () => {
+                    if (authSource.val() === 'local') {
+                        forgotPassword.removeClass('d-none');
+                    } else {
+                        forgotPassword.addClass('d-none');
+                    }
+                };
+
+                syncForgotPassword();
+                authSource.on('change', syncForgotPassword);
+            }
+        });
+    </script>
+{% endblock %}
