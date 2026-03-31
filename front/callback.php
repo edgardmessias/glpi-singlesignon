@@ -28,7 +28,7 @@ use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\NotFoundHttpException;
 use Glpi\Exception\SessionExpiredException;
 use GlpiPlugin\Singlesignon\Provider;
-use GlpiPlugin\Singlesignon\Toolbox;
+use GlpiPlugin\Singlesignon\ToolboxPlugin;
 
 use function Safe\ini_set;
 
@@ -40,7 +40,7 @@ include(__DIR__ . '/../../../inc/includes.php');
 
 // Session is automatically started by GLPI for non-stateless endpoints
 
-$provider_id = Toolbox::getCallbackParameters('provider');
+$provider_id = ToolboxPlugin::getCallbackParameters('provider');
 
 if (!$provider_id) {
     $exception = new BadRequestHttpException();
@@ -84,7 +84,7 @@ if ($test_cookie) {
     ]);
     unset($_COOKIE['glpi_singlesignon_test']);
     $signon_provider->debug = true;
-    Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');
+    Html::nullHeader("Login", ToolboxPlugin::getBaseURL() . '/index.php');
     echo '<div class="left spaced">';
     echo '<pre>';
     echo "### BEGIN ###\n";
@@ -136,20 +136,20 @@ if ($user_id || $signon_provider->login()) {
 
     if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
         if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-            $url_redirect = Toolbox::getBaseURL() . "/front/helpdesk.public.php?create_ticket=1";
+            $url_redirect = ToolboxPlugin::getBaseURL() . "/front/helpdesk.public.php?create_ticket=1";
         } else {
-            $url_redirect = Toolbox::getBaseURL() . "/front/helpdesk.public.php$REDIRECT";
+            $url_redirect = ToolboxPlugin::getBaseURL() . "/front/helpdesk.public.php$REDIRECT";
         }
     } elseif ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-        $url_redirect = Toolbox::getBaseURL() . "/front/ticket.form.php";
+        $url_redirect = ToolboxPlugin::getBaseURL() . "/front/ticket.form.php";
     } else {
-        $url_redirect = Toolbox::getBaseURL() . "/front/central.php$REDIRECT";
+        $url_redirect = ToolboxPlugin::getBaseURL() . "/front/central.php$REDIRECT";
     }
 
     $url_redirect_html = htmlspecialchars($url_redirect, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     $url_redirect_js = json_encode($url_redirect, JSON_THROW_ON_ERROR);
 
-    Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');
+    Html::nullHeader("Login", ToolboxPlugin::getBaseURL() . '/index.php');
     echo '<div class="center spaced"><a href="' . $url_redirect_html . '">' .
     __s('Automatic redirection, else click', 'singlesignon') . '</a>';
     echo '<script type="text/javascript">
@@ -168,10 +168,10 @@ if ($user_id || $signon_provider->login()) {
 }
 
 // we have done at least a good login? No, we return.
-Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');
+Html::nullHeader("Login", ToolboxPlugin::getBaseURL() . '/index.php');
 echo '<div class="center b">' . __s('User not authorized to connect in GLPI', 'singlesignon') . '<br><br>';
 // Logout whit noAUto to manage auto_login with errors
-echo '<a href="' . Toolbox::getBaseURL() . '/front/logout.php?noAUTO=1' .
+echo '<a href="' . ToolboxPlugin::getBaseURL() . '/front/logout.php?noAUTO=1' .
 str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __s('Log in again', 'singlesignon') . '</a></div>';
 echo '<script type="text/javascript">
    if (window.opener) {

@@ -40,7 +40,6 @@ use Profile;
 use Profile_User;
 use Auth;
 use Glpi\Application\View\TemplateRenderer;
-use GlpiPlugin\Singlesignon\Toolbox as SinglesignonToolbox;
 
 use function Safe\file_get_contents;
 use function Safe\fclose;
@@ -295,21 +294,21 @@ class Provider extends CommonDBTM
             $input['picture'] = '';
 
             if (array_key_exists('picture', $this->fields)) {
-                Toolbox::deletePicture($this->fields['picture']);
+                ToolboxPlugin::deletePicture($this->fields['picture']);
             }
         }
 
         if (isset($input["_picture"])) {
             $picture = array_shift($input["_picture"]);
 
-            if ($dest = Toolbox::savePicture(GLPI_TMP_DIR . '/' . $picture)) {
+            if ($dest = ToolboxPlugin::savePicture(GLPI_TMP_DIR . '/' . $picture)) {
                 $input['picture'] = $dest;
             } else {
                 Session::addMessageAfterRedirect(__s('Unable to save picture file.'), true, ERROR);
             }
 
             if (array_key_exists('picture', $this->fields)) {
-                Toolbox::deletePicture($this->fields['picture']);
+                ToolboxPlugin::deletePicture($this->fields['picture']);
             }
         }
 
@@ -840,7 +839,7 @@ class Provider extends CommonDBTM
             }
 
             // Build the callback URL for OAuth redirect
-            $callback_url = SinglesignonToolbox::getBaseURL() . SinglesignonToolbox::getCallbackUrl($this->fields['id']);
+            $callback_url = ToolboxPlugin::getBaseURL() . ToolboxPlugin::getCallbackUrl($this->fields['id']);
 
             $params = [
                 'client_id' => $this->getClientId(),
@@ -894,7 +893,7 @@ class Provider extends CommonDBTM
         }
 
         // Build the callback URL for OAuth redirect (must match the one sent in authorization request)
-        $callback_url = SinglesignonToolbox::getBaseURL() . SinglesignonToolbox::getCallbackUrl($this->fields['id']);
+        $callback_url = ToolboxPlugin::getBaseURL() . ToolboxPlugin::getCallbackUrl($this->fields['id']);
 
         $params = [
             'client_id' => $this->getClientId(),

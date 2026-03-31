@@ -30,6 +30,7 @@ use Plugin;
 use Glpi\Application\View\TemplateRenderer;
 use Glpi\Kernel\Kernel;
 use Glpi\Plugin\Hooks;
+use Toolbox;
 use Twig\Loader\FilesystemLoader;
 
 class LoginRenderer
@@ -79,7 +80,7 @@ class LoginRenderer
     {
         $dir = Kernel::getCacheRootDir() . '/templates';
         if (is_dir($dir)) {
-            \Toolbox::deleteDir($dir);
+            Toolbox::deleteDir($dir);
         }
     }
 
@@ -100,14 +101,14 @@ class LoginRenderer
                 $query['redirect'] = $_REQUEST['redirect'];
             }
 
-            $url = Toolbox::getCallbackUrl((int) $row['id'], $query);
+            $url = ToolboxPlugin::getCallbackUrl((int) $row['id'], $query);
 
             $buttons[] = [
                 'href'    => $url,
                 'label'   => sprintf(__('Login with %s', 'singlesignon'), $row['name']),
                 'popup'   => (bool) $row['popup'],
                 'style'   => self::buildButtonStyle($row),
-                'picture' => $row['picture'] ? Toolbox::getPictureUrl($row['picture']) : null,
+                'picture' => $row['picture'] ? ToolboxPlugin::getPictureUrl($row['picture']) : null,
             ];
         }
 
@@ -143,7 +144,7 @@ class LoginRenderer
 
     private static function buildClassicLoginUrl(): string
     {
-        $url = Toolbox::getCurrentURL();
+        $url = ToolboxPlugin::getCurrentURL();
         $params = ['noAUTO' => 1];
         if (isset($_REQUEST['redirect']) && $_REQUEST['redirect'] !== '') {
             $params['redirect'] = $_REQUEST['redirect'];

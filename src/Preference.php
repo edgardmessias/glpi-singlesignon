@@ -32,6 +32,7 @@ use Glpi\Application\View\TemplateRenderer;
 use Html;
 use Plugin;
 use Session;
+use Toolbox;
 use User;
 
 class Preference extends CommonDBTM
@@ -136,7 +137,7 @@ class Preference extends CommonDBTM
         }
         $canedit = Session::haveRight(User::$rightname, UPDATE);
         if ($canedit) {
-            $action = Toolbox::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/user.form.php';
+            $action = ToolboxPlugin::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/user.form.php';
             echo '<form name="form" action="' . htmlspecialchars($action, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" method="post">';
         }
         echo $this->renderPreferenceFormContent($item, $canedit);
@@ -155,7 +156,7 @@ class Preference extends CommonDBTM
         }
         $canedit = $this->user_id == Session::getLoginUserID();
         if ($canedit) {
-            $action = \Toolbox::getItemTypeFormURL(self::class);
+            $action = Toolbox::getItemTypeFormURL(self::class);
             echo '<form name="form" action="' . htmlspecialchars($action, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" method="post">';
         }
         echo $this->renderPreferenceFormContent($item, $canedit);
@@ -186,8 +187,8 @@ class Preference extends CommonDBTM
 
         $html = '';
         foreach ($this->providers as $p) {
-            $url = Toolbox::getCallbackUrl((int) $p['id'], ['redirect' => $redirect]);
-            $html .= Toolbox::renderButton($url, $p) . ' ';
+            $url = ToolboxPlugin::getCallbackUrl((int) $p['id'], ['redirect' => $redirect]);
+            $html .= ToolboxPlugin::renderButton($url, $p) . ' ';
         }
 
         return $html;

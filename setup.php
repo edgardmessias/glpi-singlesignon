@@ -22,7 +22,6 @@
  * ---------------------------------------------------------------------
  */
 
-
 use Glpi\Http\Firewall;
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Singlesignon\LoginRenderer;
@@ -53,6 +52,11 @@ function plugin_singlesignon_boot(): void
         '#^/front/callback\\.php$#',
         Firewall::STRATEGY_NO_CHECK,
     );
+    Firewall::addPluginStrategyForLegacyScripts(
+        'singlesignon',
+        '#^/front/picture\\.send\\.php$#',
+        Firewall::STRATEGY_NO_CHECK,
+    );
 }
 
 // Init the hooks of the plugins -Needed
@@ -69,11 +73,11 @@ function plugin_init_singlesignon()
 
     $PLUGIN_HOOKS[Hooks::CONFIG_PAGE]['singlesignon'] = 'front/provider.php';
     $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = [LoginRenderer::class, 'onPostInit'];
-    $PLUGIN_HOOKS[LoginRenderer::HOOK_LOGIN_BLOCK]['singlesignon'] = [LoginRenderer::class, 'display'];
-
-    $PLUGIN_HOOKS['menu_toadd']['singlesignon'] = [
+    $PLUGIN_HOOKS[Hooks::MENU_TOADD]['singlesignon'] = [
         'config'  => Provider::class,
     ];
+
+    $PLUGIN_HOOKS[LoginRenderer::HOOK_LOGIN_BLOCK]['singlesignon'] = [LoginRenderer::class, 'display'];
 }
 
 // Get the name and the version of the plugin - Needed

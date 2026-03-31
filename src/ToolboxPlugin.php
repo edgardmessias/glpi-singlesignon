@@ -38,7 +38,7 @@ use function Safe\realpath;
 use function Safe\rename;
 use function Safe\unlink;
 
-class Toolbox
+class ToolboxPlugin
 {
     /**
      * Generate a URL to callback

@@ -87,7 +87,7 @@
 )|raw }}
 
 {% if provider.fields.picture|default('') is not empty %}
-    {% set picture_row = call('Html::image', [call(['Toolbox', 'getPictureUrl'], [provider.fields.picture]), {style: picture_style, class: 'picture_square'}])|raw ~ '&nbsp;' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture'}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
+    {% set picture_row = call('Html::image', [call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPictureUrl'], [provider.fields.picture]), {style: picture_style, class: 'picture_square'}])|raw ~ '&nbsp;' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture'}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
 {% else %}
     {% set picture_row = call('Html::file', [{name: 'picture', onlyimages: true, display: false}])|raw %}
 {% endif %}
@@ -103,8 +103,8 @@ $("[name=color]").on("change", function () {
 </script>
 
 {% if provider_id %}
-    {% set cb_path = call(['GlpiPlugin\\Singlesignon\\Toolbox', 'getCallbackUrl'], [provider_id]) %}
-    {% set cb_full = call(['GlpiPlugin\\Singlesignon\\Toolbox', 'getBaseURL'], []) ~ cb_path %}
+    {% set cb_path = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getCallbackUrl'], [provider_id]) %}
+    {% set cb_full = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getBaseURL'], []) ~ cb_path %}
     {% set cb_link = '<a id="singlesignon_callbackurl" href="' ~ cb_full|e('html_attr') ~ '" data-url="' ~ cb_path|e('html_attr') ~ '">' ~ cb_full|e ~ '</a>' %}
     {{ rows.section_header(__('Test'))|raw }}
     {{ rows.row_full_width('tab_bg_1', __('Callback URL', 'singlesignon'), cb_link, '')|raw }}
