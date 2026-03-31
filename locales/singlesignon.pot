@@ -1,107 +1,41 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR glpi-singlesignon Development Team
-# This file is distributed under the same license as the singlesignon package.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: singlesignon\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-26 13:09+0000\n"
+"POT-Creation-Date: 2026-03-31 09:22-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: setup.php:43
-#, php-format
-msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
-msgstr ""
-
-#: setup.php:84 front/provider.form.php:86 front/provider.form.php:88
-#: front/provider.php:33 front/provider.php:35 src/LoginRenderer.php:48
-#: src/Preference.php:93 src/Provider.php:88
+#: \templates\login\buttons.html.twig \front\provider.form.php:109
+#: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
+#: \setup.php:83 \src\Preference.php:104 \src\Provider.php:118
 msgid "Single Sign-on"
 msgstr ""
 
-#: setup.php:101
-msgid "This plugin requires GLPI >= 11.0.0"
-msgstr ""
-
-#: setup.php:106
-msgid "This plugin is not yet validated for this GLPI version"
-msgstr ""
-
-#: setup.php:111
-msgid "This plugin requires PHP >= 8.2"
-msgstr ""
-
-#: front/callback.php:46
-msgid "Provider not defined."
-msgstr ""
-
-#: front/callback.php:54
-msgid "Provider not found."
-msgstr ""
-
-#: front/callback.php:60
-msgid "Provider not active."
-msgstr ""
-
-#: front/callback.php:130
-msgid "Automatic redirection, else click"
-msgstr ""
-
-#: src/LoginRenderer.php:32 src/Toolbox.php:244
-#, php-format
-msgid "Login with %s"
-msgstr ""
-
-#: src/LoginRenderer.php:50
+#: \templates\login\buttons.html.twig
 msgid "Use GLPI login form"
 msgstr ""
 
-#: src/Preference.php:176 src/Provider.php:81
+#: \templates\preference\form_content.html.twig \src\Provider.php:110
 msgid "Single Sign-on Provider"
 msgstr ""
 
-#: src/Preference.php:201
+#: \templates\preference\form_content.html.twig
 msgid "Linked accounts"
 msgstr ""
 
-#: src/Provider.php:130
-msgid "JSON SSO provider representation"
-msgstr ""
-
-#: src/Provider.php:131
-msgid "Copy provider information"
-msgstr ""
-
-#: src/Provider.php:162
-msgid "SSO Type"
-msgstr ""
-
-#: src/Provider.php:170 src/Provider.php:513
-msgid "Client ID"
-msgstr ""
-
-#: src/Provider.php:172 src/Provider.php:521
-msgid "Client Secret"
-msgstr ""
-
-#: src/Provider.php:183 src/Provider.php:529
-msgid "Scope"
-msgstr ""
-
-#: src/Provider.php:185 src/Provider.php:537
-msgid "Extra Options"
-msgstr ""
-
-#: src/Provider.php:187
+#: \templates\provider\show_form.html.twig
 #, php-format
 msgid ""
 "Allows you to specify custom parameters for the SSO provider %1$s. Example: "
@@ -110,121 +44,195 @@ msgid ""
 "the \"&\" delimiter."
 msgstr ""
 
-#: src/Provider.php:187 src/Provider.php:194 src/Provider.php:545
+#: \templates\provider\show_form.html.twig \src\Provider.php:402
 msgid "Authorize URL"
 msgstr ""
 
-#: src/Provider.php:199 src/Provider.php:553
-msgid "Access Token URL"
-msgstr ""
-
-#: src/Provider.php:204 src/Provider.php:561
-msgid "Resource Owner Details URL"
-msgstr ""
-
-#: src/Provider.php:209
-msgid "IsDefault"
-msgstr ""
-
-#: src/Provider.php:211
-msgid "PopupAuth"
-msgstr ""
-
-#: src/Provider.php:217
-msgid "SplitDomain"
-msgstr ""
-
-#: src/Provider.php:221
-msgid "AuthorizedDomains"
-msgstr ""
-
-#: src/Provider.php:223
+#: \templates\provider\show_form.html.twig
 msgid ""
 "Provide a list of domains allowed to log in through this provider (separated "
 "by commas, no spaces) (optional)."
 msgstr ""
 
-#: src/Provider.php:229
+#: \templates\provider\show_form.html.twig
+msgid "SSO Type"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:370
+msgid "Client ID"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:378
+msgid "Client Secret"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:386
+msgid "Scope"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:394
+msgid "Extra Options"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:410
+msgid "Access Token URL"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:418
+msgid "Resource Owner Details URL"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "IsDefault"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "PopupAuth"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "SplitDomain"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "AuthorizedDomains"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
 msgid "Use Email as Login"
 msgstr ""
 
-#: src/Provider.php:232
+#: \templates\provider\show_form.html.twig
 msgid "Split Name"
 msgstr ""
 
-#: src/Provider.php:320
+#: \templates\provider\show_form.html.twig
 msgid "Callback URL"
 msgstr ""
 
-#: src/Provider.php:324
+#: \templates\provider\show_form_debug.html.twig
+msgid "JSON SSO provider representation"
+msgstr ""
+
+#: \templates\provider\show_form_debug.html.twig
+msgid "Copy provider information"
+msgstr ""
+
+#: \front\callback.php:47
+msgid "Provider not defined."
+msgstr ""
+
+#: \front\callback.php:55
+msgid "Provider not found."
+msgstr ""
+
+#: \front\callback.php:61
+msgid "Provider not active."
+msgstr ""
+
+#: \front\callback.php:154
+msgid "Automatic redirection, else click"
+msgstr ""
+
+#: \front\callback.php:172
+msgid "User not authorized to connect in GLPI"
+msgstr ""
+
+#: \front\callback.php:175
+msgid "Log in again"
+msgstr ""
+
+#: \setup.php:44
+#, php-format
+msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
+msgstr ""
+
+#: \setup.php:101
+msgid "This plugin requires GLPI >= 11.0.0"
+msgstr ""
+
+#: \setup.php:106
+msgid "This plugin is not yet validated for this GLPI version"
+msgstr ""
+
+#: \setup.php:111
+msgid "This plugin requires PHP >= 8.2"
+msgstr ""
+
+#: \src\LoginRenderer.php:108 \src\Toolbox.php:274
+#, php-format
+msgid "Login with %s"
+msgstr ""
+
+#: \src\Provider.php:188
 msgid "Test Single Sign-on"
 msgstr ""
 
-#: src/Provider.php:383
+#: \src\Provider.php:238
 msgid "A Name is required"
 msgstr ""
 
-#: src/Provider.php:389
+#: \src\Provider.php:244
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr ""
 
-#: src/Provider.php:393
+#: \src\Provider.php:248
 msgid "A Client ID is required"
 msgstr ""
 
-#: src/Provider.php:397
+#: \src\Provider.php:252
 msgid "A Client Secret is required"
 msgstr ""
 
-#: src/Provider.php:402
+#: \src\Provider.php:257
 msgid "An Authorize URL is required"
 msgstr ""
 
-#: src/Provider.php:404
+#: \src\Provider.php:259
 msgid "The Authorize URL is invalid"
 msgstr ""
 
-#: src/Provider.php:408
+#: \src\Provider.php:263
 msgid "An Access Token URL is required"
 msgstr ""
 
-#: src/Provider.php:410
+#: \src\Provider.php:265
 msgid "The Access Token URL is invalid"
 msgstr ""
 
-#: src/Provider.php:414
+#: \src\Provider.php:269
 msgid "A Resource Owner Details URL is required"
 msgstr ""
 
-#: src/Provider.php:416
+#: \src\Provider.php:271
 msgid "The Resource Owner Details URL is invalid"
 msgstr ""
 
-#: src/Provider.php:638
+#: \src\Provider.php:498
 msgid "Generic"
 msgstr ""
 
-#: src/Provider.php:639
+#: \src\Provider.php:499
 msgid "Azure"
 msgstr ""
 
-#: src/Provider.php:640
+#: \src\Provider.php:500
 msgid "Facebook"
 msgstr ""
 
-#: src/Provider.php:641
+#: \src\Provider.php:501
 msgid "GitHub"
 msgstr ""
 
-#: src/Provider.php:642
+#: \src\Provider.php:502
 msgid "Google"
 msgstr ""
 
-#: src/Provider.php:643
+#: \src\Provider.php:503
 msgid "Instagram"
 msgstr ""
 
-#: src/Provider.php:644
+#: \src\Provider.php:504
 msgid "LinkdeIn"
 msgstr ""

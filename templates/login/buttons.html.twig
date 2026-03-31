@@ -21,7 +21,7 @@
  #}
 
 <div class="singlesignon-login">
-    <h3 class="singlesignon-login-title text-center">{{ __sso('Single Sign-on') }}</h3>
+    <h3 class="singlesignon-login-title text-center">{{ __('Single Sign-on', 'singlesignon') }}</h3>
     <div class="singlesignon-login-buttons d-grid gap-2">
         {% for button in buttons %}
             <a class="btn btn-outline-primary singlesignon-login-button" href="{{ button.href }}"
@@ -37,7 +37,7 @@
     {% if show_classic_link %}
         <div class="singlesignon-login-classic text-center">
             <a class="btn btn-link" href="{{ classic_url }}">
-                {{ __sso('Use GLPI login form') }}
+                {{ __('Use GLPI login form', 'singlesignon') }}
             </a>
         </div>
     {% endif %}

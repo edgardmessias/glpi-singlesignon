@@ -32,7 +32,6 @@ use Symfony\Component\Finder\Finder;
 class RoboFile extends Tasks
 {
     protected $name = "singlesignon";
-    protected $issues = "https://github.com/edgardmessias/glpi-singlesignon/issues";
 
     protected function getLocaleFiles()
     {
@@ -52,83 +51,21 @@ class RoboFile extends Tasks
 
     public function compile_locales()
     {
-        $files = $this->getLocaleFiles();
-
-        foreach ($files as $file) {
-            $lang = basename($file, ".po");
-
-            $this->taskExec('msgfmt')->args([
-                "locales/$lang.po",
-                "-o",
-                "locales/$lang.mo",
-            ])->run();
-        }
+        $this->taskExec('php')->args([
+            '../../bin/console',
+            'tools:locales:compile',
+            "--plugin",
+            $this->name,
+        ])->run();
     }
 
     public function update_locales()
     {
-        $finder = new Finder();
-        $finder
-           ->files()
-           ->name('*.php')
-           ->in(__DIR__)
-           ->exclude([
-               'vendor',
-           ])
-           ->sortByName();
-
-        if (!$finder->hasResults()) {
-            return false;
-        }
-
-        $args = [];
-
-        foreach ($finder as $file) {
-            $args[] = str_replace('\\', '/', $file->getRelativePathname());
-        }
-
-        $args[] = '-D';
-        $args[] = '.';
-        $args[] = '-o';
-        $args[] = "locales/{$this->name}.pot";
-        $args[] = '-L';
-        $args[] = 'PHP';
-        $args[] = '--add-comments=TRANS';
-        $args[] = '--from-code=UTF-8';
-        $args[] = '--force-po';
-        $args[] = '--keyword=__sso';
-        $args[] = "--package-name={$this->name}";
-
-        if ($this->issues) {
-            $args[] = "--msgid-bugs-address={$this->issues}";
-        }
-
-        try {
-            $content = file_get_contents('setup.php');
-            $name = 'PLUGIN_' . strtoupper($this->name) . '_VERSION';
-            preg_match("/'$name',\s*'([\w\.]+)'/", $content, $matches);
-            $args[] = '--package-version=' . $matches[1];
-        } catch (Exception $ex) {
-            echo $ex->getMessage();
-        }
-
-        putenv("LANG=C");
-
-        $this->taskExec('xgettext')->args($args)->run();
-
-        $this->taskReplaceInFile("locales/{$this->name}.pot")
-           ->from('CHARSET')
-           ->to('UTF-8')
-           ->run();
-
-        $this->taskExec('msginit')->args([
-            '--no-translator',
-            '-i',
-            "locales/{$this->name}.pot",
-            '-l',
-            'en_GB.UTF8',
-            '-o',
-            'locales/en_GB.po',
+        $this->taskExec('php')->args([
+            '../../bin/console',
+            'tools:locales:extract',
+            "--plugin",
+            $this->name,
         ])->run();
 
         $files = $this->getLocaleFiles();
@@ -154,20 +91,44 @@ class RoboFile extends Tasks
 
     public function build()
     {
-        $this->_remove(["$this->name.zip", "$this->name.tgz"]);
+        $this->_remove(["$this->name.zip", "$this->name.tgz", "$this->name.tar.bz2"]);
 
         $this->compile_locales();
 
         $tmpPath = $this->_tmpDir();
 
+        // Exclude hidden files (dotfiles)
         $exclude = glob(__DIR__ . '/.*');
+
+        // Exclude single files by name
         $exclude[] = 'plugin.xml';
         $exclude[] = 'RoboFile.php';
+
+        // Exclude directories
         $exclude[] = 'screenshots';
         $exclude[] = 'tools';
         $exclude[] = 'vendor';
+        $exclude[] = 'tests';
+        $exclude[] = '.circleci';
+
+        // Exclude test/config files
+        $exclude[] = '.atoum.php';
+        $exclude[] = '.travis.yml';
+        $exclude[] = '.ignore-release';
+        $exclude[] = '.stylelintrc.js';
+        $exclude[] = '.twig_cs.dist.php';
+        $exclude[] = 'rector.php';
+        $exclude[] = 'phpstan.neon';
+        $exclude[] = '.phpcs.xml';
+        $exclude[] = 'phpunit.xml';
+        $exclude[] = 'phpunit.xml.dist';
+        $exclude[] = 'psalm.xml';
+        $exclude[] = 'transifex.yml';
+
+        // Exclude release artifacts
         $exclude[] = "$this->name.zip";
         $exclude[] = "$this->name.tgz";
+        $exclude[] = "$this->name.tar.bz2";
 
         $this->taskCopyDir([__DIR__ => $tmpPath])
            ->exclude($exclude)
@@ -178,7 +139,8 @@ class RoboFile extends Tasks
             $hasDep = false;
             try {
                 $data = json_decode(file_get_contents($composer_file), true);
-                $hasDep = isset($data['require']) && count($data['require']) > 0;
+                $hasPHPDependency = isset($data['require']) && isset($data['require']['php']);
+                $hasDep = isset($data['require']) && count($data['require']) > ($hasPHPDependency ? 1 : 0);
             } catch (Exception $ex) {
                 $hasDep = true;
             }
@@ -199,6 +161,10 @@ class RoboFile extends Tasks
            ->run();
 
         $this->taskPack("$this->name.tgz")
+           ->addDir($this->name, $tmpPath)
+           ->run();
+
+        $this->taskPack("$this->name.tar.bz2")
            ->addDir($this->name, $tmpPath)
            ->run();
     }

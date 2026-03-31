@@ -271,7 +271,7 @@ class Toolbox
             $btn .= ' ';
         }
 
-        $btn .= sprintf(__sso('Login with %s'), $data['name']);
+        $btn .= sprintf(__('Login with %s', 'singlesignon'), $data['name']);
         $btn .= '</a></span>';
         return $btn;
     }

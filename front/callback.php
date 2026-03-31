@@ -44,7 +44,7 @@ $provider_id = Toolbox::getCallbackParameters('provider');
 
 if (!$provider_id) {
     $exception = new BadRequestHttpException();
-    $exception->setMessageToDisplay(__sso("Provider not defined."));
+    $exception->setMessageToDisplay(__("Provider not defined.", 'singlesignon'));
     throw $exception;
 }
 
@@ -52,13 +52,13 @@ $signon_provider = new Provider();
 
 if (!$signon_provider->getFromDB($provider_id)) {
     $exception = new NotFoundHttpException();
-    $exception->setMessageToDisplay(__sso("Provider not found."));
+    $exception->setMessageToDisplay(__("Provider not found.", 'singlesignon'));
     throw $exception;
 }
 
 if (!$signon_provider->fields['is_active']) {
     $exception = new BadRequestHttpException();
-    $exception->setMessageToDisplay(__sso("Provider not active."));
+    $exception->setMessageToDisplay(__("Provider not active.", 'singlesignon'));
     throw $exception;
 }
 
@@ -151,7 +151,7 @@ if ($user_id || $signon_provider->login()) {
 
     Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');
     echo '<div class="center spaced"><a href="' . $url_redirect_html . '">' .
-    __sso('Automatic redirection, else click') . '</a>';
+    __s('Automatic redirection, else click', 'singlesignon') . '</a>';
     echo '<script type="text/javascript">
          if (window.opener) {
            window.opener.location=' . $url_redirect_js . ';
@@ -169,10 +169,10 @@ if ($user_id || $signon_provider->login()) {
 
 // we have done at least a good login? No, we return.
 Html::nullHeader("Login", Toolbox::getBaseURL() . '/index.php');
-echo '<div class="center b">' . __s('User not authorized to connect in GLPI') . '<br><br>';
+echo '<div class="center b">' . __s('User not authorized to connect in GLPI', 'singlesignon') . '<br><br>';
 // Logout whit noAUto to manage auto_login with errors
 echo '<a href="' . Toolbox::getBaseURL() . '/front/logout.php?noAUTO=1' .
-str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __s('Log in again') . '</a></div>';
+str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __s('Log in again', 'singlesignon') . '</a></div>';
 echo '<script type="text/javascript">
    if (window.opener) {
       $(".singlesignon").on("click", function (e) {

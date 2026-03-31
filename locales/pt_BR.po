@@ -2,93 +2,47 @@
 # Copyright (C) YEAR glpi-singlesignon Development Team
 # This file is distributed under the same license as the singlesignon package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-# 
+#
 # Translators:
 # Eduardo Mozart de Oliveira <eduardomozart182@gmail.com>, 2025
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-04 20:31+0000\n"
+"POT-Creation-Date: 2026-03-31 08:47-0300\n"
 "PO-Revision-Date: 2025-02-04 20:49+0000\n"
-"Last-Translator: Eduardo Mozart de Oliveira <eduardomozart182@gmail.com>, 2025\n"
-"Language-Team: Portuguese (Brazil) (https://app.transifex.com/eduardomozart/teams/204814/pt_BR/)\n"
+"Last-Translator: Eduardo Mozart de Oliveira <eduardomozart182@gmail.com>, "
+"2025\n"
+"Language-Team: Portuguese (Brazil) (https://app.transifex.com/eduardomozart/"
+"teams/204814/pt_BR/)\n"
+"Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: pt_BR\n"
-"Plural-Forms: nplurals=3; plural=(n == 0 || n == 1) ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=(n == 0 || n == 1) ? 0 : n != 0 && n % "
+"1000000 == 0 ? 1 : 2;\n"
 
-#: setup.php:33
-#, php-format
-msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
-msgstr "Por favor, renomeie a pasta do plugin \"%s\" para \"singlesignon\""
-
-#: setup.php:67 front/provider.form.php:86 front/provider.form.php:88
-#: front/provider.php:33 front/provider.php:35 inc/preference.class.php:89
-#: inc/provider.class.php:84
+#: \templates\login\buttons.html.twig \front\provider.form.php:109
+#: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
+#: \setup.php:83 \src\Preference.php:104 \src\Provider.php:118
 msgid "Single Sign-on"
 msgstr "Logon Único"
 
-#: setup.php:84
-msgid "This plugin requires GLPI >= 0.85"
-msgstr "Este plugin requer GLPI >= 0.85"
+#: \templates\login\buttons.html.twig
+msgid "Use GLPI login form"
+msgstr "Usar formulário de login do GLPI"
 
-#: front/callback.php:40
-msgid "Provider not defined."
-msgstr "Provedor não definido."
-
-#: front/callback.php:46
-msgid "Provider not found."
-msgstr "Provedor não encontrado."
-
-#: front/callback.php:50
-msgid "Provider not active."
-msgstr "Provedor não ativo."
-
-#: front/callback.php:108
-msgid "Automatic redirection, else click"
-msgstr "Redirecionamento automático, caso contrário, clique"
-
-#: inc/preference.class.php:172 inc/provider.class.php:77
+#: \templates\preference\form_content.html.twig \src\Provider.php:110
 msgid "Single Sign-on Provider"
 msgstr "Provedor de Logon Único"
 
-#: inc/preference.class.php:197
+#: \templates\preference\form_content.html.twig
 msgid "Linked accounts"
 msgstr "Contas vinculadas"
 
-#: inc/provider.class.php:126
-msgid "JSON SSO provider representation"
-msgstr "Representação do provedor SSO em JSON"
-
-#: inc/provider.class.php:127
-msgid "Copy provider information"
-msgstr "Copiar informação do provedor"
-
-#: inc/provider.class.php:158
-msgid "SSO Type"
-msgstr "Tipo SSO"
-
-#: inc/provider.class.php:166 inc/provider.class.php:509
-msgid "Client ID"
-msgstr "ID de Cliente"
-
-#: inc/provider.class.php:168 inc/provider.class.php:517
-msgid "Client Secret"
-msgstr "Segredo do Cliente"
-
-#: inc/provider.class.php:179 inc/provider.class.php:525
-msgid "Scope"
-msgstr "Escopo"
-
-#: inc/provider.class.php:181 inc/provider.class.php:533
-msgid "Extra Options"
-msgstr "Opções Extras"
-
-#: inc/provider.class.php:183
+#: \templates\provider\show_form.html.twig
 #, php-format
 msgid ""
 "Allows you to specify custom parameters for the SSO provider %1$s. Example: "
@@ -102,129 +56,197 @@ msgstr ""
 "provedor). Você pode especificar parâmetros adicionais com o delimitador "
 "\"&\"."
 
-#: inc/provider.class.php:183 inc/provider.class.php:190
-#: inc/provider.class.php:541
+#: \templates\provider\show_form.html.twig \src\Provider.php:402
 msgid "Authorize URL"
 msgstr "URL de Autorização"
 
-#: inc/provider.class.php:195 inc/provider.class.php:549
-msgid "Access Token URL"
-msgstr "URL de Token de Acesso"
-
-#: inc/provider.class.php:200 inc/provider.class.php:557
-msgid "Resource Owner Details URL"
-msgstr "URL de Detalhes do Proprietário do Recurso"
-
-#: inc/provider.class.php:205
-msgid "IsDefault"
-msgstr "É Padrão"
-
-#: inc/provider.class.php:207
-msgid "PopupAuth"
-msgstr "Autenticação Pop-up"
-
-#: inc/provider.class.php:213
-msgid "SplitDomain"
-msgstr "Dividir Domínio"
-
-#: inc/provider.class.php:217
-msgid "AuthorizedDomains"
-msgstr "Domínios Autorizados"
-
-#: inc/provider.class.php:219
+#: \templates\provider\show_form.html.twig
 msgid ""
-"Provide a list of domains allowed to log in through this provider (separated"
-" by commas, no spaces) (optional)."
+"Provide a list of domains allowed to log in through this provider (separated "
+"by commas, no spaces) (optional)."
 msgstr ""
 "Forneça uma lista de domínios permitidos para fazer login por meio deste "
 "provedor (separados por vírgulas, sem espaços) (opcional)."
 
-#: inc/provider.class.php:225
+#: \templates\provider\show_form.html.twig
+msgid "SSO Type"
+msgstr "Tipo SSO"
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:370
+msgid "Client ID"
+msgstr "ID de Cliente"
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:378
+msgid "Client Secret"
+msgstr "Segredo do Cliente"
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:386
+msgid "Scope"
+msgstr "Escopo"
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:394
+msgid "Extra Options"
+msgstr "Opções Extras"
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:410
+msgid "Access Token URL"
+msgstr "URL de Token de Acesso"
+
+#: \templates\provider\show_form.html.twig \src\Provider.php:418
+msgid "Resource Owner Details URL"
+msgstr "URL de Detalhes do Proprietário do Recurso"
+
+#: \templates\provider\show_form.html.twig
+msgid "IsDefault"
+msgstr "É Padrão"
+
+#: \templates\provider\show_form.html.twig
+msgid "PopupAuth"
+msgstr "Autenticação Pop-up"
+
+#: \templates\provider\show_form.html.twig
+msgid "SplitDomain"
+msgstr "Dividir Domínio"
+
+#: \templates\provider\show_form.html.twig
+msgid "AuthorizedDomains"
+msgstr "Domínios Autorizados"
+
+#: \templates\provider\show_form.html.twig
 msgid "Use Email as Login"
 msgstr "Usar E-mail como Login"
 
-#: inc/provider.class.php:228
+#: \templates\provider\show_form.html.twig
 msgid "Split Name"
 msgstr "Dividir Nome"
 
-#: inc/provider.class.php:316
+#: \templates\provider\show_form.html.twig
 msgid "Callback URL"
 msgstr "URL de Retorno"
 
-#: inc/provider.class.php:320
+#: \templates\provider\show_form_debug.html.twig
+msgid "JSON SSO provider representation"
+msgstr "Representação do provedor SSO em JSON"
+
+#: \templates\provider\show_form_debug.html.twig
+msgid "Copy provider information"
+msgstr "Copiar informação do provedor"
+
+#: \front\callback.php:47
+msgid "Provider not defined."
+msgstr "Provedor não definido."
+
+#: \front\callback.php:55
+msgid "Provider not found."
+msgstr "Provedor não encontrado."
+
+#: \front\callback.php:61
+msgid "Provider not active."
+msgstr "Provedor não ativo."
+
+#: \front\callback.php:154
+msgid "Automatic redirection, else click"
+msgstr "Redirecionamento automático, caso contrário, clique"
+
+#: \front\callback.php:172
+msgid "User not authorized to connect in GLPI"
+msgstr "Usuário não autorizado a se conectar no GLPI"
+
+#: \front\callback.php:175
+msgid "Log in again"
+msgstr "Entrar novamente"
+
+#: \setup.php:44
+#, php-format
+msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
+msgstr "Por favor, renomeie a pasta do plugin \"%s\" para \"singlesignon\""
+
+#: \setup.php:101
+msgid "This plugin requires GLPI >= 11.0.0"
+msgstr "Este plugin requer GLPI >= 11.0.0"
+
+#: \setup.php:106
+msgid "This plugin is not yet validated for this GLPI version"
+msgstr "Este plugin ainda não foi validado para esta versão do GLPI"
+
+#: \setup.php:111
+msgid "This plugin requires PHP >= 8.2"
+msgstr "Este plugin requer PHP >= 8.2"
+
+#: \src\LoginRenderer.php:108 \src\Toolbox.php:274
+#, php-format
+msgid "Login with %s"
+msgstr "Entrar com %s"
+
+#: \src\Provider.php:188
 msgid "Test Single Sign-on"
 msgstr "Testar Logon Único"
 
-#: inc/provider.class.php:379
+#: \src\Provider.php:238
 msgid "A Name is required"
 msgstr "O Nome é obrigatório"
 
-#: inc/provider.class.php:385
+#: \src\Provider.php:244
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "O \"%s\" é um tipo inválido"
 
-#: inc/provider.class.php:389
+#: \src\Provider.php:248
 msgid "A Client ID is required"
 msgstr "O ID de Cliente é obrigatório"
 
-#: inc/provider.class.php:393
+#: \src\Provider.php:252
 msgid "A Client Secret is required"
 msgstr "O Segredo do Cliente é obrigatório"
 
-#: inc/provider.class.php:398
+#: \src\Provider.php:257
 msgid "An Authorize URL is required"
 msgstr "A URL de Autorização é obrigatória"
 
-#: inc/provider.class.php:400
+#: \src\Provider.php:259
 msgid "The Authorize URL is invalid"
 msgstr "A URL de Autorização é inválida"
 
-#: inc/provider.class.php:404
+#: \src\Provider.php:263
 msgid "An Access Token URL is required"
 msgstr "A URL de Token de Acesso é obrigatória"
 
-#: inc/provider.class.php:406
+#: \src\Provider.php:265
 msgid "The Access Token URL is invalid"
 msgstr "A URL de Token de Acesso é inválida"
 
-#: inc/provider.class.php:410
+#: \src\Provider.php:269
 msgid "A Resource Owner Details URL is required"
 msgstr "A URL de Detalhes do Proprietário do Recurso é obrigatória"
 
-#: inc/provider.class.php:412
+#: \src\Provider.php:271
 msgid "The Resource Owner Details URL is invalid"
 msgstr "A URL de Detalhes do Proprietário do Recurso é inválida"
 
-#: inc/provider.class.php:634
+#: \src\Provider.php:498
 msgid "Generic"
 msgstr "Genérico"
 
-#: inc/provider.class.php:635
+#: \src\Provider.php:499
 msgid "Azure"
 msgstr "Azure"
 
-#: inc/provider.class.php:636
+#: \src\Provider.php:500
 msgid "Facebook"
 msgstr "Facebook"
 
-#: inc/provider.class.php:637
+#: \src\Provider.php:501
 msgid "GitHub"
 msgstr "GitHub"
 
-#: inc/provider.class.php:638
+#: \src\Provider.php:502
 msgid "Google"
 msgstr "Google"
 
-#: inc/provider.class.php:639
+#: \src\Provider.php:503
 msgid "Instagram"
 msgstr "Instagram"
 
-#: inc/provider.class.php:640
+#: \src\Provider.php:504
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
-
-#: inc/toolbox.class.php:195
-#, php-format
-msgid "Login with %s"
-msgstr "Entrar com %s"

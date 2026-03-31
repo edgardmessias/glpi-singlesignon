@@ -6,7 +6,9 @@
         "php": ">=8.2"
     },
     "require-dev": {
-        "glpi-project/tools": "^0.8"
+        "consolidation/robo": "^5.1",
+        "glpi-project/tools": "^0.8",
+        "pear/archive_tar": "^1.6"
     },
     "autoload": {
         "psr-4": {

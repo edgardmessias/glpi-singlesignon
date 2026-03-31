@@ -101,7 +101,7 @@ class Preference extends CommonDBTM
         switch (get_class($item)) {
             case 'Preference':
             case 'User':
-                return [1 => \__sso('Single Sign-on')];
+                return [1 => __('Single Sign-on', 'singlesignon')];
             default:
                 return '';
         }

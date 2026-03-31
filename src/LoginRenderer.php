@@ -31,7 +31,6 @@ use Glpi\Application\View\TemplateRenderer;
 use Glpi\Kernel\Kernel;
 use Glpi\Plugin\Hooks;
 use Twig\Loader\FilesystemLoader;
-use Twig\TwigFunction;
 
 class LoginRenderer
 {
@@ -64,8 +63,6 @@ class LoginRenderer
 
         $env->addGlobal('plugin_singlesignon_has_active_provider', self::hasActiveProviders());
         $env->addGlobal('plugin_singlesignon_other_display_login', $other_display_login);
-
-        $env->addFunction(new TwigFunction('__sso', '__sso'));
     }
 
     public static function hasActiveProviders(): bool
@@ -107,7 +104,7 @@ class LoginRenderer
 
             $buttons[] = [
                 'href'    => $url,
-                'label'   => sprintf(\__sso('Login with %s'), $row['name']),
+                'label'   => sprintf(__('Login with %s', 'singlesignon'), $row['name']),
                 'popup'   => (bool) $row['popup'],
                 'style'   => self::buildButtonStyle($row),
                 'picture' => $row['picture'] ? Toolbox::getPictureUrl($row['picture']) : null,

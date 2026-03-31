@@ -107,7 +107,7 @@ class Provider extends CommonDBTM
     // Should return the localized name of the type
     public static function getTypeName($nb = 0)
     {
-        return \__sso('Single Sign-on Provider');
+        return __('Single Sign-on Provider', 'singlesignon');
     }
 
     /**
@@ -115,7 +115,7 @@ class Provider extends CommonDBTM
      * */
     public static function getMenuName()
     {
-        return \__sso('Single Sign-on');
+        return __('Single Sign-on', 'singlesignon');
     }
 
     public function defineTabs($options = [])
@@ -185,7 +185,7 @@ class Provider extends CommonDBTM
         ]);
 
         if ($ID) {
-            $options['addbuttons'] = ['test_singlesignon' => \__sso('Test Single Sign-on')];
+            $options['addbuttons'] = ['test_singlesignon' => __('Test Single Sign-on', 'singlesignon')];
         }
 
         $this->showFormButtons($options);
@@ -235,40 +235,40 @@ class Provider extends CommonDBTM
         }
 
         if (!isset($input['name']) || empty($input['name'])) {
-            $error_detected[] = \__s_sso('A Name is required');
+            $error_detected[] = __s('A Name is required', 'singlesignon');
         }
 
         if (empty($type)) {
             $error_detected[] = __s('An item type is required');
         } elseif (!isset(static::getTypes()[$type])) {
-            $error_detected[] = sprintf(\__s_sso('The "%s" is a Invalid type'), $type);
+            $error_detected[] = sprintf(__s('The "%s" is a Invalid type', 'singlesignon'), $type);
         }
 
         if (!isset($input['client_id']) || empty($input['client_id'])) {
-            $error_detected[] = \__s_sso('A Client ID is required');
+            $error_detected[] = __s('A Client ID is required', 'singlesignon');
         }
 
         if (!isset($input['client_secret']) || empty($input['client_secret'])) {
-            $error_detected[] = \__s_sso('A Client Secret is required');
+            $error_detected[] = __s('A Client Secret is required', 'singlesignon');
         }
 
         if ($type === 'generic') {
             if (!isset($input['url_authorize']) || empty($input['url_authorize'])) {
-                $error_detected[] = \__s_sso('An Authorize URL is required');
+                $error_detected[] = __s('An Authorize URL is required', 'singlesignon');
             } elseif (!filter_var($input['url_authorize'], FILTER_VALIDATE_URL)) {
-                $error_detected[] = \__s_sso('The Authorize URL is invalid');
+                $error_detected[] = __s('The Authorize URL is invalid', 'singlesignon');
             }
 
             if (!isset($input['url_access_token']) || empty($input['url_access_token'])) {
-                $error_detected[] = \__s_sso('An Access Token URL is required');
+                $error_detected[] = __s('An Access Token URL is required', 'singlesignon');
             } elseif (!filter_var($input['url_access_token'], FILTER_VALIDATE_URL)) {
-                $error_detected[] = \__s_sso('The Access Token URL is invalid');
+                $error_detected[] = __s('The Access Token URL is invalid', 'singlesignon');
             }
 
             if (!isset($input['url_resource_owner_details']) || empty($input['url_resource_owner_details'])) {
-                $error_detected[] = \__s_sso('A Resource Owner Details URL is required');
+                $error_detected[] = __s('A Resource Owner Details URL is required', 'singlesignon');
             } elseif (!filter_var($input['url_resource_owner_details'], FILTER_VALIDATE_URL)) {
-                $error_detected[] = \__s_sso('The Resource Owner Details URL is invalid');
+                $error_detected[] = __s('The Resource Owner Details URL is invalid', 'singlesignon');
             }
         }
 
@@ -367,7 +367,7 @@ class Provider extends CommonDBTM
             'id' => 3,
             'table' => $this->getTable(),
             'field' => 'client_id',
-            'name' => \__sso('Client ID'),
+            'name' => __('Client ID', 'singlesignon'),
             'datatype' => 'text',
         ];
 
@@ -375,7 +375,7 @@ class Provider extends CommonDBTM
             'id' => 4,
             'table' => $this->getTable(),
             'field' => 'client_secret',
-            'name' => \__sso('Client Secret'),
+            'name' => __('Client Secret', 'singlesignon'),
             'datatype' => 'text',
         ];
 
@@ -383,7 +383,7 @@ class Provider extends CommonDBTM
             'id' => 5,
             'table' => $this->getTable(),
             'field' => 'scope',
-            'name' => \__sso('Scope'),
+            'name' => __('Scope', 'singlesignon'),
             'datatype' => 'text',
         ];
 
@@ -391,7 +391,7 @@ class Provider extends CommonDBTM
             'id' => 6,
             'table' => $this->getTable(),
             'field' => 'extra_options',
-            'name' => \__sso('Extra Options'),
+            'name' => __('Extra Options', 'singlesignon'),
             'datatype' => 'specific',
         ];
 
@@ -399,7 +399,7 @@ class Provider extends CommonDBTM
             'id' => 7,
             'table' => $this->getTable(),
             'field' => 'url_authorize',
-            'name' => \__sso('Authorize URL'),
+            'name' => __('Authorize URL', 'singlesignon'),
             'datatype' => 'weblink',
         ];
 
@@ -407,7 +407,7 @@ class Provider extends CommonDBTM
             'id' => 8,
             'table' => $this->getTable(),
             'field' => 'url_access_token',
-            'name' => \__sso('Access Token URL'),
+            'name' => __('Access Token URL', 'singlesignon'),
             'datatype' => 'weblink',
         ];
 
@@ -415,7 +415,7 @@ class Provider extends CommonDBTM
             'id' => 9,
             'table' => $this->getTable(),
             'field' => 'url_resource_owner_details',
-            'name' => \__sso('Resource Owner Details URL'),
+            'name' => __('Resource Owner Details URL', 'singlesignon'),
             'datatype' => 'weblink',
         ];
 
@@ -495,13 +495,13 @@ class Provider extends CommonDBTM
     public static function getTypes()
     {
 
-        $options['generic'] = \__sso('Generic');
-        $options['azure'] = \__sso('Azure');
-        $options['facebook'] = \__sso('Facebook');
-        $options['github'] = \__sso('GitHub');
-        $options['google'] = \__sso('Google');
-        $options['instagram'] = \__sso('Instagram');
-        $options['linkedin'] = \__sso('LinkdeIn');
+        $options['generic'] = __('Generic', 'singlesignon');
+        $options['azure'] = __('Azure', 'singlesignon');
+        $options['facebook'] = __('Facebook', 'singlesignon');
+        $options['github'] = __('GitHub', 'singlesignon');
+        $options['google'] = __('Google', 'singlesignon');
+        $options['instagram'] = __('Instagram', 'singlesignon');
+        $options['linkedin'] = __('LinkdeIn', 'singlesignon');
 
         return $options;
     }
