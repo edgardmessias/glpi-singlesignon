@@ -54,6 +54,14 @@ use function Safe\sha1_file;
 
 class Provider extends CommonDBTM
 {
+    public const PHOTO_SYNC_DISABLED = 0;
+    public const PHOTO_SYNC_IF_EMPTY = 1;
+    public const PHOTO_SYNC_ALWAYS = 2;
+
+    public const AUTH_HEADER_BEARER = 'bearer';
+    public const AUTH_HEADER_TOKEN = 'token';
+    public const AUTH_HEADER_DISABLED = 'disabled';
+
     // From CommonDBTM
     public $dohistory = true;
     public static $rightname = 'config';
@@ -133,6 +141,9 @@ class Provider extends CommonDBTM
     {
         $this->fields["type"] = 'generic';
         $this->fields["is_active"] = 1;
+        $this->fields["user_photo_sync_mode"] = self::PHOTO_SYNC_DISABLED;
+        $this->fields["resource_owner_auth_type"] = self::AUTH_HEADER_BEARER;
+        $this->fields["resource_owner_picture_auth_type"] = self::AUTH_HEADER_BEARER;
     }
 
     public function showForm($ID, $options = [])
@@ -302,7 +313,55 @@ class Provider extends CommonDBTM
             }
         }
 
+        $input['user_photo_sync_mode'] = $this->sanitizePhotoSyncMode($input['user_photo_sync_mode'] ?? null);
+        $input['resource_owner_auth_type'] = $this->sanitizeAuthorizationType($input['resource_owner_auth_type'] ?? null);
+        $input['resource_owner_picture_auth_type'] = $this->sanitizeAuthorizationType($input['resource_owner_picture_auth_type'] ?? null);
+        $input['resource_owner_custom_headers'] = trim((string) ($input['resource_owner_custom_headers'] ?? ''));
+        $input['resource_owner_picture_custom_headers'] = trim((string) ($input['resource_owner_picture_custom_headers'] ?? ''));
+
         return $input;
+    }
+
+    public static function getPhotoSyncModes(): array
+    {
+        return [
+            (string) self::PHOTO_SYNC_DISABLED => __('Disabled'),
+            (string) self::PHOTO_SYNC_IF_EMPTY => __('Only if user has no photo', 'singlesignon'),
+            (string) self::PHOTO_SYNC_ALWAYS   => __('Always on login', 'singlesignon'),
+        ];
+    }
+
+    public static function getAuthorizationTypes(): array
+    {
+        return [
+            self::AUTH_HEADER_BEARER  => __('Authorization: Bearer <token>', 'singlesignon'),
+            self::AUTH_HEADER_TOKEN   => __('Authorization: <token>', 'singlesignon'),
+            self::AUTH_HEADER_DISABLED => __('Disabled'),
+        ];
+    }
+
+    private function sanitizePhotoSyncMode($value): int
+    {
+        $mode = (int) $value;
+        if (!in_array($mode, [
+            self::PHOTO_SYNC_DISABLED,
+            self::PHOTO_SYNC_IF_EMPTY,
+            self::PHOTO_SYNC_ALWAYS,
+        ], true)) {
+            return self::PHOTO_SYNC_DISABLED;
+        }
+
+        return $mode;
+    }
+
+    private function sanitizeAuthorizationType($value): string
+    {
+        $type = strtolower(trim((string) $value));
+        if (!in_array($type, array_keys(self::getAuthorizationTypes()), true)) {
+            return self::AUTH_HEADER_BEARER;
+        }
+
+        return $type;
     }
 
     public function getSearchOptions()
@@ -962,12 +1021,7 @@ class Provider extends CommonDBTM
 
         $url = $this->getResourceOwnerDetailsUrl($token);
 
-        $headers = [
-            "Accept:application/json",
-            "Authorization:Bearer $token",
-        ];
-
-        $headers = Plugin::doHookFunction("sso:resource_owner_header", $headers);
+        $headers = $this->buildResourceOwnerHeaders($token);
 
         $content = Toolbox::callCurl($url, [
             CURLOPT_HTTPHEADER => $headers,
@@ -1461,6 +1515,10 @@ class Provider extends CommonDBTM
      */
     public function syncOAuthPhoto($user)
     {
+        if (!$this->shouldSyncOAuthPhoto($user)) {
+            return false;
+        }
+
         $token = $this->getAccessToken();
         if (!$token) {
             return false;
@@ -1518,12 +1576,86 @@ class Provider extends CommonDBTM
      */
     private function buildOAuthPhotoHeaders(string $token): array
     {
-        $headers = [
+        $headers = $this->buildRequestHeaders(
+            $token,
             "Accept:image/*",
-            "Authorization:Bearer $token",
-        ];
+            (string) ($this->fields['resource_owner_picture_auth_type'] ?? self::AUTH_HEADER_BEARER),
+            (string) ($this->fields['resource_owner_picture_custom_headers'] ?? ''),
+        );
 
         $headers = Plugin::doHookFunction("sso:resource_owner_picture", $headers);
+
+        return $headers;
+    }
+
+    /**
+     * Build headers for resource owner request.
+     */
+    private function buildResourceOwnerHeaders(string $token): array
+    {
+        $headers = $this->buildRequestHeaders(
+            $token,
+            "Accept:application/json",
+            (string) ($this->fields['resource_owner_auth_type'] ?? self::AUTH_HEADER_BEARER),
+            (string) ($this->fields['resource_owner_custom_headers'] ?? ''),
+        );
+
+        return Plugin::doHookFunction("sso:resource_owner_header", $headers);
+    }
+
+    /**
+     * Build headers from configured auth mode and custom headers.
+     * Placeholders: <token> and <access_token>.
+     *
+     * @return string[]
+     */
+    private function buildRequestHeaders(
+        string $token,
+        string $acceptHeader,
+        string $authorizationType,
+        string $customHeaders
+    ): array {
+        $headers = [$acceptHeader];
+        $resolvedAuthType = $this->sanitizeAuthorizationType($authorizationType);
+
+        if ($resolvedAuthType === self::AUTH_HEADER_BEARER) {
+            $headers[] = "Authorization: Bearer {$token}";
+        } elseif ($resolvedAuthType === self::AUTH_HEADER_TOKEN) {
+            $headers[] = "Authorization: {$token}";
+        }
+
+        foreach ($this->parseCustomHeaders($customHeaders, $token) as $header) {
+            $headers[] = $header;
+        }
+
+        return $headers;
+    }
+
+    /**
+     * Parse custom headers from textarea (one header per line).
+     *
+     * @return string[]
+     */
+    private function parseCustomHeaders(string $raw, string $token): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return [];
+        }
+
+        $headers = [];
+        foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
+            $line = trim((string) $line);
+            if ($line === '' || !str_contains($line, ':')) {
+                continue;
+            }
+
+            $headers[] = str_replace(
+                ['<token>', '<access_token>'],
+                [$token, $token],
+                $line,
+            );
+        }
 
         return $headers;
     }
@@ -1654,5 +1786,24 @@ class Provider extends CommonDBTM
         }
 
         return $newPicture;
+    }
+
+    private function shouldSyncOAuthPhoto(User $user): bool
+    {
+        $mode = $this->sanitizePhotoSyncMode($this->fields['user_photo_sync_mode'] ?? self::PHOTO_SYNC_DISABLED);
+        if ($mode === self::PHOTO_SYNC_DISABLED) {
+            return false;
+        }
+
+        if ($mode === self::PHOTO_SYNC_ALWAYS) {
+            return true;
+        }
+
+        $picture = (string) ($user->fields['picture'] ?? '');
+        if ($picture === '') {
+            return true;
+        }
+
+        return !file_exists(GLPI_PICTURE_DIR . '/' . $picture);
     }
 }

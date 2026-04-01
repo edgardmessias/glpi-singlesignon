@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-01 10:15-0300\n"
+"POT-Creation-Date: 2026-04-01 18:36-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:93 \src\Preference.php:105 \src\Provider.php:116
+#: \setup.php:94 \src\Preference.php:116 \src\Provider.php:125
 msgid "Single Sign-on"
 msgstr ""
 
@@ -32,12 +32,12 @@ msgstr ""
 msgid "Use Single Sign-on"
 msgstr ""
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:108
-msgid "Single Sign-on Provider"
-msgstr ""
-
 #: \templates\preference\form_content.html.twig
 msgid "Linked accounts"
+msgstr ""
+
+#: \templates\preference\form_content.html.twig \src\Provider.php:117
+msgid "Single Sign-on Provider"
 msgstr ""
 
 #: \templates\provider\callback_test_result.html.twig
@@ -112,7 +112,7 @@ msgid ""
 "the \"&\" delimiter."
 msgstr ""
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:396
+#: \templates\provider\show_form.html.twig \src\Provider.php:450
 msgid "Authorize URL"
 msgstr ""
 
@@ -123,31 +123,60 @@ msgid ""
 msgstr ""
 
 #: \templates\provider\show_form.html.twig
+msgid "Choose when user avatars should be synchronized during login."
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"Controls how Authorization header is built for Resource Owner Details "
+"requests."
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"Controls how Authorization header is built for avatar download requests."
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"One header per line (format: Header-Name: value). Supported placeholders: "
+"<token> and <access_token>. Example: api-key: <token>"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
 msgid "SSO Type"
 msgstr ""
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:364
+#: \templates\provider\show_form.html.twig \src\Provider.php:418
 msgid "Client ID"
 msgstr ""
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:372
+#: \templates\provider\show_form.html.twig \src\Provider.php:426
 msgid "Client Secret"
 msgstr ""
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:380
+#: \templates\provider\show_form.html.twig \src\Provider.php:434
 msgid "Scope"
 msgstr ""
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:388
+#: \templates\provider\show_form.html.twig \src\Provider.php:442
 msgid "Extra Options"
 msgstr ""
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:404
+#: \templates\provider\show_form.html.twig \src\Provider.php:458
 msgid "Access Token URL"
 msgstr ""
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:412
+#: \templates\provider\show_form.html.twig \src\Provider.php:466
 msgid "Resource Owner Details URL"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "Resource Owner Authorization"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "Resource Owner Custom Headers"
 msgstr ""
 
 #: \templates\provider\show_form.html.twig
@@ -175,7 +204,27 @@ msgid "Split Name"
 msgstr ""
 
 #: \templates\provider\show_form.html.twig
+msgid "User photo synchronization"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "Synchronization mode"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "Photo Authorization"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "Photo Custom Headers"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
 msgid "Callback URL"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid "Test Single Sign-on"
 msgstr ""
 
 #: \front\callback.php:50
@@ -215,93 +264,106 @@ msgstr ""
 msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
 msgstr ""
 
-#: \setup.php:111
+#: \setup.php:112
 msgid "This plugin requires GLPI >= 11.0.0"
 msgstr ""
 
-#: \setup.php:116
+#: \setup.php:117
 msgid "This plugin is not yet validated for this GLPI version"
 msgstr ""
 
-#: \setup.php:121
+#: \setup.php:122
 msgid "This plugin requires PHP >= 8.2"
 msgstr ""
 
-#: \src\LoginRenderer.php:101 \src\ToolboxPlugin.php:274
+#: \src\LoginRenderer.php:101 \src\Preference.php:205
+#: \src\ToolboxPlugin.php:274
 #, php-format
 msgid "Login with %s"
 msgstr ""
 
-#: \src\Provider.php:153
-msgid "Test Single Sign-on"
-msgstr ""
-
-#: \src\Provider.php:232
+#: \src\Provider.php:238
 msgid "A Name is required"
 msgstr ""
 
-#: \src\Provider.php:238
+#: \src\Provider.php:244
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr ""
 
-#: \src\Provider.php:242
+#: \src\Provider.php:248
 msgid "A Client ID is required"
 msgstr ""
 
-#: \src\Provider.php:246
+#: \src\Provider.php:252
 msgid "A Client Secret is required"
 msgstr ""
 
-#: \src\Provider.php:251
+#: \src\Provider.php:257
 msgid "An Authorize URL is required"
 msgstr ""
 
-#: \src\Provider.php:253
+#: \src\Provider.php:259
 msgid "The Authorize URL is invalid"
 msgstr ""
 
-#: \src\Provider.php:257
+#: \src\Provider.php:263
 msgid "An Access Token URL is required"
 msgstr ""
 
-#: \src\Provider.php:259
+#: \src\Provider.php:265
 msgid "The Access Token URL is invalid"
 msgstr ""
 
-#: \src\Provider.php:263
+#: \src\Provider.php:269
 msgid "A Resource Owner Details URL is required"
 msgstr ""
 
-#: \src\Provider.php:265
+#: \src\Provider.php:271
 msgid "The Resource Owner Details URL is invalid"
 msgstr ""
 
-#: \src\Provider.php:492
+#: \src\Provider.php:329
+msgid "Only if user has no photo"
+msgstr ""
+
+#: \src\Provider.php:330
+msgid "Always on login"
+msgstr ""
+
+#: \src\Provider.php:337
+msgid "Authorization: Bearer <token>"
+msgstr ""
+
+#: \src\Provider.php:338
+msgid "Authorization: <token>"
+msgstr ""
+
+#: \src\Provider.php:546
 msgid "Generic"
 msgstr ""
 
-#: \src\Provider.php:493
+#: \src\Provider.php:547
 msgid "Azure"
 msgstr ""
 
-#: \src\Provider.php:494
+#: \src\Provider.php:548
 msgid "Facebook"
 msgstr ""
 
-#: \src\Provider.php:495
+#: \src\Provider.php:549
 msgid "GitHub"
 msgstr ""
 
-#: \src\Provider.php:496
+#: \src\Provider.php:550
 msgid "Google"
 msgstr ""
 
-#: \src\Provider.php:497
+#: \src\Provider.php:551
 msgid "Instagram"
 msgstr ""
 
-#: \src\Provider.php:498
+#: \src\Provider.php:552
 msgid "LinkdeIn"
 msgstr ""
 

@@ -33,6 +33,10 @@
    '<code>prompt=select_account</code>'
 ])]) %}
 {% set _tip_domains = call('nl2br', [__('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces) (optional).', 'singlesignon')]) %}
+{% set _tip_photo_sync = call('nl2br', [__('Choose when user avatars should be synchronized during login.', 'singlesignon')]) %}
+{% set _tip_resource_owner_auth = call('nl2br', [__('Controls how Authorization header is built for Resource Owner Details requests.', 'singlesignon')]) %}
+{% set _tip_picture_auth = call('nl2br', [__('Controls how Authorization header is built for avatar download requests.', 'singlesignon')]) %}
+{% set _tip_custom_headers = call('nl2br', [__('One header per line (format: Header-Name: value). Supported placeholders: <token> and <access_token>. Example: api-key: <token>', 'singlesignon')]) %}
 
 {% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");' %}
 {% set field_opts = {
@@ -87,6 +91,18 @@
     {{ fields.urlField('url_resource_owner_details', call([provider, 'getResourceOwnerDetailsUrl'], []), __('Resource Owner Details URL', 'singlesignon'), {
         add_field_class: 'sso_url ' ~ sso_hidden_class
     }|merge(field_opts)) }}
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
+    }) }}
+    {{ fields.dropdownArrayField('resource_owner_auth_type', provider.fields.resource_owner_auth_type|default('bearer'), call(['GlpiPlugin\\Singlesignon\\Provider', 'getAuthorizationTypes'], []), __('Resource Owner Authorization', 'singlesignon'), {
+        helper: _tip_resource_owner_auth
+    }|merge(field_opts)) }}
+    {{ fields.textareaField('resource_owner_custom_headers', provider.fields.resource_owner_custom_headers|default(''), __('Resource Owner Custom Headers', 'singlesignon'), {
+        rows: 3,
+        enable_richtext: false,
+        enable_fileupload: false,
+        helper: _tip_custom_headers
+    }|merge(field_opts)) }}
 
     {{ fields.dropdownYesNo('is_default', provider.fields.is_default|default(0), __('IsDefault', 'singlesignon'), field_opts) }}
     {{ fields.dropdownYesNo('popup', provider.fields.popup|default(0), __('PopupAuth', 'singlesignon'), field_opts) }}
@@ -96,6 +112,23 @@
     }|merge(field_opts)) }}
     {{ fields.dropdownYesNo('use_email_for_login', provider.fields.use_email_for_login|default(0), __('Use Email as Login', 'singlesignon'), field_opts) }}
     {{ fields.dropdownYesNo('split_name', provider.fields.split_name|default(0), __('Split Name', 'singlesignon'), field_opts) }}
+
+    <div class="col-12">
+        <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>
+    </div>
+
+    {{ fields.dropdownArrayField('user_photo_sync_mode', provider.fields.user_photo_sync_mode|default(0), call(['GlpiPlugin\\Singlesignon\\Provider', 'getPhotoSyncModes'], []), __('Synchronization mode', 'singlesignon'), {
+        helper: _tip_photo_sync
+    }|merge(field_opts)) }}
+    {{ fields.dropdownArrayField('resource_owner_picture_auth_type', provider.fields.resource_owner_picture_auth_type|default('bearer'), call(['GlpiPlugin\\Singlesignon\\Provider', 'getAuthorizationTypes'], []), __('Photo Authorization', 'singlesignon'), {
+        helper: _tip_picture_auth
+    }|merge(field_opts)) }}
+    {{ fields.textareaField('resource_owner_picture_custom_headers', provider.fields.resource_owner_picture_custom_headers|default(''), __('Photo Custom Headers', 'singlesignon'), {
+        rows: 3,
+        enable_richtext: false,
+        enable_fileupload: false,
+        helper: _tip_custom_headers
+    }|merge(field_opts)) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('Personalization') }}</div>

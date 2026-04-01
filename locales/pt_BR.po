@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-01 10:13-0300\n"
+"POT-Creation-Date: 2026-04-01 18:34-0300\n"
 "PO-Revision-Date: 2025-03-31 17:04+0000\n"
 "Last-Translator: Edgard <edgardmessias@gmail.com>, 2026\n"
 "Language-Team: Portuguese (Brazil) (https://app.transifex.com/eduardomozart/"
@@ -24,7 +24,7 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:93 \src\Preference.php:105 \src\Provider.php:116
+#: \setup.php:94 \src\Preference.php:116 \src\Provider.php:125
 msgid "Single Sign-on"
 msgstr "Logon Único"
 
@@ -36,13 +36,13 @@ msgstr "Usar formulário de login do GLPI"
 msgid "Use Single Sign-on"
 msgstr "Usar Logon Único"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:108
-msgid "Single Sign-on Provider"
-msgstr "Provedor de Logon Único"
-
 #: \templates\preference\form_content.html.twig
 msgid "Linked accounts"
 msgstr "Contas vinculadas"
+
+#: \templates\preference\form_content.html.twig \src\Provider.php:117
+msgid "Single Sign-on Provider"
+msgstr "Provedor de Logon Único"
 
 #: \templates\provider\callback_test_result.html.twig
 msgid "Single Sign-on test result"
@@ -121,7 +121,7 @@ msgstr ""
 "provedor). Você pode especificar parâmetros adicionais com o delimitador "
 "\"&\"."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:396
+#: \templates\provider\show_form.html.twig \src\Provider.php:450
 msgid "Authorize URL"
 msgstr "URL de Autorização"
 
@@ -134,32 +134,61 @@ msgstr ""
 "provedor (separados por vírgulas, sem espaços) (opcional)."
 
 #: \templates\provider\show_form.html.twig
+msgid "Choose when user avatars should be synchronized during login."
+msgstr "Escolha quando os avatares dos usuários devem ser sincronizados durante o login."
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"Controls how Authorization header is built for Resource Owner Details "
+"requests."
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"Controls how Authorization header is built for avatar download requests."
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"One header per line (format: Header-Name: value). Supported placeholders: "
+"<token> and <access_token>. Example: api-key: <token>"
+msgstr ""
+
+#: \templates\provider\show_form.html.twig
 msgid "SSO Type"
 msgstr "Tipo SSO"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:364
+#: \templates\provider\show_form.html.twig \src\Provider.php:418
 msgid "Client ID"
 msgstr "ID de Cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:372
+#: \templates\provider\show_form.html.twig \src\Provider.php:426
 msgid "Client Secret"
 msgstr "Segredo do Cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:380
+#: \templates\provider\show_form.html.twig \src\Provider.php:434
 msgid "Scope"
 msgstr "Escopo"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:388
+#: \templates\provider\show_form.html.twig \src\Provider.php:442
 msgid "Extra Options"
 msgstr "Opções Extras"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:404
+#: \templates\provider\show_form.html.twig \src\Provider.php:458
 msgid "Access Token URL"
 msgstr "URL de Token de Acesso"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:412
+#: \templates\provider\show_form.html.twig \src\Provider.php:466
 msgid "Resource Owner Details URL"
 msgstr "URL de Detalhes do Proprietário do Recurso"
+
+#: \templates\provider\show_form.html.twig
+msgid "Resource Owner Authorization"
+msgstr "Autorização do proprietário do recurso"
+
+#: \templates\provider\show_form.html.twig
+msgid "Resource Owner Custom Headers"
+msgstr "Cabeçalhos personalizados do proprietário do recurso"
 
 #: \templates\provider\show_form.html.twig
 msgid "IsDefault"
@@ -186,8 +215,28 @@ msgid "Split Name"
 msgstr "Dividir Nome"
 
 #: \templates\provider\show_form.html.twig
+msgid "User photo synchronization"
+msgstr "Sincronização de foto do usuário"
+
+#: \templates\provider\show_form.html.twig
+msgid "Synchronization mode"
+msgstr "Modo de sincronização"
+
+#: \templates\provider\show_form.html.twig
+msgid "Photo Authorization"
+msgstr "Autorização da foto"
+
+#: \templates\provider\show_form.html.twig
+msgid "Photo Custom Headers"
+msgstr "Cabeçalhos personalizados da foto"
+
+#: \templates\provider\show_form.html.twig
 msgid "Callback URL"
 msgstr "URL de Retorno"
+
+#: \templates\provider\show_form.html.twig
+msgid "Test Single Sign-on"
+msgstr "Testar Logon Único"
 
 #: \front\callback.php:50
 msgid "Provider not defined."
@@ -226,93 +275,106 @@ msgstr "Entrar novamente"
 msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
 msgstr "Por favor, renomeie a pasta do plugin \"%s\" para \"singlesignon\""
 
-#: \setup.php:111
+#: \setup.php:112
 msgid "This plugin requires GLPI >= 11.0.0"
 msgstr "Este plugin requer GLPI >= 11.0.0"
 
-#: \setup.php:116
+#: \setup.php:117
 msgid "This plugin is not yet validated for this GLPI version"
 msgstr "Este plugin ainda não foi validado para esta versão do GLPI"
 
-#: \setup.php:121
+#: \setup.php:122
 msgid "This plugin requires PHP >= 8.2"
 msgstr "Este plugin requer PHP >= 8.2"
 
-#: \src\LoginRenderer.php:101 \src\ToolboxPlugin.php:274
+#: \src\LoginRenderer.php:101 \src\Preference.php:205
+#: \src\ToolboxPlugin.php:274
 #, php-format
 msgid "Login with %s"
 msgstr "Entrar com %s"
 
-#: \src\Provider.php:153
-msgid "Test Single Sign-on"
-msgstr "Testar Logon Único"
-
-#: \src\Provider.php:232
+#: \src\Provider.php:238
 msgid "A Name is required"
 msgstr "O Nome é obrigatório"
 
-#: \src\Provider.php:238
+#: \src\Provider.php:244
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "O \"%s\" é um tipo inválido"
 
-#: \src\Provider.php:242
+#: \src\Provider.php:248
 msgid "A Client ID is required"
 msgstr "O ID de Cliente é obrigatório"
 
-#: \src\Provider.php:246
+#: \src\Provider.php:252
 msgid "A Client Secret is required"
 msgstr "O Segredo do Cliente é obrigatório"
 
-#: \src\Provider.php:251
+#: \src\Provider.php:257
 msgid "An Authorize URL is required"
 msgstr "A URL de Autorização é obrigatória"
 
-#: \src\Provider.php:253
+#: \src\Provider.php:259
 msgid "The Authorize URL is invalid"
 msgstr "A URL de Autorização é inválida"
 
-#: \src\Provider.php:257
+#: \src\Provider.php:263
 msgid "An Access Token URL is required"
 msgstr "A URL de Token de Acesso é obrigatória"
 
-#: \src\Provider.php:259
+#: \src\Provider.php:265
 msgid "The Access Token URL is invalid"
 msgstr "A URL de Token de Acesso é inválida"
 
-#: \src\Provider.php:263
+#: \src\Provider.php:269
 msgid "A Resource Owner Details URL is required"
 msgstr "A URL de Detalhes do Proprietário do Recurso é obrigatória"
 
-#: \src\Provider.php:265
+#: \src\Provider.php:271
 msgid "The Resource Owner Details URL is invalid"
 msgstr "A URL de Detalhes do Proprietário do Recurso é inválida"
 
-#: \src\Provider.php:492
+#: \src\Provider.php:329
+msgid "Only if user has no photo"
+msgstr "Somente se o usuário não tiver foto"
+
+#: \src\Provider.php:330
+msgid "Always on login"
+msgstr "Sempre no login"
+
+#: \src\Provider.php:337
+msgid "Authorization: Bearer <token>"
+msgstr "Autorização: Bearer <token>"
+
+#: \src\Provider.php:338
+msgid "Authorization: <token>"
+msgstr "Autorização: <token>"
+
+#: \src\Provider.php:546
 msgid "Generic"
 msgstr "Genérico"
 
-#: \src\Provider.php:493
+#: \src\Provider.php:547
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:494
+#: \src\Provider.php:548
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:495
+#: \src\Provider.php:549
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:496
+#: \src\Provider.php:550
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:497
+#: \src\Provider.php:551
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:498
+#: \src\Provider.php:552
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
 

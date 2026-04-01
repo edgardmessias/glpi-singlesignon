@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [2.0.0-dev.1](https://github.com/edgardmessias/glpi-singlesignon/compare/v1.4.0..v2.0.0-dev.1) - 2026-04-01
+## [2.0.0-dev.2](https://github.com/edgardmessias/glpi-singlesignon/compare/v1.4.0..v2.0.0-dev.2) - 2026-04-01
 
 ### Bug Fixes
 
@@ -26,9 +26,11 @@ All notable changes to this project will be documented in this file. See [conven
 - **(ui)** Improved visual of provider config - ([2b4bd32](https://github.com/edgardmessias/glpi-singlesignon/commit/2b4bd320007266fe3376e18eacecbc5f8ea3910d)) - Edgard
 - Improved login screen - ([8bbe597](https://github.com/edgardmessias/glpi-singlesignon/commit/8bbe5974174653ef8f9277cae72e04b83ff34393)) - Edgard
 - Redesign login screen with a complete new UI - ([67a5305](https://github.com/edgardmessias/glpi-singlesignon/commit/67a5305f7c398bac80988dce9f9456c74a8954c9)) - Edgard
+- Allow OAuth photo sync with avatar_url mapping for all providers - ([e0efb20](https://github.com/edgardmessias/glpi-singlesignon/commit/e0efb20967e455dcfd5b9ed79db5345367f56c4c)) - Edgard
 
 ### Miscellaneous Chores
 
+- **(ci)** streamline release and locale update workflows with git-cliff - ([4e56537](https://github.com/edgardmessias/glpi-singlesignon/commit/4e56537bfc94e0b573c9ba1e08884d84bcac36a6)) - Edgard
 - **(locale)** Updated locales - ([0556a7a](https://github.com/edgardmessias/glpi-singlesignon/commit/0556a7a8c3a795be40e216fc9bfefeda1b146cec)) - Edgard
 - Fixed PHP-CS-Fixer issues - ([954e466](https://github.com/edgardmessias/glpi-singlesignon/commit/954e466485520bb13a1ce4f60babf4da99f8c3cc)) - Edgard
 - Fixed PHPStan issues - ([ec0fd73](https://github.com/edgardmessias/glpi-singlesignon/commit/ec0fd736d3976e3a04fb804e0e796c245eab4218)) - Edgard

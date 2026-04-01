@@ -38,7 +38,7 @@
         ],
         "make-release": "vendor/bin/robo build",
         "php-cs-fixer:fix": "../../vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php",
-        "php-cs-fixer": "../../vendor/bin/php-cs-fixer check --config=.php-cs-fixer.php",
+        "php-cs-fixer": "../../vendor/bin/php-cs-fixer check --config=.php-cs-fixer.php -v",
         "phpstan": "../../vendor/bin/phpstan analyse --memory-limit=2G",
         "psalm": "../../vendor/bin/psalm",
         "rector:fix": "../../vendor/bin/rector process",

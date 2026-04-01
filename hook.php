@@ -63,6 +63,11 @@ function plugin_singlesignon_install()
             `url_authorize`              VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_access_token`           VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_resource_owner_details` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+            `user_photo_sync_mode`       INT NOT NULL DEFAULT '0',
+            `resource_owner_auth_type`   VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
+            `resource_owner_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
+            `resource_owner_picture_auth_type` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
+            `resource_owner_picture_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
             `is_active`                  TINYINT(1) NOT NULL DEFAULT '0',
             `use_email_for_login`        TINYINT(1) NOT NULL DEFAULT '0',
             `split_name`                 TINYINT(1) NOT NULL DEFAULT '0',
@@ -151,6 +156,56 @@ function plugin_singlesignon_install()
             KEY `provider_active_order` (`plugin_singlesignon_providers_id`, `is_active`, `sort_order`),
             KEY `provider_type` (`plugin_singlesignon_providers_id`, `field_type`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        );
+    }
+
+    if (version_compare($currentVersion, '2.0.0-dev.2', '<')) {
+        $migration->addField(
+            $providersTable,
+            'user_photo_sync_mode',
+            'integer',
+            [
+                'value' => 0,
+                'after' => 'url_resource_owner_details',
+            ],
+        );
+        $migration->addField(
+            $providersTable,
+            'resource_owner_auth_type',
+            'string',
+            [
+                'value' => 'bearer',
+                'after' => 'user_photo_sync_mode',
+            ],
+        );
+        $migration->addField(
+            $providersTable,
+            'resource_owner_custom_headers',
+            'text',
+            [
+                'nodefault' => true,
+                'null'      => true,
+                'after'     => 'resource_owner_auth_type',
+            ],
+        );
+        $migration->addField(
+            $providersTable,
+            'resource_owner_picture_auth_type',
+            'string',
+            [
+                'value' => 'bearer',
+                'after' => 'resource_owner_custom_headers',
+            ],
+        );
+        $migration->addField(
+            $providersTable,
+            'resource_owner_picture_custom_headers',
+            'text',
+            [
+                'nodefault' => true,
+                'null'      => true,
+                'after'     => 'resource_owner_picture_auth_type',
+            ],
         );
     }
 
