@@ -41,10 +41,10 @@ jobs:
               #excludeTypes: build,docs,style
               #includeInvalidCommits: true
 
-          - name: Commit CHANGELOG.md (master)
+          - name: Commit CHANGELOG.md (main)
             uses: stefanzweifel/git-auto-commit-action@v4
             with:
-              branch: master
+              branch: main
               commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
               file_pattern: CHANGELOG.md
 
@@ -62,7 +62,7 @@ jobs:
       steps:
         - name: Checkout code
           uses: actions/checkout@v4
-          
+
         - name: Build project # This would actually build your project, using zip for an example artifact
           id: build_
           env:
@@ -77,20 +77,20 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
             tag_name: ${{ steps.build_.outputs.tag }}
-            release_name: | 
+            release_name: |
                       GLPI ${{ steps.build_.outputs.version_glpi }} : Version ${{ steps.build_.outputs.tag }} disponible / available
-            body : Version ${{ steps.build_.outputs.tag }} released for GLPI ${{ steps.build_.outputs.version_glpi }}. The [full changelog is available](https://github.com/edgardmessias/glpi-singlesignon/blob/master/CHANGELOG.md) for more details.
+            body : Version ${{ steps.build_.outputs.tag }} released for GLPI ${{ steps.build_.outputs.version_glpi }}. The [full changelog is available](https://github.com/edgardmessias/glpi-singlesignon/blob/main/CHANGELOG.md) for more details.
             draft: false
             prerelease: false
 
         - name: Upload Release Asset
-          id: upload-release-asset 
+          id: upload-release-asset
           uses: actions/upload-release-asset@v1
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             GITHUB_NAME: ${{ github.event.repository.name }}
           with:
-            upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+            upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
             asset_path: /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}-${{ steps.build_.outputs.tag }}.tar.bz2
             asset_name: ${{ github.event.repository.name }}-${{ steps.build_.outputs.tag }}.tar.bz2
             asset_content_type: application/zip

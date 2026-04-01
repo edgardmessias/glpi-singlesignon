@@ -3,7 +3,7 @@
     <name>Single Sign-On</name>
     <key>singlesignon</key>
     <state>stable</state>
-    <logo>https://raw.githubusercontent.com/edgardmessias/glpi-singlesignon/master/plugin.png</logo>
+    <logo>https://raw.githubusercontent.com/edgardmessias/glpi-singlesignon/main/plugin.png</logo>
     <description>
         <short>
             <en><![CDATA[Allow to login in GLPI with Single sign-on (SSO)]]></en>
@@ -12,7 +12,7 @@
             <en><![CDATA[
 # Single Sign-On for GLPI
 
-[![Build Status](https://travis-ci.org/edgardmessias/glpi-singlesignon.svg?branch=master)](https://travis-ci.org/edgardmessias/glpi-singlesignon)
+[![Build Status](https://travis-ci.org/edgardmessias/glpi-singlesignon.svg?branch=main)](https://travis-ci.org/edgardmessias/glpi-singlesignon)
 [![CodeFactor](https://www.codefactor.io/repository/github/edgardmessias/glpi-singlesignon/badge)](https://www.codefactor.io/repository/github/edgardmessias/glpi-singlesignon)
 [![Total Downloads](https://img.shields.io/github/downloads/edgardmessias/glpi-singlesignon/total.svg)](https://github.com/edgardmessias/glpi-singlesignon/releases)
 [![Current Release](https://img.shields.io/github/release/edgardmessias/glpi-singlesignon.svg)](https://github.com/edgardmessias/glpi-singlesignon/releases/latest)
@@ -136,7 +136,7 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
         </en>
     </tags>
     <screenshots>
-      <screenshot>https://raw.githubusercontent.com/edgardmessias/glpi-singlesignon/master/screenshots/image_1.png</screenshot>
-      <screenshot>https://raw.githubusercontent.com/edgardmessias/glpi-singlesignon/master/screenshots/image_1.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/edgardmessias/glpi-singlesignon/main/screenshots/image_1.png</screenshot>
+      <screenshot>https://raw.githubusercontent.com/edgardmessias/glpi-singlesignon/main/screenshots/image_2.png</screenshot>
    </screenshots>
 </root>
