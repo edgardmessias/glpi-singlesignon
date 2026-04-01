@@ -83,6 +83,7 @@ function plugin_init_singlesignon()
     $PLUGIN_HOOKS[Hooks::MENU_TOADD]['singlesignon'] = [
         'config'  => Provider::class,
     ];
+    $PLUGIN_HOOKS[Hooks::ADD_CSS]['singlesignon'] = ['css/preference.css'];
     $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['singlesignon'] = ['css/login.css'];
 }
 

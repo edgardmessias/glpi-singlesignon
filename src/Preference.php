@@ -60,7 +60,18 @@ class Preference extends CommonDBTM
         if (version_compare(GLPI_VERSION, '9.4', '>=')) {
             $condition = [$condition];
         }
-        $this->providers = $signon_provider->find($condition);
+        $providers = $signon_provider->find($condition, 'is_default DESC, name ASC');
+        $this->providers = array_values($providers);
+        usort($this->providers, static function (array $a, array $b): int {
+            $a_default = (int) ($a['is_default'] ?? 0);
+            $b_default = (int) ($b['is_default'] ?? 0);
+
+            if ($a_default !== $b_default) {
+                return $b_default <=> $a_default;
+            }
+
+            return strcmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+        });
 
         $provider_user = new Provider_User();
 
@@ -185,13 +196,39 @@ class Preference extends CommonDBTM
             default      => '',
         };
 
-        $html = '';
+        $buttons = [];
         foreach ($this->providers as $p) {
             $url = ToolboxPlugin::getCallbackUrl((int) $p['id'], ['redirect' => $redirect]);
-            $html .= ToolboxPlugin::renderButton($url, $p) . ' ';
+
+            $buttons[] = [
+                'href'    => $url,
+                'label'   => sprintf(__('Login with %s', 'singlesignon'), (string) ($p['name'] ?? '')),
+                'popup'   => !empty($p['popup']),
+                'style'   => $this->buildButtonStyle($p),
+                'picture' => !empty($p['picture']) ? ToolboxPlugin::getPictureUrl((string) $p['picture']) : null,
+            ];
         }
 
-        return $html;
+        if ($buttons === []) {
+            return '';
+        }
+
+        return TemplateRenderer::getInstance()->render('@singlesignon/preference/provider_buttons.html.twig', [
+            'buttons' => $buttons,
+        ]);
+    }
+
+    private function buildButtonStyle(array $provider): string
+    {
+        $styles = [];
+        if (!empty($provider['bgcolor'])) {
+            $styles[] = 'background-color: ' . $provider['bgcolor'];
+        }
+        if (!empty($provider['color'])) {
+            $styles[] = 'color: ' . $provider['color'];
+        }
+
+        return implode(';', $styles);
     }
 
     /**
@@ -211,6 +248,8 @@ class Preference extends CommonDBTM
                 'pu_id'         => (int) $pu['id'],
             ];
         }
+
+        usort($rows, static fn(array $a, array $b): int => strcmp($a['provider_name'], $b['provider_name']));
 
         return $rows;
     }

@@ -1,0 +1,202 @@
+/*!
+ * ---------------------------------------------------------------------
+ * SingleSignOn is a plugin which allows to use SSO for auth
+ * ---------------------------------------------------------------------
+ * Copyright (C) 2026 Edgard
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * ---------------------------------------------------------------------
+ * @copyright Copyright © 2021 - 2026 Edgard
+ * @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ * @link      https://github.com/edgardmessias/glpi-singlesignon/
+ * ---------------------------------------------------------------------
+ */
+
+.singlesignon-preference {
+    --sso-pref-surface: rgba(255, 255, 255, 0.88);
+    --sso-pref-border: rgba(17, 24, 39, 0.08);
+    --sso-pref-shadow: 0 14px 30px -22px rgba(15, 23, 42, 0.65);
+    --sso-pref-title: #1f2937;
+    --sso-pref-text: #4b5563;
+    --sso-pref-muted: #6b7280;
+    --sso-pref-accent: #2563eb;
+}
+
+.singlesignon-preference .singlesignon-preference-grid {
+    width: min(100%, 52rem);
+    margin: 1rem auto 0;
+    display: grid;
+    gap: 1rem;
+}
+
+.singlesignon-preference .singlesignon-preference-card {
+    border: 1px solid var(--sso-pref-border);
+    border-radius: 14px;
+    padding: 1rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, var(--sso-pref-surface) 100%);
+    box-shadow: var(--sso-pref-shadow);
+}
+
+.singlesignon-preference .singlesignon-preference-title {
+    margin: 0 0 0.8rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--sso-pref-title);
+}
+
+.singlesignon-preference .singlesignon-preference-linked-list {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.singlesignon-preference .singlesignon-preference-linked-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--sso-pref-border) 85%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--sso-pref-surface) 92%, transparent);
+}
+
+.singlesignon-preference .singlesignon-preference-linked-text {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    color: var(--sso-pref-text);
+    font-weight: 600;
+}
+
+.singlesignon-preference .singlesignon-preference-linked-text small {
+    color: var(--sso-pref-muted);
+    font-weight: 500;
+}
+
+.singlesignon-preference .singlesignon-preference-linked-remove {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--sso-pref-muted);
+    white-space: nowrap;
+}
+
+.singlesignon-preference .singlesignon-login-buttons {
+    width: min(100%, 29rem);
+    margin: 0 auto;
+}
+
+.singlesignon-preference .singlesignon-preference-providers {
+    display: flex;
+    justify-content: center;
+}
+
+.singlesignon-preference .singlesignon-login-button {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.72rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--sso-pref-accent) 24%, var(--sso-pref-border));
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--sso-pref-text);
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 3px 10px -8px rgba(15, 23, 42, 0.4);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.singlesignon-preference .singlesignon-login-button:hover,
+.singlesignon-preference .singlesignon-login-button:focus-visible {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--sso-pref-accent) 45%, var(--sso-pref-border));
+    box-shadow: 0 12px 20px -18px rgba(15, 23, 42, 0.8);
+}
+
+.singlesignon-preference .singlesignon-login-visual {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 2rem;
+    overflow: hidden;
+    border-radius: 999px;
+    color: var(--sso-pref-accent);
+    background: color-mix(in srgb, var(--sso-pref-accent) 12%, transparent);
+}
+
+.singlesignon-preference .singlesignon-login-button--picture .singlesignon-login-visual {
+    background: transparent;
+}
+
+.singlesignon-preference .singlesignon-login-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.singlesignon-preference .singlesignon-login-arrow {
+    opacity: 0.55;
+}
+
+.singlesignon-preference .singlesignon-login-picture {
+    display: block;
+    width: 20px !important;
+    height: 20px !important;
+    max-width: 20px !important;
+    max-height: 20px !important;
+    object-fit: contain;
+}
+
+.singlesignon-preference .singlesignon-preference-providers img {
+    width: 20px !important;
+    height: 20px !important;
+    max-width: 20px !important;
+    max-height: 20px !important;
+    object-fit: contain;
+}
+
+.singlesignon-preference .singlesignon-preference-actions {
+    width: min(100%, 52rem);
+    margin: 1rem auto 0;
+    display: flex;
+    justify-content: center;
+}
+
+@media (prefers-color-scheme: dark) {
+    .singlesignon-preference {
+        --sso-pref-surface: rgba(17, 24, 39, 0.86);
+        --sso-pref-border: rgba(255, 255, 255, 0.14);
+        --sso-pref-shadow: 0 18px 34px -24px rgba(2, 6, 23, 0.95);
+        --sso-pref-title: #f3f4f6;
+        --sso-pref-text: #e5e7eb;
+        --sso-pref-muted: #cbd5e1;
+        --sso-pref-accent: #60a5fa;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .singlesignon-preference .singlesignon-preference-card {
+        padding: 0.85rem;
+    }
+
+    .singlesignon-preference .singlesignon-preference-linked-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
