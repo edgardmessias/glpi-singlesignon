@@ -10,10 +10,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-31 16:58-0300\n"
+"POT-Creation-Date: 2026-04-01 10:13-0300\n"
 "PO-Revision-Date: 2025-03-31 17:04+0000\n"
-"Last-Translator: Edgard <edgardmessias@gmail.com>, "
-"2026\n"
+"Last-Translator: Edgard <edgardmessias@gmail.com>, 2026\n"
 "Language-Team: Portuguese (Brazil) (https://app.transifex.com/eduardomozart/"
 "teams/204814/pt_BR/)\n"
 "Language: pt_BR\n"
@@ -25,7 +24,7 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:86 \src\Preference.php:105 \src\Provider.php:117
+#: \setup.php:93 \src\Preference.php:105 \src\Provider.php:116
 msgid "Single Sign-on"
 msgstr "Logon Único"
 
@@ -37,13 +36,76 @@ msgstr "Usar formulário de login do GLPI"
 msgid "Use Single Sign-on"
 msgstr "Usar Logon Único"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:109
+#: \templates\preference\form_content.html.twig \src\Provider.php:108
 msgid "Single Sign-on Provider"
 msgstr "Provedor de Logon Único"
 
 #: \templates\preference\form_content.html.twig
 msgid "Linked accounts"
 msgstr "Contas vinculadas"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Single Sign-on test result"
+msgstr "Resultado do teste de Logon Único"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Provider"
+msgstr "Provedor"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Resolved fields"
+msgstr "Campos resolvidos"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Resource Owner"
+msgstr "Proprietário do recurso"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Active mappings"
+msgstr "Mapeamentos ativos"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Default mappings"
+msgstr "Mapeamentos padrão"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Callback context"
+msgstr "Contexto do callback"
+
+#: \templates\provider\callback_test_result.html.twig
+#: \templates\provider\show_field_mappings_tab.html.twig
+msgid "JSONPath"
+msgstr "JSONPath"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Not resolved"
+msgstr "Não resolvido"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Provider mapping"
+msgstr "Mapeamento do provedor"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "Default mapping"
+msgstr "Mapeamento padrão"
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "No active mappings found."
+msgstr "Nenhum mapeamento ativo encontrado."
+
+#: \templates\provider\callback_test_result.html.twig
+msgid "No default mappings found for this provider type."
+msgstr "Nenhum mapeamento padrão encontrado para este tipo de provedor."
+
+#: \templates\provider\show_field_mappings_tab.html.twig
+#: \src\Provider_Field.php:170
+msgid "Field mappings"
+msgstr "Mapeamentos de campos"
+
+#: \templates\provider\show_field_mappings_tab.html.twig
+msgid ""
+"Configure JSONPath rules used to extract fields from Resource Owner response."
+msgstr ""
 
 #: \templates\provider\show_form.html.twig
 #, php-format
@@ -59,7 +121,7 @@ msgstr ""
 "provedor). Você pode especificar parâmetros adicionais com o delimitador "
 "\"&\"."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:401
+#: \templates\provider\show_form.html.twig \src\Provider.php:396
 msgid "Authorize URL"
 msgstr "URL de Autorização"
 
@@ -75,27 +137,27 @@ msgstr ""
 msgid "SSO Type"
 msgstr "Tipo SSO"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:369
+#: \templates\provider\show_form.html.twig \src\Provider.php:364
 msgid "Client ID"
 msgstr "ID de Cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:377
+#: \templates\provider\show_form.html.twig \src\Provider.php:372
 msgid "Client Secret"
 msgstr "Segredo do Cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:385
+#: \templates\provider\show_form.html.twig \src\Provider.php:380
 msgid "Scope"
 msgstr "Escopo"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:393
+#: \templates\provider\show_form.html.twig \src\Provider.php:388
 msgid "Extra Options"
 msgstr "Opções Extras"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:409
+#: \templates\provider\show_form.html.twig \src\Provider.php:404
 msgid "Access Token URL"
 msgstr "URL de Token de Acesso"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:417
+#: \templates\provider\show_form.html.twig \src\Provider.php:412
 msgid "Resource Owner Details URL"
 msgstr "URL de Detalhes do Proprietário do Recurso"
 
@@ -127,129 +189,154 @@ msgstr "Dividir Nome"
 msgid "Callback URL"
 msgstr "URL de Retorno"
 
-#: \templates\provider\show_form_debug.html.twig
-msgid "JSON SSO provider representation"
-msgstr "Representação do provedor SSO em JSON"
-
-#: \templates\provider\show_form_debug.html.twig
-msgid "Copy provider information"
-msgstr "Copiar informação do provedor"
-
-#: \front\callback.php:47
+#: \front\callback.php:50
 msgid "Provider not defined."
 msgstr "Provedor não definido."
 
-#: \front\callback.php:55
+#: \front\callback.php:58
 msgid "Provider not found."
 msgstr "Provedor não encontrado."
 
-#: \front\callback.php:61
+#: \front\callback.php:64
 msgid "Provider not active."
 msgstr "Provedor não ativo."
 
-#: \front\callback.php:154
+#: \front\callback.php:102
+msgid "Unable to encode resource owner payload."
+msgstr "Não foi possível codificar a carga do proprietário do recurso."
+
+#: \front\callback.php:117
+msgid "Unable to encode callback context."
+msgstr "Não foi possível codificar o contexto do callback."
+
+#: \front\callback.php:190
 msgid "Automatic redirection, else click"
 msgstr "Redirecionamento automático, caso contrário, clique"
 
-#: \front\callback.php:172
+#: \front\callback.php:208
 msgid "User not authorized to connect in GLPI"
 msgstr "Usuário não autorizado a se conectar no GLPI"
 
-#: \front\callback.php:175
+#: \front\callback.php:211
 msgid "Log in again"
 msgstr "Entrar novamente"
 
-#: \setup.php:43
+#: \setup.php:49
 #, php-format
 msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
 msgstr "Por favor, renomeie a pasta do plugin \"%s\" para \"singlesignon\""
 
-#: \setup.php:104
+#: \setup.php:111
 msgid "This plugin requires GLPI >= 11.0.0"
 msgstr "Este plugin requer GLPI >= 11.0.0"
 
-#: \setup.php:109
+#: \setup.php:116
 msgid "This plugin is not yet validated for this GLPI version"
 msgstr "Este plugin ainda não foi validado para esta versão do GLPI"
 
-#: \setup.php:114
+#: \setup.php:121
 msgid "This plugin requires PHP >= 8.2"
 msgstr "Este plugin requer PHP >= 8.2"
 
-#: \src\LoginRenderer.php:103 \src\ToolboxPlugin.php:274
+#: \src\LoginRenderer.php:101 \src\ToolboxPlugin.php:274
 #, php-format
 msgid "Login with %s"
 msgstr "Entrar com %s"
 
-#: \src\Provider.php:187
+#: \src\Provider.php:153
 msgid "Test Single Sign-on"
 msgstr "Testar Logon Único"
 
-#: \src\Provider.php:237
+#: \src\Provider.php:232
 msgid "A Name is required"
 msgstr "O Nome é obrigatório"
 
-#: \src\Provider.php:243
+#: \src\Provider.php:238
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "O \"%s\" é um tipo inválido"
 
-#: \src\Provider.php:247
+#: \src\Provider.php:242
 msgid "A Client ID is required"
 msgstr "O ID de Cliente é obrigatório"
 
-#: \src\Provider.php:251
+#: \src\Provider.php:246
 msgid "A Client Secret is required"
 msgstr "O Segredo do Cliente é obrigatório"
 
-#: \src\Provider.php:256
+#: \src\Provider.php:251
 msgid "An Authorize URL is required"
 msgstr "A URL de Autorização é obrigatória"
 
-#: \src\Provider.php:258
+#: \src\Provider.php:253
 msgid "The Authorize URL is invalid"
 msgstr "A URL de Autorização é inválida"
 
-#: \src\Provider.php:262
+#: \src\Provider.php:257
 msgid "An Access Token URL is required"
 msgstr "A URL de Token de Acesso é obrigatória"
 
-#: \src\Provider.php:264
+#: \src\Provider.php:259
 msgid "The Access Token URL is invalid"
 msgstr "A URL de Token de Acesso é inválida"
 
-#: \src\Provider.php:268
+#: \src\Provider.php:263
 msgid "A Resource Owner Details URL is required"
 msgstr "A URL de Detalhes do Proprietário do Recurso é obrigatória"
 
-#: \src\Provider.php:270
+#: \src\Provider.php:265
 msgid "The Resource Owner Details URL is invalid"
 msgstr "A URL de Detalhes do Proprietário do Recurso é inválida"
 
-#: \src\Provider.php:497
+#: \src\Provider.php:492
 msgid "Generic"
 msgstr "Genérico"
 
-#: \src\Provider.php:498
+#: \src\Provider.php:493
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:499
+#: \src\Provider.php:494
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:500
+#: \src\Provider.php:495
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:501
+#: \src\Provider.php:496
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:502
+#: \src\Provider.php:497
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:503
+#: \src\Provider.php:498
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
+
+#: \src\Provider_Field.php:42
+msgid "Field mapping"
+msgid_plural "Field mappings"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: \src\Provider_Field.php:71
+msgid "Avatar URL"
+msgstr "URL do avatar"
+
+#: \src\Provider_Field.php:191
+msgid "Save this provider before editing field mappings."
+msgstr "Salve este provedor antes de editar os mapeamentos de campos."
+
+#: \src\Provider_Field.php:272
+msgid "Field mappings updated."
+msgstr "Mapeamentos de campos atualizados."
+
+#~ msgid "JSON SSO provider representation"
+#~ msgstr "Representação do provedor SSO em JSON"
+
+#~ msgid "Copy provider information"
+#~ msgstr "Copiar informação do provedor"
