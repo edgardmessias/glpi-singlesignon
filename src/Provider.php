@@ -26,10 +26,10 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Throwable;
 use CommonDBTM;
-use CommonGLPI;
+use JsonPath\JsonObject;
 use Session;
-use Html;
 use Dropdown;
 use Toolbox;
 use Plugin;
@@ -46,7 +46,6 @@ use function Safe\fclose;
 use function Safe\fopen;
 use function Safe\fwrite;
 use function Safe\json_decode;
-use function Safe\json_encode;
 use function Safe\mkdir;
 use function Safe\preg_match;
 use function Safe\preg_split;
@@ -123,49 +122,16 @@ class Provider extends CommonDBTM
         $ong = [];
         $this->addDefaultFormTab($ong);
         $this->addStandardTab(self::class, $ong, $options);
+        $this->addStandardTab(Provider_Field::class, $ong, $options);
         $this->addStandardTab('Log', $ong, $options);
 
         return $ong;
-    }
-
-    public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
-    {
-        $tabs = [];
-
-        $debug_mode = ($_SESSION['glpi_use_mode'] == Session::DEBUG_MODE);
-        if ($debug_mode) {
-            $tabs[1] = self::createTabEntry(__('Debug'), 0, self::class, 'ti ti-bug');
-        }
-
-        return $tabs;
-    }
-
-    public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
-    {
-        switch ($tabnum) {
-            case 1:
-                if ($item instanceof self) {
-                    $item->showFormDebug($item);
-                }
-                break;
-        }
-        return true;
     }
 
     public function post_getEmpty()
     {
         $this->fields["type"] = 'generic';
         $this->fields["is_active"] = 1;
-    }
-
-    public function showFormDebug($item, $options = [])
-    {
-        Html::requireJS('clipboard');
-        $item->fields['client_secret'] = substr($item->fields['client_secret'], 0, 3) . '... (' . strlen($item->fields['client_secret']) . ')';
-        $json = str_replace('\/', '/', json_encode($item, JSON_PRETTY_PRINT));
-        echo TemplateRenderer::getInstance()->render('@singlesignon/provider/show_form_debug.html.twig', [
-            'json_pretty' => $json,
-        ]);
     }
 
     public function showForm($ID, $options = [])
@@ -206,12 +172,41 @@ class Provider extends CommonDBTM
         return $this->prepareInput($input);
     }
 
+    public function post_addItem()
+    {
+        if (($this->fields['type'] ?? '') !== 'generic') {
+            return;
+        }
+
+        $providerId = (int) ($this->fields['id'] ?? 0);
+        if ($providerId <= 0) {
+            return;
+        }
+
+        $existing = Provider_Field::getMappingsForProvider($providerId);
+        if ($existing !== []) {
+            return;
+        }
+
+        $mapping = new Provider_Field();
+        foreach (Provider_Field::getDefaultMappings('generic') as $default) {
+            $mapping->add([
+                'plugin_singlesignon_providers_id' => $providerId,
+                'field_type'                       => $default['field_type'],
+                'jsonpath'                         => $default['jsonpath'],
+                'is_active'                        => (int) $default['is_active'],
+                'sort_order'                       => (int) $default['sort_order'],
+            ]);
+        }
+    }
+
     public function cleanDBonPurge()
     {
         Toolbox::deletePicture($this->fields['picture']);
         $this->deleteChildrenAndRelationsFromDb(
             [
                 'PluginSinglesignonProvider_User',
+                'PluginSinglesignonProvider_Field',
             ],
         );
     }
@@ -679,7 +674,7 @@ class Provider extends CommonDBTM
             static::$default = json_decode($content, true);
         }
 
-        if (isset(static::$default[$type]) && static::$default[$type][$key]) {
+        if (isset(static::$default[$type]) && array_key_exists($key, static::$default[$type])) {
             return static::$default[$type][$key];
         }
 
@@ -1028,6 +1023,151 @@ class Provider extends CommonDBTM
         return $this->_resource_owner;
     }
 
+    private function getFallbackFieldMappingsByType(string $fieldType): array
+    {
+        $providerType = $this->getClientType();
+        $defaults = Provider_Field::getDefaultMappings($providerType);
+        if ($defaults === []) {
+            $defaults = Provider_Field::getDefaultMappings('generic');
+        }
+
+        return array_values(array_filter(
+            $defaults,
+            static fn(array $row): bool => $row['field_type'] === $fieldType && $row['is_active'] === 1,
+        ));
+    }
+
+    private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
+    {
+        try {
+            $json = new JsonObject($resourceArray);
+            $result = $json->get($jsonPath);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $this->normalizeJsonPathResult($result);
+    }
+
+    private function normalizeJsonPathResult($result): ?string
+    {
+        if (is_string($result)) {
+            return trim($result) !== '' ? $result : null;
+        }
+
+        if (is_numeric($result)) {
+            return (string) $result;
+        }
+
+        if (!is_array($result)) {
+            return null;
+        }
+
+        foreach ($result as $value) {
+            $normalized = $this->normalizeJsonPathResult($value);
+            if ($normalized !== null) {
+                return $normalized;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveFieldValueFromMappings(array $resourceArray, string $fieldType): ?string
+    {
+        $result = $this->resolveFieldDebugDetailsFromMappings($resourceArray, $fieldType);
+        return $result['value'];
+    }
+
+    /**
+     * @return array{value: ?string, jsonpath: ?string, source: ?string}
+     */
+    private function resolveFieldDebugDetailsFromMappings(array $resourceArray, string $fieldType): array
+    {
+        $providerId = (int) ($this->fields['id'] ?? 0);
+        $mappings = [];
+        if ($providerId > 0) {
+            $mappings = Provider_Field::getMappingsForProvider($providerId, $fieldType, true);
+        }
+
+        foreach ($mappings as $mapping) {
+            $jsonPath = trim((string) ($mapping['jsonpath'] ?? ''));
+            if ($jsonPath === '') {
+                continue;
+            }
+
+            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
+            if ($value !== null) {
+                return [
+                    'value'    => $value,
+                    'jsonpath' => $jsonPath,
+                    'source'   => 'provider',
+                ];
+            }
+        }
+
+        // Fallback defaults are only used when active mappings do not return a value.
+        foreach ($this->getFallbackFieldMappingsByType($fieldType) as $mapping) {
+            $jsonPath = trim((string) ($mapping['jsonpath'] ?? ''));
+            if ($jsonPath === '') {
+                continue;
+            }
+
+            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
+            if ($value !== null) {
+                return [
+                    'value'    => $value,
+                    'jsonpath' => $jsonPath,
+                    'source'   => 'default',
+                ];
+            }
+        }
+
+        return [
+            'value'    => null,
+            'jsonpath' => null,
+            'source'   => null,
+        ];
+    }
+
+    /**
+     * @return array<string, array{value: ?string, jsonpath: ?string, source: ?string}>
+     */
+    public function getResolvedFieldsForDebug(array $resourceArray): array
+    {
+        $resolved = [];
+        foreach (array_keys(Provider_Field::getFieldTypes()) as $fieldType) {
+            $resolved[$fieldType] = $this->resolveFieldDebugDetailsFromMappings($resourceArray, $fieldType);
+        }
+
+        return $resolved;
+    }
+
+    private function checkAuthorizedDomain(string $value, array $authorizedDomains): bool
+    {
+        if ($authorizedDomains === []) {
+            return true;
+        }
+
+        foreach ($authorizedDomains as $authorizedDomain) {
+            if (preg_match("/{$authorizedDomain}$/i", $value) !== 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function splitIdentifierByDomain(string $value, bool $split): string
+    {
+        if (!$split) {
+            return $value;
+        }
+
+        $parts = explode("@", $value);
+        return $parts[0] ?? $value;
+    }
+
     public function findUser()
     {
         $resource_array = $this->getResourceOwner();
@@ -1044,15 +1184,7 @@ class Provider extends CommonDBTM
             return $user;
         }
 
-        $remote_id = false;
-        $remote_id_fields = ['id', 'username', 'sub'];
-
-        foreach ($remote_id_fields as $field) {
-            if (isset($resource_array[$field]) && !empty($resource_array[$field])) {
-                $remote_id = $resource_array[$field];
-                break;
-            }
-        }
+        $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
 
         if ($remote_id) {
             $link = new Provider_User();
@@ -1078,27 +1210,12 @@ class Provider extends CommonDBTM
         }
 
         // check email first
-        $email = false;
-        $email_fields = ['email', 'e-mail', 'email-address', 'mail'];
-
-        foreach ($email_fields as $field) {
-            if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-                $email = $resource_array[$field];
-                $isAuthorized = $authorizedDomains === [];
-                foreach ($authorizedDomains as $authorizedDomain) {
-                    if (preg_match("/{$authorizedDomain}$/i", $email) !== 0) {
-                        $isAuthorized = true;
-                    }
-                }
-                if (!$isAuthorized) {
-                    return false;
-                }
-                if ($split) {
-                    $emailSplit = explode("@", $email);
-                    $email = $emailSplit[0];
-                }
-                break;
+        $email = $this->resolveFieldValueFromMappings($resource_array, 'email');
+        if ($email !== null) {
+            if (!$this->checkAuthorizedDomain($email, $authorizedDomains)) {
+                return false;
             }
+            $email = $this->splitIdentifierByDomain($email, (bool) $split);
         }
 
         $login = false;
@@ -1106,27 +1223,12 @@ class Provider extends CommonDBTM
         if ($email && $use_email) {
             $login = $email;
         } else {
-            $login_fields = ['userPrincipalName', 'login', 'username', 'id', 'name', 'displayName'];
-
-            foreach ($login_fields as $field) {
-                if (isset($resource_array[$field]) && is_string($resource_array[$field])) {
-                    $login = $resource_array[$field];
-                    $isAuthorized = $authorizedDomains === [];
-                    foreach ($authorizedDomains as $authorizedDomain) {
-                        if (preg_match("/{$authorizedDomain}$/i", $login) !== 0) {
-                            $isAuthorized = true;
-                        }
-                    }
-
-                    if (!$isAuthorized) {
-                        return false;
-                    }
-                    if ($split) {
-                        $loginSplit = explode("@", $login);
-                        $login = $loginSplit[0];
-                    }
-                    break;
+            $login = $this->resolveFieldValueFromMappings($resource_array, 'username');
+            if ($login !== null) {
+                if (!$this->checkAuthorizedDomain($login, $authorizedDomains)) {
+                    return false;
                 }
+                $login = $this->splitIdentifierByDomain($login, (bool) $split);
             }
         }
 
@@ -1335,15 +1437,7 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        $remote_id = false;
-        $id_fields = ['id', 'sub', 'username'];
-
-        foreach ($id_fields as $field) {
-            if (isset($resource_array[$field]) && !empty($resource_array[$field])) {
-                $remote_id = $resource_array[$field];
-                break;
-            }
-        }
+        $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
 
         if (!$remote_id) {
             return false;

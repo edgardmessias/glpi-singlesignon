@@ -3,36 +3,74 @@
         "url_authorize": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
         "url_access_token": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
         "url_resource_owner_details": "https://graph.microsoft.com/v1.0/me",
-        "scope": "User.Read"
+        "scope": "User.Read",
+        "field_mappings": [
+            {"field_type": "id", "jsonpath": "$.id", "is_active": 1, "sort_order": 10},
+            {"field_type": "id", "jsonpath": "$.userPrincipalName", "is_active": 1, "sort_order": 20},
+            {"field_type": "email", "jsonpath": "$.mail", "is_active": 1, "sort_order": 30},
+            {"field_type": "email", "jsonpath": "$.userPrincipalName", "is_active": 1, "sort_order": 40},
+            {"field_type": "username", "jsonpath": "$.userPrincipalName", "is_active": 1, "sort_order": 50},
+            {"field_type": "username", "jsonpath": "$.displayName", "is_active": 1, "sort_order": 60}
+        ]
     },
     "facebook": {
         "url_authorize": "https://www.facebook.com/v9.0/dialog/oauth",
         "url_access_token": "https://graph.facebook.com/v9.0/oauth/access_token",
         "url_resource_owner_details": "https://graph.facebook.com/v9.0/me?fields=id,email&access_token=<access_token>&appsecret_proof=<appsecret_proof>",
-        "scope": "public_profile,email"
+        "scope": "public_profile,email",
+        "field_mappings": [
+            {"field_type": "id", "jsonpath": "$.id", "is_active": 1, "sort_order": 10},
+            {"field_type": "email", "jsonpath": "$.email", "is_active": 1, "sort_order": 20},
+            {"field_type": "username", "jsonpath": "$.name", "is_active": 1, "sort_order": 30}
+        ]
     },
     "github": {
         "url_authorize": "https://github.com/login/oauth/authorize",
         "url_access_token": "https://github.com/login/oauth/access_token",
         "url_resource_owner_details": "https://api.github.com/user",
-        "scope": "user:email"
+        "scope": "user:email",
+        "field_mappings": [
+            {"field_type": "id", "jsonpath": "$.id", "is_active": 1, "sort_order": 10},
+            {"field_type": "id", "jsonpath": "$.login", "is_active": 1, "sort_order": 20},
+            {"field_type": "username", "jsonpath": "$.login", "is_active": 1, "sort_order": 30},
+            {"field_type": "email", "jsonpath": "$.email", "is_active": 1, "sort_order": 40},
+            {"field_type": "avatar_url", "jsonpath": "$.avatar_url", "is_active": 1, "sort_order": 50}
+        ]
     },
     "google": {
         "url_authorize": "https://accounts.google.com/o/oauth2/v2/auth",
         "url_access_token": "https://www.googleapis.com/oauth2/v4/token",
         "url_resource_owner_details": "https://openidconnect.googleapis.com/v1/userinfo",
-        "scope": "openid email profile"
+        "scope": "openid email profile",
+        "field_mappings": [
+            {"field_type": "id", "jsonpath": "$.sub", "is_active": 1, "sort_order": 10},
+            {"field_type": "id", "jsonpath": "$.id", "is_active": 1, "sort_order": 20},
+            {"field_type": "email", "jsonpath": "$.email", "is_active": 1, "sort_order": 30},
+            {"field_type": "username", "jsonpath": "$.email", "is_active": 1, "sort_order": 40},
+            {"field_type": "username", "jsonpath": "$.name", "is_active": 1, "sort_order": 50},
+            {"field_type": "avatar_url", "jsonpath": "$.picture", "is_active": 1, "sort_order": 60}
+        ]
     },
     "instagram": {
         "url_authorize": "https://api.instagram.com/oauth/authorize",
         "url_access_token": "https://api.instagram.com/oauth/access_token",
         "url_resource_owner_details": "https://api.instagram.com/v1/users/self?access_token=<access_token>",
-        "scope": "basic"
+        "scope": "basic",
+        "field_mappings": [
+            {"field_type": "id", "jsonpath": "$.data.id", "is_active": 1, "sort_order": 10},
+            {"field_type": "username", "jsonpath": "$.data.username", "is_active": 1, "sort_order": 20},
+            {"field_type": "avatar_url", "jsonpath": "$.data.profile_picture", "is_active": 1, "sort_order": 30}
+        ]
     },
     "linkedin": {
         "url_authorize": "https://www.linkedin.com/oauth/v2/authorization",
         "url_access_token": "https://www.linkedin.com/oauth/v2/accessToken",
         "url_resource_owner_details": "https://api.linkedin.com/v2/me",
-        "scope": "r_liteprofile r_emailaddress"
+        "scope": "r_liteprofile r_emailaddress",
+        "field_mappings": [
+            {"field_type": "id", "jsonpath": "$.id", "is_active": 1, "sort_order": 10},
+            {"field_type": "email", "jsonpath": "$['email-address']", "is_active": 1, "sort_order": 20},
+            {"field_type": "username", "jsonpath": "$.id", "is_active": 1, "sort_order": 30}
+        ]
     }
 }

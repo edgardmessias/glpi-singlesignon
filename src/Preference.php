@@ -140,7 +140,7 @@ class Preference extends CommonDBTM
             $action = ToolboxPlugin::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/user.form.php';
             echo '<form name="form" action="' . htmlspecialchars($action, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" method="post">';
         }
-        echo $this->renderPreferenceFormContent($item, $canedit);
+        echo $this->renderPreferenceFormContent($item, (bool) $canedit);
         if ($canedit) {
             Html::closeForm();
         }

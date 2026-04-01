@@ -42,6 +42,7 @@ function plugin_singlesignon_install()
 
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
+    $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
     $migration = new Migration(PLUGIN_SINGLESIGNON_VERSION);
 
@@ -135,6 +136,24 @@ function plugin_singlesignon_install()
         );
     }
 
+    if (version_compare($currentVersion, '2.0.0', '<') && !$DB->tableExists($providersFieldsTable)) {
+        $DB->doQuery(
+            "CREATE TABLE `$providersFieldsTable` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
+            `field_type` VARCHAR(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `jsonpath` VARCHAR(1024) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `is_active` TINYINT(1) NOT NULL DEFAULT '1',
+            `sort_order` INT NOT NULL DEFAULT '0',
+            `date_mod` TIMESTAMP NULL DEFAULT NULL,
+            `date_creation` TIMESTAMP NULL DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            KEY `provider_active_order` (`plugin_singlesignon_providers_id`, `is_active`, `sort_order`),
+            KEY `provider_type` (`plugin_singlesignon_providers_id`, `field_type`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        );
+    }
+
     if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => Provider::class])) {
         $preferences = [
             ['itemtype' => Provider::class, 'num' => 2, 'rank' => 1, 'users_id' => 0],
@@ -166,9 +185,14 @@ function plugin_singlesignon_uninstall()
 
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
     $providersTable = 'glpi_plugin_singlesignon_providers';
+    $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
     if ($DB->tableExists($providersUsersTable)) {
         $DB->dropTable($providersUsersTable, true);
+    }
+
+    if ($DB->tableExists($providersFieldsTable)) {
+        $DB->dropTable($providersFieldsTable, true);
     }
 
     if ($DB->tableExists($providersTable)) {

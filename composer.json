@@ -3,7 +3,8 @@
     "description": "Single Sign-On (OAuth) for GLPI",
     "license": "GPL-3.0-or-later",
     "require": {
-        "php": ">=8.2"
+        "php": ">=8.2",
+        "galbar/jsonpath": "^3.0"
     },
     "require-dev": {
         "consolidation/robo": "^5.1",

@@ -16,6 +16,16 @@ Single sign-on (SSO) is a property of access control of multiple related, yet in
  * Go to `Configuration > Single Sign-On` and add a provider. You can find an explanation of the main configuration parameters [here](https://github.com/edgardmessias/glpi-singlesignon/wiki/Plugin-Provider-Options).
  * To test, do logout and try login with links below login page `Login with <name>`
 
+# Dynamic field mappings (JSONPath)
+This plugin supports dynamic extraction of user fields from the OAuth `getResourceOwner` payload using JSONPath expressions.
+
+ * Configure mappings per provider in the `Field mappings` tab.
+ * Supported mapping types: `id`, `username`, `email`, `avatar_url`.
+ * Each mapping has: type, JSONPath expression, active flag, and order.
+ * Resolution uses active mappings ordered by `sort_order` (within the same field type).
+ * If no configured mapping resolves a value, the plugin uses provider defaults from `providers.json` (for provider-specific defaults) and built-in generic defaults.
+ * New providers of type `generic` are automatically seeded with default mappings.
+
 # Available providers
  * Azure - https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad
  * Facebook - https://developers.facebook.com/docs/apps/

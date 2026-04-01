@@ -1,0 +1,203 @@
+{#
+ # ---------------------------------------------------------------------
+ # SingleSignOn is a plugin which allows to use SSO for auth
+ # ---------------------------------------------------------------------
+ # Copyright (C) 2026 Edgard
+ # This program is free software: you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation, either version 3 of the License, or
+ # (at your option) any later version.
+ # This program is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ # ---------------------------------------------------------------------
+ # @copyright Copyright © 2021 - 2026 Edgard
+ # @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ # @link      https://github.com/edgardmessias/glpi-singlesignon/
+ # ---------------------------------------------------------------------
+ #}
+
+<div class="container-xl mt-4 mb-4">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ __('Single Sign-on test result', 'singlesignon') }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="text-muted mb-3">
+                <strong>{{ __('Provider', 'singlesignon') }}:</strong>
+                {{ provider.fields.name|default('') }} ({{ provider.fields.type|default('') }})
+            </div>
+
+            <ul class="nav nav-tabs" id="sso-test-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" type="button" data-sso-tab-target="#tab-resolved-fields">
+                        {{ __('Resolved fields', 'singlesignon') }}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" type="button" data-sso-tab-target="#tab-resource-owner">
+                        {{ __('Resource Owner', 'singlesignon') }}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" type="button" data-sso-tab-target="#tab-active-mappings">
+                        {{ __('Active mappings', 'singlesignon') }}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" type="button" data-sso-tab-target="#tab-default-mappings">
+                        {{ __('Default mappings', 'singlesignon') }}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" type="button" data-sso-tab-target="#tab-context">
+                        {{ __('Callback context', 'singlesignon') }}
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content border border-top-0 p-3" id="sso-test-tab-content">
+                <div class="tab-pane active" id="tab-resolved-fields">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Type') }}</th>
+                                    <th>{{ __('Value') }}</th>
+                                    <th>{{ __('JSONPath', 'singlesignon') }}</th>
+                                    <th>{{ __('Source') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for field_key, field_label in field_types %}
+                                    {% set data = resolved_fields[field_key]|default({ value: null, jsonpath: null, source: null }) %}
+                                    <tr>
+                                        <td><code>{{ field_key }}</code> - {{ field_label }}</td>
+                                        <td>
+                                            {% if data.value is not null and data.value != '' %}
+                                                <code>{{ data.value }}</code>
+                                            {% else %}
+                                                <span class="text-muted">{{ __('Not resolved', 'singlesignon') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if data.jsonpath %}
+                                                <code>{{ data.jsonpath }}</code>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if data.source == 'provider' %}
+                                                <span class="badge bg-blue-lt">{{ __('Provider mapping', 'singlesignon') }}</span>
+                                            {% elseif data.source == 'default' %}
+                                                <span class="badge bg-green-lt">{{ __('Default mapping', 'singlesignon') }}</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="tab-resource-owner">
+                    <pre class="mb-0" style="white-space: pre-wrap;">{{ resource_owner_pretty }}</pre>
+                </div>
+
+                <div class="tab-pane" id="tab-active-mappings">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Type') }}</th>
+                                    <th>{{ __('JSONPath', 'singlesignon') }}</th>
+                                    <th>{{ __('Order') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if active_mappings is empty %}
+                                    <tr><td colspan="3" class="text-muted">{{ __('No active mappings found.', 'singlesignon') }}</td></tr>
+                                {% else %}
+                                    {% for row in active_mappings %}
+                                        <tr>
+                                            <td><code>{{ row.field_type }}</code></td>
+                                            <td><code>{{ row.jsonpath }}</code></td>
+                                            <td>{{ row.sort_order }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="tab-default-mappings">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Type') }}</th>
+                                    <th>{{ __('JSONPath', 'singlesignon') }}</th>
+                                    <th>{{ __('Order') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if default_mappings is empty %}
+                                    <tr><td colspan="3" class="text-muted">{{ __('No default mappings found for this provider type.', 'singlesignon') }}</td></tr>
+                                {% else %}
+                                    {% for row in default_mappings %}
+                                        <tr>
+                                            <td><code>{{ row.field_type }}</code></td>
+                                            <td><code>{{ row.jsonpath }}</code></td>
+                                            <td>{{ row.sort_order }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="tab-context">
+                    <pre class="mb-0" style="white-space: pre-wrap;">{{ callback_context_pretty }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+(() => {
+    const tabsRoot = document.getElementById('sso-test-tabs');
+    const contentRoot = document.getElementById('sso-test-tab-content');
+    if (!tabsRoot || !contentRoot) {
+        return;
+    }
+
+    tabsRoot.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-sso-tab-target]');
+        if (!button) {
+            return;
+        }
+        const selector = button.getAttribute('data-sso-tab-target');
+        if (!selector) {
+            return;
+        }
+
+        tabsRoot.querySelectorAll('.nav-link').forEach((item) => item.classList.remove('active'));
+        contentRoot.querySelectorAll('.tab-pane').forEach((pane) => pane.classList.remove('active', 'show'));
+
+        button.classList.add('active');
+        const target = contentRoot.querySelector(selector);
+        if (target) {
+            target.classList.add('active', 'show');
+        }
+    });
+})();
+</script>

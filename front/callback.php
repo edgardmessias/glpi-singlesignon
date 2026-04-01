@@ -27,10 +27,13 @@
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\NotFoundHttpException;
 use Glpi\Exception\SessionExpiredException;
+use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Singlesignon\Provider;
+use GlpiPlugin\Singlesignon\Provider_Field;
 use GlpiPlugin\Singlesignon\ToolboxPlugin;
 
 use function Safe\ini_set;
+use function Safe\json_encode;
 
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
@@ -83,14 +86,47 @@ if ($test_cookie) {
         'samesite' => 'Lax',
     ]);
     unset($_COOKIE['glpi_singlesignon_test']);
-    $signon_provider->debug = true;
+    $resource_owner = $signon_provider->getResourceOwner();
+    $resource_owner_array = is_array($resource_owner) ? $resource_owner : [];
+    $resolved_fields = $signon_provider->getResolvedFieldsForDebug($resource_owner_array);
+    $field_types = Provider_Field::getFieldTypes();
+    $active_mappings = Provider_Field::getMappingsForProvider((int) $provider_id, null, true);
+    $default_mappings = Provider_Field::getDefaultMappings((string) $signon_provider->fields['type']);
+
+    try {
+        $resource_owner_pretty = json_encode(
+            $resource_owner,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+        );
+    } catch (Throwable) {
+        $resource_owner_pretty = (string) __('Unable to encode resource owner payload.', 'singlesignon');
+    }
+
+    $callback_context = [
+        'provider_id'   => (int) $provider_id,
+        'provider_name' => (string) ($signon_provider->fields['name'] ?? ''),
+        'provider_type' => (string) ($signon_provider->fields['type'] ?? ''),
+        'query_params'  => $_GET,
+    ];
+    try {
+        $callback_context_pretty = json_encode(
+            $callback_context,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+        );
+    } catch (Throwable) {
+        $callback_context_pretty = (string) __('Unable to encode callback context.', 'singlesignon');
+    }
+
     Html::nullHeader("Login", ToolboxPlugin::getBaseURL() . '/index.php');
-    echo '<div class="left spaced">';
-    echo '<pre>';
-    echo "### BEGIN ###\n";
-    $signon_provider->getResourceOwner();
-    echo "### END ###";
-    echo '</pre>';
+    echo TemplateRenderer::getInstance()->render('@singlesignon/provider/callback_test_result.html.twig', [
+        'provider'                => $signon_provider,
+        'field_types'             => $field_types,
+        'resolved_fields'         => $resolved_fields,
+        'resource_owner_pretty'   => $resource_owner_pretty,
+        'callback_context_pretty' => $callback_context_pretty,
+        'active_mappings'         => $active_mappings,
+        'default_mappings'        => $default_mappings,
+    ]);
     Html::nullFooter();
     return;
 }
