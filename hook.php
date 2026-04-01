@@ -136,7 +136,7 @@ function plugin_singlesignon_install()
         );
     }
 
-    if (version_compare($currentVersion, '2.0.0', '<') && !$DB->tableExists($providersFieldsTable)) {
+    if (version_compare($currentVersion, '2.0.0-dev.1', '<') && !$DB->tableExists($providersFieldsTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersFieldsTable` (
             `id` INT NOT NULL AUTO_INCREMENT,

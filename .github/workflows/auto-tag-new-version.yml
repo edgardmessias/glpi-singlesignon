@@ -1,0 +1,59 @@
+name: "Automatically tag new version"
+
+on:
+  push:
+    branches:
+      - "main"
+      - "**/bugfixes"
+    paths:
+      - "setup.php"
+
+jobs:
+  auto-tag-new-version:
+    name: "Automatically tag new version"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v6"
+        with:
+          fetch-depth: 0 # see https://github.com/actions/checkout/issues/1471
+          fetch-tags: true
+          persist-credentials: false
+      - name: "Extract version"
+        run: |
+          sudo apt-get update
+          sudo apt-get install --assume-yes --no-install-recommends --quiet pcregrep
+          VERSION=$(pcregrep -o1 "define\s*\(\s*['\"]PLUGIN_[A-Z]+_VERSION['\"]\s*,\s*['\"]([^'\"]+)['\"]\s*\)" setup.php)
+          echo "VERSION=v${VERSION}" >> $GITHUB_ENV
+      - name: "Check if tag exists"
+        run: |
+          CREATE_TAG=no
+          if [[ ! -z "${{ env.VERSION }}" && -z "$(git tag -l ${{ env.VERSION }})" ]]; then
+            CREATE_TAG=yes
+          fi
+          echo "CREATE_TAG=${CREATE_TAG}" >> $GITHUB_ENV
+      - name: "Create tag"
+        if: ${{ env.CREATE_TAG == 'yes' }}
+        uses: "actions/github-script@v8"
+        with:
+          # A PAT is required.
+          # From https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow:
+          # > When you use the repository's GITHUB_TOKEN to perform tasks, events triggered by the GITHUB_TOKEN,
+          # > with the exception of workflow_dispatch and repository_dispatch, will not create a new workflow run.
+          # > This prevents you from accidentally creating recursive workflow runs. For example, if a workflow run pushes
+          # > code using the repository's GITHUB_TOKEN, a new workflow will not run even when the repository
+          # > contains a workflow configured to run when push events occur.
+          github-token: "${{ secrets.PERSONAL_TOKEN }}"
+          script: |
+            try {
+              github.rest.git.createRef(
+                {
+                  ref: 'refs/tags/${{ env.VERSION }}',
+                  sha: context.sha,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                }
+              );
+            } catch (error) {
+              core.setFailed(error.message);
+            }

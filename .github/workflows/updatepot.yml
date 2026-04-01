@@ -1,33 +1,30 @@
-name: Update POT
+name: "Update translation"
 on:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - 'locales/**'
+  workflow_dispatch:
 
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+permissions:
+  contents: write
+
 jobs:
   run:
-
     name: Update POT
-    permissions: write-all
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/glpi-project/plugin-builder
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v6
 
-    - name: install xgettext
+      - name: Install dependencies
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          composer install --no-interaction --no-progress --prefer-dist
 
-      run: sudo apt-get install gettext;
-    - name: Update POT
-      run: sh tools/extract_template.sh;
+      - name: Update locales
+        run: composer update-locales
 
-
-    - name: Commit changes
-      uses: EndBug/add-and-commit@v5.1.0
-      with:
-        message: "Update POT"
-    - name: Push changes
-
-      uses: actions-go/push@v1
+      - name: Commit locale updates
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(locales): update translation files [skip ci]"
+          file_pattern: "locales/**"

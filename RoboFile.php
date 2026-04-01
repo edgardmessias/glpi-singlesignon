@@ -33,6 +33,23 @@ class RoboFile extends Tasks
 {
     protected $name = "singlesignon";
 
+    protected function getPluginVersionFromSetupFile(): string
+    {
+        $setupPath = __DIR__ . '/setup.php';
+        $content = file_get_contents($setupPath);
+
+        if ($content === false) {
+            throw new RuntimeException("Unable to read $setupPath");
+        }
+
+        $pattern = "/define\\(\\s*'PLUGIN_SINGLESIGNON_VERSION'\\s*,\\s*'([^']+)'\\s*\\)/";
+        if (!preg_match($pattern, $content, $matches)) {
+            throw new RuntimeException("Could not find PLUGIN_SINGLESIGNON_VERSION in $setupPath");
+        }
+
+        return $matches[1];
+    }
+
     protected function getLocaleFiles()
     {
         $finder = new Finder();
@@ -167,5 +184,27 @@ class RoboFile extends Tasks
         $this->taskPack("$this->name.tar.bz2")
            ->addDir($this->name, $tmpPath)
            ->run();
+    }
+
+    public function changelog()
+    {
+        $tag = $this->getPluginVersionFromSetupFile();
+        $this->say("Generating CHANGELOG.md with git-cliff tag: $tag");
+
+        $result = $this->taskExec('pnpx')->args([
+            'git-cliff@latest',
+            '--config',
+            'cliff.toml',
+            '--tag',
+            "v$tag",
+            '-o',
+            'CHANGELOG.md',
+            '--ignore-tags',
+            '.*-.*', // Ignore dev versions
+        ])->run();
+
+        if (!$result->wasSuccessful()) {
+            throw new RuntimeException("Failed to generate changelog using tag $tag");
+        }
     }
 }

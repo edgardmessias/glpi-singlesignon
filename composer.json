@@ -43,6 +43,7 @@
         "psalm": "../../vendor/bin/psalm",
         "rector:fix": "../../vendor/bin/rector process",
         "rector": "../../vendor/bin/rector process --dry-run",
+        "update-changelog": "vendor/bin/robo changelog",
         "update-locales": "vendor/bin/robo update_locales"
     },
     "config": {

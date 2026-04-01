@@ -1,96 +1,101 @@
-name: Create release with tag
+name: "Publish release"
 
 on:
-   push:
-      # Sequence of patterns matched against refs/heads
-      branches:
-      - '*.*.*' # Push events to matching ex:20.15.10
+  push:
+    tags:
+      - "*"
 
-env:
-    TAG_VALUE: ${GITHUB_REF/refs\/heads\//}
-    PR_BRANCH: release-ci-${{ github.sha }}
+permissions:
+  contents: write
 
 jobs:
-    generate-changelog:
-      name: Generate Changelog
-      runs-on: ubuntu-latest
-      steps:
-          - name: Checkout code
-            uses: actions/checkout@v4
+  publish-release:
+    name: "Publish release"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+          fetch-depth: 0
 
-          - name: 🏷️ Create/update tag
-            uses: actions/github-script@v7
-            with:
-              script: |
-                github.rest.git.createRef({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  ref: 'refs/tags/${{ github.ref_name }}',
-                  sha: context.sha
-                }).catch(err => {
-                  if (err.status !== 422) throw err;
-                })
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+          coverage: none
 
-          - name: Update CHANGELOG
-            id: changelog
-            uses: requarks/changelog-action@v1
-            with:
-              token: ${{ github.token }}
-              tag: ${{ github.ref_name }}
-              writeToFile: true
-              #excludeTypes: build,docs,style
-              #includeInvalidCommits: true
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
 
-          - name: Commit CHANGELOG.md (main)
-            uses: stefanzweifel/git-auto-commit-action@v4
-            with:
-              branch: main
-              commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
-              file_pattern: CHANGELOG.md
+      - name: Build release archive
+        run: composer make-release
 
-          - name: Commit CHANGELOG.md (branch)
-            uses: stefanzweifel/git-auto-commit-action@v4
-            with:
-              branch: ${{ github.ref_name }}
-              commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
-              file_pattern: CHANGELOG.md
+      - name: Compute release metadata
+        id: meta
+        shell: bash
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          PREVIOUS_STABLE_TAG="$(git tag --merged "${TAG_NAME}^" --sort=-version:refname | grep -v '-' | head -n 1 || true)"
+          if [[ "$TAG_NAME" == *-* ]]; then
+            PRERELEASE="true"
+          else
+            PRERELEASE="false"
+          fi
+          for asset in singlesignon.zip singlesignon.tgz singlesignon.tar.bz2; do
+            if [[ ! -f "$asset" ]]; then
+              echo "Missing release asset: $asset"
+              exit 1
+            fi
+          done
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+          if [[ -n "${PREVIOUS_STABLE_TAG}" ]]; then
+            CLI_ARGS="${PREVIOUS_STABLE_TAG}..${TAG_NAME} --strip all"
+          else
+            CLI_ARGS="--tag ${TAG_NAME} --strip all"
+          fi
+          echo "cliff_args=${CLI_ARGS}" >> "$GITHUB_OUTPUT"
 
-    build:
-      name: Upload Release Asset
-      permissions: write-all
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
+      - name: Generate release body from git-cliff
+        id: git_cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: ${{ steps.meta.outputs.cliff_args }}
+          github_token: ${{ github.token }}
+        env:
+          OUTPUT: RELEASE_BODY.md
+          GITHUB_REPO: ${{ github.repository }}
 
-        - name: Build project # This would actually build your project, using zip for an example artifact
-          id: build_
-          env:
-              GITHUB_NAME: ${{ github.event.repository.name }}
-          run: sudo apt-get install libxml-xpath-perl;echo $(xpath -e '/root/versions/version[num="'${GITHUB_REF/refs\/heads\/v/}'"]/compatibility/text()' plugin.xml);echo ::set-output name=version_glpi::$(xpath -e '/root/versions/version[num="'${GITHUB_REF/refs\/heads\/v/}'"]/compatibility/text()' plugin.xml); rm -rf plugin.xml tools wiki screenshots test .git .github ISSUE_TEMPLATE.md TODO.txt $GITHUB_NAME.png;cd ..; tar jcvf $GITHUB_NAME-${GITHUB_REF/refs\/heads\//}.tar.bz2 $GITHUB_NAME;ls -al;echo ::set-output name=tag::${GITHUB_REF/refs\/heads\//};echo ${{ steps.getxml.outputs.info }};
-         # run: rm -rf plugin.xml tools wiki screenshots test ISSUE_TEMPLATE.md TODO.txt $GITHUB_NAME.png; tar -zcvf $GITHUB_NAME-$GITHUB_TAG.tar.gz $GITHUB_NAME
-
-        - name: Create Release
-          id: create_release
-          uses: actions/create-release@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            tag_name: ${{ steps.build_.outputs.tag }}
-            release_name: |
-                      GLPI ${{ steps.build_.outputs.version_glpi }} : Version ${{ steps.build_.outputs.tag }} disponible / available
-            body : Version ${{ steps.build_.outputs.tag }} released for GLPI ${{ steps.build_.outputs.version_glpi }}. The [full changelog is available](https://github.com/edgardmessias/glpi-singlesignon/blob/main/CHANGELOG.md) for more details.
-            draft: false
-            prerelease: false
-
-        - name: Upload Release Asset
-          id: upload-release-asset
-          uses: actions/upload-release-asset@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            GITHUB_NAME: ${{ github.event.repository.name }}
-          with:
-            upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-            asset_path: /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}-${{ steps.build_.outputs.tag }}.tar.bz2
-            asset_name: ${{ github.event.repository.name }}-${{ steps.build_.outputs.tag }}.tar.bz2
-            asset_content_type: application/zip
+      - name: Create release
+        uses: actions/github-script@v8
+        env:
+          TAG_NAME: ${{ steps.meta.outputs.tag_name }}
+          PRERELEASE: ${{ steps.meta.outputs.prerelease }}
+          RELEASE_BODY: ${{ steps.git_cliff.outputs.content }}
+        with:
+          script: |
+            const fs = await import('fs');
+            const path = await import('path');
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: process.env.TAG_NAME,
+              name: process.env.TAG_NAME,
+              body: process.env.RELEASE_BODY,
+              draft: false,
+              prerelease: process.env.PRERELEASE === 'true',
+            });
+            const assets = ['singlesignon.zip', 'singlesignon.tgz', 'singlesignon.tar.bz2'];
+            for (const asset of assets) {
+              const assetPath = path.resolve(process.cwd(), asset);
+              await github.rest.repos.uploadReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.data.id,
+                name: asset,
+                data: fs.readFileSync(assetPath),
+              });
+            }
