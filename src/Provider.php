@@ -47,6 +47,7 @@ use function Safe\fopen;
 use function Safe\fwrite;
 use function Safe\json_decode;
 use function Safe\mkdir;
+use function Safe\parse_url;
 use function Safe\preg_match;
 use function Safe\preg_split;
 use function Safe\sha1_file;
@@ -1465,89 +1466,193 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        $url = $this->getResourceOwnerDetailsUrl($token);
+        $resourceOwner = $this->getResourceOwner();
 
+        if (!$resourceOwner) {
+            return false;
+        }
+
+        // 1) Prefer dynamic avatar_url mapping (provider mapping + defaults).
+        $avatarUrl = $this->resolveFieldValueFromMappings($resourceOwner, 'avatar_url');
+
+        if ($avatarUrl !== null) {
+            $avatarUrl = trim($avatarUrl);
+        }
+
+        $img = null;
+        if (!empty($avatarUrl) && filter_var($avatarUrl, FILTER_VALIDATE_URL)) {
+            $img = $this->fetchOAuthPhotoContent(
+                $avatarUrl,
+                $this->buildOAuthPhotoHeaders($token),
+            );
+        }
+
+        // 2) Fallback for Microsoft Graph resource owner when avatar_url is not mapped.
+        $resourceOwnerUrl = $this->getResourceOwnerDetailsUrl($token);
+        if (empty($img) && empty($avatarUrl) && $this->isMicrosoftGraphResourceOwnerUrl($resourceOwnerUrl)) {
+            $graphPhotoUrl = $this->buildMicrosoftGraphPhotoUrl($resourceOwnerUrl);
+            if ($graphPhotoUrl !== null) {
+                $img = $this->fetchOAuthPhotoContent(
+                    $graphPhotoUrl,
+                    $this->buildOAuthPhotoHeaders($token),
+                );
+            }
+        }
+
+        if (empty($img)) {
+            return false;
+        }
+
+        $picture = $this->storeOAuthPhoto($user, $img);
+        if ($this->debug) {
+            print_r($picture ?: false);
+        }
+        return $picture;
+    }
+
+    /**
+     * Build standard headers used to fetch avatar binary content from OAuth providers.
+     *
+     * @see https://www.rfc-editor.org/rfc/rfc9110.html#name-field-accept
+     * @see https://www.rfc-editor.org/rfc/rfc6750
+     */
+    private function buildOAuthPhotoHeaders(string $token): array
+    {
         $headers = [
+            "Accept:image/*",
             "Authorization:Bearer $token",
         ];
 
         $headers = Plugin::doHookFunction("sso:resource_owner_picture", $headers);
 
-        if ($this->debug) {
-            print_r("\nsyncOAuthPhoto:\n");
+        return $headers;
+    }
+
+    /**
+     * Fetch remote avatar content and ensure the response payload is really an image.
+     * Some providers return JSON on auth/scope errors, which must be ignored here.
+     *
+     * @see https://www.php.net/manual/en/function.getimagesizefromstring.php
+     * @see https://learn.microsoft.com/graph/api/profilephoto-get
+     */
+    private function fetchOAuthPhotoContent(string $url, array $headers): ?string
+    {
+        $img = Toolbox::callCurl($url, [
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+
+        if (!is_string($img) || $img === '') {
+            return null;
         }
 
-        //get picture content (base64) in Azure
-        if (preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url) !== 0) {
-            $headers[] = "Content-Type:image/jpeg; charset=utf-8";
-            $photo_url = "https://graph.microsoft.com/v1.0/me/photo/\$value";
-            $img = Toolbox::callCurl($photo_url, [
-                CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_SSL_VERIFYPEER => false,
-            ]);
-            if (!empty($img)) {
-                /* if ($this->debug) {
-                print_r($content);
-                } */
-
-                //prepare paths
-                $filename  = uniqid($user->fields['id'] . '_');
-                $sub       = substr($filename, -2); /* 2 hex digit */
-                $file      = GLPI_PICTURE_DIR . "/{$sub}/{$filename}.jpg";
-
-                $oldfile = array_key_exists('picture', $user->fields) ? GLPI_PICTURE_DIR . "/" . $user->fields["picture"] : null;
-
-                //update picture if not exist or changed
-                if (empty($user->fields["picture"])
-                   || !file_exists($oldfile)
-                   || sha1_file($oldfile) !== sha1($img)
-                ) {
-
-                    if (!is_dir(GLPI_PICTURE_DIR . "/$sub")) {
-                        mkdir(GLPI_PICTURE_DIR . "/$sub");
-                    }
-
-                    //save picture
-                    $outjpeg = fopen($file, 'wb');
-                    fwrite($outjpeg, $img);
-                    fclose($outjpeg);
-
-                    //save thumbnail
-                    $thumb = GLPI_PICTURE_DIR . "/{$sub}/{$filename}_min.jpg";
-                    Toolbox::resizePicture($file, $thumb);
-
-                    $user->fields['picture'] = "{$sub}/{$filename}.jpg";
-                    $success = $user->updateInDB(['picture']);
-                    if ($this->debug) {
-                        print_r(['id' => $user->getId(),
-                            'picture' => "{$sub}/{$filename}.jpg",
-                            'success' => $success,
-                        ]);
-                    }
-
-                    if (!$success) {
-                        if ($this->debug) {
-                            print_r(false);
-                        }
-                        return false;
-                    }
-
-                    if ($this->debug) {
-                        print_r("{$sub}/{$filename}.jpg");
-                    }
-                    return "{$sub}/{$filename}.jpg";
-                }
-                if ($this->debug) {
-                    print_r($user->fields["picture"]);
-                }
-                return $user->fields["picture"];
-            }
+        // Some providers may return JSON (errors, missing scope, etc.). Only accept valid image payloads.
+        if (@getimagesizefromstring($img) === false) {
+            return null;
         }
 
-        if ($this->debug) {
-            print_r(false);
+        return $img;
+    }
+
+    /**
+     * Check whether the resource owner endpoint belongs to Microsoft Graph.
+     *
+     * @see https://learn.microsoft.com/graph/overview
+     */
+    private function isMicrosoftGraphResourceOwnerUrl(string $url): bool
+    {
+        if ($url === '') {
+            return false;
         }
-        return false;
+
+        return preg_match("/^(?:https?:\/\/)?(?:[^.]+\.)?graph\.microsoft\.com(\/.*)?$/", $url) !== 0;
+    }
+
+    /**
+     * Build Microsoft Graph profile photo endpoint from the configured resource owner URL.
+     * Example: /v1.0/me -> /v1.0/me/photo/$value, /v1.0/users/{id} -> /v1.0/users/{id}/photo/$value
+     *
+     * @see https://learn.microsoft.com/graph/api/profilephoto-get
+     */
+    private function buildMicrosoftGraphPhotoUrl(string $resourceOwnerUrl): ?string
+    {
+        $parts = parse_url($resourceOwnerUrl);
+        if (!is_array($parts) || !isset($parts['host'])) {
+            return null;
+        }
+
+        $host = strtolower((string) $parts['host']);
+        if ($host === '' || !str_ends_with($host, 'graph.microsoft.com')) {
+            return null;
+        }
+
+        $scheme = (string) ($parts['scheme'] ?? 'https');
+        $path = (string) ($parts['path'] ?? '/v1.0/me');
+        $path = rtrim($path, '/');
+        if ($path === '') {
+            $path = '/v1.0/me';
+        }
+
+        if (!str_ends_with($path, '/photo/$value')) {
+            $path .= '/photo/$value';
+        }
+
+        return sprintf('%s://%s%s', $scheme, $host, $path);
+    }
+
+    /**
+     * Save picture and update user.picture according to GLPI flow.
+     *
+     * - writes file in GLPI picture directory
+     * - generates thumbnail with `_min` suffix
+     * - updates `glpi_users.picture`
+     * - removes previous picture after successful update
+     *
+     * @see https://github.com/glpi-project/glpi/blob/master/src/User.php
+     * @return string|bool
+     */
+    private function storeOAuthPhoto(User $user, string $img)
+    {
+        $oldPicture = (string) ($user->fields['picture'] ?? '');
+        $oldFile = $oldPicture !== '' ? GLPI_PICTURE_DIR . '/' . $oldPicture : null;
+
+        if (
+            $oldPicture !== ''
+            && is_string($oldFile)
+            && file_exists($oldFile)
+            && sha1_file($oldFile) === sha1($img)
+        ) {
+            return $oldPicture;
+        }
+
+        $filename = uniqid($user->fields['id'] . '_');
+        $sub = substr($filename, -2); /* 2 hex digit */
+        $file = GLPI_PICTURE_DIR . "/{$sub}/{$filename}.jpg";
+        $thumb = GLPI_PICTURE_DIR . "/{$sub}/{$filename}_min.jpg";
+        $newPicture = "{$sub}/{$filename}.jpg";
+
+        if (!is_dir(GLPI_PICTURE_DIR . "/$sub")) {
+            mkdir(GLPI_PICTURE_DIR . "/$sub");
+        }
+
+        $outjpeg = fopen($file, 'wb');
+        fwrite($outjpeg, $img);
+        fclose($outjpeg);
+        Toolbox::resizePicture($file, $thumb);
+
+        $user->fields['picture'] = $newPicture;
+        $success = $user->updateInDB(['picture']);
+
+        if (!$success) {
+            User::dropPictureFiles($newPicture);
+            return false;
+        }
+
+        if ($oldPicture !== '' && $oldPicture !== $newPicture) {
+            User::dropPictureFiles($oldPicture);
+        }
+
+        return $newPicture;
     }
 }
