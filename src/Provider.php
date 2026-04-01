@@ -137,7 +137,6 @@ class Provider extends CommonDBTM
     public function showForm($ID, $options = [])
     {
         $this->initForm($ID, $options);
-        $this->showFormHeader($options);
 
         if (empty($this->fields["type"])) {
             $this->fields["type"] = 'generic';
@@ -145,15 +144,10 @@ class Provider extends CommonDBTM
 
         $renderer = TemplateRenderer::getInstance();
         echo $renderer->render('@singlesignon/provider/show_form.html.twig', [
-            'provider'    => $this,
-            'provider_id' => (int) $ID,
+            'provider'     => $this,
+            'provider_id'  => (int) $ID,
+            'form_action'  => $this->getFormURL(),
         ]);
-
-        if ($ID) {
-            $options['addbuttons'] = ['test_singlesignon' => __('Test Single Sign-on', 'singlesignon')];
-        }
-
-        $this->showFormButtons($options);
 
         if ($ID) {
             echo $renderer->render('@singlesignon/provider/show_form_test_script.html.twig', []);

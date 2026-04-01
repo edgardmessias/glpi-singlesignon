@@ -20,7 +20,9 @@
  # ---------------------------------------------------------------------
  #}
 
-{{ call('Html::hidden', ['user_id', {value: user_id}])|raw }}
+{% import 'components/form/fields_macros.html.twig' as fields %}
+
+{{ fields.hiddenField('user_id', user_id) }}
 
 <div class="center singlesignon-preference" id="tabsbody">
     <div class="singlesignon-preference-grid">
