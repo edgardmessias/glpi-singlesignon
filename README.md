@@ -1,6 +1,6 @@
 # Single Sign-On for GLPI
 
-![Lint](https://github.com/edgardmessias/glpi-singlesignon/workflows/Lint/badge.svg)
+[![Continuous integration](https://github.com/edgardmessias/glpi-singlesignon/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/edgardmessias/glpi-singlesignon/actions/workflows/continuous-integration.yml)
 [![CodeFactor](https://www.codefactor.io/repository/github/edgardmessias/glpi-singlesignon/badge)](https://www.codefactor.io/repository/github/edgardmessias/glpi-singlesignon)
 [![Total Downloads](https://img.shields.io/github/downloads/edgardmessias/glpi-singlesignon/total.svg)](https://github.com/edgardmessias/glpi-singlesignon/releases)
 [![Current Release](https://img.shields.io/github/release/edgardmessias/glpi-singlesignon.svg)](https://github.com/edgardmessias/glpi-singlesignon/releases/latest)
@@ -51,15 +51,17 @@ To create a new release of this plugin automatically through GitHub Actions (Wor
 <table border="0">
  <tr>
     <td align="center">
-    PayPal <br>
-       <a href="https://www.paypal.com/donate?hosted_button_id=5KHYY5ZDTNDSY">
-          <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif">
+    PayPal (via email) <br>
+       <a href="mailto:edgardmessias+1@gmail.com?subject=PayPal%20Donation">
+          <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate with PayPal">
        </a>
+       <br>
+       edgardmessias+1@gmail.com
     </td>
     <td align="center">
        Pix (Brazil) <br>
-       <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=00020126680014BR.GOV.BCB.PIX013628571c52-8b9b-416c-a18f-8e52460608810206Doa%C3%A7%C3%A3o5204000053039865802BR5923Edgard%20Lorraine%20Messias6009SAO%20PAULO61080540900062160512NU50UnEaVM0H63042A45"> <br>
-       28571c52-8b9b-416c-a18f-8e5246060881
+       <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=00020101021126580014br.gov.bcb.pix01368e3fda51-2c8f-4134-a154-24cd02e078905204000053039865802BR5923EDGARD%20LORRAINE%20MESSIAS6009SAO%20PAULO622905251KN77C46DDTRXT6KZM0YM8MN96304761C"> <br>
+       8e3fda51-2c8f-4134-a154-24cd02e07890
     </td>
  </tr>
 </table>
