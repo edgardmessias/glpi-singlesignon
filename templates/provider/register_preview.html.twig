@@ -1,0 +1,45 @@
+{#
+ # ---------------------------------------------------------------------
+ # SingleSignOn is a plugin which allows to use SSO for auth
+ # ---------------------------------------------------------------------
+ # Copyright (C) 2026 Edgard
+ # This program is free software: you can redistribute it and/or modify
+ # it under the terms of the GNU General Public License as published by
+ # the Free Software Foundation, either version 3 of the License, or
+ # (at your option) any later version.
+ # This program is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ # You should have received a copy of the GNU General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ # ---------------------------------------------------------------------
+ # @copyright Copyright © 2021 - 2026 Edgard
+ # @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ # @link      https://github.com/edgardmessias/glpi-singlesignon/
+ # ---------------------------------------------------------------------
+ #}
+
+{% import 'components/form/fields_macros.html.twig' as fields %}
+
+<div class="container py-4" style="max-width: 640px;">
+    <h2 class="mb-3">{{ __('Confirm your account', 'singlesignon') }}</h2>
+    <p class="text-muted mb-4">{{ __('Review or edit the information below before completing registration.', 'singlesignon') }}</p>
+
+    <form method="post" action="{{ form_action }}">
+        <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="provider" value="{{ provider_id }}"/>
+
+        {{ fields.textField('name', login, __('Login'), {full_width: true}) }}
+        {{ fields.textField('firstname', firstname, __('First name'), {full_width: true}) }}
+        {{ fields.textField('realname', realname, __('Last name', 'singlesignon'), {full_width: true}) }}
+        {{ fields.textField('email', email, __('Email'), {full_width: true}) }}
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" name="confirm_register" value="1" class="btn btn-primary">
+                {{ __('Complete registration', 'singlesignon') }}
+            </button>
+            <a href="{{ cancel_url }}" class="btn btn-outline-secondary">{{ __('Cancel') }}</a>
+        </div>
+    </form>
+</div>

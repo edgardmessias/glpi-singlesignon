@@ -114,6 +114,28 @@
     {{ fields.dropdownYesNo('split_name', provider.fields.split_name|default(0), __('Split Name', 'singlesignon'), field_opts) }}
 
     <div class="col-12">
+        <div class="hr-text my-3">{{ __('Registration', 'singlesignon') }}</div>
+    </div>
+
+    {{ fields.dropdownYesNo('auto_register', provider.fields.auto_register|default(0), __('Allow automatic registration', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownYesNo('registration_preview', provider.fields.registration_preview|default(0), __('Confirm registration before creating account', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownField(
+        'Entity',
+        'default_entities_id',
+        provider.fields['default_entities_id']|default(0),
+        __('Default entity for new users', 'singlesignon'),
+        field_opts|merge({ display_emptychoice: true })
+    ) }}
+    {{ fields.dropdownYesNo('match_entity_by_email_domain', provider.fields.match_entity_by_email_domain|default(0), __('Match entity by email domain (entity name = domain)', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownField(
+        'Profile',
+        'default_profiles_id',
+        provider.fields['default_profiles_id']|default(0),
+        __('Default profile when GLPI has no default', 'singlesignon'),
+        field_opts|merge({ display_emptychoice: true })
+    ) }}
+
+    <div class="col-12">
         <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>
     </div>
 

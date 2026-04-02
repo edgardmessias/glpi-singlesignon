@@ -17,5 +17,3 @@ parameters:
         - ../../vendor/autoload.php
         - setup.php
     treatPhpDocTypesAsCertain: false
-    ignoreErrors:
-        - message: "#.*always true#"

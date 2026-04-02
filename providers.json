@@ -10,18 +10,22 @@
             {"field_type": "email", "jsonpath": "$.mail", "is_active": 1, "sort_order": 30},
             {"field_type": "email", "jsonpath": "$.userPrincipalName", "is_active": 1, "sort_order": 40},
             {"field_type": "username", "jsonpath": "$.userPrincipalName", "is_active": 1, "sort_order": 50},
-            {"field_type": "username", "jsonpath": "$.displayName", "is_active": 1, "sort_order": 60}
+            {"field_type": "username", "jsonpath": "$.displayName", "is_active": 1, "sort_order": 60},
+            {"field_type": "firstname", "jsonpath": "$.givenName", "is_active": 1, "sort_order": 70},
+            {"field_type": "lastname", "jsonpath": "$.surname", "is_active": 1, "sort_order": 80},
+            {"field_type": "fullname", "jsonpath": "$.displayName", "is_active": 1, "sort_order": 90}
         ]
     },
     "facebook": {
         "url_authorize": "https://www.facebook.com/v9.0/dialog/oauth",
         "url_access_token": "https://graph.facebook.com/v9.0/oauth/access_token",
-        "url_resource_owner_details": "https://graph.facebook.com/v9.0/me?fields=id,email&access_token=<access_token>&appsecret_proof=<appsecret_proof>",
+        "url_resource_owner_details": "https://graph.facebook.com/v9.0/me?fields=id,email,name&access_token=<access_token>&appsecret_proof=<appsecret_proof>",
         "scope": "public_profile,email",
         "field_mappings": [
             {"field_type": "id", "jsonpath": "$.id", "is_active": 1, "sort_order": 10},
             {"field_type": "email", "jsonpath": "$.email", "is_active": 1, "sort_order": 20},
-            {"field_type": "username", "jsonpath": "$.name", "is_active": 1, "sort_order": 30}
+            {"field_type": "username", "jsonpath": "$.name", "is_active": 1, "sort_order": 30},
+            {"field_type": "fullname", "jsonpath": "$.name", "is_active": 1, "sort_order": 40}
         ]
     },
     "github": {
@@ -34,7 +38,8 @@
             {"field_type": "id", "jsonpath": "$.login", "is_active": 1, "sort_order": 20},
             {"field_type": "username", "jsonpath": "$.login", "is_active": 1, "sort_order": 30},
             {"field_type": "email", "jsonpath": "$.email", "is_active": 1, "sort_order": 40},
-            {"field_type": "avatar_url", "jsonpath": "$.avatar_url", "is_active": 1, "sort_order": 50}
+            {"field_type": "avatar_url", "jsonpath": "$.avatar_url", "is_active": 1, "sort_order": 50},
+            {"field_type": "fullname", "jsonpath": "$.name", "is_active": 1, "sort_order": 60}
         ]
     },
     "google": {
@@ -48,7 +53,10 @@
             {"field_type": "email", "jsonpath": "$.email", "is_active": 1, "sort_order": 30},
             {"field_type": "username", "jsonpath": "$.email", "is_active": 1, "sort_order": 40},
             {"field_type": "username", "jsonpath": "$.name", "is_active": 1, "sort_order": 50},
-            {"field_type": "avatar_url", "jsonpath": "$.picture", "is_active": 1, "sort_order": 60}
+            {"field_type": "avatar_url", "jsonpath": "$.picture", "is_active": 1, "sort_order": 60},
+            {"field_type": "firstname", "jsonpath": "$.given_name", "is_active": 1, "sort_order": 70},
+            {"field_type": "lastname", "jsonpath": "$.family_name", "is_active": 1, "sort_order": 80},
+            {"field_type": "fullname", "jsonpath": "$.name", "is_active": 1, "sort_order": 90}
         ]
     },
     "instagram": {
@@ -59,7 +67,8 @@
         "field_mappings": [
             {"field_type": "id", "jsonpath": "$.data.id", "is_active": 1, "sort_order": 10},
             {"field_type": "username", "jsonpath": "$.data.username", "is_active": 1, "sort_order": 20},
-            {"field_type": "avatar_url", "jsonpath": "$.data.profile_picture", "is_active": 1, "sort_order": 30}
+            {"field_type": "avatar_url", "jsonpath": "$.data.profile_picture", "is_active": 1, "sort_order": 30},
+            {"field_type": "fullname", "jsonpath": "$.data.full_name", "is_active": 1, "sort_order": 40}
         ]
     },
     "linkedin": {
@@ -70,7 +79,9 @@
         "field_mappings": [
             {"field_type": "id", "jsonpath": "$.id", "is_active": 1, "sort_order": 10},
             {"field_type": "email", "jsonpath": "$['email-address']", "is_active": 1, "sort_order": 20},
-            {"field_type": "username", "jsonpath": "$.id", "is_active": 1, "sort_order": 30}
+            {"field_type": "username", "jsonpath": "$.id", "is_active": 1, "sort_order": 30},
+            {"field_type": "firstname", "jsonpath": "$.localizedFirstName", "is_active": 1, "sort_order": 40},
+            {"field_type": "lastname", "jsonpath": "$.localizedLastName", "is_active": 1, "sort_order": 50}
         ]
     }
 }

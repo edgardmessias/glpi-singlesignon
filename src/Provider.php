@@ -40,6 +40,7 @@ use Profile;
 use Profile_User;
 use Auth;
 use Glpi\Application\View\TemplateRenderer;
+use Html;
 
 use function Safe\file_get_contents;
 use function Safe\fclose;
@@ -54,6 +55,12 @@ use function Safe\sha1_file;
 
 class Provider extends CommonDBTM
 {
+    public const LOGIN_FAILURE = 0;
+    public const LOGIN_SUCCESS = 1;
+    public const LOGIN_REGISTRATION_PREVIEW = 2;
+
+    public const PENDING_REGISTRATION_SESSION_KEY = 'glpi_singlesignon_pending_registration';
+
     public const PHOTO_SYNC_DISABLED = 0;
     public const PHOTO_SYNC_IF_EMPTY = 1;
     public const PHOTO_SYNC_ALWAYS = 2;
@@ -144,6 +151,11 @@ class Provider extends CommonDBTM
         $this->fields["user_photo_sync_mode"] = self::PHOTO_SYNC_DISABLED;
         $this->fields["resource_owner_auth_type"] = self::AUTH_HEADER_BEARER;
         $this->fields["resource_owner_picture_auth_type"] = self::AUTH_HEADER_BEARER;
+        $this->fields['auto_register'] = 0;
+        $this->fields['registration_preview'] = 0;
+        $this->fields['default_entities_id'] = 0;
+        $this->fields['match_entity_by_email_domain'] = 0;
+        $this->fields['default_profiles_id'] = 0;
     }
 
     public function showForm($ID, $options = [])
@@ -318,6 +330,12 @@ class Provider extends CommonDBTM
         $input['resource_owner_picture_auth_type'] = $this->sanitizeAuthorizationType($input['resource_owner_picture_auth_type'] ?? null);
         $input['resource_owner_custom_headers'] = trim((string) ($input['resource_owner_custom_headers'] ?? ''));
         $input['resource_owner_picture_custom_headers'] = trim((string) ($input['resource_owner_picture_custom_headers'] ?? ''));
+
+        $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
+        $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
+        $input['default_entities_id'] = (int) ($input['default_entities_id'] ?? 0);
+        $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
+        $input['default_profiles_id'] = (int) ($input['default_profiles_id'] ?? 0);
 
         return $input;
     }
@@ -910,8 +928,7 @@ class Provider extends CommonDBTM
             $glue = !str_contains($url, '?') ? '?' : '&';
             $url .= $glue . http_build_query($params);
 
-            header('Location: ' . $url);
-            return false;
+            Html::redirect($url);
         }
 
         // Extract state parameter
@@ -1217,259 +1234,518 @@ class Provider extends CommonDBTM
         return $parts[0] ?? $value;
     }
 
-    public function findUser()
+    /**
+     * @return array{firstname: string, realname: string}
+     */
+    public function resolveRegistrationNames(array $resource_array): array
     {
-        $resource_array = $this->getResourceOwner();
+        $firstname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'firstname') ?? ''));
+        $lastname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'lastname') ?? ''));
+        $fullname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'fullname') ?? ''));
 
-        if (!$resource_array) {
+        if ($firstname === '' && $lastname === '' && $fullname !== '') {
+            $parts = preg_split('/\s+/u', $fullname, 2, PREG_SPLIT_NO_EMPTY) ?: [];
+            $firstname = $parts[0] ?? '';
+            $lastname = $parts[1] ?? '';
+        } elseif ($firstname !== '' && $lastname === '' && $fullname !== '') {
+            $parts = preg_split('/\s+/u', $fullname, 2, PREG_SPLIT_NO_EMPTY) ?: [];
+            if (($parts[1] ?? '') !== '') {
+                $lastname = $parts[1];
+            }
+        } elseif ($firstname === '' && $lastname !== '' && $fullname !== '') {
+            $parts = preg_split('/\s+/u', $fullname, 2, PREG_SPLIT_NO_EMPTY) ?: [];
+            if (($parts[0] ?? '') !== '') {
+                $firstname = $parts[0];
+            }
+        }
+
+        if ($firstname === '' && isset($resource_array['given_name'])) {
+            $firstname = trim((string) $resource_array['given_name']);
+        }
+        if ($lastname === '' && isset($resource_array['family_name'])) {
+            $lastname = trim((string) $resource_array['family_name']);
+        }
+
+        return [
+            'firstname' => $firstname,
+            'realname'  => $lastname,
+        ];
+    }
+
+    /**
+     * Resolve login name and email from resource (same rules as user lookup).
+     *
+     * @return array{login: string|false, email: ?string, authorized: bool}
+     */
+    private function resolveLoginAndEmailFromResource(array $resource_array): array
+    {
+        $split = (bool) ($this->fields['split_domain'] ?? false);
+        $authorizedDomainsString = $this->fields['authorized_domains'] ?? null;
+        $authorizedDomains = [];
+        if (isset($authorizedDomainsString) && $authorizedDomainsString !== '') {
+            $authorizedDomains = explode(',', (string) $authorizedDomainsString);
+        }
+
+        $emailRaw = $this->resolveFieldValueFromMappings($resource_array, 'email');
+        $emailFull = null;
+        if ($emailRaw !== null && $emailRaw !== '') {
+            if (!$this->checkAuthorizedDomain((string) $emailRaw, $authorizedDomains)) {
+                return ['login' => false, 'email' => null, 'authorized' => false];
+            }
+            $emailFull = (string) $emailRaw;
+        }
+
+        $use_email = !empty($this->fields['use_email_for_login']);
+        $login = false;
+        if ($emailFull && $use_email) {
+            $login = $this->splitIdentifierByDomain($emailFull, $split);
+        } else {
+            $usernameRaw = $this->resolveFieldValueFromMappings($resource_array, 'username');
+            if ($usernameRaw !== null && $usernameRaw !== '') {
+                if (!$this->checkAuthorizedDomain((string) $usernameRaw, $authorizedDomains)) {
+                    return ['login' => false, 'email' => $emailFull, 'authorized' => false];
+                }
+                $login = $this->splitIdentifierByDomain((string) $usernameRaw, $split);
+            }
+        }
+
+        if ($emailFull === null && $login !== false && $login !== '') {
+            $loginStr = (string) $login;
+            if (str_contains($loginStr, '@')) {
+                $emailFull = $loginStr;
+            } else {
+                $usernameRaw = $this->resolveFieldValueFromMappings($resource_array, 'username');
+                if ($usernameRaw !== null && str_contains((string) $usernameRaw, '@')) {
+                    $emailFull = (string) $usernameRaw;
+                }
+            }
+        }
+
+        return [
+            'login'      => $login,
+            'email'      => $emailFull,
+            'authorized' => true,
+        ];
+    }
+
+    private function resolveEntitiesIdForNewUser(array $resource_array, ?string $email): int
+    {
+        global $DB;
+
+        if (isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation']) && $resource_array['officeLocation'] !== '') {
+            foreach ($DB->request([
+                'FROM'  => 'glpi_entities',
+                'WHERE' => ['name' => $resource_array['officeLocation']],
+                'LIMIT' => 1,
+            ]) as $entity) {
+                return (int) $entity['id'];
+            }
+        }
+
+        if (!empty($this->fields['match_entity_by_email_domain']) && $email !== null && $email !== '') {
+            $parts = explode('@', $email, 2);
+            if (isset($parts[1])) {
+                $domain = strtolower(trim($parts[1]));
+                foreach ($DB->request(['FROM' => 'glpi_entities']) as $entity) {
+                    if (strcasecmp(strtolower((string) $entity['name']), $domain) === 0) {
+                        return (int) $entity['id'];
+                    }
+                }
+            }
+        }
+
+        $default = (int) ($this->fields['default_entities_id'] ?? 0);
+
+        return $default > 0 ? $default : 0;
+    }
+
+    private function ensureProfileForNewUser(User $user, int $entitiesId): bool
+    {
+        if (Profile::getDefault() != 0) {
+            return true;
+        }
+
+        global $DB;
+
+        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
+
+        $datasProfiles = [];
+        foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
+            $datasProfiles[] = $data;
+        }
+        $datasEntities = [];
+        foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
+            $datasEntities[] = $data;
+        }
+
+        if ($configuredProfile > 0) {
+            $profileId = $configuredProfile;
+            $entityForProfile = $entitiesId > 0 ? $entitiesId : (int) ($datasEntities[0]['id'] ?? 0);
+        } else {
+            if (count($datasProfiles) === 0 || count($datasEntities) === 0) {
+                return false;
+            }
+            $profileId = (int) $datasProfiles[0]['id'];
+            $entityForProfile = (int) $datasEntities[0]['id'];
+        }
+
+        if ($profileId <= 0 || $entityForProfile <= 0) {
+            return false;
+        }
+
+        $pu = new Profile_User();
+        $pu->add([
+            'users_id'      => (int) $user->fields['id'],
+            'entities_id'   => $entityForProfile,
+            'is_recursive'  => 0,
+            'profiles_id'   => $profileId,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * @param array<string, mixed> $overrides name, firstname, realname, _email, remote_id, __registration_from_preview
+     *
+     * @return User|false
+     */
+    public function createUserFromOAuthResource(array $resource_array, array $overrides = [])
+    {
+        if (!empty($overrides['__registration_from_preview'])) {
+            $login = trim((string) ($overrides['name'] ?? ''));
+            $email = isset($overrides['_email']) ? trim((string) $overrides['_email']) : null;
+            if ($email === '') {
+                $email = null;
+            }
+            $remote_id = trim((string) ($overrides['remote_id'] ?? ''));
+            if ($login === '' || $remote_id === '') {
+                return false;
+            }
+            $names = [
+                'firstname' => trim((string) ($overrides['firstname'] ?? '')),
+                'realname'  => trim((string) ($overrides['realname'] ?? '')),
+            ];
+        } else {
+            $resolved = $this->resolveLoginAndEmailFromResource($resource_array);
+            if (!$resolved['authorized']) {
+                return false;
+            }
+
+            $login = $overrides['name'] ?? $resolved['login'];
+            if ($login === false || $login === '' || $login === null) {
+                return false;
+            }
+            $login = (string) $login;
+
+            $email = $resolved['email'];
+            if (isset($overrides['_email'])) {
+                $email = (string) $overrides['_email'];
+            }
+
+            $names = $this->resolveRegistrationNames($resource_array);
+            if (isset($overrides['firstname'])) {
+                $names['firstname'] = (string) $overrides['firstname'];
+            }
+            if (isset($overrides['realname'])) {
+                $names['realname'] = (string) $overrides['realname'];
+            }
+
+            $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
+            if ($remote_id === null || $remote_id === '') {
+                return false;
+            }
+            $remote_id = (string) $remote_id;
+        }
+
+        $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+        $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
+
+        $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
+
+        $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
+        if ($picture === null && isset($resource_array['picture'])) {
+            $picture = $resource_array['picture'];
+        }
+
+        $userPost = [
+            'name'             => $login,
+            'add'              => 1,
+            'password'         => '',
+            'realname'         => $names['realname'],
+            'firstname'        => $names['firstname'],
+            'api_token'        => $tokenAPI,
+            'api_token_date'   => date('Y-m-d H:i:s'),
+            'personal_token'   => $tokenPersonnel,
+            'is_active'        => 1,
+        ];
+
+        if ($entitiesId > 0) {
+            $userPost['entities_id'] = $entitiesId;
+        }
+
+        if ($picture !== null && $picture !== '') {
+            $userPost['picture'] = $picture;
+        }
+
+        if ($email !== null && $email !== '') {
+            $userPost['_useremails'][-1] = $email;
+        }
+
+        try {
+            $user = new User();
+            $newId = $user->add($userPost);
+            if (!$newId) {
+                return false;
+            }
+
+            if (!$this->ensureProfileForNewUser($user, $entitiesId)) {
+                return false;
+            }
+
+            $this->linkRemoteUserToProvider((int) $user->fields['id'], (string) $remote_id);
+
+            return $user;
+        } catch (Exception $ex) {
+            if ($this->debug) {
+                print_r("\ncreateUserFromOAuthResource: " . $ex->getMessage() . "\n");
+            }
+            return false;
+        }
+    }
+
+    private function linkRemoteUserToProvider(int $users_id, string $remote_id): void
+    {
+        $link = new Provider_User();
+        $link->deleteByCriteria([
+            'plugin_singlesignon_providers_id' => $this->fields['id'],
+            'remote_id'                         => $remote_id,
+        ]);
+        $link->add([
+            'plugin_singlesignon_providers_id' => $this->fields['id'],
+            'users_id'                         => $users_id,
+            'remote_id'                        => $remote_id,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $resource_array
+     */
+    public function storePendingRegistrationSession(array $resource_array): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            Session::start();
+        }
+
+        $resolved = $this->resolveLoginAndEmailFromResource($resource_array);
+        $names = $this->resolveRegistrationNames($resource_array);
+        $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
+
+        $_SESSION[self::PENDING_REGISTRATION_SESSION_KEY] = [
+            'provider_id' => (int) $this->fields['id'],
+            'expires'     => time() + 900,
+            'firstname'   => $names['firstname'],
+            'realname'    => $names['realname'],
+            'login'       => $resolved['login'] !== false ? (string) $resolved['login'] : '',
+            'email'       => $resolved['email'] ?? '',
+            'remote_id'   => $remote_id !== null ? (string) $remote_id : '',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public static function getPendingRegistrationSession(): ?array
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            Session::start();
+        }
+        $data = $_SESSION[self::PENDING_REGISTRATION_SESSION_KEY] ?? null;
+        if (!is_array($data)) {
+            return null;
+        }
+        if (($data['expires'] ?? 0) < time()) {
+            unset($_SESSION[self::PENDING_REGISTRATION_SESSION_KEY]);
+            return null;
+        }
+
+        return $data;
+    }
+
+    public static function clearPendingRegistrationSession(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            Session::start();
+        }
+        unset($_SESSION[self::PENDING_REGISTRATION_SESSION_KEY]);
+    }
+
+    /**
+     * @return bool success
+     */
+    public function performGlpiLogin(User $user): bool
+    {
+        global $DB;
+
+        $userId = $user->fields['id'];
+
+        $tempPassword = bin2hex(random_bytes(64));
+        $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+
+        $auth = new Auth();
+        $authResult = $auth->login($user->fields['name'], $tempPassword);
+
+        $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+
+        if ($authResult) {
+            try {
+                $this->syncOAuthPhoto($user);
+            } catch (Exception $ex) {
+                if ($this->debug) {
+                    print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
+                }
+            }
+        }
+
+        return (bool) $authResult;
+    }
+
+    /**
+     * @param array<string, mixed>|null $resource_array
+     *
+     * @return User|false
+     */
+    public function findUser(?array $resource_array = null)
+    {
+        if ($resource_array === null) {
+            $resource_array = $this->getResourceOwner();
+        }
+
+        if (!$resource_array || !is_array($resource_array)) {
             return false;
         }
 
         $user = new User();
-        //First: check linked user
-        $id = Plugin::doHookFunction("sso:find_user", $resource_array);
+        $id = null;
 
-        if (is_numeric($id) && $user->getFromDB($id)) {
+        $hookId = Plugin::doHookFunction('sso:find_user', $resource_array);
+        if (is_numeric($hookId) && $user->getFromDB((int) $hookId)) {
             return $user;
         }
 
         $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
 
-        if ($remote_id) {
+        if ($remote_id !== null && $remote_id !== '') {
             $link = new Provider_User();
-            $condition = "`remote_id` = '{$remote_id}' AND `plugin_singlesignon_providers_id` = {$this->fields['id']}";
-            if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-                $condition = [$condition];
-            }
-            $links = $link->find($condition);
+            $links = $link->find([
+                'remote_id'                        => (string) $remote_id,
+                'plugin_singlesignon_providers_id' => (int) $this->fields['id'],
+            ]);
             if (!empty($links) && $first = reset($links)) {
                 $id = $first['users_id'];
             }
         }
 
-        if (is_numeric($id) && $user->getFromDB($id)) {
+        if (is_numeric($id) && $user->getFromDB((int) $id)) {
             return $user;
         }
 
-        $split = $this->fields['split_domain'];
-        $authorizedDomainsString = $this->fields['authorized_domains'];
+        $split = (bool) ($this->fields['split_domain'] ?? false);
+        $authorizedDomainsString = $this->fields['authorized_domains'] ?? null;
         $authorizedDomains = [];
-        if (isset($authorizedDomainsString)) {
-            $authorizedDomains = explode(',', $authorizedDomainsString);
+        if (isset($authorizedDomainsString) && $authorizedDomainsString !== '') {
+            $authorizedDomains = explode(',', (string) $authorizedDomainsString);
         }
 
-        // check email first
-        $email = $this->resolveFieldValueFromMappings($resource_array, 'email');
-        if ($email !== null) {
-            if (!$this->checkAuthorizedDomain($email, $authorizedDomains)) {
+        $emailFull = null;
+        $emailMapped = $this->resolveFieldValueFromMappings($resource_array, 'email');
+        if ($emailMapped !== null && $emailMapped !== '') {
+            if (!$this->checkAuthorizedDomain((string) $emailMapped, $authorizedDomains)) {
                 return false;
             }
-            $email = $this->splitIdentifierByDomain($email, (bool) $split);
+            $emailFull = (string) $emailMapped;
         }
 
         $login = false;
-        $use_email = $this->fields['use_email_for_login'];
-        if ($email && $use_email) {
-            $login = $email;
+        $use_email = !empty($this->fields['use_email_for_login']);
+        if ($emailFull && $use_email) {
+            $login = $this->splitIdentifierByDomain($emailFull, $split);
         } else {
-            $login = $this->resolveFieldValueFromMappings($resource_array, 'username');
-            if ($login !== null) {
-                if (!$this->checkAuthorizedDomain($login, $authorizedDomains)) {
+            $usernameVal = $this->resolveFieldValueFromMappings($resource_array, 'username');
+            if ($usernameVal !== null && $usernameVal !== '') {
+                if (!$this->checkAuthorizedDomain((string) $usernameVal, $authorizedDomains)) {
                     return false;
                 }
-                $login = $this->splitIdentifierByDomain($login, (bool) $split);
+                $login = $this->splitIdentifierByDomain((string) $usernameVal, $split);
+            } else {
+                $login = false;
             }
         }
 
-        if ($login && $user->getFromDBbyName($login)) {
+        if ($login && $user->getFromDBbyName((string) $login)) {
             return $user;
         }
 
-        $default_condition = '';
+        $default_condition = version_compare(GLPI_VERSION, '9.3', '>=') ? [] : '';
 
-        if (version_compare(GLPI_VERSION, '9.3', '>=')) {
-            $default_condition = [];
+        if ($emailFull === null) {
+            if ($login !== false && $login !== '' && str_contains((string) $login, '@')) {
+                $emailFull = (string) $login;
+            } else {
+                $usernameVal = $this->resolveFieldValueFromMappings($resource_array, 'username');
+                if ($usernameVal !== null && str_contains((string) $usernameVal, '@')) {
+                    $emailFull = (string) $usernameVal;
+                }
+            }
         }
 
-        $bOk = true;
-        if ($email && $user->getFromDBbyEmail($email, $default_condition)) {
+        if ($emailFull && $user->getFromDBbyEmail($emailFull, $default_condition)) {
             return $user;
-        } else {
-            $bOk = false;
-        }
-
-        // var_dump($bOk);
-        // die();
-
-        // If the user does not exist in the database and the provider is google
-        if (static::getClientType() == "google" && !$bOk) {
-            // Generates an api token and a personal token... probably not necessary
-            $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
-            $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
-
-            $realname = '';
-            if (isset($resource_array['family_name'])) {
-                $realname = $resource_array['family_name'];
-            }
-            $firstname = '';
-            if (isset($resource_array['given_name'])) {
-                $firstname = $resource_array['given_name'];
-            }
-            $useremail = $email;
-            if (isset($resource_array['email'])) {
-                $useremail = $resource_array['email'];
-            }
-
-            $userPost = [
-                'name' => $login,
-                'add' => 1,
-                'password' => '',
-                'realname' => $realname,
-                'firstname' => $firstname,
-                //'picture' => $resource_array['picture'] ?? '',
-                'picture' => $resource_array['picture'],
-                'api_token' => $tokenAPI,
-                'api_token_date' => date("Y-m-d H:i:s"),
-                'personal_token' => $tokenPersonnel,
-                'is_active' => 1,
-            ];
-            $userPost['_useremails'][-1] = $useremail;
-            $user->add($userPost);
-            return $user;
-        }
-
-        // If the user does not exist in the database and the provider is generic (Ex: azure ad without common tenant)
-        if (static::getClientType() == "generic" && !$bOk) {
-            try {
-                // Generates an api token and a personal token... probably not necessary
-                $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
-                $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
-
-                $splitname = $this->fields['split_name'];
-                $firstLastArray = ($splitname) ? preg_split('/ /', $resource_array['name'], 2) : preg_split('/ /', $resource_array['displayName'], 2);
-
-                $userPost = [
-                    'name' => $login,
-                    'add' => 1,
-                    'password' => '',
-                    'realname' => $firstLastArray[1],
-                    'firstname' => $firstLastArray[0],
-                    'api_token' => $tokenAPI,
-                    'api_token_date' => date("Y-m-d H:i:s"),
-                    'personal_token' => $tokenPersonnel,
-                    'is_active' => 1,
-                ];
-
-                // Set the office location from Office 365 user as entity for the GLPI new user if they names match
-                if (isset($resource_array['officeLocation'])) {
-                    global $DB;
-                    foreach ($DB->request(['FROM' => 'glpi_entities']) as $entity) {
-                        if ($entity['name'] == $resource_array['officeLocation']) {
-                            $userPost['entities_id'] = $entity['id'];
-                            break;
-                        }
-                    }
-                }
-
-                if ($email) {
-                    $userPost['_useremails'][-1] = $email;
-                }
-
-                //$user->check(-1, CREATE, $userPost);
-                $newID = $user->add($userPost);
-
-                // var_dump($newID);
-
-                $profils = 0;
-                // Verification default profiles exist in the entity
-                // If no default profile exists, the user will not be able to log in.
-                // In this case, we retrieve a profile and an entity and assign these values ​​to it.
-                // The administrator can change these values ​​later.
-                if (0 == Profile::getDefault()) {
-                    // No default profiles
-                    // Profile recovery and assignment
-                    global $DB;
-
-                    $datasProfiles = [];
-                    foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
-                        $datasProfiles[] = $data;
-                    }
-                    $datasEntities = [];
-                    foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
-                        $datasEntities[] = $data;
-                    }
-                    if (count($datasProfiles) > 0 && count($datasEntities) > 0) {
-                        $profils = $datasProfiles[0]['id'];
-                        $entitie = $datasEntities[0]['id'];
-
-                        $profile   = new Profile_User();
-                        $userProfile['users_id'] = intval($user->fields['id']);
-                        $userProfile['entities_id'] = intval($entitie);
-                        $userProfile['is_recursive'] = 0;
-                        $userProfile['profiles_id'] = intval($profils);
-                        $userProfile['add'] = "Ajouter";
-                        $profile->add($userProfile);
-                    } else {
-                        return false;
-                    }
-                }
-
-                return $user;
-            } catch (Exception $ex) {
-                return false;
-            }
         }
 
         return false;
     }
 
-    public function login()
+    public function login(): int
     {
-        $user = $this->findUser();
-
-        if (!$user) {
-            return false;
+        $resource_array = $this->getResourceOwner();
+        if (!$resource_array) {
+            return self::LOGIN_FAILURE;
         }
 
-        try {
-            $this->syncOAuthPhoto($user);
-        } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
-            }
+        $user = $this->findUser($resource_array);
+        if ($user) {
+            return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
         }
 
-        // Create fake auth
-        // phpcs:disable
-        /* $auth = new Auth();
-        $auth->user = $user;
-        $auth->auth_succeded = true;
-        $auth->extauth = 1;
-        $auth->user_present = 1;
-        $auth->user->fields['authtype'] = \Auth::DB_GLPI;
+        if (empty($this->fields['auto_register'])) {
+            return self::LOGIN_FAILURE;
+        }
 
-        \Session::init($auth);
+        $gate = $this->resolveLoginAndEmailFromResource($resource_array);
+        if (!$gate['authorized']) {
+            return self::LOGIN_FAILURE;
+        }
 
-        // Return false if the profile is not defined in \Session::init($auth)
-        return $auth->auth_succeded; */
-        // phpcs:enable
+        if ($gate['login'] === false || (string) $gate['login'] === '') {
+            return self::LOGIN_FAILURE;
+        }
 
-        global $DB;
+        $remoteForReg = $this->resolveFieldValueFromMappings($resource_array, 'id');
+        if ($remoteForReg === null || $remoteForReg === '') {
+            return self::LOGIN_FAILURE;
+        }
 
-        $userId = $user->fields['id'];
+        if (!empty($this->fields['registration_preview'])) {
+            $this->storePendingRegistrationSession($resource_array);
+            return self::LOGIN_REGISTRATION_PREVIEW;
+        }
 
-        // Set a random password for the current user
-        $tempPassword = bin2hex(random_bytes(64));
-        $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+        $user = $this->createUserFromOAuthResource($resource_array);
+        if (!$user || !$user->getID()) {
+            return self::LOGIN_FAILURE;
+        }
 
-        // Log-in using the generated password as if you were logging in using the login form
-        $auth = new Auth();
-        $authResult = $auth->login($user->fields['name'], $tempPassword);
-
-        // Rollback password change
-        $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
-
-        return $authResult;
+        return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
     }
 
     public function linkUser($user_id)

@@ -32,12 +32,7 @@ use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
 use GlpiPlugin\Singlesignon\ToolboxPlugin;
 
-use function Safe\ini_set;
 use function Safe\json_encode;
-
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
 
 include(__DIR__ . '/../../../inc/includes.php');
 
@@ -146,7 +141,15 @@ if ($existing_user_id) {
 
 $REDIRECT = '';
 
-if ($user_id || $signon_provider->login()) {
+$loginResult = Provider::LOGIN_FAILURE;
+$loginResult = $user_id !== 0 ? Provider::LOGIN_SUCCESS : $signon_provider->login();
+
+if ($loginResult === Provider::LOGIN_REGISTRATION_PREVIEW) {
+    global $CFG_GLPI;
+    Html::redirect($CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/register_preview.php?provider=' . (int) $provider_id);
+}
+
+if ($user_id || $loginResult === Provider::LOGIN_SUCCESS) {
 
     $user_id = $user_id ?: Session::getLoginUserID();
 

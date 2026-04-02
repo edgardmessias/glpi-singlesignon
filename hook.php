@@ -209,6 +209,28 @@ function plugin_singlesignon_install()
         );
     }
 
+    if (version_compare($currentVersion, '2.0.0-dev.3', '<')) {
+        $migration->addField($providersTable, 'auto_register', 'bool', ['value' => 0]);
+        $migration->addField($providersTable, 'registration_preview', 'bool', ['value' => 0]);
+        $migration->addField(
+            $providersTable,
+            'default_entities_id',
+            'integer',
+            [
+                'value' => 0,
+            ],
+        );
+        $migration->addField($providersTable, 'match_entity_by_email_domain', 'bool', ['value' => 0]);
+        $migration->addField(
+            $providersTable,
+            'default_profiles_id',
+            'integer',
+            [
+                'value' => 0,
+            ],
+        );
+    }
+
     if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => Provider::class])) {
         $preferences = [
             ['itemtype' => Provider::class, 'num' => 2, 'rank' => 1, 'users_id' => 0],

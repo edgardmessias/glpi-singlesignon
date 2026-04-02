@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-01 18:34-0300\n"
+"POT-Creation-Date: 2026-04-02 16:31-0300\n"
 "PO-Revision-Date: 2026-03-24 21:00+0000\n"
 "Last-Translator: Esteban Esquivel <esteban.esquivel@mava.com.co>\n"
 "Language-Team: Spanish (Colombia)\n"
@@ -22,7 +22,7 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:94 \src\Preference.php:116 \src\Provider.php:125
+#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:132
 msgid "Single Sign-on"
 msgstr "Single Sign-on"
 
@@ -38,7 +38,7 @@ msgstr "Usar Single Sign-on"
 msgid "Linked accounts"
 msgstr "Cuentas vinculadas"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:117
+#: \templates\preference\form_content.html.twig \src\Provider.php:124
 msgid "Single Sign-on Provider"
 msgstr "Proveedor de Single Sign-on"
 
@@ -95,8 +95,25 @@ msgstr "No se encontraron mapeos activos."
 msgid "No default mappings found for this provider type."
 msgstr "No se encontraron mapeos predeterminados para este tipo de proveedor."
 
+#: \templates\provider\register_preview.html.twig
+msgid "Confirm your account"
+msgstr "Confirme su cuenta"
+
+#: \templates\provider\register_preview.html.twig
+msgid "Review or edit the information below before completing registration."
+msgstr ""
+"Revise o edite la información siguiente antes de completar el registro."
+
+#: \templates\provider\register_preview.html.twig
+msgid "Last name"
+msgstr "Apellido"
+
+#: \templates\provider\register_preview.html.twig
+msgid "Complete registration"
+msgstr "Completar registro"
+
 #: \templates\provider\show_field_mappings_tab.html.twig
-#: \src\Provider_Field.php:170
+#: \src\Provider_Field.php:176
 msgid "Field mappings"
 msgstr "Mapeos de campos"
 
@@ -104,6 +121,8 @@ msgstr "Mapeos de campos"
 msgid ""
 "Configure JSONPath rules used to extract fields from Resource Owner response."
 msgstr ""
+"Configure las reglas JSONPath usadas para extraer campos de la respuesta del "
+"propietario del recurso."
 
 #: \templates\provider\show_form.html.twig
 #, php-format
@@ -119,7 +138,7 @@ msgstr ""
 "proveedor). Puede especificar parámetros adicionales con el delimitador "
 "\"&\"."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:450
+#: \templates\provider\show_form.html.twig \src\Provider.php:468
 msgid "Authorize URL"
 msgstr "URL de autorización"
 
@@ -133,50 +152,58 @@ msgstr ""
 
 #: \templates\provider\show_form.html.twig
 msgid "Choose when user avatars should be synchronized during login."
-msgstr "Elija cuando los avatares de usuario deben sincronizarse durante el inicio de sesion."
+msgstr ""
+"Elija cuando los avatares de usuario deben sincronizarse durante el inicio "
+"de sesión."
 
 #: \templates\provider\show_form.html.twig
 msgid ""
 "Controls how Authorization header is built for Resource Owner Details "
 "requests."
 msgstr ""
+"Controla cómo se construye el encabezado Authorization para las solicitudes "
+"de detalles del propietario del recurso."
 
 #: \templates\provider\show_form.html.twig
 msgid ""
 "Controls how Authorization header is built for avatar download requests."
 msgstr ""
+"Controla cómo se construye el encabezado Authorization para las solicitudes "
+"de descarga del avatar."
 
 #: \templates\provider\show_form.html.twig
 msgid ""
 "One header per line (format: Header-Name: value). Supported placeholders: "
 "<token> and <access_token>. Example: api-key: <token>"
 msgstr ""
+"Un encabezado por línea (formato: Nombre-Encabezado: valor). Marcadores "
+"admitidos: <token> y <access_token>. Ejemplo: api-key: <token>"
 
 #: \templates\provider\show_form.html.twig
 msgid "SSO Type"
 msgstr "Tipo de SSO"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:418
+#: \templates\provider\show_form.html.twig \src\Provider.php:436
 msgid "Client ID"
 msgstr "ID de cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:426
+#: \templates\provider\show_form.html.twig \src\Provider.php:444
 msgid "Client Secret"
 msgstr "Secreto de cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:434
+#: \templates\provider\show_form.html.twig \src\Provider.php:452
 msgid "Scope"
 msgstr "Alcance"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:442
+#: \templates\provider\show_form.html.twig \src\Provider.php:460
 msgid "Extra Options"
 msgstr "Opciones adicionales"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:458
+#: \templates\provider\show_form.html.twig \src\Provider.php:476
 msgid "Access Token URL"
 msgstr "URL del token de acceso"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:466
+#: \templates\provider\show_form.html.twig \src\Provider.php:484
 msgid "Resource Owner Details URL"
 msgstr "URL de detalles del propietario del recurso"
 
@@ -213,6 +240,31 @@ msgid "Split Name"
 msgstr "Separar nombre"
 
 #: \templates\provider\show_form.html.twig
+msgid "Registration"
+msgstr "Registro"
+
+#: \templates\provider\show_form.html.twig
+msgid "Allow automatic registration"
+msgstr "Permitir el registro automático"
+
+#: \templates\provider\show_form.html.twig
+msgid "Confirm registration before creating account"
+msgstr "Confirmar el registro antes de crear la cuenta"
+
+#: \templates\provider\show_form.html.twig
+msgid "Default entity for new users"
+msgstr "Entidad predeterminada para usuarios nuevos"
+
+#: \templates\provider\show_form.html.twig
+msgid "Match entity by email domain (entity name = domain)"
+msgstr ""
+"Asociar entidad por dominio del correo (nombre de entidad = dominio)"
+
+#: \templates\provider\show_form.html.twig
+msgid "Default profile when GLPI has no default"
+msgstr "Perfil predeterminado cuando GLPI no tiene uno predeterminado"
+
+#: \templates\provider\show_form.html.twig
 msgid "User photo synchronization"
 msgstr "Sincronizacion de foto del usuario"
 
@@ -236,52 +288,71 @@ msgstr "URL de retorno"
 msgid "Test Single Sign-on"
 msgstr "Probar Single Sign-on"
 
-#: \front\callback.php:50
+#: \front\callback.php:45
 msgid "Provider not defined."
 msgstr "Proveedor no definido."
 
-#: \front\callback.php:58
+#: \front\callback.php:53 \front\register_preview.php:42
 msgid "Provider not found."
 msgstr "Proveedor no encontrado."
 
-#: \front\callback.php:64
+#: \front\callback.php:59 \front\register_preview.php:48
 msgid "Provider not active."
 msgstr "Proveedor no activado."
 
-#: \front\callback.php:102
+#: \front\callback.php:97
 msgid "Unable to encode resource owner payload."
 msgstr "No se pudo codificar la carga del propietario del recurso."
 
-#: \front\callback.php:117
+#: \front\callback.php:112
 msgid "Unable to encode callback context."
 msgstr "No se pudo codificar el contexto del callback."
 
-#: \front\callback.php:190
+#: \front\callback.php:193 \front\register_preview.php:157
 msgid "Automatic redirection, else click"
 msgstr "Redirección automática, de lo contrario haga clic"
 
-#: \front\callback.php:208
+#: \front\callback.php:211
 msgid "User not authorized to connect in GLPI"
 msgstr "Usuario no autorizado para conectarse en GLPI"
 
-#: \front\callback.php:211
+#: \front\callback.php:214
 msgid "Log in again"
 msgstr "Iniciar sesión nuevamente"
+
+#: \front\register_preview.php:55
+msgid "Registration session expired or invalid. Please sign in again."
+msgstr ""
+"La sesión de registro ha caducado o no es válida. Vuelva a iniciar sesión."
+
+#: \front\register_preview.php:70
+msgid "Confirm registration"
+msgstr "Confirmar registro"
+
+#: \front\register_preview.php:119 \front\register_preview.php:155
+msgid "Login"
+msgstr "Iniciar sesión"
+
+#: \front\register_preview.php:121
+msgid "User created but login failed. Please try signing in again."
+msgstr ""
+"Usuario creado pero falló el inicio de sesión. Intente iniciar sesión de "
+"nuevo."
 
 #: \setup.php:49
 #, php-format
 msgid "Please, rename the plugin folder \"%s\" to \"singlesignon\""
 msgstr "Por favor, renombre la carpeta del plugin \"%s\" a \"singlesignon\""
 
-#: \setup.php:112
+#: \setup.php:117
 msgid "This plugin requires GLPI >= 11.0.0"
 msgstr "Este plugin requiere GLPI >= 11.0.0"
 
-#: \setup.php:117
+#: \setup.php:122
 msgid "This plugin is not yet validated for this GLPI version"
 msgstr "Este plugin aún no ha sido validado para esta versión de GLPI"
 
-#: \setup.php:122
+#: \setup.php:127
 msgid "This plugin requires PHP >= 8.2"
 msgstr "Este plugin requiere PHP >= 8.2"
 
@@ -291,88 +362,88 @@ msgstr "Este plugin requiere PHP >= 8.2"
 msgid "Login with %s"
 msgstr "Iniciar sesión con %s"
 
-#: \src\Provider.php:238
+#: \src\Provider.php:250
 msgid "A Name is required"
 msgstr "Se requiere un nombre"
 
-#: \src\Provider.php:244
+#: \src\Provider.php:256
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "El \"%s\" es un tipo no válido"
 
-#: \src\Provider.php:248
+#: \src\Provider.php:260
 msgid "A Client ID is required"
 msgstr "Se requiere un ID de cliente"
 
-#: \src\Provider.php:252
+#: \src\Provider.php:264
 msgid "A Client Secret is required"
 msgstr "Se requiere un secreto de cliente"
 
-#: \src\Provider.php:257
+#: \src\Provider.php:269
 msgid "An Authorize URL is required"
 msgstr "Se requiere una URL de autorización"
 
-#: \src\Provider.php:259
+#: \src\Provider.php:271
 msgid "The Authorize URL is invalid"
 msgstr "La URL de autorización no es válida"
 
-#: \src\Provider.php:263
+#: \src\Provider.php:275
 msgid "An Access Token URL is required"
 msgstr "Se requiere una URL de token de acceso"
 
-#: \src\Provider.php:265
+#: \src\Provider.php:277
 msgid "The Access Token URL is invalid"
 msgstr "La URL del token de acceso no es válida"
 
-#: \src\Provider.php:269
+#: \src\Provider.php:281
 msgid "A Resource Owner Details URL is required"
 msgstr "Se requiere una URL de detalles del propietario del recurso"
 
-#: \src\Provider.php:271
+#: \src\Provider.php:283
 msgid "The Resource Owner Details URL is invalid"
 msgstr "La URL de detalles del propietario del recurso no es válida"
 
-#: \src\Provider.php:329
+#: \src\Provider.php:347
 msgid "Only if user has no photo"
 msgstr "Solo si el usuario no tiene foto"
 
-#: \src\Provider.php:330
+#: \src\Provider.php:348
 msgid "Always on login"
 msgstr "Siempre al iniciar sesion"
 
-#: \src\Provider.php:337
+#: \src\Provider.php:355
 msgid "Authorization: Bearer <token>"
 msgstr "Autorizacion: Bearer <token>"
 
-#: \src\Provider.php:338
+#: \src\Provider.php:356
 msgid "Authorization: <token>"
 msgstr "Autorizacion: <token>"
 
-#: \src\Provider.php:546
+#: \src\Provider.php:564
 msgid "Generic"
 msgstr "Genérico"
 
-#: \src\Provider.php:547
+#: \src\Provider.php:565
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:548
+#: \src\Provider.php:566
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:549
+#: \src\Provider.php:567
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:550
+#: \src\Provider.php:568
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:551
+#: \src\Provider.php:569
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:552
+#: \src\Provider.php:570
 msgid "LinkdeIn"
 msgstr "LinkedIn"
 
@@ -383,20 +454,14 @@ msgstr[0] ""
 msgstr[1] ""
 msgstr[2] ""
 
-#: \src\Provider_Field.php:71
+#: \src\Provider_Field.php:74
 msgid "Avatar URL"
 msgstr "URL del avatar"
 
-#: \src\Provider_Field.php:191
+#: \src\Provider_Field.php:197
 msgid "Save this provider before editing field mappings."
 msgstr "Guarde este proveedor antes de editar los mapeos de campos."
 
-#: \src\Provider_Field.php:272
+#: \src\Provider_Field.php:278
 msgid "Field mappings updated."
 msgstr "Mapeos de campos actualizados."
-
-#~ msgid "JSON SSO provider representation"
-#~ msgstr "Representación JSON del proveedor SSO"
-
-#~ msgid "Copy provider information"
-#~ msgstr "Copiar información del proveedor"
