@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [2.0.0-dev.2](https://github.com/edgardmessias/glpi-singlesignon/compare/v1.4.0..v2.0.0-dev.2) - 2026-04-01
+## [2.0.0-dev.4](https://github.com/edgardmessias/glpi-singlesignon/compare/v1.4.0..v2.0.0-dev.4) - 2026-04-03
 
 ### Bug Fixes
 
@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file. See [conven
 - Updated locales - ([f197fdb](https://github.com/edgardmessias/glpi-singlesignon/commit/f197fdbe36f151f23c1a5594d702d4382ab7e470)) - Edgard
 - Fixed UI icons - ([cf629e6](https://github.com/edgardmessias/glpi-singlesignon/commit/cf629e6a5a2edfe2196f8d4e3f008337ac31a37e)) - Edgard
 - Fixed public login images - ([bde7af0](https://github.com/edgardmessias/glpi-singlesignon/commit/bde7af04ac70ed35e06cd236f2fbd9949b714460)) - Edgard
+- Fixed redirect issues (closes #157) - ([61f348b](https://github.com/edgardmessias/glpi-singlesignon/commit/61f348b5791d55fd4d917647b679e0f9ca93cf2d)) - Edgard
 
 ### Documentation
 
@@ -27,6 +28,8 @@ All notable changes to this project will be documented in this file. See [conven
 - Improved login screen - ([8bbe597](https://github.com/edgardmessias/glpi-singlesignon/commit/8bbe5974174653ef8f9277cae72e04b83ff34393)) - Edgard
 - Redesign login screen with a complete new UI - ([67a5305](https://github.com/edgardmessias/glpi-singlesignon/commit/67a5305f7c398bac80988dce9f9456c74a8954c9)) - Edgard
 - Allow OAuth photo sync with avatar_url mapping for all providers - ([e0efb20](https://github.com/edgardmessias/glpi-singlesignon/commit/e0efb20967e455dcfd5b9ed79db5345367f56c4c)) - Edgard
+- Add configurable photo sync modes and custom header options - ([093cdbc](https://github.com/edgardmessias/glpi-singlesignon/commit/093cdbc76d8eb3ea55e330c4aa2673e3f50fa4ff)) - Edgard
+- new auto-registration flow for OAuth SSO users - ([09627a2](https://github.com/edgardmessias/glpi-singlesignon/commit/09627a227ab566b0f5da9a59be9522fa0cba41b3)) - Edgard
 
 ### Miscellaneous Chores
 
@@ -40,6 +43,7 @@ All notable changes to this project will be documented in this file. See [conven
 - Fixed Rector issues - ([3d1df02](https://github.com/edgardmessias/glpi-singlesignon/commit/3d1df0265e0bdee9c65a133bb031895d95b3f1db)) - Edgard
 - Fixed Psalm issues - ([331b1e9](https://github.com/edgardmessias/glpi-singlesignon/commit/331b1e9255322ee43287460b739864c41112d5e8)) - Edgard
 - Renamed branch master to main - ([7c368ee](https://github.com/edgardmessias/glpi-singlesignon/commit/7c368ee11d4b7a686307482ab45cf89bb206ce3c)) - Edgard
+- Updated README.md - ([93f97ce](https://github.com/edgardmessias/glpi-singlesignon/commit/93f97ce06479c9f3dc6cda9fba9ef576aa92a78f)) - Edgard
 
 ### Refactoring
 
