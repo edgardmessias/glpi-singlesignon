@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-02 16:31-0300\n"
+"POT-Creation-Date: 2026-04-03 11:50-0300\n"
 "PO-Revision-Date: 2025-02-04 20:49+0000\n"
 "Last-Translator: Sinan Doğan, 2025\n"
 "Language-Team: Turkish (Turkey) (https://app.transifex.com/eduardomozart/"
@@ -23,9 +23,27 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:132
+#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:134
 msgid "Single Sign-on"
 msgstr "Tek Oturum Açma"
+
+#: \templates\login\redirect_opener.html.twig
+#: \templates\login\unauthorized_retry.html.twig
+#: \front\register_preview.php:128
+msgid "Login"
+msgstr "Giriş yap"
+
+#: \templates\login\redirect_opener.html.twig
+msgid "Automatic redirection, else click"
+msgstr "Otomatik yönlendirme, aksi takdirde tıklayın"
+
+#: \templates\login\unauthorized_retry.html.twig
+msgid "User not authorized to connect in GLPI"
+msgstr "Kullanıcı GLPI'ye bağlanmak için yetkili değil"
+
+#: \templates\login\unauthorized_retry.html.twig
+msgid "Log in again"
+msgstr "Tekrar giriş yap"
 
 #: \templates\override\pages\login.html.twig
 msgid "Use GLPI login form"
@@ -39,7 +57,7 @@ msgstr "Tek Oturum Açmayı kullan"
 msgid "Linked accounts"
 msgstr "Bağlı hesaplar"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:124
+#: \templates\preference\form_content.html.twig \src\Provider.php:126
 msgid "Single Sign-on Provider"
 msgstr "Single Sign-on Sağlayıcı"
 
@@ -138,7 +156,7 @@ msgstr ""
 "(desteklenen URL ayarları sağlayıcıya göre değişebilir). “&” sınırlayıcısı "
 "ile ek parametreler belirtebilirsiniz."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:468
+#: \templates\provider\show_form.html.twig \src\Provider.php:470
 msgid "Authorize URL"
 msgstr "Yetkilendirme URL'si"
 
@@ -183,27 +201,27 @@ msgstr ""
 msgid "SSO Type"
 msgstr "SSO Tipi"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:436
+#: \templates\provider\show_form.html.twig \src\Provider.php:438
 msgid "Client ID"
 msgstr "Client ID"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:444
+#: \templates\provider\show_form.html.twig \src\Provider.php:446
 msgid "Client Secret"
 msgstr "Client Secret"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:452
+#: \templates\provider\show_form.html.twig \src\Provider.php:454
 msgid "Scope"
 msgstr "Kapsam"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:460
+#: \templates\provider\show_form.html.twig \src\Provider.php:462
 msgid "Extra Options"
 msgstr "Ekstra Seçenekler"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:476
+#: \templates\provider\show_form.html.twig \src\Provider.php:478
 msgid "Access Token URL"
 msgstr "Erişim Belirteci URL'si"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:484
+#: \templates\provider\show_form.html.twig \src\Provider.php:486
 msgid "Resource Owner Details URL"
 msgstr "Kaynak Sahibi Ayrıntıları URL"
 
@@ -257,8 +275,7 @@ msgstr "Yeni kullanıcılar için varsayılan varlık"
 
 #: \templates\provider\show_form.html.twig
 msgid "Match entity by email domain (entity name = domain)"
-msgstr ""
-"E-posta alan adına göre varlık eşleştir (varlık adı = alan adı)"
+msgstr "E-posta alan adına göre varlık eşleştir (varlık adı = alan adı)"
 
 #: \templates\provider\show_form.html.twig
 msgid "Default profile when GLPI has no default"
@@ -288,52 +305,36 @@ msgstr "Geri Çağırma URL'si"
 msgid "Test Single Sign-on"
 msgstr "Test Single Sign-on"
 
-#: \front\callback.php:45
+#: \front\callback.php:47
 msgid "Provider not defined."
 msgstr "Sağlayıcı tanımlanmamış."
 
-#: \front\callback.php:53 \front\register_preview.php:42
+#: \front\callback.php:55 \front\register_preview.php:39
 msgid "Provider not found."
 msgstr "Sağlayıcı bulunamadı."
 
-#: \front\callback.php:59 \front\register_preview.php:48
+#: \front\callback.php:61 \front\register_preview.php:45
 msgid "Provider not active."
 msgstr "Sağlayıcı aktif değil."
 
-#: \front\callback.php:97
+#: \front\callback.php:104
 msgid "Unable to encode resource owner payload."
 msgstr "Kaynak sahibi yükü kodlanamadı."
 
-#: \front\callback.php:112
+#: \front\callback.php:119
 msgid "Unable to encode callback context."
 msgstr "Callback bağlamı kodlanamadı."
 
-#: \front\callback.php:193 \front\register_preview.php:157
-msgid "Automatic redirection, else click"
-msgstr "Otomatik yönlendirme, aksi takdirde tıklayın"
-
-#: \front\callback.php:211
-msgid "User not authorized to connect in GLPI"
-msgstr "Kullanıcı GLPI'ye bağlanmak için yetkili değil"
-
-#: \front\callback.php:214
-msgid "Log in again"
-msgstr "Tekrar giriş yap"
-
-#: \front\register_preview.php:55
+#: \front\register_preview.php:52
 msgid "Registration session expired or invalid. Please sign in again."
 msgstr ""
 "Kayıt oturumunun süresi doldu veya geçersiz. Lütfen yeniden giriş yapın."
 
-#: \front\register_preview.php:70
+#: \front\register_preview.php:67
 msgid "Confirm registration"
 msgstr "Kaydı onayla"
 
-#: \front\register_preview.php:119 \front\register_preview.php:155
-msgid "Login"
-msgstr "Giriş yap"
-
-#: \front\register_preview.php:121
+#: \front\register_preview.php:130
 msgid "User created but login failed. Please try signing in again."
 msgstr ""
 "Kullanıcı oluşturuldu ancak giriş başarısız oldu. Lütfen yeniden giriş "
@@ -357,102 +358,102 @@ msgstr "Bu eklenti henüz bu GLPI sürümü için doğrulanmadı"
 msgid "This plugin requires PHP >= 8.2"
 msgstr "Bu eklenti PHP >= 8.2 gerektirir"
 
-#: \src\LoginRenderer.php:101 \src\Preference.php:205
-#: \src\ToolboxPlugin.php:274
+#: \src\LoginRenderer.php:102 \src\Preference.php:205
+#: \src\ToolboxPlugin.php:273
 #, php-format
 msgid "Login with %s"
 msgstr "%s ile giriş yap"
 
-#: \src\Provider.php:250
+#: \src\Provider.php:252
 msgid "A Name is required"
 msgstr "Bir İsim Gerekli"
 
-#: \src\Provider.php:256
+#: \src\Provider.php:258
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "\"%s\" Geçersiz bir türdür"
 
-#: \src\Provider.php:260
+#: \src\Provider.php:262
 msgid "A Client ID is required"
 msgstr "Bir ClientID gereklidir."
 
-#: \src\Provider.php:264
+#: \src\Provider.php:266
 msgid "A Client Secret is required"
 msgstr "Bir Client Secret gereklidir."
 
-#: \src\Provider.php:269
+#: \src\Provider.php:271
 msgid "An Authorize URL is required"
 msgstr "Yetkilendirme URL'si gereklidir"
 
-#: \src\Provider.php:271
+#: \src\Provider.php:273
 msgid "The Authorize URL is invalid"
 msgstr "Yetkilendirme URL'si geçersiz"
 
-#: \src\Provider.php:275
+#: \src\Provider.php:277
 msgid "An Access Token URL is required"
 msgstr "Bir Erişim Belirteci URL'si gereklidir"
 
-#: \src\Provider.php:277
+#: \src\Provider.php:279
 msgid "The Access Token URL is invalid"
 msgstr "Erişim Belirteci URL'si geçersiz"
 
-#: \src\Provider.php:281
+#: \src\Provider.php:283
 msgid "A Resource Owner Details URL is required"
 msgstr "Bir Kaynak Sahibi Ayrıntıları URL'si gereklidir"
 
-#: \src\Provider.php:283
+#: \src\Provider.php:285
 msgid "The Resource Owner Details URL is invalid"
 msgstr "Kaynak Sahibi Ayrıntıları URL'si geçersiz"
 
-#: \src\Provider.php:347
+#: \src\Provider.php:349
 msgid "Only if user has no photo"
 msgstr "Yalnizca kullanicinin fotografi yoksa"
 
-#: \src\Provider.php:348
+#: \src\Provider.php:350
 msgid "Always on login"
 msgstr "Giris yaparken her zaman"
 
-#: \src\Provider.php:355
+#: \src\Provider.php:357
 msgid "Authorization: Bearer <token>"
 msgstr "Yetkilendirme: Bearer <token>"
 
-#: \src\Provider.php:356
+#: \src\Provider.php:358
 msgid "Authorization: <token>"
 msgstr "Yetkilendirme: <token>"
 
-#: \src\Provider.php:564
+#: \src\Provider.php:566
 msgid "Generic"
 msgstr "Genel"
 
-#: \src\Provider.php:565
+#: \src\Provider.php:567
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:566
+#: \src\Provider.php:568
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:567
+#: \src\Provider.php:569
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:568
+#: \src\Provider.php:570
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:569
+#: \src\Provider.php:571
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:570
+#: \src\Provider.php:572
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
 
 #: \src\Provider_Field.php:42
 msgid "Field mapping"
 msgid_plural "Field mappings"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Alan eşlemesi"
+msgstr[1] "Alan eşlemeleri"
 
 #: \src\Provider_Field.php:74
 msgid "Avatar URL"

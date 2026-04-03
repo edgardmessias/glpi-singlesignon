@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-02 16:31-0300\n"
+"POT-Creation-Date: 2026-04-03 11:50-0300\n"
 "PO-Revision-Date: 2026-03-24 21:00+0000\n"
 "Last-Translator: Esteban Esquivel <esteban.esquivel@mava.com.co>\n"
 "Language-Team: Spanish (Spain) (https://app.transifex.com/eduardomozart/"
@@ -24,9 +24,27 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:132
+#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:134
 msgid "Single Sign-on"
 msgstr "Single Sign-on"
+
+#: \templates\login\redirect_opener.html.twig
+#: \templates\login\unauthorized_retry.html.twig
+#: \front\register_preview.php:128
+msgid "Login"
+msgstr "Iniciar sesión"
+
+#: \templates\login\redirect_opener.html.twig
+msgid "Automatic redirection, else click"
+msgstr "Redirección automática, de lo contrario haga clic"
+
+#: \templates\login\unauthorized_retry.html.twig
+msgid "User not authorized to connect in GLPI"
+msgstr "Usuario no autorizado para conectarse en GLPI"
+
+#: \templates\login\unauthorized_retry.html.twig
+msgid "Log in again"
+msgstr "Iniciar sesión de nuevo"
 
 #: \templates\override\pages\login.html.twig
 msgid "Use GLPI login form"
@@ -40,7 +58,7 @@ msgstr "Usar Single Sign-on"
 msgid "Linked accounts"
 msgstr "Cuentas vinculadas"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:124
+#: \templates\preference\form_content.html.twig \src\Provider.php:126
 msgid "Single Sign-on Provider"
 msgstr "Proveedor de Single Sign-on"
 
@@ -140,7 +158,7 @@ msgstr ""
 "proveedor). Puede especificar parámetros adicionales con el delimitador "
 "\"&\"."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:468
+#: \templates\provider\show_form.html.twig \src\Provider.php:470
 msgid "Authorize URL"
 msgstr "URL de autorización"
 
@@ -185,27 +203,27 @@ msgstr ""
 msgid "SSO Type"
 msgstr "Tipo de SSO"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:436
+#: \templates\provider\show_form.html.twig \src\Provider.php:438
 msgid "Client ID"
 msgstr "ID de cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:444
+#: \templates\provider\show_form.html.twig \src\Provider.php:446
 msgid "Client Secret"
 msgstr "Secreto de cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:452
+#: \templates\provider\show_form.html.twig \src\Provider.php:454
 msgid "Scope"
 msgstr "Alcance"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:460
+#: \templates\provider\show_form.html.twig \src\Provider.php:462
 msgid "Extra Options"
 msgstr "Opciones adicionales"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:476
+#: \templates\provider\show_form.html.twig \src\Provider.php:478
 msgid "Access Token URL"
 msgstr "URL del token de acceso"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:484
+#: \templates\provider\show_form.html.twig \src\Provider.php:486
 msgid "Resource Owner Details URL"
 msgstr "URL de detalles del propietario del recurso"
 
@@ -259,8 +277,7 @@ msgstr "Entidad predeterminada para usuarios nuevos"
 
 #: \templates\provider\show_form.html.twig
 msgid "Match entity by email domain (entity name = domain)"
-msgstr ""
-"Asociar entidad por dominio del correo (nombre de entidad = dominio)"
+msgstr "Asociar entidad por dominio del correo (nombre de entidad = dominio)"
 
 #: \templates\provider\show_form.html.twig
 msgid "Default profile when GLPI has no default"
@@ -290,52 +307,36 @@ msgstr "URL de retorno"
 msgid "Test Single Sign-on"
 msgstr "Probar Single Sign-on"
 
-#: \front\callback.php:45
+#: \front\callback.php:47
 msgid "Provider not defined."
 msgstr "Proveedor no definido."
 
-#: \front\callback.php:53 \front\register_preview.php:42
+#: \front\callback.php:55 \front\register_preview.php:39
 msgid "Provider not found."
 msgstr "Proveedor no encontrado."
 
-#: \front\callback.php:59 \front\register_preview.php:48
+#: \front\callback.php:61 \front\register_preview.php:45
 msgid "Provider not active."
 msgstr "Proveedor no activado."
 
-#: \front\callback.php:97
+#: \front\callback.php:104
 msgid "Unable to encode resource owner payload."
 msgstr "No se pudo codificar la carga del propietario del recurso."
 
-#: \front\callback.php:112
+#: \front\callback.php:119
 msgid "Unable to encode callback context."
 msgstr "No se pudo codificar el contexto del callback."
 
-#: \front\callback.php:193 \front\register_preview.php:157
-msgid "Automatic redirection, else click"
-msgstr "Redirección automática, de lo contrario haga clic"
-
-#: \front\callback.php:211
-msgid "User not authorized to connect in GLPI"
-msgstr "Usuario no autorizado para conectarse en GLPI"
-
-#: \front\callback.php:214
-msgid "Log in again"
-msgstr "Iniciar sesión de nuevo"
-
-#: \front\register_preview.php:55
+#: \front\register_preview.php:52
 msgid "Registration session expired or invalid. Please sign in again."
 msgstr ""
 "La sesión de registro ha caducado o no es válida. Vuelva a iniciar sesión."
 
-#: \front\register_preview.php:70
+#: \front\register_preview.php:67
 msgid "Confirm registration"
 msgstr "Confirmar registro"
 
-#: \front\register_preview.php:119 \front\register_preview.php:155
-msgid "Login"
-msgstr "Iniciar sesión"
-
-#: \front\register_preview.php:121
+#: \front\register_preview.php:130
 msgid "User created but login failed. Please try signing in again."
 msgstr ""
 "Usuario creado pero falló el inicio de sesión. Intente iniciar sesión de "
@@ -360,103 +361,103 @@ msgstr "Este plugin aún no ha sido validado para esta versión de GLPI"
 msgid "This plugin requires PHP >= 8.2"
 msgstr "Este plugin requiere PHP >= 8.2"
 
-#: \src\LoginRenderer.php:101 \src\Preference.php:205
-#: \src\ToolboxPlugin.php:274
+#: \src\LoginRenderer.php:102 \src\Preference.php:205
+#: \src\ToolboxPlugin.php:273
 #, php-format
 msgid "Login with %s"
 msgstr "Iniciar sesión con %s"
 
-#: \src\Provider.php:250
+#: \src\Provider.php:252
 msgid "A Name is required"
 msgstr "Se requiere un nombre"
 
-#: \src\Provider.php:256
+#: \src\Provider.php:258
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "El \"%s\" es un tipo no válido"
 
-#: \src\Provider.php:260
+#: \src\Provider.php:262
 msgid "A Client ID is required"
 msgstr "Se requiere un ID de cliente"
 
-#: \src\Provider.php:264
+#: \src\Provider.php:266
 msgid "A Client Secret is required"
 msgstr "Se requiere un secreto de cliente"
 
-#: \src\Provider.php:269
+#: \src\Provider.php:271
 msgid "An Authorize URL is required"
 msgstr "Se requiere una URL de autorización"
 
-#: \src\Provider.php:271
+#: \src\Provider.php:273
 msgid "The Authorize URL is invalid"
 msgstr "La URL de autorización no es válida"
 
-#: \src\Provider.php:275
+#: \src\Provider.php:277
 msgid "An Access Token URL is required"
 msgstr "Se requiere una URL de token de acceso"
 
-#: \src\Provider.php:277
+#: \src\Provider.php:279
 msgid "The Access Token URL is invalid"
 msgstr "La URL del token de acceso no es válida"
 
-#: \src\Provider.php:281
+#: \src\Provider.php:283
 msgid "A Resource Owner Details URL is required"
 msgstr "Se requiere una URL de detalles del propietario del recurso"
 
-#: \src\Provider.php:283
+#: \src\Provider.php:285
 msgid "The Resource Owner Details URL is invalid"
 msgstr "La URL de detalles del propietario del recurso no es válida"
 
-#: \src\Provider.php:347
+#: \src\Provider.php:349
 msgid "Only if user has no photo"
 msgstr "Solo si el usuario no tiene foto"
 
-#: \src\Provider.php:348
+#: \src\Provider.php:350
 msgid "Always on login"
 msgstr "Siempre al iniciar sesion"
 
-#: \src\Provider.php:355
+#: \src\Provider.php:357
 msgid "Authorization: Bearer <token>"
 msgstr "Autorizacion: Bearer <token>"
 
-#: \src\Provider.php:356
+#: \src\Provider.php:358
 msgid "Authorization: <token>"
 msgstr "Autorizacion: <token>"
 
-#: \src\Provider.php:564
+#: \src\Provider.php:566
 msgid "Generic"
 msgstr "Genérico"
 
-#: \src\Provider.php:565
+#: \src\Provider.php:567
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:566
+#: \src\Provider.php:568
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:567
+#: \src\Provider.php:569
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:568
+#: \src\Provider.php:570
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:569
+#: \src\Provider.php:571
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:570
+#: \src\Provider.php:572
 msgid "LinkdeIn"
 msgstr "LinkedIn"
 
 #: \src\Provider_Field.php:42
 msgid "Field mapping"
 msgid_plural "Field mappings"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "Mapeo de campo"
+msgstr[1] "Mapeos de campos"
+msgstr[2] "Mapeos de campos"
 
 #: \src\Provider_Field.php:74
 msgid "Avatar URL"

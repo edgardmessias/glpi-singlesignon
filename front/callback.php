@@ -38,6 +38,8 @@ include(__DIR__ . '/../../../inc/includes.php');
 
 // Session is automatically started by GLPI for non-stateless endpoints
 
+global $CFG_GLPI;
+
 $provider_id = ToolboxPlugin::getCallbackParameters('provider');
 
 if (!$provider_id) {
@@ -60,9 +62,14 @@ if (!$signon_provider->fields['is_active']) {
     throw $exception;
 }
 
-if (!$signon_provider->checkAuthorization()) {
-    return;
-}
+/**
+ * Handles the OAuth authorization callback from the identity provider.
+ * This function validates the CSRF (state) token, extracts the authorization code,
+ * and may perform a redirect depending on the authentication step.
+ * If the authorization code is not present in the request, it may redirect the browser
+ * to the provider's authorization page.
+ */
+$signon_provider->checkAuthorization();
 
 /**
  * The "glpi_singlesignon_test" cookie is used to signal that this callback request is a test for the Single Sign-On (SSO) integration.
@@ -139,24 +146,12 @@ if ($existing_user_id) {
     }
 }
 
-$REDIRECT = '';
+$query_params = [];
 
 $loginResult = Provider::LOGIN_FAILURE;
 $loginResult = $user_id !== 0 ? Provider::LOGIN_SUCCESS : $signon_provider->login();
 
-if ($loginResult === Provider::LOGIN_REGISTRATION_PREVIEW) {
-    global $CFG_GLPI;
-    Html::redirect($CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/register_preview.php?provider=' . (int) $provider_id);
-}
-
-if ($user_id || $loginResult === Provider::LOGIN_SUCCESS) {
-
-    $user_id = $user_id ?: Session::getLoginUserID();
-
-    if ($user_id) {
-        $signon_provider->linkUser($user_id);
-    }
-
+if ($loginResult !== Provider::LOGIN_FAILURE) {
     // Retrieve redirect stored during authorization step, validating it
     $redirect_target = '';
     if (isset($_SESSION['glpi_singlesignon_redirect'])) {
@@ -168,59 +163,44 @@ if ($user_id || $loginResult === Provider::LOGIN_SUCCESS) {
 
     // Only allow internal redirects starting with "/" and encode them safely
     if ($redirect_target !== '' && str_starts_with($redirect_target, '/')) {
-        $REDIRECT = '?redirect=' . rawurlencode($redirect_target);
+        $query_params['redirect'] = $redirect_target;
     }
-
-    $url_redirect = '';
-
-    if ($_SESSION["glpiactiveprofile"]["interface"] == "helpdesk") {
-        if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-            $url_redirect = ToolboxPlugin::getBaseURL() . "/front/helpdesk.public.php?create_ticket=1";
-        } else {
-            $url_redirect = ToolboxPlugin::getBaseURL() . "/front/helpdesk.public.php$REDIRECT";
-        }
-    } elseif ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && empty($REDIRECT)) {
-        $url_redirect = ToolboxPlugin::getBaseURL() . "/front/ticket.form.php";
-    } else {
-        $url_redirect = ToolboxPlugin::getBaseURL() . "/front/central.php$REDIRECT";
-    }
-
-    $url_redirect_html = htmlspecialchars($url_redirect, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-    $url_redirect_js = json_encode($url_redirect, JSON_THROW_ON_ERROR);
-
-    Html::nullHeader("Login", ToolboxPlugin::getBaseURL() . '/index.php');
-    echo '<div class="center spaced"><a href="' . $url_redirect_html . '">' .
-    __s('Automatic redirection, else click', 'singlesignon') . '</a>';
-    echo '<script type="text/javascript">
-         if (window.opener) {
-           window.opener.location=' . $url_redirect_js . ';
-           window.close();
-         } else {
-           window.location=' . $url_redirect_js . ';
-         }
-       </script></div>';
-    Html::nullFooter();
-    return;
-
-    // Auth::redirectIfAuthenticated();
-
 }
 
+if ($loginResult === Provider::LOGIN_REGISTRATION_PREVIEW) {
+
+    $query_params['provider'] = (int) $provider_id;
+    $url_redirect = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/register_preview.php?' . http_build_query($query_params);
+    $url_redirect = rtrim($url_redirect, '?'); // remove `?` when there is no parameters
+    Html::redirect($url_redirect);
+}
+
+if ($user_id || $loginResult === Provider::LOGIN_SUCCESS) {
+
+    $user_id = $user_id ?: Session::getLoginUserID();
+
+    if ($user_id) {
+        $signon_provider->linkUser($user_id);
+    }
+
+    $url_redirect = $CFG_GLPI['root_doc'] . "/index.php?" . http_build_query($query_params);
+    $url_redirect = rtrim($url_redirect, '?'); // remove `?` when there is no parameters
+
+    echo TemplateRenderer::getInstance()->render('@singlesignon/login/redirect_opener.html.twig', [
+        'header_back_url' => $CFG_GLPI['root_doc'] . '/index.php',
+        'url_redirect'    => $url_redirect,
+    ]);
+    return;
+}
+
+$query_params['noAUTO'] = 1;
+$url_redirect = $CFG_GLPI['root_doc'] . "/front/logout.php?" . http_build_query($query_params);
+$url_redirect = rtrim($url_redirect, '?'); // remove `?` when there is no parameters
+
+
 // we have done at least a good login? No, we return.
-Html::nullHeader("Login", ToolboxPlugin::getBaseURL() . '/index.php');
-echo '<div class="center b">' . __s('User not authorized to connect in GLPI', 'singlesignon') . '<br><br>';
-// Logout whit noAUto to manage auto_login with errors
-echo '<a href="' . ToolboxPlugin::getBaseURL() . '/front/logout.php?noAUTO=1' .
-str_replace("?", "&", $REDIRECT) . '" class="singlesignon">' . __s('Log in again', 'singlesignon') . '</a></div>';
-echo '<script type="text/javascript">
-   if (window.opener) {
-      $(".singlesignon").on("click", function (e) {
-         e.preventDefault();
-         window.opener.location = $(this).attr("href");
-         window.focus();
-         window.close();
-      });
-   }
-</script>';
-Html::nullFooter();
+echo TemplateRenderer::getInstance()->render('@singlesignon/login/unauthorized_retry.html.twig', [
+    'header_back_url' => $CFG_GLPI['root_doc'] . '/index.php',
+    'retry_url'       => $url_redirect,
+]);
 return;

@@ -51,7 +51,7 @@ class LoginRenderer
             }
         }
 
-        $env->addFunction(new TwigFunction('plugin_singlesignon_render_buttons', fn() => self::renderButtons(), ['is_safe' => ['html']]));
+        $env->addFunction(new TwigFunction('plugin_singlesignon_render_buttons', fn($redirect = '') => self::renderButtons($redirect), ['is_safe' => ['html']]));
 
         $env->addFunction(new TwigFunction('plugin_singlesignon_get_login_mode', function () {
             $mode = $_COOKIE['singlesignon_login_mode'] ?? 'oauth';
@@ -77,7 +77,7 @@ class LoginRenderer
         }
     }
 
-    public static function renderButtons()
+    public static function renderButtons($redirect = '')
     {
         $provider = new Provider();
         $condition = ['`is_active` = 1'];
@@ -87,12 +87,13 @@ class LoginRenderer
             return '';
         }
 
+        $query = [];
+        if ($redirect !== '') {
+            $query['redirect'] = $redirect;
+        }
+
         $buttons = [];
         foreach ($providers as $row) {
-            $query = [];
-            if (isset($_REQUEST['redirect']) && $_REQUEST['redirect'] !== '') {
-                $query['redirect'] = $_REQUEST['redirect'];
-            }
 
             $url = ToolboxPlugin::getCallbackUrl((int) $row['id'], $query);
 

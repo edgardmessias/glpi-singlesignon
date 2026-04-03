@@ -73,6 +73,8 @@ class Provider extends CommonDBTM
     public $dohistory = true;
     public static $rightname = 'config';
 
+    private $toSessionSave = ['glpi_singlesignon_redirect'];
+
     /**
      * @var array
      */
@@ -876,36 +878,38 @@ class Provider extends CommonDBTM
     }
 
     /**
+     * Handles the OAuth authorization callback from the identity provider.
+     * This function validates the CSRF (state) token, extracts the authorization code,
+     * and may perform a redirect depending on the authentication step.
+     * If the authorization code is not present in the request, it may redirect the browser
+     * to the provider's authorization page.
      *
-     * @return boolean|string
+     * @return string
      */
     public function checkAuthorization()
     {
-
+        // If an OAuth error is present, show the error for processing
         if (isset($_GET['error'])) {
-
+            // The error comes from OAuth, so display it for processing
             $error_description = $_GET['error_description'] ?? __("The action you have requested is not allowed.");
-
             $exception = new BadRequestHttpException();
             $exception->setMessageToDisplay(__($error_description));
             throw $exception;
         }
 
+        // If there is no 'code' in the request, this is the initial (request) step: generate the CSRF token and save the redirect in the session.
+        // When 'code' is present, this is the response step returned by the provider after authentication.
         if (!isset($_GET['code'])) {
-            if (session_status() === PHP_SESSION_NONE) {
-                Session::start();
-            }
-
-            // Generate CSRF token for OAuth state parameter and remember redirect in session
+            // Generate CSRF token for OAuth state to validate the response step
             $state = Session::getNewCSRFToken();
 
-            if (isset($_SESSION['redirect'])) {
-                $_SESSION['glpi_singlesignon_redirect'] = $_SESSION['redirect'];
-            } elseif (isset($_GET['redirect'])) {
-                $_SESSION['glpi_singlesignon_redirect'] = $_GET['redirect'];
+            if (isset($_REQUEST['redirect'])) {
+                $_SESSION['glpi_singlesignon_redirect'] = $_REQUEST['redirect'];
+            } else {
+                unset($_SESSION['glpi_singlesignon_redirect']);
             }
 
-            // Build the callback URL for OAuth redirect
+            // Build the callback URL for OAuth redirect without any query parameters
             $callback_url = ToolboxPlugin::getBaseURL() . ToolboxPlugin::getCallbackUrl($this->fields['id']);
 
             $params = [
@@ -923,15 +927,16 @@ class Provider extends CommonDBTM
 
             $params = Plugin::doHookFunction("sso:authorize_params", $params);
 
-            $url = $this->getAuthorizeUrl();
+            $authorizeUrl = $this->getAuthorizeUrl();
 
-            $glue = !str_contains($url, '?') ? '?' : '&';
-            $url .= $glue . http_build_query($params);
+            $glue = !str_contains($authorizeUrl, '?') ? '?' : '&';
+            $authorizeUrl .= $glue . http_build_query($params);
 
-            Html::redirect($url);
+            Html::redirect($authorizeUrl);
         }
 
         // Extract state parameter
+        $code = $_GET['code'] ?? '';
         $state = $_GET['state'] ?? '';
 
         // Validate state against stored CSRF token
@@ -939,9 +944,9 @@ class Provider extends CommonDBTM
             '_glpi_csrf_token' => $state,
         ]);
 
-        $this->_code = $_GET['code'];
+        $this->_code = $code;
 
-        return $_GET['code'];
+        return $code;
     }
 
     /**
@@ -1591,12 +1596,31 @@ class Provider extends CommonDBTM
         $tempPassword = bin2hex(random_bytes(64));
         $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
+
+        /**
+         * Save the session data to be restored after the login.
+         */
+        $save = [];
+        foreach ($this->toSessionSave as $key) {
+            if (isset($_SESSION[$key])) {
+                $save[$key] = $_SESSION[$key];
+            }
+        }
+
         $auth = new Auth();
         $authResult = $auth->login($user->fields['name'], $tempPassword);
+
 
         $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
 
         if ($authResult) {
+            /**
+             * Restore the session data if the login was successful.
+             */
+            foreach ($save as $key => $value) {
+                $_SESSION[$key] = $value;
+            }
+
             try {
                 $this->syncOAuthPhoto($user);
             } catch (Exception $ex) {

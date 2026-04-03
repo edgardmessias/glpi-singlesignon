@@ -44,22 +44,21 @@ class ToolboxPlugin
      * Generate a URL to callback
      * GLPI 11: Use query params instead of PATH_INFO for compatibility
      * @global array $CFG_GLPI
-     * @param int $row Provider identifier
+     * @param int $provider_id Provider identifier
      * @param array $query
      * @return string
      */
-    public static function getCallbackUrl($row, $query = [])
+    public static function getCallbackUrl($provider_id, $query = [])
     {
         global $CFG_GLPI;
-
-        $provider_id = (int) $row;
 
         // Build PATH_INFO style callback to stay compatible with providers that reject query strings
         $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/callback.php';
         $url .= '/provider/' . $provider_id;
 
-        if (!empty($query) && isset($query['redirect'])) {
-            $_SESSION['redirect'] = $query['redirect'];
+        if (!empty($query)) {
+            $querystring = http_build_query($query);
+            $url .= '?' . $querystring;
         }
 
         return $url;

@@ -23,7 +23,7 @@
 {% extends 'layout/page_card_notlogged.html.twig' %}
 
 {% block content_block %}
-    {% set singlesignon_oauth_html = plugin_singlesignon_render_buttons() %}
+    {% set singlesignon_oauth_html = plugin_singlesignon_render_buttons(redirect ?? '') %}
     {% set sso_has_active_provider = singlesignon_oauth_html is not empty %}
     {% set can_switch_auth_mode = sso_has_active_provider %}
     {% set sso_cookie_mode = plugin_singlesignon_get_login_mode() %}

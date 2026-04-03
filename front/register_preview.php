@@ -26,9 +26,6 @@ use Glpi\Application\View\TemplateRenderer;
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\NotFoundHttpException;
 use GlpiPlugin\Singlesignon\Provider;
-use GlpiPlugin\Singlesignon\ToolboxPlugin;
-
-use function Safe\json_encode;
 
 include __DIR__ . '/../../../inc/includes.php';
 
@@ -71,6 +68,17 @@ $renderRegistrationForm = static function (
     if ($show_queued_messages) {
         Html::displayMessageAfterRedirect();
     }
+
+    $query_params = [
+        'noAUTO' => 1,
+    ];
+    if (isset($_REQUEST['redirect']) && !empty($_REQUEST['redirect'])) {
+        $query_params['redirect'] = (string) $_REQUEST['redirect'];
+    }
+
+    $cancel_url = $CFG_GLPI['root_doc'] . '/index.php?' . http_build_query($query_params);
+    $cancel_url = rtrim($cancel_url, '?'); // remove `?` when there is no parameters
+
     echo TemplateRenderer::getInstance()->render('@singlesignon/provider/register_preview.html.twig', [
         'form_action' => $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/register_preview.php?provider=' . $provider_id,
         'provider_id' => $provider_id,
@@ -78,7 +86,8 @@ $renderRegistrationForm = static function (
         'firstname'   => $firstname,
         'realname'    => $realname,
         'email'       => $email,
-        'cancel_url'  => $CFG_GLPI['root_doc'] . '/index.php',
+        'cancel_url'  => $cancel_url,
+        'redirect'    => $_REQUEST['redirect'] ?? '',
     ]);
     Html::nullFooter();
 };
@@ -126,44 +135,18 @@ if (isset($_POST['confirm_register'])) {
         return;
     }
 
-    $redirect_target = '';
-    if (isset($_SESSION['glpi_singlesignon_redirect'])) {
-        $redirect_target = (string) $_SESSION['glpi_singlesignon_redirect'];
-        unset($_SESSION['glpi_singlesignon_redirect']);
-    }
-    $REDIRECT = '';
-    if ($redirect_target !== '' && str_starts_with($redirect_target, '/')) {
-        $REDIRECT = '?redirect=' . rawurlencode($redirect_target);
+    $query_params = [];
+    if (isset($_REQUEST['redirect']) && !empty($_REQUEST['redirect'])) {
+        $query_params['redirect'] = (string) $_REQUEST['redirect'];
     }
 
-    $url_redirect = '';
-    if ($_SESSION['glpiactiveprofile']['interface'] === 'helpdesk') {
-        if ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && $REDIRECT === '') {
-            $url_redirect = ToolboxPlugin::getBaseURL() . '/front/helpdesk.public.php?create_ticket=1';
-        } else {
-            $url_redirect = ToolboxPlugin::getBaseURL() . '/front/helpdesk.public.php' . $REDIRECT;
-        }
-    } elseif ($_SESSION['glpiactiveprofile']['create_ticket_on_login'] && $REDIRECT === '') {
-        $url_redirect = ToolboxPlugin::getBaseURL() . '/front/ticket.form.php';
-    } else {
-        $url_redirect = ToolboxPlugin::getBaseURL() . '/front/central.php' . $REDIRECT;
-    }
+    $url_redirect = $CFG_GLPI['root_doc'] . "/index.php?" . http_build_query($query_params);
+    $url_redirect = rtrim($url_redirect, '?'); // remove `?` when there is no parameters
 
-    $url_redirect_html = htmlspecialchars($url_redirect, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-    $url_redirect_js = json_encode($url_redirect, JSON_THROW_ON_ERROR);
-
-    Html::nullHeader(__('Login', 'singlesignon'), ToolboxPlugin::getBaseURL() . '/index.php');
-    echo '<div class="center spaced"><a href="' . $url_redirect_html . '">' .
-        __s('Automatic redirection, else click', 'singlesignon') . '</a>';
-    echo '<script type="text/javascript">
-         if (window.opener) {
-           window.opener.location=' . $url_redirect_js . ';
-           window.close();
-         } else {
-           window.location=' . $url_redirect_js . ';
-         }
-       </script></div>';
-    Html::nullFooter();
+    echo TemplateRenderer::getInstance()->render('@singlesignon/login/redirect_opener.html.twig', [
+        'header_back_url' => $CFG_GLPI['root_doc'] . '/index.php',
+        'url_redirect'    => $url_redirect,
+    ]);
     return;
 }
 

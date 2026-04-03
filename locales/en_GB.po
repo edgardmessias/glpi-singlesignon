@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-02 16:31-0300\n"
-"PO-Revision-Date: 2026-04-02 16:31-0300\n"
+"POT-Creation-Date: 2026-04-03 11:53-0300\n"
+"PO-Revision-Date: 2026-04-03 11:53-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: en_GB\n"
@@ -19,9 +19,27 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:132
+#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:134
 msgid "Single Sign-on"
 msgstr "Single Sign-on"
+
+#: \templates\login\redirect_opener.html.twig
+#: \templates\login\unauthorized_retry.html.twig
+#: \front\register_preview.php:128
+msgid "Login"
+msgstr "Login"
+
+#: \templates\login\redirect_opener.html.twig
+msgid "Automatic redirection, else click"
+msgstr "Automatic redirection, else click"
+
+#: \templates\login\unauthorized_retry.html.twig
+msgid "User not authorized to connect in GLPI"
+msgstr "User not authorized to connect in GLPI"
+
+#: \templates\login\unauthorized_retry.html.twig
+msgid "Log in again"
+msgstr "Log in again"
 
 #: \templates\override\pages\login.html.twig
 msgid "Use GLPI login form"
@@ -35,7 +53,7 @@ msgstr "Use Single Sign-on"
 msgid "Linked accounts"
 msgstr "Linked accounts"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:124
+#: \templates\preference\form_content.html.twig \src\Provider.php:126
 msgid "Single Sign-on Provider"
 msgstr "Single Sign-on Provider"
 
@@ -132,7 +150,7 @@ msgstr ""
 "settings may vary by provider). You can specify additional parameters with "
 "the \"&\" delimiter."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:468
+#: \templates\provider\show_form.html.twig \src\Provider.php:470
 msgid "Authorize URL"
 msgstr "Authorize URL"
 
@@ -174,27 +192,27 @@ msgstr ""
 msgid "SSO Type"
 msgstr "SSO Type"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:436
+#: \templates\provider\show_form.html.twig \src\Provider.php:438
 msgid "Client ID"
 msgstr "Client ID"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:444
+#: \templates\provider\show_form.html.twig \src\Provider.php:446
 msgid "Client Secret"
 msgstr "Client Secret"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:452
+#: \templates\provider\show_form.html.twig \src\Provider.php:454
 msgid "Scope"
 msgstr "Scope"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:460
+#: \templates\provider\show_form.html.twig \src\Provider.php:462
 msgid "Extra Options"
 msgstr "Extra Options"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:476
+#: \templates\provider\show_form.html.twig \src\Provider.php:478
 msgid "Access Token URL"
 msgstr "Access Token URL"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:484
+#: \templates\provider\show_form.html.twig \src\Provider.php:486
 msgid "Resource Owner Details URL"
 msgstr "Resource Owner Details URL"
 
@@ -278,51 +296,35 @@ msgstr "Callback URL"
 msgid "Test Single Sign-on"
 msgstr "Test Single Sign-on"
 
-#: \front\callback.php:45
+#: \front\callback.php:47
 msgid "Provider not defined."
 msgstr "Provider not defined."
 
-#: \front\callback.php:53 \front\register_preview.php:42
+#: \front\callback.php:55 \front\register_preview.php:39
 msgid "Provider not found."
 msgstr "Provider not found."
 
-#: \front\callback.php:59 \front\register_preview.php:48
+#: \front\callback.php:61 \front\register_preview.php:45
 msgid "Provider not active."
 msgstr "Provider not active."
 
-#: \front\callback.php:97
+#: \front\callback.php:104
 msgid "Unable to encode resource owner payload."
 msgstr "Unable to encode resource owner payload."
 
-#: \front\callback.php:112
+#: \front\callback.php:119
 msgid "Unable to encode callback context."
 msgstr "Unable to encode callback context."
 
-#: \front\callback.php:193 \front\register_preview.php:157
-msgid "Automatic redirection, else click"
-msgstr "Automatic redirection, else click"
-
-#: \front\callback.php:211
-msgid "User not authorized to connect in GLPI"
-msgstr "User not authorized to connect in GLPI"
-
-#: \front\callback.php:214
-msgid "Log in again"
-msgstr "Log in again"
-
-#: \front\register_preview.php:55
+#: \front\register_preview.php:52
 msgid "Registration session expired or invalid. Please sign in again."
 msgstr "Registration session expired or invalid. Please sign in again."
 
-#: \front\register_preview.php:70
+#: \front\register_preview.php:67
 msgid "Confirm registration"
 msgstr "Confirm registration"
 
-#: \front\register_preview.php:119 \front\register_preview.php:155
-msgid "Login"
-msgstr "Login"
-
-#: \front\register_preview.php:121
+#: \front\register_preview.php:130
 msgid "User created but login failed. Please try signing in again."
 msgstr "User created but login failed. Please try signing in again."
 
@@ -343,94 +345,94 @@ msgstr "This plugin is not yet validated for this GLPI version"
 msgid "This plugin requires PHP >= 8.2"
 msgstr "This plugin requires PHP >= 8.2"
 
-#: \src\LoginRenderer.php:101 \src\Preference.php:205
-#: \src\ToolboxPlugin.php:274
+#: \src\LoginRenderer.php:102 \src\Preference.php:205
+#: \src\ToolboxPlugin.php:273
 #, php-format
 msgid "Login with %s"
 msgstr "Login with %s"
 
-#: \src\Provider.php:250
+#: \src\Provider.php:252
 msgid "A Name is required"
 msgstr "A Name is required"
 
-#: \src\Provider.php:256
+#: \src\Provider.php:258
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "The \"%s\" is a Invalid type"
 
-#: \src\Provider.php:260
+#: \src\Provider.php:262
 msgid "A Client ID is required"
 msgstr "A Client ID is required"
 
-#: \src\Provider.php:264
+#: \src\Provider.php:266
 msgid "A Client Secret is required"
 msgstr "A Client Secret is required"
 
-#: \src\Provider.php:269
+#: \src\Provider.php:271
 msgid "An Authorize URL is required"
 msgstr "An Authorize URL is required"
 
-#: \src\Provider.php:271
+#: \src\Provider.php:273
 msgid "The Authorize URL is invalid"
 msgstr "The Authorize URL is invalid"
 
-#: \src\Provider.php:275
+#: \src\Provider.php:277
 msgid "An Access Token URL is required"
 msgstr "An Access Token URL is required"
 
-#: \src\Provider.php:277
+#: \src\Provider.php:279
 msgid "The Access Token URL is invalid"
 msgstr "The Access Token URL is invalid"
 
-#: \src\Provider.php:281
+#: \src\Provider.php:283
 msgid "A Resource Owner Details URL is required"
 msgstr "A Resource Owner Details URL is required"
 
-#: \src\Provider.php:283
+#: \src\Provider.php:285
 msgid "The Resource Owner Details URL is invalid"
 msgstr "The Resource Owner Details URL is invalid"
 
-#: \src\Provider.php:347
+#: \src\Provider.php:349
 msgid "Only if user has no photo"
 msgstr "Only if user has no photo"
 
-#: \src\Provider.php:348
+#: \src\Provider.php:350
 msgid "Always on login"
 msgstr "Always on login"
 
-#: \src\Provider.php:355
+#: \src\Provider.php:357
 msgid "Authorization: Bearer <token>"
 msgstr "Authorization: Bearer <token>"
 
-#: \src\Provider.php:356
+#: \src\Provider.php:358
 msgid "Authorization: <token>"
 msgstr "Authorization: <token>"
 
-#: \src\Provider.php:564
+#: \src\Provider.php:566
 msgid "Generic"
 msgstr "Generic"
 
-#: \src\Provider.php:565
+#: \src\Provider.php:567
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:566
+#: \src\Provider.php:568
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:567
+#: \src\Provider.php:569
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:568
+#: \src\Provider.php:570
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:569
+#: \src\Provider.php:571
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:570
+#: \src\Provider.php:572
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
 

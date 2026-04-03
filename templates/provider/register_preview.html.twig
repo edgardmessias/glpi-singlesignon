@@ -29,6 +29,7 @@
     <form method="post" action="{{ form_action }}">
         <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}"/>
         <input type="hidden" name="provider" value="{{ provider_id }}"/>
+        <input type="hidden" name="redirect" value="{{ redirect }}"/>
 
         {{ fields.textField('name', login, __('Login'), {full_width: true}) }}
         {{ fields.textField('firstname', firstname, __('First name'), {full_width: true}) }}
