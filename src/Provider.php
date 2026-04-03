@@ -158,6 +158,8 @@ class Provider extends CommonDBTM
         $this->fields['default_entities_id'] = 0;
         $this->fields['match_entity_by_email_domain'] = 0;
         $this->fields['default_profiles_id'] = 0;
+        $this->fields['ssl_verify_host'] = 1;
+        $this->fields['ssl_verify_peer'] = 1;
     }
 
     public function showForm($ID, $options = [])
@@ -338,6 +340,16 @@ class Provider extends CommonDBTM
         $input['default_entities_id'] = (int) ($input['default_entities_id'] ?? 0);
         $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
         $input['default_profiles_id'] = (int) ($input['default_profiles_id'] ?? 0);
+        if (array_key_exists('ssl_verify_host', $input)) {
+            $input['ssl_verify_host'] = empty($input['ssl_verify_host']) ? 0 : 1;
+        } else {
+            $input['ssl_verify_host'] = 1;
+        }
+        if (array_key_exists('ssl_verify_peer', $input)) {
+            $input['ssl_verify_peer'] = empty($input['ssl_verify_peer']) ? 0 : 1;
+        } else {
+            $input['ssl_verify_peer'] = 1;
+        }
 
         return $input;
     }
@@ -979,15 +991,13 @@ class Provider extends CommonDBTM
         $url = $this->getAccessTokenUrl();
 
         $msgerr = null;
-        $content = Toolbox::callCurl($url, [
+        $content = Toolbox::callCurl($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => [
                 "Accept: application/json",
             ],
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => http_build_query($params),
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_SSL_VERIFYPEER => false,
-        ], $msgerr);
+        ]), $msgerr);
 
         if ($msgerr) {
             print_r("\ngetAccessToken error: " . $msgerr . "\n");
@@ -1045,11 +1055,9 @@ class Provider extends CommonDBTM
 
         $headers = $this->buildResourceOwnerHeaders($token);
 
-        $content = Toolbox::callCurl($url, [
+        $content = Toolbox::callCurl($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_SSL_VERIFYPEER => false,
-        ]);
+        ]));
 
         if ($this->debug) {
             print_r("\ngetResourceOwner:\n");
@@ -1073,11 +1081,9 @@ class Provider extends CommonDBTM
                 print_r("\nlinkedin:\n");
             }
             $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
-            $content = Toolbox::callCurl($email_url, [
+            $content = Toolbox::callCurl($email_url, $this->buildCurlOptions([
                 CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_SSL_VERIFYPEER => false,
-            ]);
+            ]));
 
             try {
                 $data = json_decode($content, true);
@@ -1961,6 +1967,28 @@ class Provider extends CommonDBTM
     }
 
     /**
+     * Merge CURLOPT_* options with TLS settings from this provider.
+     * Uses array_replace (not array_merge) so numeric CURLOPT keys are preserved.
+     *
+     * @param array<int, mixed> $options
+     *
+     * @return array<int, mixed>
+     */
+    private function buildCurlOptions(array $options): array
+    {
+        $verifyHost = !isset($this->fields['ssl_verify_host']) || (int) $this->fields['ssl_verify_host'] !== 0;
+        $verifyPeer = !isset($this->fields['ssl_verify_peer']) || (int) $this->fields['ssl_verify_peer'] !== 0;
+
+        if (!isset($options[CURLOPT_SSL_VERIFYHOST])) {
+            $options[CURLOPT_SSL_VERIFYHOST] = $verifyHost ? 2 : 0;
+        }
+        if (!isset($options[CURLOPT_SSL_VERIFYPEER])) {
+            $options[CURLOPT_SSL_VERIFYPEER] = $verifyPeer;
+        }
+        return $options;
+    }
+
+    /**
      * Fetch remote avatar content and ensure the response payload is really an image.
      * Some providers return JSON on auth/scope errors, which must be ignored here.
      *
@@ -1969,11 +1997,9 @@ class Provider extends CommonDBTM
      */
     private function fetchOAuthPhotoContent(string $url, array $headers): ?string
     {
-        $img = Toolbox::callCurl($url, [
+        $img = Toolbox::callCurl($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_SSL_VERIFYHOST => false,
-            CURLOPT_SSL_VERIFYPEER => false,
-        ]);
+        ]));
 
         if (!is_string($img) || $img === '') {
             return null;

@@ -37,6 +37,8 @@
 {% set _tip_resource_owner_auth = call('nl2br', [__('Controls how Authorization header is built for Resource Owner Details requests.', 'singlesignon')]) %}
 {% set _tip_picture_auth = call('nl2br', [__('Controls how Authorization header is built for avatar download requests.', 'singlesignon')]) %}
 {% set _tip_custom_headers = call('nl2br', [__('One header per line (format: Header-Name: value). Supported placeholders: <token> and <access_token>. Example: api-key: <token>', 'singlesignon')]) %}
+{% set _tip_ssl_verify_host = call('nl2br', [__('Verify that the server certificate matches the hostname (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
+{% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 
 {% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");' %}
 {% set field_opts = {
@@ -54,7 +56,7 @@
 
 <div id="sso-provider-modern-form" class="row text-start">
     <div class="col-12">
-        <div class="hr-text my-3">{{ __('Registration') }}</div>
+        <div class="hr-text my-3">{{ __('General') }}</div>
     </div>
 
     {{ fields.textField('name', provider.fields.name|default(''), __('Name'), field_opts) }}
@@ -77,6 +79,11 @@
 
     {{ fields.textField('client_id', provider.fields.client_id|default(''), __('Client ID', 'singlesignon'), field_opts) }}
     {{ fields.textField('client_secret', provider.fields.client_secret|default(''), __('Client Secret', 'singlesignon'), field_opts) }}
+
+    <div class="col-12">
+        <div class="hr-text my-3">{{ __('OAuth URLs and HTTP', 'singlesignon') }}</div>
+    </div>
+
     {{ fields.textField('scope', call([provider, 'getScope'], []), __('Scope', 'singlesignon'), field_opts) }}
     {{ fields.textField('extra_options', provider.fields.extra_options|default(''), __('Extra Options', 'singlesignon'), {
         helper: _tip_extra
@@ -94,6 +101,7 @@
     {{ fields.nullField({
         field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
     }) }}
+
     {{ fields.dropdownArrayField('resource_owner_auth_type', provider.fields.resource_owner_auth_type|default('bearer'), call(['GlpiPlugin\\Singlesignon\\Provider', 'getAuthorizationTypes'], []), __('Resource Owner Authorization', 'singlesignon'), {
         helper: _tip_resource_owner_auth
     }|merge(field_opts)) }}
@@ -103,6 +111,17 @@
         enable_fileupload: false,
         helper: _tip_custom_headers
     }|merge(field_opts)) }}
+
+    {{ fields.dropdownYesNo('ssl_verify_host', provider.fields.ssl_verify_host|default(1), __('SSL verify host', 'singlesignon'), {
+        helper: _tip_ssl_verify_host
+    }|merge(field_opts)) }}
+    {{ fields.dropdownYesNo('ssl_verify_peer', provider.fields.ssl_verify_peer|default(1), __('SSL verify peer', 'singlesignon'), {
+        helper: _tip_ssl_verify_peer
+    }|merge(field_opts)) }}
+
+    <div class="col-12">
+        <div class="hr-text my-3">{{ __('Login behavior', 'singlesignon') }}</div>
+    </div>
 
     {{ fields.dropdownYesNo('is_default', provider.fields.is_default|default(0), __('IsDefault', 'singlesignon'), field_opts) }}
     {{ fields.dropdownYesNo('popup', provider.fields.popup|default(0), __('PopupAuth', 'singlesignon'), field_opts) }}

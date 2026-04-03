@@ -68,6 +68,8 @@ function plugin_singlesignon_install()
             `resource_owner_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
             `resource_owner_picture_auth_type` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
             `resource_owner_picture_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
+            `ssl_verify_host`            TINYINT(1) NOT NULL DEFAULT '1',
+            `ssl_verify_peer`            TINYINT(1) NOT NULL DEFAULT '1',
             `is_active`                  TINYINT(1) NOT NULL DEFAULT '0',
             `use_email_for_login`        TINYINT(1) NOT NULL DEFAULT '0',
             `split_name`                 TINYINT(1) NOT NULL DEFAULT '0',
@@ -229,6 +231,11 @@ function plugin_singlesignon_install()
                 'value' => 0,
             ],
         );
+    }
+
+    if (version_compare($currentVersion, '2.0.0-dev.5', '<')) {
+        $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
+        $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
     }
 
     if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => Provider::class])) {
