@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [2.0.0-dev.5](https://github.com/edgardmessias/glpi-singlesignon/compare/v1.4.0..v2.0.0-dev.5) - 2026-04-04
+## [2.0.0](https://github.com/edgardmessias/glpi-singlesignon/compare/v1.4.0..v2.0.0) - 2026-04-04
 
 ### Bug Fixes
 
@@ -14,11 +14,13 @@ All notable changes to this project will be documented in this file. See [conven
 - Fixed UI icons - ([cf629e6](https://github.com/edgardmessias/glpi-singlesignon/commit/cf629e6a5a2edfe2196f8d4e3f008337ac31a37e)) - Edgard
 - Fixed public login images - ([bde7af0](https://github.com/edgardmessias/glpi-singlesignon/commit/bde7af04ac70ed35e06cd236f2fbd9949b714460)) - Edgard
 - Fixed redirect issues (closes #157) - ([61f348b](https://github.com/edgardmessias/glpi-singlesignon/commit/61f348b5791d55fd4d917647b679e0f9ca93cf2d)) - Edgard
+- Fixed migration script for update/install - ([59096d5](https://github.com/edgardmessias/glpi-singlesignon/commit/59096d502fd3b563d98aef6ac76b2df1b4aeb1c4)) - Edgard
 
 ### Documentation
 
 - update CHANGELOG.md for v1.4.0 [skip ci] - ([76e5e0a](https://github.com/edgardmessias/glpi-singlesignon/commit/76e5e0a983c60c15ebc600ce6d7decf589f2333e)) - eduardomozart
 - update CHANGELOG.md for v1.5.1 [skip ci] - ([424485c](https://github.com/edgardmessias/glpi-singlesignon/commit/424485cfb5515340fa0f15494667caccefcd6d57)) - Killian-Aidalinfo
+- add admin guides, identity providers, and contributor setup - ([fabf0f1](https://github.com/edgardmessias/glpi-singlesignon/commit/fabf0f1607878de55049e04f0c8bf025e5100952)) - Edgard
 
 ### Features
 
@@ -46,6 +48,7 @@ All notable changes to this project will be documented in this file. See [conven
 - Renamed branch master to main - ([7c368ee](https://github.com/edgardmessias/glpi-singlesignon/commit/7c368ee11d4b7a686307482ab45cf89bb206ce3c)) - Edgard
 - Updated README.md - ([93f97ce](https://github.com/edgardmessias/glpi-singlesignon/commit/93f97ce06479c9f3dc6cda9fba9ef576aa92a78f)) - Edgard
 - Bump preview release - ([cdb48e8](https://github.com/edgardmessias/glpi-singlesignon/commit/cdb48e891ff3a14a54aad859a129b7b7323b9a50)) - Edgard
+- Updated plugin.xml - ([7af3f4b](https://github.com/edgardmessias/glpi-singlesignon/commit/7af3f4b9d4a0ea7bd6bdfe4bf15c58adbb19ad05)) - Edgard
 
 ### Refactoring
 
