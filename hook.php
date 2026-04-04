@@ -82,54 +82,61 @@ function plugin_singlesignon_install()
             KEY `date_creation` (`date_creation`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         );
-    } else {
-        $migration->addField($providersTable, 'is_default', 'bool');
-        $migration->addField($providersTable, 'popup', 'bool');
-        $migration->addField($providersTable, 'split_domain', 'bool');
-        $migration->addField(
-            $providersTable,
-            'authorized_domains',
-            'string',
-            [
-                'nodefault' => true,
-                'null'      => true,
-            ],
-        );
-        $migration->addField($providersTable, 'use_email_for_login', 'bool');
-        $migration->addField($providersTable, 'split_name', 'bool');
     }
 
-    if (version_compare($currentVersion, '1.2.0', '<')) {
-        $migration->addField(
-            $providersTable,
-            'picture',
-            'string',
-            [
-                'nodefault' => true,
-                'null'      => true,
-            ],
-        );
-        $migration->addField(
-            $providersTable,
-            'bgcolor',
-            "varchar(7)",
-            [
-                'nodefault' => true,
-                'null'      => true,
-            ],
-        );
-        $migration->addField(
-            $providersTable,
-            'color',
-            "varchar(7)",
-            [
-                'nodefault' => true,
-                'null'      => true,
-            ],
-        );
-    }
+    /**
+     * Version 1.1.0
+     */
+    $migration->addField($providersTable, 'is_default', 'bool');
+    $migration->addField($providersTable, 'popup', 'bool');
+    $migration->addField($providersTable, 'split_domain', 'bool');
+    $migration->addField(
+        $providersTable,
+        'authorized_domains',
+        'string',
+        [
+            'nodefault' => true,
+            'null'      => true,
+        ],
+    );
+    $migration->addField($providersTable, 'use_email_for_login', 'bool');
+    $migration->addField($providersTable, 'split_name', 'bool');
 
-    if (version_compare($currentVersion, '1.3.0', '<') && !$DB->tableExists($providersUsersTable)) {
+    /**
+     * Version 1.2.0
+     */
+    $migration->addField(
+        $providersTable,
+        'picture',
+        'string',
+        [
+            'nodefault' => true,
+            'null'      => true,
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'bgcolor',
+        "varchar(7)",
+        [
+            'nodefault' => true,
+            'null'      => true,
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'color',
+        "varchar(7)",
+        [
+            'nodefault' => true,
+            'null'      => true,
+        ],
+    );
+
+    /**
+     * Version 1.3.0
+     */
+    if (!$DB->tableExists($providersUsersTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersUsersTable` (
             `id` INT NOT NULL AUTO_INCREMENT,
@@ -143,7 +150,10 @@ function plugin_singlesignon_install()
         );
     }
 
-    if (version_compare($currentVersion, '2.0.0-dev.1', '<') && !$DB->tableExists($providersFieldsTable)) {
+    /**
+     * Version 2.0.0
+     */
+    if (!$DB->tableExists($providersFieldsTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersFieldsTable` (
             `id` INT NOT NULL AUTO_INCREMENT,
@@ -161,83 +171,80 @@ function plugin_singlesignon_install()
         );
     }
 
-    if (version_compare($currentVersion, '2.0.0-dev.2', '<')) {
-        $migration->addField(
-            $providersTable,
-            'user_photo_sync_mode',
-            'integer',
-            [
-                'value' => 0,
-                'after' => 'url_resource_owner_details',
-            ],
-        );
-        $migration->addField(
-            $providersTable,
-            'resource_owner_auth_type',
-            'string',
-            [
-                'value' => 'bearer',
-                'after' => 'user_photo_sync_mode',
-            ],
-        );
-        $migration->addField(
-            $providersTable,
-            'resource_owner_custom_headers',
-            'text',
-            [
-                'nodefault' => true,
-                'null'      => true,
-                'after'     => 'resource_owner_auth_type',
-            ],
-        );
-        $migration->addField(
-            $providersTable,
-            'resource_owner_picture_auth_type',
-            'string',
-            [
-                'value' => 'bearer',
-                'after' => 'resource_owner_custom_headers',
-            ],
-        );
-        $migration->addField(
-            $providersTable,
-            'resource_owner_picture_custom_headers',
-            'text',
-            [
-                'nodefault' => true,
-                'null'      => true,
-                'after'     => 'resource_owner_picture_auth_type',
-            ],
-        );
-    }
+    $migration->addField(
+        $providersTable,
+        'user_photo_sync_mode',
+        'integer',
+        [
+            'value' => 0,
+            'after' => 'url_resource_owner_details',
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'resource_owner_auth_type',
+        'string',
+        [
+            'value' => 'bearer',
+            'after' => 'user_photo_sync_mode',
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'resource_owner_custom_headers',
+        'text',
+        [
+            'nodefault' => true,
+            'null'      => true,
+            'after'     => 'resource_owner_auth_type',
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'resource_owner_picture_auth_type',
+        'string',
+        [
+            'value' => 'bearer',
+            'after' => 'resource_owner_custom_headers',
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'resource_owner_picture_custom_headers',
+        'text',
+        [
+            'nodefault' => true,
+            'null'      => true,
+            'after'     => 'resource_owner_picture_auth_type',
+        ],
+    );
 
-    if (version_compare($currentVersion, '2.0.0-dev.3', '<')) {
-        $migration->addField($providersTable, 'auto_register', 'bool', ['value' => 0]);
-        $migration->addField($providersTable, 'registration_preview', 'bool', ['value' => 0]);
-        $migration->addField(
-            $providersTable,
-            'default_entities_id',
-            'integer',
-            [
-                'value' => 0,
-            ],
-        );
-        $migration->addField($providersTable, 'match_entity_by_email_domain', 'bool', ['value' => 0]);
-        $migration->addField(
-            $providersTable,
-            'default_profiles_id',
-            'integer',
-            [
-                'value' => 0,
-            ],
-        );
-    }
+    $migration->addField($providersTable, 'auto_register', 'bool', ['value' => 0]);
+    $migration->addField($providersTable, 'registration_preview', 'bool', ['value' => 0]);
+    $migration->addField(
+        $providersTable,
+        'default_entities_id',
+        'integer',
+        [
+            'value' => 0,
+        ],
+    );
+    $migration->addField($providersTable, 'match_entity_by_email_domain', 'bool', ['value' => 0]);
+    $migration->addField(
+        $providersTable,
+        'default_profiles_id',
+        'integer',
+        [
+            'value' => 0,
+        ],
+    );
 
-    if (version_compare($currentVersion, '2.0.0-dev.5', '<')) {
-        $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
-        $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
-    }
+    $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
+    $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
 
+    /**
+     * Add display preferences
+     */
     if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => Provider::class])) {
         $preferences = [
             ['itemtype' => Provider::class, 'num' => 2, 'rank' => 1, 'users_id' => 0],
@@ -264,8 +271,7 @@ function plugin_singlesignon_uninstall()
 {
     global $DB;
 
-    $config = new Config();
-    $config->deleteConfigurationValues('plugin:singlesignon');
+    Config::deleteConfigurationValues('plugin:singlesignon');
 
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
     $providersTable = 'glpi_plugin_singlesignon_providers';
