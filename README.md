@@ -7,24 +7,32 @@
 
 Single sign-on (SSO) is a property of access control of multiple related, yet independent, software systems. With this property, a user logs in with a single ID and password to gain access to any of several related systems.
 
+# Documentation
+
+Full administrator documentation lives in the [`docs/`](./docs/README.md) folder:
+
+| Topic | Document |
+|-------|----------|
+| Overview (administrators) | [docs/README.md](./docs/README.md) |
+| Installation | [docs/installation.md](./docs/installation.md) |
+| Identity providers (Azure, Google, GitHub, …) | [docs/identity-providers.md](./docs/identity-providers.md) |
+| Provider configuration | [docs/configuration.md](./docs/configuration.md) |
+| Field mappings | [docs/field-mappings.md](./docs/field-mappings.md) |
+| FAQ & troubleshooting | [docs/faq.md](./docs/faq.md) |
+| Contributing, releases, translations | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+
 # Installation
+
  * Uncompress the archive to the `<GLPI_ROOT>/plugins/singlesignon` directory
  * Navigate to the Configuration > Plugins page,
  * Install and activate the plugin.
 
+For detailed steps (GitHub clone, `composer install`, requirements), see **[docs/installation.md](./docs/installation.md)**.
+
 # Usage
- * Go to `Configuration > Single Sign-On` and add a provider. You can find an explanation of the main configuration parameters [here](https://github.com/edgardmessias/glpi-singlesignon/wiki/Plugin-Provider-Options).
+
+ * Go to `Configuration > Single Sign-On` and add a provider. See **[docs/configuration.md](./docs/configuration.md)** for all settings. Additional notes also appear on the [wiki](https://github.com/edgardmessias/glpi-singlesignon/wiki/Plugin-Provider-Options).
  * To test, do logout and try login with links below login page `Login with <name>`
-
-# Dynamic field mappings (JSONPath)
-This plugin supports dynamic extraction of user fields from the OAuth `getResourceOwner` payload using JSONPath expressions.
-
- * Configure mappings per provider in the `Field mappings` tab.
- * Supported mapping types: `id`, `username`, `email`, `avatar_url`.
- * Each mapping has: type, JSONPath expression, active flag, and order.
- * Resolution uses active mappings ordered by `sort_order` (within the same field type).
- * If no configured mapping resolves a value, the plugin uses provider defaults from `providers.json` (for provider-specific defaults) and built-in generic defaults.
- * New providers of type `generic` are automatically seeded with default mappings.
 
 # Available providers
  * Azure - https://docs.microsoft.com/azure/app-service/configure-authentication-provider-aad
@@ -36,16 +44,23 @@ This plugin supports dynamic extraction of user fields from the OAuth `getResour
  * Generic - Allow to define custom URLs
  * Zitadel - use _Generic_ and see parameters in [Generic Examples - Zitadel](https://github.com/edgardmessias/glpi-singlesignon/wiki/Generic-Examples-%E2%80%90-Zitadel)
 
-# Adding translations
-If your preferred language is missing. You can add your own [translation on Transifex service](https://app.transifex.com/eduardomozart/glpi-singlesignon/languages/).
+# Contributing
 
-# Adding a new release
-To create a new release of this plugin automatically through GitHub Actions (Workflow), edit the file ``plugin.xml`` to include the new version tag, GLPI compatible version and download URL and create a new branch. Remember to edit the ``setup.php`` file for the new plugin version.
+See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for developers (repository layout, Composer, quality checks, **releases**, **translations** on Transifex, and integration hooks).
 
 # Screenshots
 
-![image 1](./screenshots/image_1.png)
-![image 2](./screenshots/image_2.png)
+<div align="center">
+
+  <img src="./screenshots/image_1.png" alt="Screenshot 1" width="600" />
+  <br><br>
+  <img src="./screenshots/image_2.png" alt="Screenshot 2" width="600" />
+  <br><br>
+  <img src="./screenshots/image_3.png" alt="Screenshot 3" width="600" />
+  <br><br>
+  <img src="./screenshots/image_4.png" alt="Screenshot 3" width="600" />
+
+</div>
 
 # Donation
 <table border="0">

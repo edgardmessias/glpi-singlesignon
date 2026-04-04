@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [2.0.0-dev.4](https://github.com/edgardmessias/glpi-singlesignon/compare/v1.4.0..v2.0.0-dev.4) - 2026-04-03
+## [2.0.0-dev.5](https://github.com/edgardmessias/glpi-singlesignon/compare/v1.4.0..v2.0.0-dev.5) - 2026-04-04
 
 ### Bug Fixes
 
@@ -30,6 +30,7 @@ All notable changes to this project will be documented in this file. See [conven
 - Allow OAuth photo sync with avatar_url mapping for all providers - ([e0efb20](https://github.com/edgardmessias/glpi-singlesignon/commit/e0efb20967e455dcfd5b9ed79db5345367f56c4c)) - Edgard
 - Add configurable photo sync modes and custom header options - ([093cdbc](https://github.com/edgardmessias/glpi-singlesignon/commit/093cdbc76d8eb3ea55e330c4aa2673e3f50fa4ff)) - Edgard
 - new auto-registration flow for OAuth SSO users - ([09627a2](https://github.com/edgardmessias/glpi-singlesignon/commit/09627a227ab566b0f5da9a59be9522fa0cba41b3)) - Edgard
+- Added SSL Verify option - ([710ed1e](https://github.com/edgardmessias/glpi-singlesignon/commit/710ed1eb4a9e1943222a47f2b56098189535af2b)) - Edgard
 
 ### Miscellaneous Chores
 
@@ -44,6 +45,7 @@ All notable changes to this project will be documented in this file. See [conven
 - Fixed Psalm issues - ([331b1e9](https://github.com/edgardmessias/glpi-singlesignon/commit/331b1e9255322ee43287460b739864c41112d5e8)) - Edgard
 - Renamed branch master to main - ([7c368ee](https://github.com/edgardmessias/glpi-singlesignon/commit/7c368ee11d4b7a686307482ab45cf89bb206ce3c)) - Edgard
 - Updated README.md - ([93f97ce](https://github.com/edgardmessias/glpi-singlesignon/commit/93f97ce06479c9f3dc6cda9fba9ef576aa92a78f)) - Edgard
+- Bump preview release - ([cdb48e8](https://github.com/edgardmessias/glpi-singlesignon/commit/cdb48e891ff3a14a54aad859a129b7b7323b9a50)) - Edgard
 
 ### Refactoring
 
