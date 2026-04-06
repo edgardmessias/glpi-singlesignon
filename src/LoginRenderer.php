@@ -79,6 +79,8 @@ class LoginRenderer
 
     public static function renderButtons($redirect = '')
     {
+        global $CFG_GLPI;
+
         $provider = new Provider();
         $condition = ['`is_active` = 1'];
         $providers = $provider->find($condition, 'is_default DESC, name ASC');
@@ -87,9 +89,15 @@ class LoginRenderer
             return '';
         }
 
+        $showRemember = !empty($CFG_GLPI['login_remember_time']);
+        $rememberDefault = !empty($CFG_GLPI['login_remember_default']);
+
         $query = [];
         if ($redirect !== '') {
             $query['redirect'] = $redirect;
+        }
+        if ($showRemember && $rememberDefault) {
+            $query['remember'] = '1';
         }
 
         $buttons = [];
@@ -113,7 +121,9 @@ class LoginRenderer
         $renderer = TemplateRenderer::getInstance();
 
         return $renderer->render('@singlesignon/login/buttons.html.twig', [
-            'buttons' => $buttons,
+            'buttons'          => $buttons,
+            'show_remember'    => $showRemember,
+            'remember_default' => $rememberDefault,
         ]);
     }
 

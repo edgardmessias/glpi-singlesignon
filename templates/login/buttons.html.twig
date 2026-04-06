@@ -42,10 +42,61 @@
             </a>
         {% endfor %}
     </div>
+    {% if show_remember %}
+        {# Session preference below primary OAuth actions (common UX pattern). #}
+        <div class="singlesignon-login-remember" role="group" aria-label="{{ __('Session options', 'singlesignon') }}">
+            <div class="singlesignon-login-remember-inner">
+                <span class="singlesignon-login-remember-icon" aria-hidden="true">
+                    <i class="ti ti-shield-check"></i>
+                </span>
+                <label class="singlesignon-login-remember-label form-check mb-0" for="singlesignon_login_remember">
+                    <input type="checkbox" class="form-check-input mt-0" id="singlesignon_login_remember" data-singlesignon-remember-toggle="true" {{ remember_default ? 'checked' : '' }}/>
+                    <span class="form-check-label">
+                        <span class="singlesignon-login-remember-title">{{ __('Remember me') }}</span>
+                        <small class="singlesignon-login-remember-hint text-muted">{{ __('Stay signed in on this browser until you sign out.', 'singlesignon') }}</small>
+                    </span>
+                </label>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {# OAuth popup: anchors with data-singlesignon-popup #}
 <script>
 (function () {
+    const applyRememberToOAuthLinks = () => {
+        const checkbox = document.getElementById('singlesignon_login_remember');
+        if (!checkbox) {
+            return;
+        }
+        const enabled = checkbox.checked;
+        document.querySelectorAll('a.singlesignon-login-button[href]').forEach((anchor) => {
+            let href = anchor.getAttribute('href') || '';
+            try {
+                const url = new URL(href, window.location.origin);
+                if (enabled) {
+                    url.searchParams.set('remember', '1');
+                } else {
+                    url.searchParams.delete('remember');
+                }
+                const qs = url.search ? url.search : '';
+                anchor.setAttribute('href', url.pathname + qs + url.hash);
+            } catch (e) {
+                if (enabled) {
+                    href += (href.indexOf('?') === -1 ? '?' : '&') + 'remember=1';
+                } else {
+                    href = href.replace(/([?&])remember=1(&|$)/, '$1').replace(/\?$/, '').replace(/&$/, '');
+                }
+                anchor.setAttribute('href', href);
+            }
+        });
+    };
+
+    const rememberCheckbox = document.getElementById('singlesignon_login_remember');
+    if (rememberCheckbox) {
+        applyRememberToOAuthLinks();
+        rememberCheckbox.addEventListener('change', applyRememberToOAuthLinks);
+    }
+
     document.addEventListener('click', (event) => {
         const trigger = event.target.closest('[data-singlesignon-popup="true"]');
         if (!trigger) {

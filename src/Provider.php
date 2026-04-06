@@ -922,6 +922,13 @@ class Provider extends CommonDBTM
                 unset($_SESSION['glpi_singlesignon_redirect']);
             }
 
+            // Persist "remember me" intent for performGlpiLogin (same request lifecycle as redirect above).
+            if (isset($_REQUEST['remember']) && (string) $_REQUEST['remember'] === '1') {
+                $_SESSION['glpi_singlesignon_remember'] = 1;
+            } else {
+                unset($_SESSION['glpi_singlesignon_remember']);
+            }
+
             // Build the callback URL for OAuth redirect without any query parameters
             $callback_url = ToolboxPlugin::getBaseURL() . ToolboxPlugin::getCallbackUrl($this->fields['id']);
 
@@ -1625,6 +1632,11 @@ class Provider extends CommonDBTM
             }
         }
 
+        // GLPI "remember me" cookie: only if session flag was set during OAuth authorize step and feature is enabled.
+        $remember_me = !empty($_SESSION['glpi_singlesignon_remember'])
+            && (int) ($CFG_GLPI['login_remember_time'] ?? 0) > 0;
+        unset($_SESSION['glpi_singlesignon_remember']);
+
         // --- 2. Temporary SSO variable context (restored in step 4) ---
         $original_ssovariables_id = $CFG_GLPI['ssovariables_id'];
         $sso_variable_name = '';
@@ -1644,7 +1656,7 @@ class Provider extends CommonDBTM
 
         // --- 3. Login via external auth (password unused) ---
         $auth = new Auth();
-        $authResult = $auth->login($user->fields['name'], '');
+        $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
 
         // --- 4. Post-login cleanup (success or failure): undo temporary SSO context ---
         unset($_SESSION['glpi_remote_user']);

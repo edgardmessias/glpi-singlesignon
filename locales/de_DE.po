@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-03 12:06-0300\n"
+"POT-Creation-Date: 2026-04-06 16:40-0300\n"
 "PO-Revision-Date: 2025-02-04 19:31+0000\n"
 "Last-Translator: Eduardo Mozart de Oliveira <eduardomozart182@gmail.com>, "
 "2025\n"
@@ -24,9 +24,18 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:134
+#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:135
 msgid "Single Sign-on"
 msgstr "Single Sign-on"
+
+#: \templates\login\buttons.html.twig
+msgid "Session options"
+msgstr "Sitzungsoptionen"
+
+#: \templates\login\buttons.html.twig
+msgid "Stay signed in on this browser until you sign out."
+msgstr ""
+"Bleiben Sie in diesem Browser angemeldet, bis Sie sich abmelden."
 
 #: \templates\login\redirect_opener.html.twig
 #: \templates\login\unauthorized_retry.html.twig
@@ -58,7 +67,7 @@ msgstr "Single Sign-on verwenden"
 msgid "Linked accounts"
 msgstr "Verlinkte Accounts"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:126
+#: \templates\preference\form_content.html.twig \src\Provider.php:127
 msgid "Single Sign-on Provider"
 msgstr "Single Sign-on Provider"
 
@@ -159,7 +168,7 @@ msgstr ""
 "Provider variieren). Zusätzliche Parameter können mit dem Trennzeichen \"&\" "
 "angegeben werden."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:482
+#: \templates\provider\show_form.html.twig \src\Provider.php:483
 msgid "Authorize URL"
 msgstr "URL Autorisierung"
 
@@ -220,11 +229,11 @@ msgstr ""
 msgid "SSO Type"
 msgstr "SSO Typ"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:450
+#: \templates\provider\show_form.html.twig \src\Provider.php:451
 msgid "Client ID"
 msgstr "Client ID"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:458
+#: \templates\provider\show_form.html.twig \src\Provider.php:459
 msgid "Client Secret"
 msgstr "Client Secret"
 
@@ -232,19 +241,19 @@ msgstr "Client Secret"
 msgid "OAuth URLs and HTTP"
 msgstr "OAuth-URLs und HTTP"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:466
+#: \templates\provider\show_form.html.twig \src\Provider.php:467
 msgid "Scope"
 msgstr "Scope"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:474
+#: \templates\provider\show_form.html.twig \src\Provider.php:475
 msgid "Extra Options"
 msgstr "Weitere Optionen"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:490
+#: \templates\provider\show_form.html.twig \src\Provider.php:491
 msgid "Access Token URL"
 msgstr "URL Access Token"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:498
+#: \templates\provider\show_form.html.twig \src\Provider.php:499
 msgid "Resource Owner Details URL"
 msgstr "URL Benutzerinfornmationen"
 
@@ -394,94 +403,94 @@ msgstr "Dieses Plugin ist für diese GLPI-Version noch nicht validiert"
 msgid "This plugin requires PHP >= 8.2"
 msgstr "Dieses Plugin erfordert PHP >= 8.2"
 
-#: \src\LoginRenderer.php:102 \src\Preference.php:205
+#: \src\LoginRenderer.php:110 \src\Preference.php:205
 #: \src\ToolboxPlugin.php:273
 #, php-format
 msgid "Login with %s"
 msgstr "Login mit %s"
 
-#: \src\Provider.php:254
+#: \src\Provider.php:255
 msgid "A Name is required"
 msgstr "Es wird ein Name benötigt."
 
-#: \src\Provider.php:260
+#: \src\Provider.php:261
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "Der Typ \"%s\" ist nicht gültig"
 
-#: \src\Provider.php:264
+#: \src\Provider.php:265
 msgid "A Client ID is required"
 msgstr "Eine Client ID ist notwendig"
 
-#: \src\Provider.php:268
+#: \src\Provider.php:269
 msgid "A Client Secret is required"
 msgstr "Ein Client Secret ist notwendig"
 
-#: \src\Provider.php:273
+#: \src\Provider.php:274
 msgid "An Authorize URL is required"
 msgstr "Eine Autorisierungs URL ist notwendig"
 
-#: \src\Provider.php:275
+#: \src\Provider.php:276
 msgid "The Authorize URL is invalid"
 msgstr "Die Autorisierungs URL ist nicht gültig"
 
-#: \src\Provider.php:279
+#: \src\Provider.php:280
 msgid "An Access Token URL is required"
 msgstr "Eine Access Token URL ist notwendig"
 
-#: \src\Provider.php:281
+#: \src\Provider.php:282
 msgid "The Access Token URL is invalid"
 msgstr "Die Access Token URL ist nicht gültig"
 
-#: \src\Provider.php:285
+#: \src\Provider.php:286
 msgid "A Resource Owner Details URL is required"
 msgstr "Eine Benutzerinfornmationen URL ist notwendig"
 
-#: \src\Provider.php:287
+#: \src\Provider.php:288
 msgid "The Resource Owner Details URL is invalid"
 msgstr "Die Benutzerinfornmationen URL ist nicht gültig"
 
-#: \src\Provider.php:361
+#: \src\Provider.php:362
 msgid "Only if user has no photo"
 msgstr "Nur wenn der Benutzer kein Foto hat"
 
-#: \src\Provider.php:362
+#: \src\Provider.php:363
 msgid "Always on login"
 msgstr "Immer bei der Anmeldung"
 
-#: \src\Provider.php:369
+#: \src\Provider.php:370
 msgid "Authorization: Bearer <token>"
 msgstr "Autorisierung: Bearer <token>"
 
-#: \src\Provider.php:370
+#: \src\Provider.php:371
 msgid "Authorization: <token>"
 msgstr "Autorisierung: <token>"
 
-#: \src\Provider.php:578
+#: \src\Provider.php:579
 msgid "Generic"
 msgstr "Generisch"
 
-#: \src\Provider.php:579
+#: \src\Provider.php:580
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:580
+#: \src\Provider.php:581
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:581
+#: \src\Provider.php:582
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:582
+#: \src\Provider.php:583
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:583
+#: \src\Provider.php:584
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:584
+#: \src\Provider.php:585
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
 
