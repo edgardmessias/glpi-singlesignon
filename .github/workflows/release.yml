@@ -26,6 +26,16 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "9"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
@@ -52,39 +62,35 @@ jobs:
           echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
           echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
           if [[ -n "${PREVIOUS_STABLE_TAG}" ]]; then
-            CLI_ARGS="${PREVIOUS_STABLE_TAG}..${TAG_NAME} --strip all"
+            echo "range=${PREVIOUS_STABLE_TAG}..${TAG_NAME}" >> "$GITHUB_OUTPUT"
           else
-            CLI_ARGS="--tag ${TAG_NAME} --strip all"
+            echo "range=" >> "$GITHUB_OUTPUT"
           fi
-          echo "cliff_args=${CLI_ARGS}" >> "$GITHUB_OUTPUT"
 
-      - name: Generate release body from git-cliff
-        id: git_cliff
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: ${{ steps.meta.outputs.cliff_args }}
-          github_token: ${{ github.token }}
-        env:
-          OUTPUT: RELEASE_BODY.md
-          GITHUB_REPO: ${{ github.repository }}
+      - name: Prepare release notes (badges + git-cliff body)
+        run: |
+          if [ -n "${{ steps.meta.outputs.range }}" ]; then
+            composer generate-prepare-notes "${{ steps.meta.outputs.tag_name }}" "${{ steps.meta.outputs.range }}"
+          else
+            composer generate-prepare-notes "${{ steps.meta.outputs.tag_name }}"
+          fi > RELEASE_BODY_FINAL.md
 
       - name: Create release
         uses: actions/github-script@v8
         env:
           TAG_NAME: ${{ steps.meta.outputs.tag_name }}
           PRERELEASE: ${{ steps.meta.outputs.prerelease }}
-          RELEASE_BODY: ${{ steps.git_cliff.outputs.content }}
         with:
           script: |
             const fs = await import('fs');
             const path = await import('path');
+            const releaseBody = fs.readFileSync('RELEASE_BODY_FINAL.md', 'utf8');
             const release = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: process.env.TAG_NAME,
               name: process.env.TAG_NAME,
-              body: process.env.RELEASE_BODY,
+              body: releaseBody,
               draft: false,
               prerelease: process.env.PRERELEASE === 'true',
             });

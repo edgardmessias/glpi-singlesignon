@@ -22,6 +22,8 @@
         }
     },
     "scripts": {
+        "generate-changelog-body": "vendor/bin/robo generate_changelog_body",
+        "generate-prepare-notes": "vendor/bin/robo generate_prepare_notes",
         "license-check:fix": "./vendor/bin/licence-headers-check --fix --header-file ./tools/HEADER",
         "license-check": "./vendor/bin/licence-headers-check --header-file ./tools/HEADER",
         "lint": [
