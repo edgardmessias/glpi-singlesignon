@@ -236,11 +236,14 @@ class RoboFile extends Tasks
             '--strip', 'all',
             '--ignore-tags', '-',
         ];
-        if ($range !== null && $range !== '') {
-            $args[] = $range;
-        } else {
+
+        if ($tagForSingleTag !== null && $tagForSingleTag !== '') {
             $args[] = '--tag';
             $args[] = $this->normalizeVersionTag($tagForSingleTag);
+        }
+
+        if ($range !== null && $range !== '') {
+            $args[] = $range;
         }
 
         $result = $this->taskExec('pnpx')

@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.0.1](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.1) - 2026-04-06
+
+### Bug Fixes
+
+- Fixed login for LDAP users (closes #147) - ([29609e3](https://github.com/edgardmessias/glpi-singlesignon/commit/29609e3951be21fceed00fc67bddb3e6a262a546)) - Edgard
+
+### Ci
+
+- Updated changelog output - ([f4c53cf](https://github.com/edgardmessias/glpi-singlesignon/commit/f4c53cf4a086524dabffa0addbbcf7b8320dd5b3)) - Edgard
+
+---
 ## [2.0.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.0) - 2026-04-04
 
 ### Bug Fixes
