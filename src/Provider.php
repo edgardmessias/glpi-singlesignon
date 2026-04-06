@@ -39,6 +39,7 @@ use User;
 use Profile;
 use Profile_User;
 use Auth;
+use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
 
@@ -1591,21 +1592,32 @@ class Provider extends CommonDBTM
     }
 
     /**
-     * @return bool success
+     * Completes GLPI session login for a user already resolved by SSO (OAuth/OpenID).
+     *
+     * GLPI's external auth path expects {@see $CFG_GLPI}['ssovariables_id'] and often a matching
+     * entry in {@see $_SERVER} keyed by the SSO variable name. This method temporarily applies the
+     * first row of `glpi_ssovariables` (by id), sets the remote user on that variable name, runs
+     * {@see Auth::login}, then restores config and server superglobals so later requests are not
+     * polluted.
+     *
+     * Process:
+     * 1. Pre-login: snapshot selected session keys (e.g. redirect URL) so Auth can replace the session.
+     * 2. SSO context: load first `glpi_ssovariables` row; set `ssovariables_id` and `$_SERVER[name]`.
+     * 3. Login: {@see Auth::login} with empty password (external auth).
+     * 4. Post-login (always): clear `glpi_remote_user` fake marker; restore `ssovariables_id` and
+     *    remove the temporary `$_SERVER` entry.
+     * 5. On success only: restore saved session keys, sync OAuth avatar if configured.
+     *
+     * @param User $user User row (must include `name` for login name).
+     *
+     * @return bool True if {@see Auth::login} succeeded.
      */
     public function performGlpiLogin(User $user): bool
     {
-        global $DB;
+        /** @var DBmysql $DB */
+        global $CFG_GLPI, $DB;
 
-        $userId = $user->fields['id'];
-
-        $tempPassword = bin2hex(random_bytes(64));
-        $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
-
-
-        /**
-         * Save the session data to be restored after the login.
-         */
+        // --- 1. Pre-login: preserve keys Auth::login may wipe from the session ---
         $save = [];
         foreach ($this->toSessionSave as $key) {
             if (isset($_SESSION[$key])) {
@@ -1613,30 +1625,53 @@ class Provider extends CommonDBTM
             }
         }
 
+        // --- 2. Temporary SSO variable context (restored in step 4) ---
+        $original_ssovariables_id = $CFG_GLPI['ssovariables_id'];
+        $sso_variable_name = '';
+
+        $iterator = $DB->request([
+            'FROM'  => 'glpi_ssovariables',
+            'ORDER' => 'id ASC',
+            'LIMIT' => 1,
+        ]);
+
+        foreach ($iterator as $row) {
+            $CFG_GLPI['ssovariables_id'] = (int) $row['id'];
+            $sso_variable_name = (string) $row['name'];
+            $_SERVER[$sso_variable_name] = $user->fields['name'];
+            break;
+        }
+
+        // --- 3. Login via external auth (password unused) ---
         $auth = new Auth();
-        $authResult = $auth->login($user->fields['name'], $tempPassword);
+        $authResult = $auth->login($user->fields['name'], '');
 
+        // --- 4. Post-login cleanup (success or failure): undo temporary SSO context ---
+        unset($_SESSION['glpi_remote_user']);
 
-        $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+        $CFG_GLPI['ssovariables_id'] = $original_ssovariables_id;
+        if ($sso_variable_name !== '') {
+            unset($_SERVER[$sso_variable_name]);
+        }
 
-        if ($authResult) {
-            /**
-             * Restore the session data if the login was successful.
-             */
-            foreach ($save as $key => $value) {
-                $_SESSION[$key] = $value;
-            }
+        if (!$authResult) {
+            return false;
+        }
 
-            try {
-                $this->syncOAuthPhoto($user);
-            } catch (Exception $ex) {
-                if ($this->debug) {
-                    print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
-                }
+        // --- 5. Success: restore session snapshot and optional photo sync ---
+        foreach ($save as $key => $value) {
+            $_SESSION[$key] = $value;
+        }
+
+        try {
+            $this->syncOAuthPhoto($user);
+        } catch (Exception $ex) {
+            if ($this->debug) {
+                print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
             }
         }
 
-        return (bool) $authResult;
+        return true;
     }
 
     /**

@@ -253,7 +253,7 @@ class RoboFile extends Tasks
 
         if (!$result->wasSuccessful()) {
             throw new RuntimeException(
-                'git-cliff failed: ' . trim($result->getMessage())
+                'git-cliff failed: ' . trim($result->getMessage()),
             );
         }
 
@@ -274,7 +274,7 @@ class RoboFile extends Tasks
         $tag = $tag !== '' ? $tag : $this->getPluginVersionFromSetupFile();
         $body = $this->generateReleaseChangelogBody(
             $tag,
-            $range
+            $range,
         );
         fwrite(STDOUT, $body);
         if ($body !== '' && !str_ends_with($body, "\n")) {
@@ -322,7 +322,7 @@ class RoboFile extends Tasks
             ],
             '',
             '&',
-            PHP_QUERY_RFC3986
+            PHP_QUERY_RFC3986,
         );
 
         return 'https://img.shields.io/static/v1?' . $query;
@@ -336,7 +336,7 @@ class RoboFile extends Tasks
      */
     public function generate_prepare_notes(string $tag = '', string $range = ''): void
     {
-        if (!$tag) {
+        if ($tag === '' || $tag === '0') {
             $tag = 'v' . $this->getPluginVersionFromSetupFile();
         }
 
