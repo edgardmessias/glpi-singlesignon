@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
+
+### Bug Fixes
+
+- Added missing remember-me option for OAuth login - ([a606f0b](https://github.com/edgardmessias/glpi-singlesignon/commit/a606f0b36be4b702a652014a2363a8275d1bda0f)) - Edgard
+- Fixed redirect url from email template (closes #82) - ([f4c81ca](https://github.com/edgardmessias/glpi-singlesignon/commit/f4c81ca3fa45e83c593c4646c06a88d2cb7895a4)) - Edgard
+
+---
 ## [2.0.1](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.1) - 2026-04-06
 
 ### Bug Fixes
