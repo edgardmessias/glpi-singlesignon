@@ -162,7 +162,7 @@ if ($loginResult !== Provider::LOGIN_FAILURE) {
     }
 
     // Only allow internal redirects starting with "/" and encode them safely
-    if ($redirect_target !== '' && str_starts_with($redirect_target, '/')) {
+    if ($redirect_target !== '') {
         $query_params['redirect'] = $redirect_target;
     }
 }
