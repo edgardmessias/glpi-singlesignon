@@ -72,6 +72,11 @@ class Provider extends CommonDBTM
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
     public const AUTH_HEADER_DISABLED = 'disabled';
+    private const MAX_GROUPS_PER_SYNC = 200;
+    private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
+    private const MAX_GROUP_CLAIM_PATH_LENGTH = 1024;
+    private const MAX_GROUP_CLAIM_PATH_DEPTH = 10;
+    private const MAX_GROUP_NAME_LENGTH = 255;
 
     // From CommonDBTM
     public $dohistory = true;
@@ -2228,7 +2233,11 @@ class Provider extends CommonDBTM
         $groups = [];
         $groupsClaim = trim((string) ($this->fields['groups_claim'] ?? ''));
         if ($groupsClaim !== '') {
-            return $this->normalizeGroupClaimValue($this->getResourceOwnerValueByClaimPath($resource_array, $groupsClaim));
+            return array_slice(
+                $this->normalizeGroupClaimValue($this->getResourceOwnerValueByClaimPath($resource_array, $groupsClaim)),
+                0,
+                self::MAX_GROUPS_PER_SYNC,
+            );
         }
 
         $groupFields = ['groups', 'roles', 'group', 'role'];
@@ -2251,7 +2260,7 @@ class Provider extends CommonDBTM
             }
         }
 
-        return array_values(array_unique($groups));
+        return array_slice(array_values(array_unique($groups)), 0, self::MAX_GROUPS_PER_SYNC);
     }
 
     /**
@@ -2261,8 +2270,12 @@ class Provider extends CommonDBTM
     private function normalizeGroupClaimValue($value): array
     {
         if (is_string($value)) {
-            $items = preg_split('/[,\s]+/u', trim($value), -1, PREG_SPLIT_NO_EMPTY);
-            if (!is_array($items)) {
+            $value = trim($value);
+            if ($value === '' || strlen($value) > self::MAX_GROUP_CLAIM_STRING_LENGTH) {
+                return [];
+            }
+            $items = preg_split('/[,\s]+/u', $value, -1, PREG_SPLIT_NO_EMPTY);
+            if ($items === false) {
                 return [];
             }
             return array_values(array_unique($items));
@@ -2315,8 +2328,12 @@ class Provider extends CommonDBTM
      */
     private function getResourceOwnerValueByClaimPath(array $resource_array, string $claimPath)
     {
-        $parts = array_values(array_filter(explode('.', $claimPath), static fn(string $part): bool => $part !== ''));
-        if ($parts === []) {
+        if (strlen($claimPath) > self::MAX_GROUP_CLAIM_PATH_LENGTH || str_contains($claimPath, '..')) {
+            return null;
+        }
+
+        $parts = array_values(array_filter(explode('.', $claimPath), static fn($part): bool => $part !== ''));
+        if ($parts === [] || count($parts) > self::MAX_GROUP_CLAIM_PATH_DEPTH) {
             return null;
         }
 
@@ -2347,8 +2364,8 @@ class Provider extends CommonDBTM
         $keepDynGroupIds = $ruleDynamicGroupIds;
 
         foreach ($groups as $groupValue) {
-            $groupValue = trim((string) $groupValue);
-            if ($groupValue === '') {
+            $groupValue = $this->sanitizeGroupClaimEntry((string) $groupValue);
+            if ($groupValue === null) {
                 continue;
             }
 
@@ -2402,6 +2419,26 @@ class Provider extends CommonDBTM
         }
     }
 
+    private function sanitizeGroupClaimEntry(string $groupValue): ?string
+    {
+        $groupValue = trim($groupValue);
+        if ($groupValue === '') {
+            return null;
+        }
+
+        // Keep only predictable UTF-8 group names from external OAuth payloads.
+        if (preg_match('/^[\p{L}\p{N}\s._@:\-]+$/u', $groupValue) !== 1) {
+            return null;
+        }
+
+        $length = function_exists('mb_strlen') ? mb_strlen($groupValue, 'UTF-8') : strlen($groupValue);
+        if ($length > self::MAX_GROUP_NAME_LENGTH) {
+            return null;
+        }
+
+        return $groupValue;
+    }
+
     private function resolveGroupIdFromClaimValue(\Group $group, string $groupValue): ?int
     {
         if (is_numeric($groupValue)) {
@@ -2450,6 +2487,7 @@ class Provider extends CommonDBTM
             $groupIds,
             $user->fields,
             [
+                // Keep DB_GLPI to align rule evaluation with existing GLPI authorization assignment flow.
                 'type'  => Auth::DB_GLPI,
                 'login' => (string) ($user->fields['name'] ?? ''),
                 'email' => (string) \UserEmail::getDefaultForUser($user->getID()),
