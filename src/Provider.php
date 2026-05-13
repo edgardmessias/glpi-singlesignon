@@ -171,8 +171,6 @@ class Provider extends CommonDBTM
         $this->fields['default_profiles_id'] = 0;
         $this->fields['ssl_verify_host'] = 1;
         $this->fields['ssl_verify_peer'] = 1;
-        $this->fields['groups_entities_id'] = 0;
-        $this->fields['groups_is_recursive'] = 0;
     }
 
     public function showForm($ID, $options = [])
@@ -345,8 +343,6 @@ class Provider extends CommonDBTM
         $input['user_photo_sync_mode'] = $this->sanitizePhotoSyncMode($input['user_photo_sync_mode'] ?? null);
         $input['user_group_sync_mode'] = $this->sanitizeUserGroupSyncMode($input['user_group_sync_mode'] ?? null);
         $input['groups_claim'] = trim((string) ($input['groups_claim'] ?? ''));
-        $input['groups_entities_id'] = (int) ($input['groups_entities_id'] ?? 0);
-        $input['groups_is_recursive'] = empty($input['groups_is_recursive']) ? 0 : 1;
         $input['resource_owner_auth_type'] = $this->sanitizeAuthorizationType($input['resource_owner_auth_type'] ?? null);
         $input['resource_owner_picture_auth_type'] = $this->sanitizeAuthorizationType($input['resource_owner_picture_auth_type'] ?? null);
         $input['resource_owner_custom_headers'] = trim((string) ($input['resource_owner_custom_headers'] ?? ''));
@@ -2366,12 +2362,11 @@ class Provider extends CommonDBTM
             $groupId = $this->resolveGroupIdFromClaimValue($group, $groupValue);
 
             if ($groupId === null && $mode === self::USER_GROUP_SYNC_ALL) {
-                $entitiesId = (int) ($this->fields['groups_entities_id'] ?? 0);
-                $isRecursive = (int) ($this->fields['groups_is_recursive'] ?? 0);
+                $entitiesId = (int) ($this->fields['default_entities_id'] ?? 0);
                 $groupId = $group->add([
                     'name'         => $groupValue,
                     'entities_id'  => $entitiesId,
-                    'is_recursive' => $isRecursive,
+                    'is_recursive' => 0,
                     'comment'      => __('Created automatically by Single Sign-On', 'singlesignon'),
                     'add'          => 1,
                 ]);
