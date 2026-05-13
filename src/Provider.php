@@ -1041,12 +1041,11 @@ class Provider extends CommonDBTM
         if ($expected_state === '' || !hash_equals($expected_state, $state)) {
             $user_id = (string) (Session::getLoginUserID() ?? '');
             $req_uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
-            $client_ip = ToolboxPlugin::getClientIp();
             // Use the same log message format as GLPI's Session::checkCSRF() so that
             // existing monitoring and alerting based on that string continues to work.
             Toolbox::logInFile(
                 'access-errors',
-                "CSRF check failed for User ID: $user_id at $req_uri [client: $client_ip]",
+                "CSRF check failed for User ID: $user_id at $req_uri",
                 true
             );
 

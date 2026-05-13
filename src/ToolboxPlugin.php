@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace GlpiPlugin\Singlesignon;
 
 use Throwable;
+use IPAddress;
 use Plugin;
 use Document;
 use Html;
@@ -398,15 +399,25 @@ class ToolboxPlugin
 
     /**
      * Returns the remote client IP address as a string suitable for log messages.
-     * The value is validated so that only a well-formed IP address (v4 or v6) is
-     * returned; an empty string is returned when no valid address is available.
+     * Uses the same resolution order as GLPI internals: X-Forwarded-For, then
+     * X-Real-IP, then REMOTE_ADDR. The address is validated with GLPI's IPAddress
+     * class; an empty string is returned when no valid address is available.
      */
     public static function getClientIp(): string
     {
-        $raw = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-        // Validate: accept only proper IPv4 / IPv6 addresses to prevent log injection.
-        if (filter_var($raw, FILTER_VALIDATE_IP) !== false) {
-            return $raw;
+        $raw = '';
+        if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            // Managing IP through a PROXY — take only the first (client) entry.
+            $raw = explode(', ', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+        } elseif (isset($_SERVER['HTTP_X_REAL_IP'])) {
+            $raw = $_SERVER['HTTP_X_REAL_IP'];
+        } elseif (isset($_SERVER['REMOTE_ADDR'])) {
+            $raw = $_SERVER['REMOTE_ADDR'];
+        }
+
+        $ip = new IPAddress($raw);
+        if ($ip->is_valid()) {
+            return $ip->getTextual();
         }
         return '';
     }
