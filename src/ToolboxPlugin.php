@@ -395,4 +395,19 @@ class ToolboxPlugin
 
         return array_values(array_unique($filtered));
     }
+
+    /**
+     * Returns the remote client IP address as a string suitable for log messages.
+     * The value is validated so that only a well-formed IP address (v4 or v6) is
+     * returned; an empty string is returned when no valid address is available.
+     */
+    public static function getClientIp(): string
+    {
+        $raw = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+        // Validate: accept only proper IPv4 / IPv6 addresses to prevent log injection.
+        if (filter_var($raw, FILTER_VALIDATE_IP) !== false) {
+            return $raw;
+        }
+        return '';
+    }
 }
