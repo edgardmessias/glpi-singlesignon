@@ -945,11 +945,15 @@ class Provider extends CommonDBTM
             throw $exception;
         }
 
-        // If there is no 'code' in the request, this is the initial (request) step: generate the CSRF token and save the redirect in the session.
+        // If there is no 'code' in the request, this is the initial (request) step: generate the OAuth state token and save the redirect in the session.
         // When 'code' is present, this is the response step returned by the provider after authentication.
         if (!isset($_GET['code'])) {
-            // Generate CSRF token for OAuth state to validate the response step
-            $state = Session::getNewCSRFToken();
+            // Generate a cryptographically secure state for OAuth CSRF protection.
+            // Stored in the session independently of GLPI's CSRF token rotation so
+            // that a token refresh between the authorize redirect and the callback
+            // does not invalidate the flow.
+            $state = bin2hex(random_bytes(32));
+            $_SESSION['glpi_singlesignon_oauth_state'] = $state;
 
             if (isset($_REQUEST['redirect'])) {
                 $_SESSION['glpi_singlesignon_redirect'] = $_REQUEST['redirect'];
@@ -994,10 +998,18 @@ class Provider extends CommonDBTM
         $code = $_GET['code'] ?? '';
         $state = $_GET['state'] ?? '';
 
-        // Validate state against stored CSRF token
-        Session::checkCSRF([
-            '_glpi_csrf_token' => $state,
-        ]);
+        // Validate state against the OAuth state stored during the authorize step.
+        // This is intentionally independent of GLPI's CSRF token rotation: the
+        // state is a one-time value generated per-flow and must survive the
+        // round-trip through the identity provider without being rotated.
+        $expected_state = (string) ($_SESSION['glpi_singlesignon_oauth_state'] ?? '');
+        unset($_SESSION['glpi_singlesignon_oauth_state']);
+
+        if ($expected_state === '' || !hash_equals($expected_state, $state)) {
+            $exception = new BadRequestHttpException();
+            $exception->setMessageToDisplay(__('The action you have requested is not allowed.'));
+            throw $exception;
+        }
 
         $this->_code = $code;
 
