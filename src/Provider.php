@@ -1043,18 +1043,16 @@ class Provider extends CommonDBTM
         ]), $msgerr);
 
         if ($msgerr) {
-            Toolbox::logDebug("getAccessToken error: " . $msgerr);
+            if ($this->debug) {
+                Toolbox::logDebug("getAccessToken error: " . $msgerr);
+            }
             return false;
-        }
-
-        if ($this->debug) {
-            Toolbox::logDebug("getAccessToken:");
         }
 
         try {
             $data = json_decode($content, true);
             if ($this->debug) {
-                Toolbox::logDebug($data);
+                Toolbox::logDebug("getAccessToken: " . $data);
             }
             if (isset($data['error_description'])) {
                 echo '<style>#page .center small { font-weight: normal; }</style>
@@ -1101,27 +1099,20 @@ class Provider extends CommonDBTM
             CURLOPT_HTTPHEADER => $headers,
         ]));
 
-        if ($this->debug) {
-            Toolbox::logDebug("getResourceOwner:");
-        }
-
         try {
             $data = json_decode($content, true);
             if ($this->debug) {
-                Toolbox::logDebug($data);
+                Toolbox::logDebug("getResourceOwner: " . $data);
             }
             $this->_resource_owner = $data;
         } catch (Exception $ex) {
             if ($this->debug) {
-                Toolbox::logDebug($content);
+                Toolbox::logDebug("getResourceOwner exception: " . $content);
             }
             return false;
         }
 
         if ($this->getClientType() === "linkedin") {
-            if ($this->debug) {
-                Toolbox::logDebug("linkedin:");
-            }
             $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
             $content = Toolbox::callCurl($email_url, $this->buildCurlOptions([
                 CURLOPT_HTTPHEADER => $headers,
@@ -1130,7 +1121,7 @@ class Provider extends CommonDBTM
             try {
                 $data = json_decode($content, true);
                 if ($this->debug) {
-                    Toolbox::logDebug($content);
+                    Toolbox::logDebug("linkedin: " . $content);
                 }
 
                 $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
