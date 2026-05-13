@@ -1086,7 +1086,7 @@ class Provider extends CommonDBTM
 
         if ($msgerr) {
             if ($this->debug) {
-                Toolbox::logDebug("getAccessToken error: " . $msgerr);
+                print_r("\ngetAccessToken error: " . $msgerr . "\n");
             }
             return false;
         }
@@ -1094,8 +1094,7 @@ class Provider extends CommonDBTM
         try {
             $data = json_decode($content, true);
             if ($this->debug) {
-                Toolbox::logDebug("getAccessToken:");
-                Toolbox::logDebug($data);
+                print_r("\ngetAccessToken:\n" . $data);
             }
             if (isset($data['error_description'])) {
                 echo '<style>#page .center small { font-weight: normal; }</style>
@@ -1111,7 +1110,8 @@ class Provider extends CommonDBTM
             $this->_token = $data['access_token'];
         } catch (Exception $ex) {
             if ($this->debug) {
-                Toolbox::logDebug("getAccessToken exception: " . $ex->getMessage(), $content);
+                print_r("\ngetAccessToken exception: " . $ex->getMessage() . "\n");
+                print_r($content);
             }
             return false;
         }
@@ -1145,13 +1145,12 @@ class Provider extends CommonDBTM
         try {
             $data = json_decode($content, true);
             if ($this->debug) {
-                Toolbox::logDebug("getResourceOwner:");
-                Toolbox::logDebug($data);
+                print_r("\ngetResourceOwner:\n" . $data);
             }
             $this->_resource_owner = $data;
         } catch (Exception $ex) {
             if ($this->debug) {
-                Toolbox::logDebug("getResourceOwner exception: " . $content);
+                print_r("\ngetResourceOwner exception:\n" . $content);
             }
             return false;
         }
@@ -1165,11 +1164,14 @@ class Provider extends CommonDBTM
             try {
                 $data = json_decode($content, true);
                 if ($this->debug) {
-                    Toolbox::logDebug("linkedin: " . $content);
+                    print_r("linkedin: " . $content);
                 }
 
                 $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
             } catch (Exception $ex) {
+                if ($this->debug) {
+                    print_r("\nlinkedin exception: " . $ex->getMessage() . "\n");
+                }
                 return false;
             }
         }
@@ -1595,7 +1597,7 @@ class Provider extends CommonDBTM
             return $user;
         } catch (Exception $ex) {
             if ($this->debug) {
-                Toolbox::logDebug("createUserFromOAuthResource: " . $ex->getMessage());
+                print_r("\ncreateUserFromOAuthResource: " . $ex->getMessage() . "\n");
             }
             return false;
         }
@@ -1760,7 +1762,7 @@ class Provider extends CommonDBTM
             $this->syncOAuthGroups($user);
         } catch (Exception $ex) {
             if ($this->debug) {
-                Toolbox::logDebug("syncOAuthGroups exception: " . $ex->getMessage());
+                print_r("\nsyncOAuthGroups exception: " . $ex->getMessage() . "\n");
             }
         }
 
@@ -1768,7 +1770,7 @@ class Provider extends CommonDBTM
             $this->syncOAuthPhoto($user);
         } catch (Exception $ex) {
             if ($this->debug) {
-                Toolbox::logDebug("syncOAuthPhoto exception: " . $ex->getMessage());
+                print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
             }
         }
 
@@ -2005,7 +2007,7 @@ class Provider extends CommonDBTM
 
         $picture = $this->storeOAuthPhoto($user, $img);
         if ($this->debug) {
-            Toolbox::logDebug($picture ?: false);
+            print_r($picture ?: false);
         }
         return $picture;
     }
