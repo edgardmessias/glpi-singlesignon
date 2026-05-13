@@ -57,13 +57,5 @@ if (!file_exists($path)) {
 
 $name = pathinfo($path, PATHINFO_BASENAME);
 
-// Validate MIME type against expected image types for the provider picture.
-$detectedMime = mime_content_type($path);
-$allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-$mime = in_array($detectedMime, $allowedMimes, true) ? $detectedMime : 'application/octet-stream';
-
-// Return a Symfony Response so that GLPI 11's LegacyFileLoadController handles
-// output correctly. The controller captures any return value that is a Response
-// instance and sends it through the Symfony stack, avoiding the output-buffer
-// lifecycle conflict that would occur with ->send() or direct readfile() calls.
-return Toolbox::getFileAsResponse($path, $name, $mime);
+// In GLPI 11, use getFileAsResponse() instead of deprecated sendFile()
+return Toolbox::getFileAsResponse($path, $name, null, true);
