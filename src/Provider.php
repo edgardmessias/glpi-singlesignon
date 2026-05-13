@@ -1150,7 +1150,7 @@ class Provider extends CommonDBTM
             $this->_resource_owner = $data;
         } catch (Exception $ex) {
             if ($this->debug) {
-                print_r("\ngetResourceOwner exception:\n" . $content);
+                print_r("\ngetResourceOwner exception:\n" . $ex->getMessage() . "\n");
             }
             return false;
         }
