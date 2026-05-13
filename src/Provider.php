@@ -1031,7 +1031,7 @@ class Provider extends CommonDBTM
             // Use the same log message format as GLPI's Session::checkCSRF() so that
             // existing monitoring and alerting based on that string continues to work.
             Toolbox::logInFile(
-                'php-errors',
+                'access-errors',
                 "CSRF check failed for User ID: $user_id at $req_uri",
                 true
             );
@@ -1094,7 +1094,8 @@ class Provider extends CommonDBTM
         try {
             $data = json_decode($content, true);
             if ($this->debug) {
-                Toolbox::logDebug("getAccessToken: " . $data);
+                Toolbox::logDebug("getAccessToken:");
+                Toolbox::logDebug($data);
             }
             if (isset($data['error_description'])) {
                 echo '<style>#page .center small { font-weight: normal; }</style>
@@ -1144,7 +1145,8 @@ class Provider extends CommonDBTM
         try {
             $data = json_decode($content, true);
             if ($this->debug) {
-                Toolbox::logDebug("getResourceOwner: " . $data);
+                Toolbox::logDebug("getResourceOwner:");
+                Toolbox::logDebug($data);
             }
             $this->_resource_owner = $data;
         } catch (Exception $ex) {
@@ -1721,11 +1723,16 @@ class Provider extends CommonDBTM
             break;
         }
 
-        // --- 3. Login via external auth (password unused) ---
+        // --- 3. Ensure the user has at least one profile before login.
+        // This covers existing users who have no profile assigned —
+        // ensureProfileForNewUser() would otherwise only run for newly auto-registered users.
+        $this->ensureProfileForNewUser($user, 0);
+
+        // --- 4. Login via external auth (password unused) ---
         $auth = new Auth();
         $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
 
-        // --- 4. Post-login cleanup (success or failure): undo temporary SSO context ---
+        // --- 5. Post-login cleanup (success or failure): undo temporary SSO context ---
         unset($_SESSION['glpi_remote_user']);
 
         $CFG_GLPI['ssovariables_id'] = $original_ssovariables_id;
@@ -1734,10 +1741,17 @@ class Provider extends CommonDBTM
         }
 
         if (!$authResult) {
+            $providerName = (string) ($this->fields['name'] ?? '');
+            $userName = (string) ($user->fields['name'] ?? '');
+            Toolbox::logInFile(
+                'access-errors',
+                "SSO login failed for user '$userName' via provider '$providerName': User not authorized to connect in GLPI",
+                true
+            );
             return false;
         }
 
-        // --- 5. Success: restore session snapshot and optional photo sync ---
+        // --- 6. Success: restore session snapshot and optional photo sync ---
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
         }
