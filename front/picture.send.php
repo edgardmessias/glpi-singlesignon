@@ -57,5 +57,19 @@ if (!file_exists($path)) {
 
 $name = pathinfo($path, PATHINFO_BASENAME);
 
-// In GLPI 11, use getFileAsResponse() instead of deprecated sendFile()
-Toolbox::getFileAsResponse($path, $name, null, true)->send();
+// Output the file directly so GLPI 11's LegacyFileLoadController output buffer
+// is not closed prematurely (calling ->send() on a Symfony Response object
+// flushes/closes the buffer that the controller owns, which triggers the
+// "output buffer unexpectedly closed" warning).
+
+// Validate MIME type against expected image types for the provider picture.
+$detectedMime = mime_content_type($path);
+$allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+$mime = in_array($detectedMime, $allowedMimes, true) ? $detectedMime : 'application/octet-stream';
+
+// Use RFC 5987 encoding for the filename in Content-Disposition to avoid header injection.
+header('Content-Type: ' . $mime);
+header('Content-Disposition: inline; filename*=UTF-8\'\'' . rawurlencode($name));
+header('Content-Length: ' . filesize($path));
+header('Cache-Control: private, max-age=86400');
+readfile($path);
