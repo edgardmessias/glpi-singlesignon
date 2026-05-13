@@ -25,6 +25,8 @@
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\NotFoundHttpException;
 use GlpiPlugin\Singlesignon\Provider;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 include(__DIR__ . '/../../../inc/includes.php');
 
@@ -57,19 +59,18 @@ if (!file_exists($path)) {
 
 $name = pathinfo($path, PATHINFO_BASENAME);
 
-// Output the file directly so GLPI 11's LegacyFileLoadController output buffer
-// is not closed prematurely (calling ->send() on a Symfony Response object
-// flushes/closes the buffer that the controller owns, which triggers the
-// "output buffer unexpectedly closed" warning).
-
 // Validate MIME type against expected image types for the provider picture.
 $detectedMime = mime_content_type($path);
 $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 $mime = in_array($detectedMime, $allowedMimes, true) ? $detectedMime : 'application/octet-stream';
 
-// Use RFC 5987 encoding for the filename in Content-Disposition to avoid header injection.
-header('Content-Type: ' . $mime);
-header('Content-Disposition: inline; filename*=UTF-8\'\'' . rawurlencode($name));
-header('Content-Length: ' . filesize($path));
-header('Cache-Control: private, max-age=86400');
-readfile($path);
+// Return a Symfony Response so that GLPI 11's LegacyFileLoadController handles
+// output correctly. The controller captures any return value that is a Response
+// instance and sends it through the Symfony stack, avoiding the output-buffer
+// lifecycle conflict that would occur with ->send() or direct readfile() calls.
+$response = new BinaryFileResponse($path);
+$response->headers->set('Content-Type', $mime);
+$response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, $name);
+$response->headers->set('Cache-Control', 'private, max-age=86400');
+
+return $response;
