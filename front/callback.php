@@ -197,6 +197,10 @@ $query_params['noAUTO'] = 1;
 $url_redirect = $CFG_GLPI['root_doc'] . "/front/logout.php?" . http_build_query($query_params);
 $url_redirect = rtrim($url_redirect, '?'); // remove `?` when there is no parameters
 
+$loginError = $signon_provider->getLastLoginError();
+if ($loginError !== '') {
+    Toolbox::logInFile('access-errors', $loginError, true);
+}
 
 // we have done at least a good login? No, we return.
 echo TemplateRenderer::getInstance()->render('@singlesignon/login/unauthorized_retry.html.twig', [

@@ -109,6 +109,19 @@ class Provider extends CommonDBTM
 
     public $debug = false;
 
+    /**
+     * Human-readable reason for the last LOGIN_FAILURE, populated by login() and performGlpiLogin().
+     * Empty string when no failure has occurred yet.
+     *
+     * @var string
+     */
+    protected string $lastLoginError = '';
+
+    public function getLastLoginError(): string
+    {
+        return $this->lastLoginError;
+    }
+
     public static function canCreate(): bool
     {
         return static::canUpdate();
@@ -1094,7 +1107,7 @@ class Provider extends CommonDBTM
         try {
             $data = json_decode($content, true);
             if ($this->debug) {
-                print_r("\ngetAccessToken:\n" . $data);
+                print_r("\ngetAccessToken:\n" . print_r($data, true));
             }
             if (isset($data['error_description'])) {
                 echo '<style>#page .center small { font-weight: normal; }</style>
@@ -1145,7 +1158,7 @@ class Provider extends CommonDBTM
         try {
             $data = json_decode($content, true);
             if ($this->debug) {
-                print_r("\ngetResourceOwner:\n" . $data);
+                print_r("\ngetResourceOwner:\n" . print_r($data, true));
             }
             $this->_resource_owner = $data;
         } catch (Exception $ex) {
@@ -1745,11 +1758,7 @@ class Provider extends CommonDBTM
         if (!$authResult) {
             $providerName = (string) ($this->fields['name'] ?? '');
             $userName = (string) ($user->fields['name'] ?? '');
-            Toolbox::logInFile(
-                'access-errors',
-                "SSO login failed for user '$userName' via provider '$providerName': User not authorized to connect in GLPI",
-                true
-            );
+            $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User not authorized to connect in GLPI";
             return false;
         }
 
@@ -1875,8 +1884,12 @@ class Provider extends CommonDBTM
 
     public function login(): int
     {
+        $this->lastLoginError = '';
+        $providerName = (string) ($this->fields['name'] ?? '');
+
         $resource_array = $this->getResourceOwner();
         if (!$resource_array) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not retrieve resource owner from identity provider";
             return self::LOGIN_FAILURE;
         }
 
@@ -1886,20 +1899,24 @@ class Provider extends CommonDBTM
         }
 
         if (empty($this->fields['auto_register'])) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
             return self::LOGIN_FAILURE;
         }
 
         $gate = $this->resolveLoginAndEmailFromResource($resource_array);
         if (!$gate['authorized']) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User is not authorized by provider domain/email restrictions";
             return self::LOGIN_FAILURE;
         }
 
         if ($gate['login'] === false || (string) $gate['login'] === '') {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not resolve a login name from the identity provider response";
             return self::LOGIN_FAILURE;
         }
 
         $remoteForReg = $this->resolveFieldValueFromMappings($resource_array, 'id');
         if ($remoteForReg === null || $remoteForReg === '') {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not resolve remote user ID from the identity provider response";
             return self::LOGIN_FAILURE;
         }
 
@@ -1910,6 +1927,7 @@ class Provider extends CommonDBTM
 
         $user = $this->createUserFromOAuthResource($resource_array);
         if (!$user || !$user->getID()) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User auto-registration failed";
             return self::LOGIN_FAILURE;
         }
 
