@@ -25,8 +25,6 @@
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\NotFoundHttpException;
 use GlpiPlugin\Singlesignon\Provider;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 include(__DIR__ . '/../../../inc/includes.php');
 
@@ -68,9 +66,4 @@ $mime = in_array($detectedMime, $allowedMimes, true) ? $detectedMime : 'applicat
 // output correctly. The controller captures any return value that is a Response
 // instance and sends it through the Symfony stack, avoiding the output-buffer
 // lifecycle conflict that would occur with ->send() or direct readfile() calls.
-$response = new BinaryFileResponse($path);
-$response->headers->set('Content-Type', $mime);
-$response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, $name);
-$response->headers->set('Cache-Control', 'private, max-age=86400');
-
-return $response;
+return Toolbox::getFileAsResponse($path, $name, $mime);
