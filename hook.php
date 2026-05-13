@@ -64,6 +64,8 @@ function plugin_singlesignon_install()
             `url_access_token`           VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_resource_owner_details` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `user_photo_sync_mode`       INT NOT NULL DEFAULT '0',
+            `user_group_sync_mode`       INT NOT NULL DEFAULT '0',
+            `groups_claim`               VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `resource_owner_auth_type`   VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
             `resource_owner_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
             `resource_owner_picture_auth_type` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
@@ -187,6 +189,25 @@ function plugin_singlesignon_install()
         [
             'value' => 'bearer',
             'after' => 'user_photo_sync_mode',
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'user_group_sync_mode',
+        'integer',
+        [
+            'value' => 0,
+            'after' => 'user_photo_sync_mode',
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'groups_claim',
+        'string',
+        [
+            'nodefault' => true,
+            'null'      => true,
+            'after'     => 'user_group_sync_mode',
         ],
     );
     $migration->addField(

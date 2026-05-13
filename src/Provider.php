@@ -65,6 +65,9 @@ class Provider extends CommonDBTM
     public const PHOTO_SYNC_DISABLED = 0;
     public const PHOTO_SYNC_IF_EMPTY = 1;
     public const PHOTO_SYNC_ALWAYS = 2;
+    public const USER_GROUP_SYNC_DISABLED = 0;
+    public const USER_GROUP_SYNC_ALL = 1;
+    public const USER_GROUP_SYNC_RULE_MATCHED = 2;
 
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
@@ -152,6 +155,8 @@ class Provider extends CommonDBTM
         $this->fields["type"] = 'generic';
         $this->fields["is_active"] = 1;
         $this->fields["user_photo_sync_mode"] = self::PHOTO_SYNC_DISABLED;
+        $this->fields["user_group_sync_mode"] = self::USER_GROUP_SYNC_DISABLED;
+        $this->fields["groups_claim"] = '';
         $this->fields["resource_owner_auth_type"] = self::AUTH_HEADER_BEARER;
         $this->fields["resource_owner_picture_auth_type"] = self::AUTH_HEADER_BEARER;
         $this->fields['auto_register'] = 0;
@@ -331,6 +336,8 @@ class Provider extends CommonDBTM
         }
 
         $input['user_photo_sync_mode'] = $this->sanitizePhotoSyncMode($input['user_photo_sync_mode'] ?? null);
+        $input['user_group_sync_mode'] = $this->sanitizeUserGroupSyncMode($input['user_group_sync_mode'] ?? null);
+        $input['groups_claim'] = trim((string) ($input['groups_claim'] ?? ''));
         $input['resource_owner_auth_type'] = $this->sanitizeAuthorizationType($input['resource_owner_auth_type'] ?? null);
         $input['resource_owner_picture_auth_type'] = $this->sanitizeAuthorizationType($input['resource_owner_picture_auth_type'] ?? null);
         $input['resource_owner_custom_headers'] = trim((string) ($input['resource_owner_custom_headers'] ?? ''));
@@ -364,6 +371,15 @@ class Provider extends CommonDBTM
         ];
     }
 
+    public static function getUserGroupSyncModes(): array
+    {
+        return [
+            (string) self::USER_GROUP_SYNC_DISABLED => __('Disabled'),
+            (string) self::USER_GROUP_SYNC_ALL => __('Import all groups from OAuth claim', 'singlesignon'),
+            (string) self::USER_GROUP_SYNC_RULE_MATCHED => __('Import only groups allowed by matching GLPI authorization rules', 'singlesignon'),
+        ];
+    }
+
     public static function getAuthorizationTypes(): array
     {
         return [
@@ -382,6 +398,20 @@ class Provider extends CommonDBTM
             self::PHOTO_SYNC_ALWAYS,
         ], true)) {
             return self::PHOTO_SYNC_DISABLED;
+        }
+
+        return $mode;
+    }
+
+    private function sanitizeUserGroupSyncMode($value): int
+    {
+        $mode = (int) $value;
+        if (!in_array($mode, [
+            self::USER_GROUP_SYNC_DISABLED,
+            self::USER_GROUP_SYNC_ALL,
+            self::USER_GROUP_SYNC_RULE_MATCHED,
+        ], true)) {
+            return self::USER_GROUP_SYNC_DISABLED;
         }
 
         return $mode;
@@ -1676,6 +1706,14 @@ class Provider extends CommonDBTM
         }
 
         try {
+            $this->syncOAuthGroups($user);
+        } catch (Exception $ex) {
+            if ($this->debug) {
+                print_r("\nsyncOAuthGroups exception: " . $ex->getMessage() . "\n");
+            }
+        }
+
+        try {
             $this->syncOAuthPhoto($user);
         } catch (Exception $ex) {
             if ($this->debug) {
@@ -2159,6 +2197,285 @@ class Provider extends CommonDBTM
         }
 
         return $newPicture;
+    }
+
+    private function syncOAuthGroups(User $user): void
+    {
+        if ($user->getID() <= 0) {
+            return;
+        }
+
+        $mode = $this->sanitizeUserGroupSyncMode($this->fields['user_group_sync_mode'] ?? self::USER_GROUP_SYNC_DISABLED);
+        if ($mode === self::USER_GROUP_SYNC_DISABLED) {
+            return;
+        }
+
+        $resourceOwner = $this->getResourceOwner();
+        if (!$resourceOwner || !is_array($resourceOwner)) {
+            return;
+        }
+
+        $groups = $this->extractUserGroupsFromResource($resourceOwner);
+        $this->assignGroupsToUser($user, $groups, $mode);
+    }
+
+    /**
+     * @param array<string, mixed> $resource_array
+     * @return string[]
+     */
+    private function extractUserGroupsFromResource(array $resource_array): array
+    {
+        $groups = [];
+        $groupsClaim = trim((string) ($this->fields['groups_claim'] ?? ''));
+        if ($groupsClaim !== '') {
+            return $this->normalizeGroupClaimValue($this->getResourceOwnerValueByClaimPath($resource_array, $groupsClaim));
+        }
+
+        $groupFields = ['groups', 'roles', 'group', 'role'];
+        foreach ($groupFields as $field) {
+            if (array_key_exists($field, $resource_array)) {
+                $groups = array_merge($groups, $this->normalizeGroupClaimValue($resource_array[$field]));
+            }
+        }
+
+        if (isset($resource_array['realm_access']) && is_array($resource_array['realm_access']) && array_key_exists('roles', $resource_array['realm_access'])) {
+            $groups = array_merge($groups, $this->normalizeGroupClaimValue($resource_array['realm_access']['roles']));
+        }
+
+        if (isset($resource_array['resource_access']) && is_array($resource_array['resource_access'])) {
+            foreach ($resource_array['resource_access'] as $clientRoles) {
+                if (!is_array($clientRoles) || !array_key_exists('roles', $clientRoles)) {
+                    continue;
+                }
+                $groups = array_merge($groups, $this->normalizeGroupClaimValue($clientRoles['roles']));
+            }
+        }
+
+        return array_values(array_unique($groups));
+    }
+
+    /**
+     * @param mixed $value
+     * @return string[]
+     */
+    private function normalizeGroupClaimValue($value): array
+    {
+        if (is_string($value)) {
+            $items = preg_split('/[,\s]+/u', trim($value), -1, PREG_SPLIT_NO_EMPTY);
+            if (!is_array($items)) {
+                return [];
+            }
+            return array_values(array_unique($items));
+        }
+
+        if (is_numeric($value)) {
+            return [(string) $value];
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $groups = [];
+        foreach ($value as $item) {
+            if (is_string($item)) {
+                $item = trim($item);
+                if ($item !== '') {
+                    $groups[] = $item;
+                }
+                continue;
+            }
+
+            if (is_numeric($item)) {
+                $groups[] = (string) $item;
+                continue;
+            }
+
+            if (is_array($item)) {
+                if (isset($item['displayName']) && is_string($item['displayName']) && trim($item['displayName']) !== '') {
+                    $groups[] = trim($item['displayName']);
+                    continue;
+                }
+                if (isset($item['name']) && is_string($item['name']) && trim($item['name']) !== '') {
+                    $groups[] = trim($item['name']);
+                    continue;
+                }
+                if (isset($item['id']) && (is_string($item['id']) || is_numeric($item['id']))) {
+                    $groups[] = (string) $item['id'];
+                }
+            }
+        }
+
+        return array_values(array_unique($groups));
+    }
+
+    /**
+     * @param array<string, mixed> $resource_array
+     * @return mixed
+     */
+    private function getResourceOwnerValueByClaimPath(array $resource_array, string $claimPath)
+    {
+        $parts = array_values(array_filter(explode('.', $claimPath), static fn(string $part): bool => $part !== ''));
+        if ($parts === []) {
+            return null;
+        }
+
+        $value = $resource_array;
+        foreach ($parts as $part) {
+            if (!is_array($value) || !array_key_exists($part, $value)) {
+                return null;
+            }
+            $value = $value[$part];
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param string[] $groups
+     */
+    private function assignGroupsToUser(User $user, array $groups, int $mode): void
+    {
+        $groupUser = new \Group_User();
+        $group = new \Group();
+        $links = $groupUser->find([
+            'users_id'   => $user->getID(),
+            'is_dynamic' => 1,
+        ]);
+
+        $ruleDynamicGroupIds = $this->getRuleMatchedDynamicGroupIds($user);
+        $keepDynGroupIds = $ruleDynamicGroupIds;
+
+        foreach ($groups as $groupValue) {
+            $groupValue = trim((string) $groupValue);
+            if ($groupValue === '') {
+                continue;
+            }
+
+            $groupId = $this->resolveGroupIdFromClaimValue($group, $groupValue);
+
+            if ($groupId === null && $mode === self::USER_GROUP_SYNC_ALL) {
+                $entitiesId = (int) ($user->fields['entities_id'] ?? 0);
+                $groupId = $group->add([
+                    'name'         => $groupValue,
+                    'entities_id'  => $entitiesId,
+                    'is_recursive' => 0,
+                    'comment'      => __('Created automatically by Single Sign-On', 'singlesignon'),
+                    'add'          => 1,
+                ]);
+                $groupId = is_numeric($groupId) ? (int) $groupId : null;
+            }
+
+            if ($groupId === null) {
+                continue;
+            }
+
+            if ($mode === self::USER_GROUP_SYNC_RULE_MATCHED && !in_array($groupId, $ruleDynamicGroupIds, true)) {
+                continue;
+            }
+
+            if ($groupUser->getFromDBByCrit([
+                'users_id'  => $user->getID(),
+                'groups_id' => $groupId,
+            ])) {
+                $keepDynGroupIds[] = $groupId;
+                continue;
+            }
+
+            $linkId = $groupUser->add([
+                'users_id'    => $user->getID(),
+                'groups_id'   => $groupId,
+                'is_dynamic'  => 1,
+            ]);
+            if (is_numeric($linkId)) {
+                $keepDynGroupIds[] = $groupId;
+            }
+        }
+
+        $keepDynGroupIds = array_values(array_unique(array_map('intval', $keepDynGroupIds)));
+        foreach ($links as $link) {
+            $linkedGroupId = (int) ($link['groups_id'] ?? 0);
+            if ($linkedGroupId <= 0 || in_array($linkedGroupId, $keepDynGroupIds, true)) {
+                continue;
+            }
+            $groupUser->delete(['id' => (int) $link['id']], true);
+        }
+    }
+
+    private function resolveGroupIdFromClaimValue(\Group $group, string $groupValue): ?int
+    {
+        if (is_numeric($groupValue)) {
+            $groupId = (int) $groupValue;
+            if ($groupId > 0 && $group->getFromDB($groupId)) {
+                return $groupId;
+            }
+        }
+
+        $found = $group->find(['name' => $groupValue], '', 1);
+        if ($found === []) {
+            return null;
+        }
+
+        $firstKey = array_key_first($found);
+        if (!is_numeric($firstKey)) {
+            return null;
+        }
+
+        return (int) $firstKey;
+    }
+
+    /**
+     * @return int[]
+     */
+    private function getRuleMatchedDynamicGroupIds(User $user): array
+    {
+        if (!class_exists(\RuleRightCollection::class)) {
+            return [];
+        }
+
+        $groups = \Group_User::getUserGroups($user->getID());
+        $groupIds = [];
+        foreach ($groups as $group) {
+            if (isset($group['id']) && is_numeric($group['id'])) {
+                $groupIds[] = (int) $group['id'];
+                continue;
+            }
+            if (isset($group['groups_id']) && is_numeric($group['groups_id'])) {
+                $groupIds[] = (int) $group['groups_id'];
+            }
+        }
+
+        $rules = new \RuleRightCollection();
+        $actions = $rules->testAllRules(
+            $groupIds,
+            $user->fields,
+            [
+                'type'  => Auth::DB_GLPI,
+                'login' => (string) ($user->fields['name'] ?? ''),
+                'email' => (string) \UserEmail::getDefaultForUser($user->getID()),
+            ],
+        );
+
+        $allowed = [];
+        if (is_array($actions)) {
+            foreach ($actions as $action) {
+                if (!is_array($action)) {
+                    continue;
+                }
+                if (($action['field'] ?? null) !== 'groups_id') {
+                    continue;
+                }
+                if ((int) ($action['is_dynamic'] ?? 0) !== 1) {
+                    continue;
+                }
+                if (!isset($action['value']) || !is_numeric($action['value'])) {
+                    continue;
+                }
+                $allowed[] = (int) $action['value'];
+            }
+        }
+
+        return array_values(array_unique($allowed));
     }
 
     private function shouldSyncOAuthPhoto(User $user): bool
