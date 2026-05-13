@@ -183,6 +183,14 @@
     {{ fields.textField('groups_claim', provider.fields.groups_claim|default(''), __('Group claim', 'singlesignon'), {
         helper: _tip_groups_claim
     }|merge(field_opts)) }}
+    {{ fields.dropdownField(
+        'Entity',
+        'groups_entities_id',
+        provider.fields['groups_entities_id']|default(0),
+        __('Entity for new groups', 'singlesignon'),
+        field_opts|merge({ display_emptychoice: true })
+    ) }}
+    {{ fields.dropdownYesNo('groups_is_recursive', provider.fields.groups_is_recursive|default(0), __('Recursive for new groups', 'singlesignon'), field_opts) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('Personalization') }}</div>

@@ -262,6 +262,24 @@ function plugin_singlesignon_install()
 
     $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
     $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
+    $migration->addField(
+        $providersTable,
+        'groups_entities_id',
+        'integer',
+        [
+            'value' => 0,
+            'after' => 'groups_claim',
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'groups_is_recursive',
+        'bool',
+        [
+            'value' => 0,
+            'after' => 'groups_entities_id',
+        ],
+    );
 
     /**
      * Add display preferences
