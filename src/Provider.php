@@ -42,6 +42,7 @@ use Auth;
 use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
+use GlpiPlugin\Singlesignon\Provider_Group;
 
 use function Safe\file_get_contents;
 use function Safe\fclose;
@@ -2306,7 +2307,7 @@ class Provider extends CommonDBTM
             );
         }
 
-        $groupFields = ['groups', 'roles', 'group', 'role'];
+        $groupFields = ['groups', 'roles'];
         foreach ($groupFields as $field) {
             if (array_key_exists($field, $resource_array)) {
                 $groups = array_merge($groups, $this->normalizeGroupClaimValue($resource_array[$field]));
@@ -2453,6 +2454,10 @@ class Provider extends CommonDBTM
                 continue;
             }
 
+            // Persist (or update) the remote_id → groups_id mapping so future
+            // logins can find the correct GLPI group even after a rename.
+            $this->ensureGroupMapping($groupValue, $groupId);
+
             if ($mode === self::USER_GROUP_SYNC_RULE_MATCHED && !in_array($groupId, $ruleDynamicGroupIds, true)) {
                 continue;
             }
@@ -2507,6 +2512,21 @@ class Provider extends CommonDBTM
 
     private function resolveGroupIdFromClaimValue(\Group $group, string $groupValue): ?int
     {
+        // Check the stable provider→group mapping table first.  This survives
+        // GLPI group renames because the record is keyed by GLPI groups_id.
+        $mapping = (new Provider_Group())->find([
+            'plugin_singlesignon_providers_id' => $this->fields['id'],
+            'remote_id' => $groupValue,
+        ], '', 1);
+        if ($mapping !== []) {
+            $row = current($mapping);
+            $mappedId = (int) ($row['groups_id'] ?? 0);
+            if ($mappedId > 0 && $group->getFromDB($mappedId)) {
+                return $mappedId;
+            }
+        }
+
+        // Numeric claim values may be used as a direct GLPI group ID.
         if (is_numeric($groupValue)) {
             $groupId = (int) $groupValue;
             if ($groupId > 0 && $group->getFromDB($groupId)) {
@@ -2514,6 +2534,7 @@ class Provider extends CommonDBTM
             }
         }
 
+        // Fall back to a name-based lookup in the GLPI groups table.
         $found = $group->find(['name' => $groupValue], '', 1);
         if ($found === []) {
             return null;
@@ -2525,6 +2546,46 @@ class Provider extends CommonDBTM
         }
 
         return (int) $firstKey;
+    }
+
+    /**
+     * Upserts the remote_id → groups_id mapping in the providers_groups table.
+     *
+     * Existing GLPI group names and properties are never touched; only the
+     * cross-reference record in this plugin's own table is created or updated.
+     * If the mapping already exists and points to the same GLPI group, the
+     * method is a no-op.
+     */
+    private function ensureGroupMapping(string $remoteId, int $groupId): void
+    {
+        global $DB;
+
+        $table = Provider_Group::getTable();
+        $providerId = (int) $this->fields['id'];
+
+        $existing = $DB->request([
+            'SELECT' => ['id', 'groups_id'],
+            'FROM'   => $table,
+            'WHERE'  => [
+                'plugin_singlesignon_providers_id' => $providerId,
+                'remote_id' => $remoteId,
+            ],
+        ]);
+
+        foreach ($existing as $row) {
+            if ((int) $row['groups_id'] !== $groupId) {
+                // The GLPI group ID changed (e.g. deleted and recreated) — update it.
+                $DB->update($table, ['groups_id' => $groupId], ['id' => (int) $row['id']]);
+            }
+            // Either way the record exists; nothing further to do.
+            return;
+        }
+
+        $DB->insert($table, [
+            'plugin_singlesignon_providers_id' => $providerId,
+            'groups_id' => $groupId,
+            'remote_id' => $remoteId,
+        ]);
     }
 
     /**

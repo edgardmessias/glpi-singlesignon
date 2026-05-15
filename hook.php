@@ -24,6 +24,7 @@
 
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Provider;
+use GlpiPlugin\Singlesignon\Provider_Group;
 
 function plugin_singlesignon_install()
 {
@@ -42,6 +43,7 @@ function plugin_singlesignon_install()
 
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
+    $providersGroupsTable = Provider_Group::getTable();
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
     $migration = new Migration(PLUGIN_SINGLESIGNON_VERSION);
@@ -148,6 +150,20 @@ function plugin_singlesignon_install()
             PRIMARY KEY (`id`),
             UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
             UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        );
+    }
+
+    if (!$DB->tableExists($providersGroupsTable)) {
+        $DB->doQuery(
+            "CREATE TABLE `$providersGroupsTable` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
+            `groups_id` INT NOT NULL DEFAULT '0',
+            `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`),
+            KEY `groups_id` (`groups_id`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         );
     }
@@ -295,11 +311,16 @@ function plugin_singlesignon_uninstall()
     Config::deleteConfigurationValues('plugin:singlesignon');
 
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
+    $providersGroupsTable = Provider_Group::getTable();
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
     if ($DB->tableExists($providersUsersTable)) {
         $DB->dropTable($providersUsersTable, true);
+    }
+
+    if ($DB->tableExists($providersGroupsTable)) {
+        $DB->dropTable($providersGroupsTable, true);
     }
 
     if ($DB->tableExists($providersFieldsTable)) {
