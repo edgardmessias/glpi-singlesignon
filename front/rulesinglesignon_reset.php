@@ -25,6 +25,8 @@
 use GlpiPlugin\Singlesignon\RuleSinglesignon;
 use GlpiPlugin\Singlesignon\ToolboxPlugin;
 
+include __DIR__ . '/../../../inc/includes.php';
+
 Session::checkRight('config', UPDATE);
 Session::checkCSRF($_POST);
 

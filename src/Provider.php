@@ -198,6 +198,20 @@ class Provider extends CommonDBTM
         return true;
     }
 
+    public static function getAdditionalMenuOptions()
+    {
+        $options = parent::getAdditionalMenuOptions();
+        if (!is_array($options)) {
+            $options = [];
+        }
+
+        $label = __('SSO rules', 'singlesignon');
+        $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
+        $options['singlesignon']['links'][$link] = ToolboxPlugin::getRulesUrl();
+
+        return $options;
+    }
+
     public function prepareInputForAdd($input)
     {
         return $this->prepareInput($input);
