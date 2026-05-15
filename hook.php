@@ -375,7 +375,7 @@ function plugin_singlesignon_install()
                 ['field' => '_entities_id_default'],
                 [
                     'field'    => 'entities_id',
-                    'rules_id' => new \QuerySubQuery([
+                    'rules_id' => new \Glpi\DBAL\QuerySubQuery([
                         'SELECT' => 'id',
                         'FROM'   => 'glpi_rules',
                         'WHERE'  => ['sub_type' => $ruleSubtype],
@@ -476,7 +476,7 @@ function plugin_singlesignon_install()
                 'glpi_ruleactions',
                 [
                     'field'    => ['auto_register', 'registration_preview'],
-                    'rules_id' => new \QuerySubQuery([
+                    'rules_id' => new \Glpi\DBAL\QuerySubQuery([
                         'SELECT' => 'id',
                         'FROM'   => 'glpi_rules',
                         'WHERE'  => ['sub_type' => $ruleSubtype],

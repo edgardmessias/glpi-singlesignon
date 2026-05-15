@@ -23,7 +23,7 @@
  */
 
 use GlpiPlugin\Singlesignon\Provider;
-use GlpiPlugin\Singlesignon\ToolboxPlugin;
+use GlpiPlugin\Singlesignon\RuleSinglesignonCollection;
 
 include(__DIR__ . '/../../../inc/includes.php');
 
@@ -36,7 +36,7 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
 }
 
 // Add a shortcut button to the SSO rules page alongside the standard search UI.
-$rulesUrl = ToolboxPlugin::getRulesUrl();
+$rulesUrl = RuleSinglesignonCollection::getSearchURL();
 echo '<div class="d-flex justify-content-end mb-2 px-3">';
 echo '<a href="' . htmlspecialchars($rulesUrl, ENT_QUOTES, 'UTF-8') . '" class="btn btn-sm btn-outline-secondary">';
 echo '<i class="ti ti-list-check me-1"></i>';

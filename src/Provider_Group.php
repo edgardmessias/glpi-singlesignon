@@ -55,7 +55,6 @@ class Provider_Group extends CommonDBRelation
 
     private const MAX_GROUPS_PER_SYNC = 200;
     private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
-    private const MAX_GROUP_NAME_LENGTH = 255;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Public entry points
@@ -78,7 +77,7 @@ class Provider_Group extends CommonDBRelation
         }
 
         $groups = static::extractUserGroupsFromResource($provider, $resourceOwner);
-        static::applyPluginGroupRules($provider, $user, $groups, $resourceOwner);
+        self::applyPluginGroupRules($provider, $user, $groups, $resourceOwner);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -112,7 +111,7 @@ class Provider_Group extends CommonDBRelation
                 } catch (Throwable) {
                     continue;
                 }
-                $extracted = static::normalizeGroupClaimValue($result);
+                $extracted = self::normalizeGroupClaimValue($result);
                 if ($extracted !== []) {
                     return array_slice($extracted, 0, self::MAX_GROUPS_PER_SYNC);
                 }
@@ -123,7 +122,7 @@ class Provider_Group extends CommonDBRelation
         $groupFields = ['groups', 'roles'];
         foreach ($groupFields as $field) {
             if (array_key_exists($field, $resource_array)) {
-                $groups = array_merge($groups, static::normalizeGroupClaimValue($resource_array[$field]));
+                $groups = array_merge($groups, self::normalizeGroupClaimValue($resource_array[$field]));
             }
         }
 
@@ -132,7 +131,7 @@ class Provider_Group extends CommonDBRelation
             && is_array($resource_array['realm_access'])
             && array_key_exists('roles', $resource_array['realm_access'])
         ) {
-            $groups = array_merge($groups, static::normalizeGroupClaimValue($resource_array['realm_access']['roles']));
+            $groups = array_merge($groups, self::normalizeGroupClaimValue($resource_array['realm_access']['roles']));
         }
 
         if (isset($resource_array['resource_access']) && is_array($resource_array['resource_access'])) {
@@ -140,7 +139,7 @@ class Provider_Group extends CommonDBRelation
                 if (!is_array($clientRoles) || !array_key_exists('roles', $clientRoles)) {
                     continue;
                 }
-                $groups = array_merge($groups, static::normalizeGroupClaimValue($clientRoles['roles']));
+                $groups = array_merge($groups, self::normalizeGroupClaimValue($clientRoles['roles']));
             }
         }
 

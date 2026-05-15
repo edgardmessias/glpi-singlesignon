@@ -72,9 +72,6 @@ class Provider extends CommonDBTM
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
     public const AUTH_HEADER_DISABLED = 'disabled';
-    private const MAX_GROUPS_PER_SYNC = 200;
-    private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
-
     // From CommonDBTM
     public $dohistory = true;
     public static $rightname = 'config';
@@ -941,23 +938,11 @@ class Provider extends CommonDBTM
             throw $exception;
         }
 
-        // If there is no 'code' in the request, this is the initial (request) step: generate the OAuth state token and save the redirect in the session.
+        // If there is no 'code' in the request, this is the initial (request) step: generate the CSRF token and save the redirect in the session.
         // When 'code' is present, this is the response step returned by the provider after authentication.
         if (!isset($_GET['code'])) {
-            // Generate a cryptographically secure state for OAuth CSRF protection.
-            // Stored in both the session and a short-lived cookie so that the
-            // value survives the round-trip through the identity provider even if
-            // the PHP session is regenerated or lost during the cross-site redirect.
-            $state = bin2hex(random_bytes(32));
-            $_SESSION['glpi_singlesignon_oauth_state'] = $state;
-            $is_secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
-            setcookie('glpi_singlesignon_oauth_state', $state, [
-                'expires'  => time() + 600, // 10-minute window for the user to authenticate
-                'path'     => '/',
-                'secure'   => $is_secure,
-                'httponly' => true,
-                'samesite' => 'Lax',
-            ]);
+            // Generate CSRF token for OAuth state to validate the response step.
+            $state = Session::getNewCSRFToken();
 
             if (isset($_REQUEST['redirect'])) {
                 $_SESSION['glpi_singlesignon_redirect'] = $_REQUEST['redirect'];
@@ -1002,40 +987,10 @@ class Provider extends CommonDBTM
         $code = $_GET['code'] ?? '';
         $state = $_GET['state'] ?? '';
 
-        // Validate state against the OAuth state stored during the authorize step.
-        // Prefer the session-stored value; fall back to the cookie if the PHP session
-        // was regenerated or lost during the cross-site IdP redirect.
-        $expected_state = (string) ($_SESSION['glpi_singlesignon_oauth_state'] ?? '');
-        if ($expected_state === '') {
-            $expected_state = (string) ($_COOKIE['glpi_singlesignon_oauth_state'] ?? '');
-        }
-        unset($_SESSION['glpi_singlesignon_oauth_state']);
-
-        // Delete the state cookie regardless of validation outcome (one-time use).
-        $is_secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
-        setcookie('glpi_singlesignon_oauth_state', '', [
-            'expires'  => time() - 3600,
-            'path'     => '/',
-            'secure'   => $is_secure,
-            'httponly' => true,
-            'samesite' => 'Lax',
+        // Validate state against the CSRF token stored by GLPI.
+        Session::checkCSRF([
+            '_glpi_csrf_token' => $state,
         ]);
-
-        if ($expected_state === '' || !hash_equals($expected_state, $state)) {
-            $user_id = (string) (Session::getLoginUserID() ?? '');
-            $req_uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
-            // Use the same log message format as GLPI's Session::checkCSRF() so that
-            // existing monitoring and alerting based on that string continues to work.
-            Toolbox::logInFile(
-                'access-errors',
-                "CSRF check failed for User ID: $user_id at $req_uri",
-                true
-            );
-
-            $exception = new BadRequestHttpException();
-            $exception->setMessageToDisplay(__('The action you have requested is not allowed.'));
-            throw $exception;
-        }
 
         $this->_code = $code;
 
