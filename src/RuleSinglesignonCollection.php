@@ -42,7 +42,9 @@ class RuleSinglesignonCollection extends \RuleCollection
     public static $rightname = 'config';
 
     /** Evaluate ALL matching rules so a user can receive multiple groups. */
-    public bool $stop_on_first_match = false;
+    // No type annotation: parent RuleCollection declares this property untyped,
+    // so PHP requires the child to omit the type as well.
+    public $stop_on_first_match = false;
 
     public $menu_option = 'singlesignon';
 
