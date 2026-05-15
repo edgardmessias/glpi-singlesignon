@@ -121,6 +121,37 @@ class RuleSinglesignon extends \Rule
         return true;
     }
 
+    public function showRulePreviewCriteriasForm($rules_id)
+    {
+        $criteria = $this->getAllCriteria();
+        if (!$this->getRuleWithCriteriasAndActions($rules_id, true, false)) {
+            return;
+        }
+
+        $criteriaNames = [];
+        foreach ($criteria as $key => $value) {
+            $criteriaNames[$key] = $value['name'] ?? '';
+        }
+
+        $alreadyAddedCriterias = [];
+        $uniqueCriterias = [];
+        foreach ($this->criterias as $criterion) {
+            if (!in_array($criterion->fields['criteria'], $alreadyAddedCriterias, true)) {
+                $uniqueCriterias[] = $criterion;
+                $alreadyAddedCriterias[] = $criterion->fields['criteria'];
+            }
+        }
+
+        \Glpi\Application\View\TemplateRenderer::getInstance()->display('pages/admin/rules/preview_criteria.html.twig', [
+            'criterias'       => $uniqueCriterias,
+            'criteria_names'  => $criteriaNames,
+            'item'            => $this,
+            'target'          => static::getTestURL(),
+            'rules_id'        => $rules_id,
+            'rules_id_field'  => $this->rules_id_field,
+        ]);
+    }
+
     public function getCriterias(): array
     {
         return [

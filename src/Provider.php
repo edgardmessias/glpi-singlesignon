@@ -209,6 +209,20 @@ class Provider extends CommonDBTM
         return $options;
     }
 
+    public static function getAdditionalMenuLinks()
+    {
+        $links = parent::getAdditionalMenuLinks();
+        if (!is_array($links)) {
+            $links = [];
+        }
+
+        $label = __('Authorization assignment rules');
+        $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
+        $links[$link] = RuleSinglesignonCollection::getSearchURL(false);
+
+        return $links;
+    }
+
     public function prepareInputForAdd($input)
     {
         return $this->prepareInput($input);
