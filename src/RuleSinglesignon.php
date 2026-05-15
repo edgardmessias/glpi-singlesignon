@@ -50,11 +50,16 @@ class RuleSinglesignon extends \Rule
      * class.  GLPI's default implementation uses strtolower(static::class) which
      * produces a URL containing backslashes when the class is in a PHP namespace.
      *
+     * Plugin::getWebDir() is called with the default $full=true so that it
+     * prepends root_doc and returns an absolute (server-root-relative) path.
+     * Passing false would return a relative path such as "plugins/singlesignon"
+     * which browsers resolve relative to the current page and double the prefix.
+     *
      * @param bool $full When true, appends the itemtype query parameter.
      */
     public static function getFormURL($full = true): string
     {
-        $dir = \Plugin::getWebDir('singlesignon', false);
+        $dir = \Plugin::getWebDir('singlesignon');
         $url = $dir . '/front/rulesinglesignon.form.php';
         return $full ? $url . '?itemtype=' . static::class : $url;
     }
