@@ -314,7 +314,7 @@ function plugin_singlesignon_install()
                     'entities_id'  => 0,
                     'is_recursive' => 1,
                     'is_active'    => 1,
-                    'name'         => sprintf(__('Auto-migrated rule for provider: %s', 'singlesignon'), $providerRow['name']),
+                    'name'         => sprintf(__('Auto-migrated rule for provider: %s', 'singlesignon'), strip_tags((string) $providerRow['name'])),
                     'match'        => \Rule::AND_MATCHING,
                     'ranking'      => $nextRank,
                 ]);
