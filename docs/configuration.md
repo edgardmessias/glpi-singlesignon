@@ -138,7 +138,7 @@ Controls how groups from OAuth claims are applied on login:
 
 - **Disabled** — do not synchronize groups.
 - **Import all groups from OAuth claim** — import every group returned by the claim.
-- **Import only groups allowed by matching GLPI authorization rules** — only import groups when GLPI rule engine has a matching dynamic group assignment rule.
+- **Import only groups allowed by matching GLPI authorization rules** — assigns the user to existing GLPI groups via the plugin's SSO group rules engine. Rules match against raw IdP group name strings; no new GLPI groups are created automatically.
 
 ### Group claim
 

@@ -43,6 +43,7 @@ use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
 use GlpiPlugin\Singlesignon\Provider_Group;
+use GlpiPlugin\Singlesignon\RuleSinglesignonCollection;
 
 use function Safe\file_get_contents;
 use function Safe\fclose;
@@ -395,7 +396,7 @@ class Provider extends CommonDBTM
         return [
             (string) self::USER_GROUP_SYNC_DISABLED => __('Disabled'),
             (string) self::USER_GROUP_SYNC_ALL => __('Import all groups from OAuth claim', 'singlesignon'),
-            (string) self::USER_GROUP_SYNC_RULE_MATCHED => __('Import only groups allowed by matching GLPI authorization rules', 'singlesignon'),
+            (string) self::USER_GROUP_SYNC_RULE_MATCHED => __('Assign existing groups via SSO group rules (no auto-import)', 'singlesignon'),
         ];
     }
 
@@ -2288,7 +2289,12 @@ class Provider extends CommonDBTM
         }
 
         $groups = $this->extractUserGroupsFromResource($resourceOwner);
-        $this->assignGroupsToUser($user, $groups, $mode);
+
+        if ($mode === self::USER_GROUP_SYNC_RULE_MATCHED) {
+            $this->applyPluginGroupRules($user, $groups);
+        } else {
+            $this->assignGroupsToUser($user, $groups, $mode);
+        }
     }
 
     /**
@@ -2427,8 +2433,7 @@ class Provider extends CommonDBTM
             'is_dynamic' => 1,
         ]);
 
-        $ruleDynamicGroupIds = $this->getRuleMatchedDynamicGroupIds($user);
-        $keepDynGroupIds = $ruleDynamicGroupIds;
+        $keepDynGroupIds = [];
 
         foreach ($groups as $groupValue) {
             $groupValue = $this->sanitizeGroupClaimEntry((string) $groupValue);
@@ -2458,10 +2463,6 @@ class Provider extends CommonDBTM
             // logins can find the correct GLPI group even after a rename.
             $this->ensureGroupMapping($groupValue, $groupId);
 
-            if ($mode === self::USER_GROUP_SYNC_RULE_MATCHED && !in_array($groupId, $ruleDynamicGroupIds, true)) {
-                continue;
-            }
-
             if ($groupUser->getFromDBByCrit([
                 'users_id'  => $user->getID(),
                 'groups_id' => $groupId,
@@ -2488,6 +2489,107 @@ class Provider extends CommonDBTM
             }
             $groupUser->delete(['id' => (int) $link['id']], true);
         }
+    }
+
+    /**
+     * Evaluate the plugin's SSO group rule collection and assign the user to
+     * every GLPI group returned by matching rules.  Dynamic group memberships
+     * that are no longer covered by the rules are removed, consistent with
+     * the behaviour of the other sync modes.
+     *
+     * This method is the entry-point for USER_GROUP_SYNC_RULE_MATCHED.  It
+     * never creates new GLPI groups; it only references existing ones.
+     *
+     * @param string[] $ssoGroups Raw IdP group name strings from the token claim.
+     */
+    private function applyPluginGroupRules(User $user, array $ssoGroups): void
+    {
+        $groupUser = new \Group_User();
+
+        // Snapshot all current dynamic group memberships before we start.
+        $links = $groupUser->find([
+            'users_id'   => $user->getID(),
+            'is_dynamic' => 1,
+        ]);
+
+        $targetGroupIds = $this->getPluginRuleGroupIds($user, $ssoGroups);
+
+        $keepGroupIds = [];
+        foreach ($targetGroupIds as $groupId) {
+            if ($groupUser->getFromDBByCrit([
+                'users_id'  => $user->getID(),
+                'groups_id' => $groupId,
+            ])) {
+                $keepGroupIds[] = $groupId;
+                continue;
+            }
+
+            $linkId = $groupUser->add([
+                'users_id'   => $user->getID(),
+                'groups_id'  => $groupId,
+                'is_dynamic' => 1,
+            ]);
+            if (is_numeric($linkId)) {
+                $keepGroupIds[] = $groupId;
+            }
+        }
+
+        // Remove dynamic groups no longer covered by the current rule results.
+        $keepGroupIds = array_values(array_unique(array_map('intval', $keepGroupIds)));
+        foreach ($links as $link) {
+            $linkedGroupId = (int) ($link['groups_id'] ?? 0);
+            if ($linkedGroupId <= 0 || in_array($linkedGroupId, $keepGroupIds, true)) {
+                continue;
+            }
+            $groupUser->delete(['id' => (int) $link['id']], true);
+        }
+    }
+
+    /**
+     * Run the plugin's SSO group rule collection and return the GLPI group IDs
+     * produced by all matching rules.
+     *
+     * @param string[] $ssoGroups Raw IdP group name strings.
+     * @return int[]
+     */
+    private function getPluginRuleGroupIds(User $user, array $ssoGroups): array
+    {
+        if (!class_exists(RuleSinglesignonCollection::class)) {
+            return [];
+        }
+
+        $collection = new RuleSinglesignonCollection();
+        $actions = $collection->testAllRules(
+            // Initial input — prepareInputDataForProcess() will populate it
+            // from the params array below.
+            [],
+            [],
+            [
+                'sso_groups' => $ssoGroups,
+                'login'      => (string) ($user->fields['name'] ?? ''),
+            ],
+        );
+
+        $groupIds = [];
+        if (is_array($actions)) {
+            foreach ($actions as $action) {
+                if (!is_array($action)) {
+                    continue;
+                }
+                if (($action['field'] ?? null) !== 'groups_id') {
+                    continue;
+                }
+                if (!isset($action['value']) || !is_numeric($action['value'])) {
+                    continue;
+                }
+                $groupId = (int) $action['value'];
+                if ($groupId > 0) {
+                    $groupIds[] = $groupId;
+                }
+            }
+        }
+
+        return array_values(array_unique($groupIds));
     }
 
     private function sanitizeGroupClaimEntry(string $groupValue): ?string
@@ -2586,61 +2688,6 @@ class Provider extends CommonDBTM
             'groups_id' => $groupId,
             'remote_id' => $remoteId,
         ]);
-    }
-
-    /**
-     * @return int[]
-     */
-    private function getRuleMatchedDynamicGroupIds(User $user): array
-    {
-        if (!class_exists(\RuleRightCollection::class)) {
-            return [];
-        }
-
-        $groups = \Group_User::getUserGroups($user->getID());
-        $groupIds = [];
-        foreach ($groups as $group) {
-            if (isset($group['id']) && is_numeric($group['id'])) {
-                $groupIds[] = (int) $group['id'];
-                continue;
-            }
-            if (isset($group['groups_id']) && is_numeric($group['groups_id'])) {
-                $groupIds[] = (int) $group['groups_id'];
-            }
-        }
-
-        $rules = new \RuleRightCollection();
-        $actions = $rules->testAllRules(
-            $groupIds,
-            $user->fields,
-            [
-                // Keep DB_GLPI to align rule evaluation with existing GLPI authorization assignment flow.
-                'type'  => Auth::DB_GLPI,
-                'login' => (string) ($user->fields['name'] ?? ''),
-                'email' => (string) \UserEmail::getDefaultForUser($user->getID()),
-            ],
-        );
-
-        $allowed = [];
-        if (is_array($actions)) {
-            foreach ($actions as $action) {
-                if (!is_array($action)) {
-                    continue;
-                }
-                if (($action['field'] ?? null) !== 'groups_id') {
-                    continue;
-                }
-                if ((int) ($action['is_dynamic'] ?? 0) !== 1) {
-                    continue;
-                }
-                if (!isset($action['value']) || !is_numeric($action['value'])) {
-                    continue;
-                }
-                $allowed[] = (int) $action['value'];
-            }
-        }
-
-        return array_values(array_unique($allowed));
     }
 
     private function shouldSyncOAuthPhoto(User $user): bool
