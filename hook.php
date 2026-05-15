@@ -351,17 +351,15 @@ function plugin_singlesignon_install()
             'is_recursive' => 1,
             'is_active'    => 1,
             'name'         => __('Default SSO rule', 'singlesignon'),
-            'comment'      => __('No criteria — applies to all SSO logins. Edit to enable auto-registration and set default entity/profile.', 'singlesignon'),
+            'description'  => __('No criteria — applies to all SSO logins. Edit to set default entity/profile.', 'singlesignon'),
             'match'        => \Rule::AND_MATCHING,
             'ranking'      => $nextRank,
         ]);
 
         if (is_numeric($ruleId) && (int) $ruleId > 0) {
             $ruleAction = new \RuleAction();
-            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'auto_register',       'value' => 0]);
-            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'registration_preview', 'value' => 0]);
-            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'entities_id',          'value' => 0]);
-            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'is_recursive',         'value' => 0]);
+            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'entities_id',  'value' => 0]);
+            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'is_recursive', 'value' => 0]);
         }
     }
 
@@ -454,6 +452,38 @@ function plugin_singlesignon_install()
         $migration->dropField($providersTable, 'user_group_sync_mode');
         $migration->dropField($providersTable, 'groups_claim');
         $migration->executeMigration();
+    }
+
+    /**
+     * Version 2.4.0:
+     *  - Move default-rule text back from comment to description column.
+     *  - Remove auto_register and registration_preview rule actions (these
+     *    settings are now provider-level fields, not rule actions).
+     */
+    if (version_compare($currentVersion, '2.4.0', '<')) {
+        if ($DB->tableExists('glpi_rules')) {
+            $oldRuleText = __('No criteria — applies to all SSO logins. Edit to enable auto-registration and set default entity/profile.', 'singlesignon');
+            $newRuleText = __('No criteria — applies to all SSO logins. Edit to set default entity/profile.', 'singlesignon');
+            // Move text back to description for rules still carrying the old comment value.
+            $DB->update(
+                'glpi_rules',
+                ['description' => $newRuleText, 'comment' => ''],
+                ['sub_type' => $ruleSubtype, 'comment' => $oldRuleText],
+            );
+        }
+        if ($DB->tableExists('glpi_ruleactions')) {
+            $DB->delete(
+                'glpi_ruleactions',
+                [
+                    'field'    => ['auto_register', 'registration_preview'],
+                    'rules_id' => new \QuerySubQuery([
+                        'SELECT' => 'id',
+                        'FROM'   => 'glpi_rules',
+                        'WHERE'  => ['sub_type' => $ruleSubtype],
+                    ]),
+                ],
+            );
+        }
     }
 
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;

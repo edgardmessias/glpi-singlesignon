@@ -40,11 +40,8 @@ namespace GlpiPlugin\Singlesignon;
  *   - 'sso_groups'     => string[]   raw IdP group names from the token claim
  *   - 'login'          => string     GLPI login name
  *   - 'email'          => string     full e-mail address
- *   - 'firstname'      => string
- *   - 'realname'       => string
  *   - 'location'       => string     IdP location claim value (officeLocation fallback)
  *   - 'supervisor'     => string     supervisor user name (for criterion matching)
- *   - 'is_new_user'    => bool       true when the user does not yet exist in GLPI
  *   - 'provider_id'    => int        ID of the SSO provider that triggered the login
  */
 class RuleSinglesignonCollection extends \RuleCollection
@@ -65,6 +62,61 @@ class RuleSinglesignonCollection extends \RuleCollection
     }
 
     /**
+     * Override to return a lowercase plugin path so the GLPI router can find
+     * the test page.  The default implementation derives the path from the
+     * class namespace and produces a capitalised URL
+     * (/plugins/Singlesignon/…) that does not exist.
+     */
+    public static function getRulesTestURL(): string
+    {
+        return '/plugins/singlesignon/front/rulesengine.test.php';
+    }
+
+    /**
+     * Output a prominent "+ Add rule" button at the top of the rules list.
+     * Overrides the no-op default in RuleCollection.
+     */
+    public function title(): void
+    {
+        $ruleClass = static::getRuleClassName();
+        if ($ruleClass !== '' && $ruleClass::canCreate()) {
+            $addUrl = htmlspecialchars($ruleClass::getFormURL(), ENT_QUOTES, 'UTF-8');
+            echo '<div class="d-flex justify-content-end mb-2">';
+            echo '<a href="' . $addUrl . '" class="btn btn-primary btn-sm">';
+            echo '<i class="ti ti-plus me-1"></i>';
+            echo htmlspecialchars(_x('button', 'Add'), ENT_QUOTES, 'UTF-8');
+            echo '</a>';
+            echo '</div>';
+        }
+    }
+
+    /**
+     * Render the rules list and append a "Reset rules" button below it.
+     */
+    public function showListRules($target, $options = [])
+    {
+        parent::showListRules($target, $options);
+
+        if (static::canUpdate() && \Session::getActiveEntity() === 0 && \Session::getIsActiveEntityRecursive()) {
+            $resetUrl = ToolboxPlugin::getResetRulesUrl();
+            echo \Glpi\Application\View\TemplateRenderer::getInstance()->renderFromStringTemplate(<<<TWIG
+                <div class="d-flex justify-content-center mt-2">
+                    <form method="post" action="{{ reset_url }}" onsubmit="return confirm('{{ warning|e('js') }}');">
+                        <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-ghost-danger">
+                            <i class="ti ti-refresh me-1"></i>{{ label }}
+                        </button>
+                    </form>
+                </div>
+            TWIG, [
+                'reset_url' => $resetUrl,
+                'warning'   => __('Delete all existing rules and restore the default rule?', 'singlesignon'),
+                'label'     => __('Reset rules', 'singlesignon'),
+            ]);
+        }
+    }
+
+    /**
      * Populate the criteria input from the params array supplied by Provider.
      *
      * @param array<string, mixed> $input
@@ -82,29 +134,11 @@ class RuleSinglesignonCollection extends \RuleCollection
         if (isset($params['email']) && is_string($params['email'])) {
             $input['email'] = $params['email'];
         }
-        if (isset($params['firstname']) && is_string($params['firstname'])) {
-            $input['firstname'] = $params['firstname'];
-        }
-        if (isset($params['realname']) && is_string($params['realname'])) {
-            $input['realname'] = $params['realname'];
-        }
-        if (isset($params['phone']) && is_string($params['phone'])) {
-            $input['phone'] = $params['phone'];
-        }
-        if (isset($params['phone2']) && is_string($params['phone2'])) {
-            $input['phone2'] = $params['phone2'];
-        }
-        if (isset($params['mobile']) && is_string($params['mobile'])) {
-            $input['mobile'] = $params['mobile'];
-        }
         if (isset($params['location']) && is_string($params['location'])) {
             $input['location'] = $params['location'];
         }
         if (isset($params['supervisor']) && is_string($params['supervisor'])) {
             $input['supervisor'] = $params['supervisor'];
-        }
-        if (isset($params['is_new_user'])) {
-            $input['is_new_user'] = $params['is_new_user'] ? '1' : '0';
         }
         if (isset($params['provider_id'])) {
             $input['provider_id'] = (int) $params['provider_id'];
@@ -127,8 +161,6 @@ class RuleSinglesignonCollection extends \RuleCollection
      * @param int      $providerId   ID of the SSO provider.
      *
      * @return array{
-     *   auto_register: bool,
-     *   registration_preview: bool,
      *   _entities_id_default: int,
      *   is_recursive: bool,
      *   is_active: bool|null,
@@ -152,8 +184,6 @@ class RuleSinglesignonCollection extends \RuleCollection
         int $providerId = 0
     ): array {
         $result = [
-            'auto_register'          => false,
-            'registration_preview'   => false,
             '_entities_id_default'   => 0,
             'is_recursive'           => false,
             'is_active'              => null,  // null = do not change
@@ -175,12 +205,6 @@ class RuleSinglesignonCollection extends \RuleCollection
                 'login'        => $login,
                 'email'        => $email ?? '',
                 'sso_groups'   => $ssoGroups,
-                'is_new_user'  => $isNewUser,
-                'firstname'    => (string) ($resourceArray['given_name'] ?? $resourceArray['firstname'] ?? ''),
-                'realname'     => (string) ($resourceArray['family_name'] ?? $resourceArray['realname'] ?? ''),
-                'phone'        => (string) ($resourceArray['phone'] ?? (is_array($resourceArray['businessPhones'] ?? null) ? ($resourceArray['businessPhones'][0] ?? '') : '') ?: ''),
-                'phone2'       => (string) ($resourceArray['phone2'] ?? (is_array($resourceArray['businessPhones'] ?? null) ? ($resourceArray['businessPhones'][1] ?? '') : '') ?: ''),
-                'mobile'       => (string) ($resourceArray['mobile'] ?? $resourceArray['mobilePhone'] ?? ''),
                 'location'     => (string) ($resourceArray['location'] ?? $resourceArray['officeLocation'] ?? ''),
                 'supervisor'   => (string) ($resourceArray['supervisor'] ?? $resourceArray['manager'] ?? ''),
                 'provider_id'  => $providerId,
@@ -198,12 +222,6 @@ class RuleSinglesignonCollection extends \RuleCollection
             $field = $action['field'] ?? null;
             $value = $action['value'] ?? null;
             switch ($field) {
-                case 'auto_register':
-                    $result['auto_register'] = (bool) $value;
-                    break;
-                case 'registration_preview':
-                    $result['registration_preview'] = (bool) $value;
-                    break;
                 case '_entities_id_default':
                     $result['_entities_id_default'] = (int) $value;
                     break;

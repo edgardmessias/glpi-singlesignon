@@ -1924,8 +1924,7 @@ class Provider extends CommonDBTM
         }
 
         // Evaluate all SSO rules with the new-user context so that
-        // auto_register, registration_preview, entity, profile and group
-        // assignments are all driven by the rules engine.
+        // entity, profile and group assignments are driven by the rules engine.
         $ssoGroups  = Provider_Group::extractUserGroupsFromResource($this, $resource_array);
         $ruleResult = $this->evaluateRulesForUser(
             (string) $gate['login'],
@@ -1935,12 +1934,12 @@ class Provider extends CommonDBTM
             $resource_array
         );
 
-        if (!$ruleResult['auto_register']) {
+        if (!$this->fields['auto_register']) {
             $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
             return self::LOGIN_FAILURE;
         }
 
-        if ($ruleResult['registration_preview']) {
+        if ($this->fields['registration_preview']) {
             $this->storePendingRegistrationSession($resource_array, $ruleResult);
             return self::LOGIN_REGISTRATION_PREVIEW;
         }
@@ -2310,8 +2309,6 @@ class Provider extends CommonDBTM
     ): array {
         if (!class_exists(RuleSinglesignonCollection::class)) {
             return [
-                'auto_register'          => false,
-                'registration_preview'   => false,
                 '_entities_id_default'   => 0,
                 'is_recursive'           => false,
                 'is_active'              => null,

@@ -92,31 +92,6 @@ class RuleSinglesignon extends \Rule
                 'type'  => 'text',
                 'table' => '',
             ],
-            'firstname' => [
-                'name'  => __('First name'),
-                'type'  => 'text',
-                'table' => '',
-            ],
-            'realname' => [
-                'name'  => __('Last name'),
-                'type'  => 'text',
-                'table' => '',
-            ],
-            'phone' => [
-                'name'  => __('Phone'),
-                'type'  => 'text',
-                'table' => '',
-            ],
-            'phone2' => [
-                'name'  => __('Phone 2'),
-                'type'  => 'text',
-                'table' => '',
-            ],
-            'mobile' => [
-                'name'  => __('Cell phone'),
-                'type'  => 'text',
-                'table' => '',
-            ],
             'location' => [
                 'name'  => __('Location'),
                 'type'  => 'text',
@@ -129,18 +104,12 @@ class RuleSinglesignon extends \Rule
             ],
             // ── IdP claim values ────────────────────────────────────────────
             'SSO_GROUPS' => [
-                'name'    => __('SSO Group (IdP claim)', 'singlesignon'),
+                'name'    => __('Group'),
                 'type'    => 'text',
                 'virtual' => true,
                 'table'   => '',
             ],
             // ── Context ─────────────────────────────────────────────────────
-            'is_new_user' => [
-                'name'    => __('Is new user (first registration)', 'singlesignon'),
-                'type'    => 'yesno',
-                'virtual' => true,
-                'table'   => '',
-            ],
             'provider_id' => [
                 'name'  => __('SSO Provider', 'singlesignon'),
                 'type'  => 'dropdown',
@@ -223,17 +192,6 @@ class RuleSinglesignon extends \Rule
             '_deny_login' => [
                 'name'          => __('Deny login'),
                 'type'          => 'yesonly',
-                'force_actions' => ['assign'],
-            ],
-            // ── SSO-specific registration gate ───────────────────────────────
-            'auto_register' => [
-                'name'          => __('Allow automatic registration', 'singlesignon'),
-                'type'          => 'yesno',
-                'force_actions' => ['assign'],
-            ],
-            'registration_preview' => [
-                'name'          => __('Confirm registration before creating account', 'singlesignon'),
-                'type'          => 'yesno',
                 'force_actions' => ['assign'],
             ],
         ];

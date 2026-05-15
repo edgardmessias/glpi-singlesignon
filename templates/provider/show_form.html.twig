@@ -138,24 +138,18 @@
 
     {% if provider_id %}
     {% set _rules_url = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getRulesUrl'], []) %}
-    {% set _reset_url = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getResetRulesUrl'], []) %}
     {% set _rules_link %}
-        <div class="d-flex gap-2">
-            <a href="{{ _rules_url }}" class="btn btn-sm btn-outline-secondary">
-                <i class="ti ti-list-check me-1"></i>{{ __('Authorization assignment rules') }}
-            </a>
-            <form method="post" action="{{ _reset_url }}" onsubmit="return confirm('{{ __('Delete all existing rules and restore the default rule?', 'singlesignon')|e('js') }}');" style="display:inline">
-                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-sm btn-outline-danger">
-                    <i class="ti ti-refresh me-1"></i>{{ __('Reset rules', 'singlesignon') }}
-                </button>
-            </form>
-        </div>
+        <a href="{{ _rules_url }}" class="btn btn-sm btn-outline-secondary">
+            <i class="ti ti-list-check me-1"></i>{{ __('Authorization assignment rules') }}
+        </a>
     {% endset %}
     {{ fields.htmlField('', _rules_link, __('Authorization assignment rules'), field_opts) }}
     {% else %}
     {{ fields.htmlField('', '<span class="text-muted">' ~ __('Save the provider first to access the rules engine.', 'singlesignon') ~ '</span>', __('SSO rules', 'singlesignon'), field_opts) }}
     {% endif %}
+
+    {{ fields.dropdownYesNo('auto_register', provider.fields.auto_register|default(0), __('Allow automatic registration', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownYesNo('registration_preview', provider.fields.registration_preview|default(0), __('Confirm registration before creating account', 'singlesignon'), field_opts) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>
