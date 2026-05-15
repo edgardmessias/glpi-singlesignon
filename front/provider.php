@@ -22,13 +22,15 @@
  * ---------------------------------------------------------------------
  */
 
+use GlpiPlugin\Singlesignon\Menu;
 use GlpiPlugin\Singlesignon\Provider;
+
 include(__DIR__ . '/../../../inc/includes.php');
 
 Session::checkRight("config", UPDATE);
 
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
-    Html::header(__('Single Sign-on', 'singlesignon'), $_SERVER['PHP_SELF'], "config", Provider::class, "provider");
+    Html::header(__('Single Sign-on', 'singlesignon'), $_SERVER['PHP_SELF'], "config", Menu::class, "provider");
 } else {
     Html::helpHeader(__('Single Sign-on', 'singlesignon'), $_SERVER['PHP_SELF']);
 }

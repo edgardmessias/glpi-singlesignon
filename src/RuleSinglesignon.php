@@ -50,6 +50,11 @@ class RuleSinglesignon extends \Rule
         return static::canUpdate();
     }
 
+    public static function getIcon()
+    {
+        return 'ti ti-user-check';
+    }
+
     /**
      * Override to return the correct front-end path for this namespaced plugin
      * class.  GLPI's default implementation uses strtolower(static::class) which

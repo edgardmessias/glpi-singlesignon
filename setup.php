@@ -25,6 +25,7 @@
 use Glpi\Http\Firewall;
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Singlesignon\LoginRenderer;
+use GlpiPlugin\Singlesignon\Menu;
 use GlpiPlugin\Singlesignon\Preference;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
@@ -102,7 +103,7 @@ function plugin_init_singlesignon()
     $PLUGIN_HOOKS[Hooks::CONFIG_PAGE]['singlesignon'] = 'front/provider.php';
     $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = [LoginRenderer::class, 'onPostInit'];
     $PLUGIN_HOOKS[Hooks::MENU_TOADD]['singlesignon'] = [
-        'config'  => Provider::class,
+        'config'  => Menu::class,
     ];
     $PLUGIN_HOOKS[Hooks::ADD_CSS]['singlesignon'] = ['css/preference.css'];
     $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['singlesignon'] = ['css/login.css'];

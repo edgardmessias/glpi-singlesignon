@@ -195,36 +195,6 @@ class Provider extends CommonDBTM
         return true;
     }
 
-    public static function getAdditionalMenuOptions()
-    {
-        $options = [
-            'provider' => [
-                'title' => static::getTypeName(Session::getPluralNumber()),
-                'page'  => static::getSearchURL(false),
-                'links' => [
-                    'search' => static::getSearchURL(false),
-                ],
-            ],
-            'rules' => [
-                'title' => __('Authorization assignment rules'),
-                'page'  => RuleSinglesignonCollection::getSearchURL(false),
-                'links' => [
-                    'search' => RuleSinglesignonCollection::getSearchURL(false),
-                ],
-            ],
-        ];
-
-        if (static::canCreate()) {
-            $options['provider']['links']['add'] = static::getFormURL(false);
-        }
-
-        $label = __('Authorization assignment rules');
-        $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        $options['provider']['links'][$link] = RuleSinglesignonCollection::getSearchURL(false);
-
-        return $options;
-    }
-
     public function prepareInputForAdd($input)
     {
         return $this->prepareInput($input);

@@ -69,6 +69,11 @@ class ToolboxPlugin
 
 
 
+    public static function getRulesUrl(): string
+    {
+        return RuleSinglesignonCollection::getSearchURL();
+    }
+
     public static function isDefault($row, $query = [])
     {
         return $row['is_default'] == 1;
