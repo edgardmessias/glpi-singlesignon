@@ -45,6 +45,11 @@ class RuleSinglesignon extends \Rule
         return __('Authorization assignment rules');
     }
 
+    public static function canCreate(): bool
+    {
+        return static::canUpdate();
+    }
+
     /**
      * Override to return the correct front-end path for this namespaced plugin
      * class.  GLPI's default implementation uses strtolower(static::class) which
