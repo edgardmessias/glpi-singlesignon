@@ -83,6 +83,44 @@ class RuleSinglesignon extends \Rule
         return $dir . '/front/rule.test.php';
     }
 
+    public function showForm($ID, array $options = [])
+    {
+        $newItem = static::isNewID($ID);
+        if (!$newItem) {
+            $this->check($ID, READ);
+        } else {
+            $this->checkGlobal(UPDATE);
+        }
+
+        $canedit = $this->canEdit($ID);
+        $addButtons = [];
+        if (!$newItem && $canedit) {
+            $addButtons = [
+                [
+                    'text'    => _x('button', 'Test'),
+                    'type'    => 'button',
+                    'onclick' => "$('#ruletestmodal').modal('show');",
+                ],
+            ];
+        }
+
+        $twigParams = array_merge_recursive([
+            'item'            => $this,
+            'match_operators' => $this->getRulesMatch(),
+            'conditions'      => static::getConditionsArray(),
+            'rand'            => mt_rand(),
+            'test_url'        => static::getTestURL(),
+            'params'          => [
+                'canedit'    => $canedit,
+                'addbuttons' => $addButtons,
+            ],
+        ], $options);
+
+        \Glpi\Application\View\TemplateRenderer::getInstance()->display('pages/admin/rules/form.html.twig', $twigParams);
+
+        return true;
+    }
+
     public function getCriterias(): array
     {
         return [

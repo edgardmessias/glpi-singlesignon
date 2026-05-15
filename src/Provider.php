@@ -202,9 +202,9 @@ class Provider extends CommonDBTM
             $options = [];
         }
 
-        $label = __('SSO rules', 'singlesignon');
+        $label = __('Authorization assignment rules');
         $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        $options[strtolower(static::class)]['links'][$link] = RuleSinglesignonCollection::getSearchURL();
+        $options['singlesignon']['links'][$link] = RuleSinglesignonCollection::getSearchURL();
 
         return $options;
     }
