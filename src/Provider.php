@@ -207,7 +207,7 @@ class Provider extends CommonDBTM
 
         $label = __('SSO rules', 'singlesignon');
         $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        $options['singlesignon']['links'][$link] = ToolboxPlugin::getRulesUrl();
+        $options[strtolower(static::class)]['links'][$link] = RuleSinglesignonCollection::getSearchURL();
 
         return $options;
     }

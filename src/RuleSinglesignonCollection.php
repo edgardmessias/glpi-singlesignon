@@ -77,6 +77,17 @@ class RuleSinglesignonCollection extends \RuleCollection
         return '/plugins/singlesignon/front/rulesengine.test.php';
     }
 
+    /**
+     * Override to return the correct URL for the rules list page.
+     *
+     * @param bool $full When true, appends the root_doc.
+     */
+    public static function getSearchURL($full = true): string
+    {
+        $dir = \Plugin::getWebDir('singlesignon', $full);
+        return $dir . '/front/rulesinglesignon.php';
+    }
+
     public static function getAdditionalMenuOptions()
     {
         $options = parent::getAdditionalMenuOptions();
@@ -88,78 +99,13 @@ class RuleSinglesignonCollection extends \RuleCollection
         if ($ruleClass !== '' && $ruleClass::canCreate()) {
             $label = _x('button', 'Add');
             $link = "<i class=\"ti ti-plus\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-            $options['singlesignon']['links'][$link] = $ruleClass::getFormURL();
+            $options[strtolower(static::class)]['links'][$link] = $ruleClass::getFormURL();
         }
 
         return $options;
     }
 
-    /**
-     * Render the rules list and append a "Reset rules" button below it.
-     */
-    public function showListRules($target, $options = [])
-    {
-        parent::showListRules($target, $options);
 
-        if (static::canUpdate() && \Session::getActiveEntity() === 0 && \Session::getIsActiveEntityRecursive()) {
-            $resetUrl = \GlpiPlugin\Singlesignon\ToolboxPlugin::getResetRulesUrl();
-            echo \Glpi\Application\View\TemplateRenderer::getInstance()->renderFromStringTemplate(<<<TWIG
-                <style>
-                .sso-reset-btn-wrapper {
-                    position: absolute;
-                    margin-top: -50px;
-                    left: 50%;
-                    transform: translateX(-180px);
-                }
-                </style>
-                <div class="sso-reset-btn-wrapper">
-                    <button type="button" class="btn btn-ghost-danger mx-1" data-bs-toggle="modal" data-bs-target="#reset_rules">
-                        {{ label }}
-                    </button>
-                </div>
-                <div class="modal fade" id="reset_rules" tabindex="-1" role="dialog" aria-modal="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
-                            <div class="modal-status bg-danger"></div>
-                            <div class="modal-body text-center py-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 9v4"></path><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"></path><path d="M12 16h.01"></path></svg>
-                                <h3>{{ are_you_sure }}</h3>
-                                <div class="text-muted">
-                                    {{ warning }}
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <div class="w-100">
-                                    <div class="row">
-                                        <div class="col">
-                                            <a class="btn w-100" data-bs-dismiss="modal">
-                                                {{ cancel }}
-                                            </a>
-                                        </div>
-                                        <div class="col">
-                                            <form method="post" action="{{ reset_url }}">
-                                                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-danger w-100">
-                                                    {{ label }}
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            TWIG, [
-                'reset_url'    => $resetUrl,
-                'label'        => __('Reset rules', 'singlesignon'),
-                'are_you_sure' => __('Are you sure?'),
-                'warning'      => __('Rules will be erased and recreated from defaults. All existing rules will be lost.'),
-                'cancel'       => __('Cancel'),
-            ]);
-        }
-    }
 
     /**
      * Populate the criteria input from the params array supplied by Provider.

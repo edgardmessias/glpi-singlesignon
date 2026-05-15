@@ -83,36 +83,75 @@ class RuleSinglesignon extends \Rule
         return $dir . '/front/rule.test.php';
     }
 
+    /**
+     * Inform GLPI that this rule class has default rules, enabling the native "Reset rules" button.
+     */
+    public function hasDefaultRules()
+    {
+        return true;
+    }
+
+    /**
+     * Reinitialize rules to their default state.
+     * This is called by GLPI when the native "Reset rules" button is clicked.
+     */
+    public static function initRules()
+    {
+        $rule = new self();
+        // Delete all existing SSO rules (purge = true removes related criteria and actions).
+        foreach ($rule->find(['sub_type' => static::class]) as $id => $ruleData) {
+            $rule->delete(['id' => $id], true);
+        }
+
+        // Re-create the default catch-all rule using the installation hook.
+        if (!function_exists('plugin_singlesignon_install')) {
+            include_once \Plugin::getPhpDir('singlesignon') . '/hook.php';
+        }
+
+        plugin_singlesignon_install();
+
+        return true;
+    }
+
     public function getCriterias(): array
     {
         return [
             // ── Identity ────────────────────────────────────────────────────
             'login' => [
-                'name'  => __('Login'),
-                'type'  => 'text',
-                'table' => '',
+                'name'    => __('Login'),
+                'type'    => 'text',
+                'table'   => '',
+                'field'   => 'login',
+                'virtual' => true,
             ],
             'email' => [
-                'name'  => __('Email'),
-                'type'  => 'text',
-                'table' => '',
+                'name'    => __('Email'),
+                'type'    => 'text',
+                'table'   => '',
+                'field'   => 'email',
+                'virtual' => true,
             ],
             'location' => [
-                'name'  => __('Location'),
-                'type'  => 'text',
-                'table' => '',
+                'name'    => __('Location'),
+                'type'    => 'text',
+                'table'   => '',
+                'field'   => 'location',
+                'virtual' => true,
             ],
             'supervisor' => [
-                'name'  => __('Supervisor'),
-                'type'  => 'text',
-                'table' => '',
+                'name'    => __('Supervisor'),
+                'type'    => 'text',
+                'table'   => '',
+                'field'   => 'supervisor',
+                'virtual' => true,
             ],
             // ── IdP claim values ────────────────────────────────────────────
             'SSO_GROUPS' => [
                 'name'    => __('Group'),
                 'type'    => 'text',
-                'virtual' => true,
                 'table'   => '',
+                'field'   => 'SSO_GROUPS',
+                'virtual' => true,
             ],
             // ── Context ─────────────────────────────────────────────────────
             'provider_id' => [

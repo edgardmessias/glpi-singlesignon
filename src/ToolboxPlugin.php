@@ -65,25 +65,9 @@ class ToolboxPlugin
         return $url;
     }
 
-    /**
-     * Returns the URL of the plugin's SSO group assignment rules list page.
-     */
-    public static function getRulesUrl(): string
-    {
-        global $CFG_GLPI;
 
-        return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/rulesinglesignon.php';
-    }
 
-    /**
-     * Returns the URL of the plugin's SSO rules reset endpoint.
-     */
-    public static function getResetRulesUrl(): string
-    {
-        global $CFG_GLPI;
 
-        return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/rulesinglesignon_reset.php';
-    }
 
     public static function isDefault($row, $query = [])
     {
