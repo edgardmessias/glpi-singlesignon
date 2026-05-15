@@ -57,7 +57,8 @@ use function Safe\preg_match;
 use function Safe\preg_split;
 use function Safe\sha1_file;
 
-class Provider extends CommonDBTM {
+class Provider extends CommonDBTM
+{
     public const LOGIN_FAILURE = 0;
     public const LOGIN_SUCCESS = 1;
     public const LOGIN_REGISTRATION_PREVIEW = 2;
@@ -113,39 +114,47 @@ class Provider extends CommonDBTM {
      */
     protected string $lastLoginError = '';
 
-    public function getLastLoginError(): string {
+    public function getLastLoginError(): string
+    {
         return $this->lastLoginError;
     }
 
-    public static function canCreate(): bool {
+    public static function canCreate(): bool
+    {
         return static::canUpdate();
     }
 
-    public static function canDelete(): bool {
+    public static function canDelete(): bool
+    {
         return static::canUpdate();
     }
 
-    public static function canPurge(): bool {
+    public static function canPurge(): bool
+    {
         return static::canUpdate();
     }
 
-    public static function canView(): bool {
+    public static function canView(): bool
+    {
         return static::canUpdate();
     }
 
     // Should return the localized name of the type
-    public static function getTypeName($nb = 0) {
+    public static function getTypeName($nb = 0)
+    {
         return __('Single Sign-on Provider', 'singlesignon');
     }
 
     /**
      * @see \CommonGLPI::getMenuName()
      * */
-    public static function getMenuName() {
+    public static function getMenuName()
+    {
         return __('Single Sign-on', 'singlesignon');
     }
 
-    public function defineTabs($options = []) {
+    public function defineTabs($options = [])
+    {
 
         $ong = [];
         $this->addDefaultFormTab($ong);
@@ -156,7 +165,8 @@ class Provider extends CommonDBTM {
         return $ong;
     }
 
-    public function post_getEmpty() {
+    public function post_getEmpty()
+    {
         $this->fields["type"] = 'generic';
         $this->fields["is_active"] = 1;
         $this->fields["user_photo_sync_mode"] = self::PHOTO_SYNC_DISABLED;
@@ -166,7 +176,8 @@ class Provider extends CommonDBTM {
         $this->fields['ssl_verify_peer'] = 1;
     }
 
-    public function showForm($ID, $options = []) {
+    public function showForm($ID, $options = [])
+    {
         $this->initForm($ID, $options);
 
         if (empty($this->fields["type"])) {
@@ -187,7 +198,8 @@ class Provider extends CommonDBTM {
         return true;
     }
 
-    public static function getAdditionalMenuOptions() {
+    public static function getAdditionalMenuOptions()
+    {
         $options = parent::getAdditionalMenuOptions();
         if (!is_array($options)) {
             $options = [];
@@ -200,15 +212,18 @@ class Provider extends CommonDBTM {
         return $options;
     }
 
-    public function prepareInputForAdd($input) {
+    public function prepareInputForAdd($input)
+    {
         return $this->prepareInput($input);
     }
 
-    public function prepareInputForUpdate($input) {
+    public function prepareInputForUpdate($input)
+    {
         return $this->prepareInput($input);
     }
 
-    public function post_addItem() {
+    public function post_addItem()
+    {
         if (($this->fields['type'] ?? '') !== 'generic') {
             return;
         }
@@ -235,7 +250,8 @@ class Provider extends CommonDBTM {
         }
     }
 
-    public function cleanDBonPurge() {
+    public function cleanDBonPurge()
+    {
         Toolbox::deletePicture($this->fields['picture']);
         $this->deleteChildrenAndRelationsFromDb(
             [
@@ -252,7 +268,8 @@ class Provider extends CommonDBTM {
      *
      * @return array|bool
      */
-    private function prepareInput($input) {
+    private function prepareInput($input)
+    {
         $error_detected = [];
 
         $type = '';
@@ -369,7 +386,8 @@ class Provider extends CommonDBTM {
         return $input;
     }
 
-    public static function getPhotoSyncModes(): array {
+    public static function getPhotoSyncModes(): array
+    {
         return [
             (string) self::PHOTO_SYNC_DISABLED => __('Disabled'),
             (string) self::PHOTO_SYNC_IF_EMPTY => __('Only if user has no photo', 'singlesignon'),
@@ -377,7 +395,8 @@ class Provider extends CommonDBTM {
         ];
     }
 
-    public static function getAuthorizationTypes(): array {
+    public static function getAuthorizationTypes(): array
+    {
         return [
             self::AUTH_HEADER_BEARER  => __('Authorization: Bearer <token>', 'singlesignon'),
             self::AUTH_HEADER_TOKEN   => __('Authorization: <token>', 'singlesignon'),
@@ -385,7 +404,8 @@ class Provider extends CommonDBTM {
         ];
     }
 
-    private function sanitizePhotoSyncMode($value): int {
+    private function sanitizePhotoSyncMode($value): int
+    {
         $mode = (int) $value;
         if (!in_array($mode, [
             self::PHOTO_SYNC_DISABLED,
@@ -398,7 +418,8 @@ class Provider extends CommonDBTM {
         return $mode;
     }
 
-    private function sanitizeAuthorizationType($value): string {
+    private function sanitizeAuthorizationType($value): string
+    {
         $type = strtolower(trim((string) $value));
         if (!in_array($type, array_keys(self::getAuthorizationTypes()), true)) {
             return self::AUTH_HEADER_BEARER;
@@ -407,7 +428,8 @@ class Provider extends CommonDBTM {
         return $type;
     }
 
-    public function getSearchOptions() {
+    public function getSearchOptions()
+    {
         // For GLPI <= 9.2
         $options = [];
         foreach ($this->rawSearchOptions() as $opt) {
@@ -427,7 +449,8 @@ class Provider extends CommonDBTM {
         return $options;
     }
 
-    public function rawSearchOptions() {
+    public function rawSearchOptions()
+    {
         $tab = [];
 
         $tab[] = [
@@ -546,7 +569,8 @@ class Provider extends CommonDBTM {
         return $tab;
     }
 
-    public static function getSpecificValueToDisplay($field, $values, array $options = []) {
+    public static function getSpecificValueToDisplay($field, $values, array $options = [])
+    {
 
         if (!is_array($values)) {
             $values = [$field => $values];
@@ -560,7 +584,8 @@ class Provider extends CommonDBTM {
         return '';
     }
 
-    public static function getSpecificValueToSelect($field, $name = '', $values = '', array $options = []) {
+    public static function getSpecificValueToSelect($field, $name = '', $values = '', array $options = [])
+    {
 
         if (!is_array($values)) {
             $values = [$field => $values];
@@ -579,7 +604,8 @@ class Provider extends CommonDBTM {
      *
      * @return array of types
      * */
-    public static function getTypes() {
+    public static function getTypes()
+    {
 
         $options['generic'] = __('Generic', 'singlesignon');
         $options['azure'] = __('Azure', 'singlesignon');
@@ -597,7 +623,8 @@ class Provider extends CommonDBTM {
      *
      * @param $value type ID
      * */
-    public static function getTicketTypeName($value) {
+    public static function getTicketTypeName($value)
+    {
         $tab = static::getTypes();
         // Return $value if not defined
         return ($tab[$value] ?? $value);
@@ -615,7 +642,8 @@ class Provider extends CommonDBTM {
      *
      * @return string id of the select
      * */
-    public static function dropdownType($name, $options = []) {
+    public static function dropdownType($name, $options = [])
+    {
 
         $params['value'] = 0;
         $params['toadd'] = [];
@@ -752,11 +780,13 @@ class Provider extends CommonDBTM {
     } */
     // phpcs:enable
 
-    public static function getIcon() {
+    public static function getIcon()
+    {
         return 'ti ti-lock';
     }
 
-    public static function getDefault($type, $key, $default = null) {
+    public static function getDefault($type, $key, $default = null)
+    {
         if (static::$default === null) {
             $content = file_get_contents(__DIR__ . '/../providers.json');
             static::$default = json_decode($content, true);
@@ -769,7 +799,8 @@ class Provider extends CommonDBTM {
         return $default;
     }
 
-    public function getClientType() {
+    public function getClientType()
+    {
         $value = "generic";
 
         if (isset($this->fields['type']) && !empty($this->fields['type'])) {
@@ -779,7 +810,8 @@ class Provider extends CommonDBTM {
         return $value;
     }
 
-    public function getClientId() {
+    public function getClientId()
+    {
         $value = "";
 
         if (isset($this->fields['client_id']) && !empty($this->fields['client_id'])) {
@@ -789,7 +821,8 @@ class Provider extends CommonDBTM {
         return $value;
     }
 
-    public function getClientSecret() {
+    public function getClientSecret()
+    {
         $value = "";
 
         if (isset($this->fields['client_secret']) && !empty($this->fields['client_secret'])) {
@@ -799,7 +832,8 @@ class Provider extends CommonDBTM {
         return $value;
     }
 
-    public function getScope() {
+    public function getScope()
+    {
         $type = $this->getClientType();
 
         $value = static::getDefault($type, "scope");
@@ -815,7 +849,8 @@ class Provider extends CommonDBTM {
         return $fields['scope'];
     }
 
-    public function getExtraOptions() {
+    public function getExtraOptions()
+    {
         if (isset($this->fields['extra_options']) && !empty($this->fields['extra_options'])) {
             // e.g. 'response_type=code&approval_prompt=auto'
             parse_str($this->fields['extra_options'], $value);
@@ -827,7 +862,8 @@ class Provider extends CommonDBTM {
         return $value;
     }
 
-    public function getAuthorizeUrl() {
+    public function getAuthorizeUrl()
+    {
         $type = $this->getClientType();
 
         $value = static::getDefault($type, "url_authorize");
@@ -843,7 +879,8 @@ class Provider extends CommonDBTM {
         return $fields['url_authorize'];
     }
 
-    public function getAccessTokenUrl() {
+    public function getAccessTokenUrl()
+    {
         $type = $this->getClientType();
 
         $value = static::getDefault($type, "url_access_token");
@@ -859,7 +896,8 @@ class Provider extends CommonDBTM {
         return $fields['url_access_token'];
     }
 
-    public function getResourceOwnerDetailsUrl($access_token = null) {
+    public function getResourceOwnerDetailsUrl($access_token = null)
+    {
         $type = $this->getClientType();
 
         $value = static::getDefault($type, "url_resource_owner_details", "");
@@ -892,7 +930,8 @@ class Provider extends CommonDBTM {
      *
      * @return string
      */
-    public function checkAuthorization() {
+    public function checkAuthorization()
+    {
         // If an OAuth error is present, show the error for processing
         if (isset($_GET['error'])) {
             // The error comes from OAuth, so display it for processing
@@ -1007,7 +1046,8 @@ class Provider extends CommonDBTM {
      *
      * @return boolean|string
      */
-    public function getAccessToken() {
+    public function getAccessToken()
+    {
         if ($this->_token !== null) {
             return $this->_token;
         }
@@ -1079,7 +1119,8 @@ class Provider extends CommonDBTM {
      *
      * @return boolean|array
      */
-    public function getResourceOwner() {
+    public function getResourceOwner()
+    {
         if ($this->_resource_owner !== null) {
             return $this->_resource_owner;
         }
@@ -1134,7 +1175,8 @@ class Provider extends CommonDBTM {
         return $this->_resource_owner;
     }
 
-    private function getFallbackFieldMappingsByType(string $fieldType): array {
+    private function getFallbackFieldMappingsByType(string $fieldType): array
+    {
         $providerType = $this->getClientType();
         $defaults = Provider_Field::getDefaultMappings($providerType);
         if ($defaults === []) {
@@ -1147,7 +1189,8 @@ class Provider extends CommonDBTM {
         ));
     }
 
-    private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string {
+    private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
+    {
         try {
             $json = new JsonObject($resourceArray);
             $result = $json->get($jsonPath);
@@ -1158,7 +1201,8 @@ class Provider extends CommonDBTM {
         return $this->normalizeJsonPathResult($result);
     }
 
-    private function normalizeJsonPathResult($result): ?string {
+    private function normalizeJsonPathResult($result): ?string
+    {
         if (is_string($result)) {
             return trim($result) !== '' ? $result : null;
         }
@@ -1181,7 +1225,8 @@ class Provider extends CommonDBTM {
         return null;
     }
 
-    private function resolveFieldValueFromMappings(array $resourceArray, string $fieldType): ?string {
+    private function resolveFieldValueFromMappings(array $resourceArray, string $fieldType): ?string
+    {
         $result = $this->resolveFieldDebugDetailsFromMappings($resourceArray, $fieldType);
         return $result['value'];
     }
@@ -1189,7 +1234,8 @@ class Provider extends CommonDBTM {
     /**
      * @return array{value: ?string, jsonpath: ?string, source: ?string}
      */
-    private function resolveFieldDebugDetailsFromMappings(array $resourceArray, string $fieldType): array {
+    private function resolveFieldDebugDetailsFromMappings(array $resourceArray, string $fieldType): array
+    {
         $providerId = (int) ($this->fields['id'] ?? 0);
         $mappings = [];
         if ($providerId > 0) {
@@ -1239,7 +1285,8 @@ class Provider extends CommonDBTM {
     /**
      * @return array<string, array{value: ?string, jsonpath: ?string, source: ?string}>
      */
-    public function getResolvedFieldsForDebug(array $resourceArray): array {
+    public function getResolvedFieldsForDebug(array $resourceArray): array
+    {
         $resolved = [];
         foreach (array_keys(Provider_Field::getFieldTypes()) as $fieldType) {
             $resolved[$fieldType] = $this->resolveFieldDebugDetailsFromMappings($resourceArray, $fieldType);
@@ -1248,7 +1295,8 @@ class Provider extends CommonDBTM {
         return $resolved;
     }
 
-    private function checkAuthorizedDomain(string $value, array $authorizedDomains): bool {
+    private function checkAuthorizedDomain(string $value, array $authorizedDomains): bool
+    {
         if ($authorizedDomains === []) {
             return true;
         }
@@ -1262,7 +1310,8 @@ class Provider extends CommonDBTM {
         return false;
     }
 
-    private function splitIdentifierByDomain(string $value, bool $split): string {
+    private function splitIdentifierByDomain(string $value, bool $split): string
+    {
         if (!$split) {
             return $value;
         }
@@ -1274,7 +1323,8 @@ class Provider extends CommonDBTM {
     /**
      * @return array{firstname: string, realname: string}
      */
-    public function resolveRegistrationNames(array $resource_array): array {
+    public function resolveRegistrationNames(array $resource_array): array
+    {
         $firstname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'firstname') ?? ''));
         $lastname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'lastname') ?? ''));
 
@@ -1296,7 +1346,8 @@ class Provider extends CommonDBTM {
      *
      * @return array{login: string|false, email: ?string, authorized: bool}
      */
-    private function resolveLoginAndEmailFromResource(array $resource_array): array {
+    private function resolveLoginAndEmailFromResource(array $resource_array): array
+    {
         $split = (bool) ($this->fields['split_domain'] ?? false);
         $authorizedDomainsString = $this->fields['authorized_domains'] ?? null;
         $authorizedDomains = [];
@@ -1346,7 +1397,8 @@ class Provider extends CommonDBTM {
         ];
     }
 
-    private function ensureProfileForNewUser(User $user, int $entitiesId, int $profilesId, bool $isRecursive): bool {
+    private function ensureProfileForNewUser(User $user, int $entitiesId, int $profilesId, bool $isRecursive): bool
+    {
         if (Profile::getDefault() != 0) {
             return true;
         }
@@ -1398,7 +1450,8 @@ class Provider extends CommonDBTM {
      *
      * @return User|false
      */
-    public function createUserFromOAuthResource(array $resource_array, array $overrides = [], array $ruleResult = []) {
+    public function createUserFromOAuthResource(array $resource_array, array $overrides = [], array $ruleResult = [])
+    {
         if (!empty($overrides['__registration_from_preview'])) {
             $login = trim((string) ($overrides['name'] ?? ''));
             $email = isset($overrides['_email']) ? trim((string) $overrides['_email']) : null;
@@ -1581,7 +1634,8 @@ class Provider extends CommonDBTM {
         }
     }
 
-    private function linkRemoteUserToProvider(int $users_id, string $remote_id): void {
+    private function linkRemoteUserToProvider(int $users_id, string $remote_id): void
+    {
         $link = new Provider_User();
         $link->deleteByCriteria([
             'plugin_singlesignon_providers_id' => $this->fields['id'],
@@ -1598,7 +1652,8 @@ class Provider extends CommonDBTM {
      * @param array<string, mixed> $resource_array
      * @param array<string, mixed> $ruleResult     Structured result from evaluateRulesForUser().
      */
-    public function storePendingRegistrationSession(array $resource_array, array $ruleResult = []): void {
+    public function storePendingRegistrationSession(array $resource_array, array $ruleResult = []): void
+    {
         if (session_status() === PHP_SESSION_NONE) {
             Session::start();
         }
@@ -1622,7 +1677,8 @@ class Provider extends CommonDBTM {
     /**
      * @return array<string, mixed>|null
      */
-    public static function getPendingRegistrationSession(): ?array {
+    public static function getPendingRegistrationSession(): ?array
+    {
         if (session_status() === PHP_SESSION_NONE) {
             Session::start();
         }
@@ -1638,7 +1694,8 @@ class Provider extends CommonDBTM {
         return $data;
     }
 
-    public static function clearPendingRegistrationSession(): void {
+    public static function clearPendingRegistrationSession(): void
+    {
         if (session_status() === PHP_SESSION_NONE) {
             Session::start();
         }
@@ -1666,7 +1723,8 @@ class Provider extends CommonDBTM {
      *
      * @return bool True if {@see Auth::login} succeeded.
      */
-    public function performGlpiLogin(User $user): bool {
+    public function performGlpiLogin(User $user): bool
+    {
         /** @var DBmysql $DB */
         global $CFG_GLPI, $DB;
 
@@ -1753,7 +1811,8 @@ class Provider extends CommonDBTM {
      *
      * @return User|false
      */
-    public function findUser(?array $resource_array = null) {
+    public function findUser(?array $resource_array = null)
+    {
         if ($resource_array === null) {
             $resource_array = $this->getResourceOwner();
         }
@@ -1843,7 +1902,8 @@ class Provider extends CommonDBTM {
         return false;
     }
 
-    public function login(): int {
+    public function login(): int
+    {
         $this->lastLoginError = '';
         $providerName = (string) ($this->fields['name'] ?? '');
 
@@ -1907,7 +1967,8 @@ class Provider extends CommonDBTM {
         return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
     }
 
-    public function linkUser($user_id) {
+    public function linkUser($user_id)
+    {
         $user = new User();
 
         if (!$user->getFromDB($user_id)) {
@@ -1947,7 +2008,8 @@ class Provider extends CommonDBTM {
      *
      * @return string|boolean Filename to be stored in user picture field, false if no picture found
      */
-    public function syncOAuthPhoto($user) {
+    public function syncOAuthPhoto($user)
+    {
         if (!$this->shouldSyncOAuthPhoto($user)) {
             return false;
         }
@@ -2007,7 +2069,8 @@ class Provider extends CommonDBTM {
      * @see https://www.rfc-editor.org/rfc/rfc9110.html#name-field-accept
      * @see https://www.rfc-editor.org/rfc/rfc6750
      */
-    private function buildOAuthPhotoHeaders(string $token): array {
+    private function buildOAuthPhotoHeaders(string $token): array
+    {
         $headers = $this->buildRequestHeaders(
             $token,
             "Accept:image/*",
@@ -2023,7 +2086,8 @@ class Provider extends CommonDBTM {
     /**
      * Build headers for resource owner request.
      */
-    private function buildResourceOwnerHeaders(string $token): array {
+    private function buildResourceOwnerHeaders(string $token): array
+    {
         $headers = $this->buildRequestHeaders(
             $token,
             "Accept:application/json",
@@ -2067,7 +2131,8 @@ class Provider extends CommonDBTM {
      *
      * @return string[]
      */
-    private function parseCustomHeaders(string $raw, string $token): array {
+    private function parseCustomHeaders(string $raw, string $token): array
+    {
         $raw = trim($raw);
         if ($raw === '') {
             return [];
@@ -2098,7 +2163,8 @@ class Provider extends CommonDBTM {
      *
      * @return array<int, mixed>
      */
-    private function buildCurlOptions(array $options): array {
+    private function buildCurlOptions(array $options): array
+    {
         $verifyHost = !isset($this->fields['ssl_verify_host']) || (int) $this->fields['ssl_verify_host'] !== 0;
         $verifyPeer = !isset($this->fields['ssl_verify_peer']) || (int) $this->fields['ssl_verify_peer'] !== 0;
 
@@ -2118,7 +2184,8 @@ class Provider extends CommonDBTM {
      * @see https://www.php.net/manual/en/function.getimagesizefromstring.php
      * @see https://learn.microsoft.com/graph/api/profilephoto-get
      */
-    private function fetchOAuthPhotoContent(string $url, array $headers): ?string {
+    private function fetchOAuthPhotoContent(string $url, array $headers): ?string
+    {
         $img = Toolbox::callCurl($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => $headers,
         ]));
@@ -2140,7 +2207,8 @@ class Provider extends CommonDBTM {
      *
      * @see https://learn.microsoft.com/graph/overview
      */
-    private function isMicrosoftGraphResourceOwnerUrl(string $url): bool {
+    private function isMicrosoftGraphResourceOwnerUrl(string $url): bool
+    {
         if ($url === '') {
             return false;
         }
@@ -2154,7 +2222,8 @@ class Provider extends CommonDBTM {
      *
      * @see https://learn.microsoft.com/graph/api/profilephoto-get
      */
-    private function buildMicrosoftGraphPhotoUrl(string $resourceOwnerUrl): ?string {
+    private function buildMicrosoftGraphPhotoUrl(string $resourceOwnerUrl): ?string
+    {
         $parts = parse_url($resourceOwnerUrl);
         if (!is_array($parts) || !isset($parts['host'])) {
             return null;
@@ -2190,7 +2259,8 @@ class Provider extends CommonDBTM {
      * @see https://github.com/glpi-project/glpi/blob/master/src/User.php
      * @return string|bool
      */
-    private function storeOAuthPhoto(User $user, string $img) {
+    private function storeOAuthPhoto(User $user, string $img)
+    {
         $oldPicture = (string) ($user->fields['picture'] ?? '');
         $oldFile = $oldPicture !== '' ? GLPI_PICTURE_DIR . '/' . $oldPicture : null;
 
@@ -2279,7 +2349,8 @@ class Provider extends CommonDBTM {
         );
     }
 
-    private function shouldSyncOAuthPhoto(User $user): bool {
+    private function shouldSyncOAuthPhoto(User $user): bool
+    {
         $mode = $this->sanitizePhotoSyncMode($this->fields['user_photo_sync_mode'] ?? self::PHOTO_SYNC_DISABLED);
         if ($mode === self::PHOTO_SYNC_DISABLED) {
             return false;

@@ -33,17 +33,20 @@ namespace GlpiPlugin\Singlesignon;
  * mirror GLPI's native RuleRight actions so that existing GLPI translations
  * are reused and the UI feels familiar to administrators.
  */
-class RuleSinglesignon extends \Rule {
+class RuleSinglesignon extends \Rule
+{
     // Use the standard 'config' right so that GLPI administrators can manage
     // these rules through the normal Rules interface.
     public static $rightname = 'config';
 
-    public function getTitle(): string {
+    public function getTitle(): string
+    {
         // Reuse the native GLPI translation for "Authorization assignment rules".
         return __('Authorization assignment rules');
     }
 
-    public static function canCreate(): bool {
+    public static function canCreate(): bool
+    {
         return static::canUpdate();
     }
 
@@ -59,7 +62,8 @@ class RuleSinglesignon extends \Rule {
      *
      * @param bool $full When true, appends the itemtype query parameter.
      */
-    public static function getFormURL($full = true): string {
+    public static function getFormURL($full = true): string
+    {
         $dir = \Plugin::getWebDir('singlesignon');
         $url = $dir . '/front/rulesinglesignon.form.php';
         return $full ? $url . '?itemtype=' . static::class : $url;
@@ -73,7 +77,8 @@ class RuleSinglesignon extends \Rule {
      *
      * @param bool $full Unused – kept for signature compatibility.
      */
-    public static function getTestURL($full = true): string {
+    public static function getTestURL($full = true): string
+    {
         $dir = \Plugin::getWebDir('singlesignon');
         return $dir . '/front/rule.test.php';
     }
@@ -81,7 +86,8 @@ class RuleSinglesignon extends \Rule {
     /**
      * Inform GLPI that this rule class has default rules, enabling the native "Reset rules" button.
      */
-    public function hasDefaultRules() {
+    public function hasDefaultRules()
+    {
         return true;
     }
 
@@ -89,7 +95,8 @@ class RuleSinglesignon extends \Rule {
      * Reinitialize rules to their default state.
      * This is called by GLPI when the native "Reset rules" button is clicked.
      */
-    public static function initRules() {
+    public static function initRules()
+    {
         $rule = new self();
         // Delete all existing SSO rules (purge = true removes related criteria and actions).
         foreach ($rule->find(['sub_type' => static::class]) as $id => $ruleData) {
@@ -106,7 +113,8 @@ class RuleSinglesignon extends \Rule {
         return true;
     }
 
-    public function getCriterias(): array {
+    public function getCriterias(): array
+    {
         return [
             // ── Identity ────────────────────────────────────────────────────
             'login' => [
@@ -155,7 +163,8 @@ class RuleSinglesignon extends \Rule {
         ];
     }
 
-    public function getActions(): array {
+    public function getActions(): array
+    {
         return [
             // ── Flow control ─────────────────────────────────────────────────
             '_stop_rules_processing' => [
