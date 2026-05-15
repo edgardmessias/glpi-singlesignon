@@ -44,8 +44,7 @@ namespace GlpiPlugin\Singlesignon;
  *   - 'supervisor'     => string     supervisor user name (for criterion matching)
  *   - 'provider_id'    => int        ID of the SSO provider that triggered the login
  */
-class RuleSinglesignonCollection extends \RuleCollection
-{
+class RuleSinglesignonCollection extends \RuleCollection {
     public static $rightname = 'config';
 
     /** Evaluate ALL matching rules so a user can receive multiple actions. */
@@ -55,14 +54,12 @@ class RuleSinglesignonCollection extends \RuleCollection
 
     public $menu_option = 'singlesignon';
 
-    public function getTitle(): string
-    {
+    public function getTitle(): string {
         // Reuse the native GLPI translation for "Authorization assignment rules".
         return __('Authorization assignment rules');
     }
 
-    public static function canCreate(): bool
-    {
+    public static function canCreate(): bool {
         return static::canUpdate();
     }
 
@@ -72,8 +69,7 @@ class RuleSinglesignonCollection extends \RuleCollection
      * class namespace and produces a capitalised URL
      * (/plugins/Singlesignon/…) that does not exist.
      */
-    public static function getRulesTestURL(): string
-    {
+    public static function getRulesTestURL(): string {
         return '/plugins/singlesignon/front/rulesengine.test.php';
     }
 
@@ -82,14 +78,12 @@ class RuleSinglesignonCollection extends \RuleCollection
      *
      * @param bool $full When true, appends the root_doc.
      */
-    public static function getSearchURL($full = true): string
-    {
+    public static function getSearchURL($full = true): string {
         $dir = \Plugin::getWebDir('singlesignon', $full);
         return $dir . '/front/rulesinglesignon.php';
     }
 
-    public static function getAdditionalMenuOptions()
-    {
+    public static function getAdditionalMenuOptions() {
         $options = parent::getAdditionalMenuOptions();
         if (!is_array($options)) {
             $options = [];
@@ -114,8 +108,7 @@ class RuleSinglesignonCollection extends \RuleCollection
      * @param array<string, mixed> $params
      * @return array<string, mixed>
      */
-    public function prepareInputDataForProcess($input, $params): array
-    {
+    public function prepareInputDataForProcess($input, $params): array {
         if (isset($params['sso_groups']) && is_array($params['sso_groups'])) {
             $input['SSO_GROUPS'] = $params['sso_groups'];
         }

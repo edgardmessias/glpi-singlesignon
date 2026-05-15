@@ -81,6 +81,11 @@ function plugin_singlesignon_boot(): void
         '#^/front/rulesengine\\.test\\.php$#',
         Firewall::STRATEGY_AUTHENTICATED,
     );
+    Firewall::addPluginStrategyForLegacyScripts(
+        'singlesignon',
+        '#^/front/rulesinglesignon_reset\\.php$#',
+        Firewall::STRATEGY_AUTHENTICATED,
+    );
 }
 
 // Init the hooks of the plugins -Needed
