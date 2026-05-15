@@ -156,6 +156,16 @@
         field_opts|merge({ display_emptychoice: true })
     ) }}
 
+    {% if provider_id %}
+    {% set _rules_url = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getRulesUrl'], []) %}
+    {% set _rules_link %}
+        <a href="{{ _rules_url }}" class="btn btn-sm btn-outline-secondary">
+            <i class="ti ti-list-check me-1"></i>{{ __('Manage SSO group assignment rules', 'singlesignon') }}
+        </a>
+    {% endset %}
+    {{ fields.htmlField('', _rules_link, __('Group assignment rules', 'singlesignon'), field_opts) }}
+    {% endif %}
+
     <div class="col-12">
         <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>
     </div>

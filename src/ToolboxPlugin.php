@@ -65,6 +65,16 @@ class ToolboxPlugin
         return $url;
     }
 
+    /**
+     * Returns the URL of the plugin's SSO group assignment rules list page.
+     */
+    public static function getRulesUrl(): string
+    {
+        global $CFG_GLPI;
+
+        return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/rulesinglesignon.php';
+    }
+
     public static function isDefault($row, $query = [])
     {
         return $row['is_default'] == 1;
