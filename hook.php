@@ -260,30 +260,13 @@ function plugin_singlesignon_install()
 
     $migration->addField($providersTable, 'auto_register', 'bool', ['value' => 0]);
     $migration->addField($providersTable, 'registration_preview', 'bool', ['value' => 0]);
-    $migration->addField(
-        $providersTable,
-        'default_entities_id',
-        'integer',
-        [
-            'value' => 0,
-        ],
-    );
-    $migration->addField($providersTable, 'match_entity_by_email_domain', 'bool', ['value' => 0]);
-    $migration->addField(
-        $providersTable,
-        'default_profiles_id',
-        'integer',
-        [
-            'value' => 0,
-        ],
-    );
+    // default_entities_id, match_entity_by_email_domain and default_profiles_id were
+    // present in versions < 2.1.0 and are dropped in the 2.1.0 migration below.
+    // Do NOT re-add them here so that fresh installs never create these columns.
 
     $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
     $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
 
-    /**
-     * Add display preferences
-     */
     if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => Provider::class])) {
         $preferences = [
             ['itemtype' => Provider::class, 'num' => 2, 'rank' => 1, 'users_id' => 0],
@@ -301,40 +284,54 @@ function plugin_singlesignon_install()
     $migration->executeMigration();
 
     /**
-     * Seed the default SSO rule if no rules exist yet for this collection.
-     * If existing providers already have auto_register enabled, create a
-     * matching per-provider rule so their behaviour is preserved.
+     * Version 2.1.0: migrate Registration/group-sync fields to the rules engine
+     * and drop the now-redundant DB columns.
      */
     $ruleSubtype = RuleSinglesignon::class;
-    if (!countElementsInTable('glpi_rules', ['sub_type' => $ruleSubtype])) {
-        $nextRank = 1;
 
+    if (version_compare($currentVersion, '2.1.0', '<')) {
+        // ── Data migration ──────────────────────────────────────────────────
         // Create per-provider rules for any existing provider that had
-        // auto_register = 1, preserving the previously stored settings.
-        if ($DB->tableExists($providersTable)) {
+        // auto_register = 1 so that existing behaviour is preserved.
+        if ($DB->tableExists($providersTable) && $DB->fieldExists($providersTable, 'auto_register')) {
             foreach ($DB->request(['FROM' => $providersTable, 'WHERE' => ['auto_register' => 1]]) as $providerRow) {
+                // Skip if a rule for this provider was already created in a
+                // previous (failed or partial) upgrade attempt.
+                $alreadyHasProviderRule = countElementsInTable('glpi_rulecriteria', [
+                    'criteria' => 'provider_id',
+                    'pattern'  => (int) $providerRow['id'],
+                ]) > 0;
+
+                if ($alreadyHasProviderRule) {
+                    continue;
+                }
+
+                $nextRank = countElementsInTable('glpi_rules', ['sub_type' => $ruleSubtype]) + 1;
+
                 $rule   = new RuleSinglesignon();
                 $ruleId = $rule->add([
-                    'sub_type'    => $ruleSubtype,
-                    'entities_id' => 0,
+                    'sub_type'     => $ruleSubtype,
+                    'entities_id'  => 0,
                     'is_recursive' => 1,
-                    'is_active'   => 1,
-                    'name'        => sprintf(__('Auto-migrated rule for provider: %s', 'singlesignon'), $providerRow['name']),
-                    'match'       => \Rule::AND_MATCHING,
-                    'ranking'     => $nextRank++,
+                    'is_active'    => 1,
+                    'name'         => sprintf(__('Auto-migrated rule for provider: %s', 'singlesignon'), $providerRow['name']),
+                    'match'        => \Rule::AND_MATCHING,
+                    'ranking'      => $nextRank,
                 ]);
+
                 if (!is_numeric($ruleId) || (int) $ruleId <= 0) {
                     continue;
                 }
+
                 $ruleAction = new \RuleAction();
                 $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'auto_register',        'value' => 1]);
-                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'registration_preview',  'value' => (int) $providerRow['registration_preview']]);
-                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'entities_id',           'value' => (int) $providerRow['default_entities_id']]);
+                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'registration_preview',  'value' => (int) ($providerRow['registration_preview'] ?? 0)]);
+                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'entities_id',           'value' => (int) ($providerRow['default_entities_id'] ?? 0)]);
                 $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'is_recursive',          'value' => 0]);
-                if ((int) $providerRow['default_profiles_id'] > 0) {
+                if ((int) ($providerRow['default_profiles_id'] ?? 0) > 0) {
                     $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'profiles_id', 'value' => (int) $providerRow['default_profiles_id']]);
                 }
-                // Add a provider_id criterion so the rule only fires for this provider.
+
                 $ruleCriteria = new \RuleCriteria();
                 $ruleCriteria->add([
                     'rules_id'  => (int) $ruleId,
@@ -345,7 +342,26 @@ function plugin_singlesignon_install()
             }
         }
 
-        // Global default rule — conservative settings (no auto-registration).
+        // ── Drop migrated columns ────────────────────────────────────────────
+        // migration->dropField() is a no-op when the column does not exist, so
+        // this is safe for fresh installs where the columns were never created.
+        $migration->dropField($providersTable, 'default_entities_id');
+        $migration->dropField($providersTable, 'match_entity_by_email_domain');
+        $migration->dropField($providersTable, 'default_profiles_id');
+        $migration->executeMigration();
+    }
+
+    // ── Ensure the global default rule exists ────────────────────────────────
+    // Run on every install/upgrade so fresh installs and upgrades both have the
+    // conservative catch-all rule visible in the UI.
+    $defaultRuleExists = countElementsInTable('glpi_rules', [
+        'sub_type' => $ruleSubtype,
+        'name'     => __('Default SSO rule', 'singlesignon'),
+    ]) > 0;
+
+    if (!$defaultRuleExists) {
+        $nextRank = countElementsInTable('glpi_rules', ['sub_type' => $ruleSubtype]) + 1;
+
         $rule   = new RuleSinglesignon();
         $ruleId = $rule->add([
             'sub_type'     => $ruleSubtype,
@@ -357,6 +373,7 @@ function plugin_singlesignon_install()
             'match'        => \Rule::AND_MATCHING,
             'ranking'      => $nextRank,
         ]);
+
         if (is_numeric($ruleId) && (int) $ruleId > 0) {
             $ruleAction = new \RuleAction();
             $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'auto_register',       'value' => 0]);

@@ -57,7 +57,7 @@ class RuleSinglesignonCollection extends \RuleCollection
 
     public function getTitle(): string
     {
-        return __('SSO rules', 'singlesignon');
+        return __('SSO rules — Authorization assignment rules', 'singlesignon');
     }
 
     /**

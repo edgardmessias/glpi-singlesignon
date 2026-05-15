@@ -151,6 +151,17 @@
     {% endif %}
 
     <div class="col-12">
+        <div class="hr-text my-3">{{ __('User group synchronization', 'singlesignon') }}</div>
+    </div>
+
+    {{ fields.dropdownArrayField('user_group_sync_mode', provider.fields.user_group_sync_mode|default(0), call(['GlpiPlugin\\Singlesignon\\Provider', 'getUserGroupSyncModes'], []), __('Synchronization mode', 'singlesignon'), {
+        helper: _tip_group_sync
+    }|merge(field_opts)) }}
+    {{ fields.textField('groups_claim', provider.fields.groups_claim|default(''), __('Group claim', 'singlesignon'), {
+        helper: _tip_groups_claim
+    }|merge(field_opts)) }}
+
+    <div class="col-12">
         <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>
     </div>
 
@@ -165,17 +176,6 @@
         enable_richtext: false,
         enable_fileupload: false,
         helper: _tip_custom_headers
-    }|merge(field_opts)) }}
-
-    <div class="col-12">
-        <div class="hr-text my-3">{{ __('User group synchronization', 'singlesignon') }}</div>
-    </div>
-
-    {{ fields.dropdownArrayField('user_group_sync_mode', provider.fields.user_group_sync_mode|default(0), call(['GlpiPlugin\\Singlesignon\\Provider', 'getUserGroupSyncModes'], []), __('Synchronization mode', 'singlesignon'), {
-        helper: _tip_group_sync
-    }|merge(field_opts)) }}
-    {{ fields.textField('groups_claim', provider.fields.groups_claim|default(''), __('Group claim', 'singlesignon'), {
-        helper: _tip_groups_claim
     }|merge(field_opts)) }}
 
     <div class="col-12">

@@ -23,6 +23,7 @@
  */
 
 use GlpiPlugin\Singlesignon\Provider;
+use GlpiPlugin\Singlesignon\ToolboxPlugin;
 
 include(__DIR__ . '/../../../inc/includes.php');
 
@@ -34,8 +35,14 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Html::helpHeader(__('Single Sign-on', 'singlesignon'), $_SERVER['PHP_SELF']);
 }
 
-
-//checkTypeRight('PluginExampleExample',"r");
+// Add a shortcut button to the SSO rules page alongside the standard search UI.
+$rulesUrl = ToolboxPlugin::getRulesUrl();
+echo '<div class="d-flex justify-content-end mb-2 px-3">';
+echo '<a href="' . htmlspecialchars($rulesUrl, ENT_QUOTES, 'UTF-8') . '" class="btn btn-sm btn-outline-secondary">';
+echo '<i class="ti ti-list-check me-1"></i>';
+echo htmlspecialchars(__('SSO rules — Authorization assignment rules', 'singlesignon'), ENT_QUOTES, 'UTF-8');
+echo '</a>';
+echo '</div>';
 
 Search::show(Provider::class);
 

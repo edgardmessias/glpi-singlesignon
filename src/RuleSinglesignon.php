@@ -42,7 +42,7 @@ class RuleSinglesignon extends \Rule
 
     public function getTitle(): string
     {
-        return __('SSO rules', 'singlesignon');
+        return __('SSO rules — Authorization assignment rules', 'singlesignon');
     }
 
     /**
