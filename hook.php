@@ -25,6 +25,8 @@
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Group;
+use GlpiPlugin\Singlesignon\RuleSinglesignon;
+use GlpiPlugin\Singlesignon\RuleSinglesignonCollection;
 
 function plugin_singlesignon_install()
 {
@@ -297,6 +299,72 @@ function plugin_singlesignon_install()
     }
 
     $migration->executeMigration();
+
+    /**
+     * Seed the default SSO rule if no rules exist yet for this collection.
+     * If existing providers already have auto_register enabled, create a
+     * matching per-provider rule so their behaviour is preserved.
+     */
+    $ruleSubtype = RuleSinglesignon::class;
+    if (!countElementsInTable('glpi_rules', ['sub_type' => $ruleSubtype])) {
+        $nextRank = 1;
+
+        // Create per-provider rules for any existing provider that had
+        // auto_register = 1, preserving the previously stored settings.
+        if ($DB->tableExists($providersTable)) {
+            foreach ($DB->request(['FROM' => $providersTable, 'WHERE' => ['auto_register' => 1]]) as $providerRow) {
+                $rule   = new RuleSinglesignon();
+                $ruleId = $rule->add([
+                    'sub_type'    => $ruleSubtype,
+                    'entities_id' => 0,
+                    'is_recursive' => 1,
+                    'is_active'   => 1,
+                    'name'        => sprintf(__('Auto-migrated rule for provider: %s', 'singlesignon'), $providerRow['name']),
+                    'match'       => \Rule::AND_MATCHING,
+                    'ranking'     => $nextRank++,
+                ]);
+                if (!is_numeric($ruleId) || (int) $ruleId <= 0) {
+                    continue;
+                }
+                $ruleAction = new \RuleAction();
+                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'auto_register',        'value' => 1]);
+                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'registration_preview',  'value' => (int) $providerRow['registration_preview']]);
+                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'entities_id',           'value' => (int) $providerRow['default_entities_id']]);
+                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'is_recursive',          'value' => 0]);
+                if ((int) $providerRow['default_profiles_id'] > 0) {
+                    $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'profiles_id', 'value' => (int) $providerRow['default_profiles_id']]);
+                }
+                // Add a provider_id criterion so the rule only fires for this provider.
+                $ruleCriteria = new \RuleCriteria();
+                $ruleCriteria->add([
+                    'rules_id'  => (int) $ruleId,
+                    'criteria'  => 'provider_id',
+                    'condition' => \Rule::PATTERN_IS,
+                    'pattern'   => (int) $providerRow['id'],
+                ]);
+            }
+        }
+
+        // Global default rule — conservative settings (no auto-registration).
+        $rule   = new RuleSinglesignon();
+        $ruleId = $rule->add([
+            'sub_type'     => $ruleSubtype,
+            'entities_id'  => 0,
+            'is_recursive' => 1,
+            'is_active'    => 1,
+            'name'         => __('Default SSO rule', 'singlesignon'),
+            'description'  => __('No criteria — applies to all SSO logins. Edit to enable auto-registration and set default entity/profile.', 'singlesignon'),
+            'match'        => \Rule::AND_MATCHING,
+            'ranking'      => $nextRank,
+        ]);
+        if (is_numeric($ruleId) && (int) $ruleId > 0) {
+            $ruleAction = new \RuleAction();
+            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'auto_register',       'value' => 0]);
+            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'registration_preview', 'value' => 0]);
+            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'entities_id',          'value' => 0]);
+            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'is_recursive',         'value' => 0]);
+        }
+    }
 
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
     Config::setConfigurationValues('plugin:singlesignon', $current);

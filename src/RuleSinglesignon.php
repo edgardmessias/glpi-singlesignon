@@ -27,12 +27,12 @@ declare(strict_types=1);
 namespace GlpiPlugin\Singlesignon;
 
 /**
- * Rule class for the SSO group assignment rule engine.
+ * Rule class for the SSO rules engine.
  *
- * Each rule can match on raw IdP group name strings (SSO_GROUPS) or on the
- * user's GLPI login and produce group assignment actions that map to an
- * existing GLPI group.  No GLPI group is created automatically by this
- * mechanism; only existing groups are referenced by the actions.
+ * Each rule can match on IdP claim values (login, email, groups, location, …)
+ * and produce actions that drive user registration, entity/profile assignment,
+ * and group membership.  This replaces the old per-provider "Registration"
+ * fields and the "Entity / Recursive for new groups" settings.
  */
 class RuleSinglesignon extends \Rule
 {
@@ -42,23 +42,72 @@ class RuleSinglesignon extends \Rule
 
     public function getTitle(): string
     {
-        return __('SSO group assignment rules', 'singlesignon');
+        return __('SSO rules', 'singlesignon');
+    }
+
+    /**
+     * Override to return the correct front-end path for this namespaced plugin
+     * class.  GLPI's default implementation uses strtolower(static::class) which
+     * produces a URL containing backslashes when the class is in a PHP namespace.
+     *
+     * @param bool $full When true, appends the itemtype query parameter.
+     */
+    public static function getFormURL($full = true): string
+    {
+        $dir = \Plugin::getWebDir('singlesignon', false);
+        $url = $dir . '/front/rulesinglesignon.form.php';
+        return $full ? $url . '?itemtype=' . static::class : $url;
     }
 
     public function getCriterias(): array
     {
         return [
-            'SSO_GROUPS' => [
-                'name'    => __('SSO Group (IdP claim)', 'singlesignon'),
-                'type'    => 'text',
-                // virtual = true tells the rule engine not to try a DB lookup
-                // for the criteria values; matching is done against the array
-                // of raw group-name strings provided at evaluation time.
-                'virtual' => true,
-            ],
+            // ── Identity ────────────────────────────────────────────────────
             'login' => [
                 'name' => __('Login'),
                 'type' => 'text',
+            ],
+            'email' => [
+                'name' => __('Email'),
+                'type' => 'text',
+            ],
+            'email_domain' => [
+                'name'    => __('Email domain', 'singlesignon'),
+                'type'    => 'text',
+                // virtual = true: value is injected by prepareInputDataForProcess()
+                // and the rule engine does not attempt a DB lookup.
+                'virtual' => true,
+            ],
+            'firstname' => [
+                'name' => __('First name'),
+                'type' => 'text',
+            ],
+            'realname' => [
+                'name' => __('Last name'),
+                'type' => 'text',
+            ],
+            // ── IdP claim values ────────────────────────────────────────────
+            'SSO_GROUPS' => [
+                'name'    => __('SSO Group (IdP claim)', 'singlesignon'),
+                'type'    => 'text',
+                'virtual' => true,
+            ],
+            'officeLocation' => [
+                'name'    => __('Office location (IdP claim)', 'singlesignon'),
+                'type'    => 'text',
+                'virtual' => true,
+            ],
+            // ── Context ─────────────────────────────────────────────────────
+            'is_new_user' => [
+                'name'    => __('Is new user (first registration)', 'singlesignon'),
+                'type'    => 'yesonly',
+                'virtual' => true,
+            ],
+            'provider_id' => [
+                'name'  => __('SSO Provider', 'singlesignon'),
+                'type'  => 'dropdown',
+                'table' => 'glpi_plugin_singlesignon_providers',
+                'field' => 'name',
             ],
         ];
     }
@@ -66,13 +115,42 @@ class RuleSinglesignon extends \Rule
     public function getActions(): array
     {
         return [
+            // ── Registration gate ────────────────────────────────────────────
+            'auto_register' => [
+                'name'          => __('Allow automatic registration', 'singlesignon'),
+                'type'          => 'yesno',
+                'force_actions' => ['assign'],
+            ],
+            'registration_preview' => [
+                'name'          => __('Confirm registration before creating account', 'singlesignon'),
+                'type'          => 'yesno',
+                'force_actions' => ['assign'],
+            ],
+            // ── Assignment ──────────────────────────────────────────────────
+            'entities_id' => [
+                'name'          => __('Default entity for new users and groups', 'singlesignon'),
+                'type'          => 'dropdown',
+                'table'         => 'glpi_entities',
+                'field'         => 'completename',
+                'force_actions' => ['assign'],
+            ],
+            'is_recursive' => [
+                'name'          => __('Recursive for new users and groups', 'singlesignon'),
+                'type'          => 'yesno',
+                'force_actions' => ['assign'],
+            ],
+            'profiles_id' => [
+                'name'          => __('Default profile when GLPI has no default', 'singlesignon'),
+                'type'          => 'dropdown',
+                'table'         => 'glpi_profiles',
+                'field'         => 'name',
+                'force_actions' => ['assign'],
+            ],
             'groups_id' => [
                 'name'          => __('Group'),
                 'type'          => 'dropdown',
                 'table'         => 'glpi_groups',
                 'field'         => 'completename',
-                // force_actions keeps only the "assign" operator visible in
-                // the rule form, which is the only meaningful operation here.
                 'force_actions' => ['assign'],
             ],
         ];

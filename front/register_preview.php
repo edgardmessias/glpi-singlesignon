@@ -102,6 +102,7 @@ if (isset($_POST['confirm_register'])) {
         ['id' => $pending['remote_id']],
         [
             '__registration_from_preview' => true,
+            '__rule_result'                => $pending['rule_result'] ?? [],
             'name'                          => $name,
             'firstname'                     => $firstname,
             'realname'                      => $realname,

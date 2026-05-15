@@ -363,11 +363,24 @@ class Provider extends CommonDBTM
         $input['resource_owner_custom_headers'] = trim((string) ($input['resource_owner_custom_headers'] ?? ''));
         $input['resource_owner_picture_custom_headers'] = trim((string) ($input['resource_owner_picture_custom_headers'] ?? ''));
 
-        $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
-        $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
-        $input['default_entities_id'] = (int) ($input['default_entities_id'] ?? 0);
-        $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
-        $input['default_profiles_id'] = (int) ($input['default_profiles_id'] ?? 0);
+        // These fields have been moved to the rules engine; only process them
+        // when they are explicitly present in the submitted form data so that
+        // removing them from the UI does not reset the stored DB value.
+        if (array_key_exists('auto_register', $input)) {
+            $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
+        }
+        if (array_key_exists('registration_preview', $input)) {
+            $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
+        }
+        if (array_key_exists('default_entities_id', $input)) {
+            $input['default_entities_id'] = (int) $input['default_entities_id'];
+        }
+        if (array_key_exists('match_entity_by_email_domain', $input)) {
+            $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
+        }
+        if (array_key_exists('default_profiles_id', $input)) {
+            $input['default_profiles_id'] = (int) $input['default_profiles_id'];
+        }
         if (array_key_exists('ssl_verify_host', $input)) {
             $input['ssl_verify_host'] = empty($input['ssl_verify_host']) ? 0 : 1;
         } else {
@@ -1433,38 +1446,7 @@ class Provider extends CommonDBTM
         ];
     }
 
-    private function resolveEntitiesIdForNewUser(array $resource_array, ?string $email): int
-    {
-        global $DB;
-
-        if (isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation']) && $resource_array['officeLocation'] !== '') {
-            foreach ($DB->request([
-                'FROM'  => 'glpi_entities',
-                'WHERE' => ['name' => $resource_array['officeLocation']],
-                'LIMIT' => 1,
-            ]) as $entity) {
-                return (int) $entity['id'];
-            }
-        }
-
-        if (!empty($this->fields['match_entity_by_email_domain']) && $email !== null && $email !== '') {
-            $parts = explode('@', $email, 2);
-            if (isset($parts[1])) {
-                $domain = strtolower(trim($parts[1]));
-                foreach ($DB->request(['FROM' => 'glpi_entities']) as $entity) {
-                    if (strcasecmp(strtolower((string) $entity['name']), $domain) === 0) {
-                        return (int) $entity['id'];
-                    }
-                }
-            }
-        }
-
-        $default = (int) ($this->fields['default_entities_id'] ?? 0);
-
-        return $default > 0 ? $default : 0;
-    }
-
-    private function ensureProfileForNewUser(User $user, int $entitiesId): bool
+    private function ensureProfileForNewUser(User $user, int $entitiesId, int $profilesId, bool $isRecursive): bool
     {
         if (Profile::getDefault() != 0) {
             return true;
@@ -1472,49 +1454,52 @@ class Provider extends CommonDBTM
 
         global $DB;
 
-        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
-
-        $datasProfiles = [];
-        foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
-            $datasProfiles[] = $data;
-        }
         $datasEntities = [];
         foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
             $datasEntities[] = $data;
         }
 
-        if ($configuredProfile > 0) {
-            $profileId = $configuredProfile;
+        if ($profilesId > 0) {
+            // Use the profile specified by the rule result.
             $entityForProfile = $entitiesId > 0 ? $entitiesId : (int) ($datasEntities[0]['id'] ?? 0);
         } else {
+            // Fall back to the very first available profile when neither GLPI
+            // nor the rules engine has a configured default.
+            $datasProfiles = [];
+            foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
+                $datasProfiles[] = $data;
+            }
             if (count($datasProfiles) === 0 || count($datasEntities) === 0) {
                 return false;
             }
-            $profileId = (int) $datasProfiles[0]['id'];
+            $profilesId       = (int) $datasProfiles[0]['id'];
             $entityForProfile = (int) $datasEntities[0]['id'];
         }
 
-        if ($profileId <= 0 || $entityForProfile <= 0) {
+        if ($profilesId <= 0 || $entityForProfile <= 0) {
             return false;
         }
 
         $pu = new Profile_User();
         $pu->add([
-            'users_id'      => (int) $user->fields['id'],
-            'entities_id'   => $entityForProfile,
-            'is_recursive'  => 0,
-            'profiles_id'   => $profileId,
+            'users_id'     => (int) $user->fields['id'],
+            'entities_id'  => $entityForProfile,
+            'is_recursive' => $isRecursive ? 1 : 0,
+            'profiles_id'  => $profilesId,
         ]);
 
         return true;
     }
 
     /**
-     * @param array<string, mixed> $overrides name, firstname, realname, _email, remote_id, __registration_from_preview
+     * @param array<string, mixed> $overrides   name, firstname, realname, _email, remote_id,
+     *                                           __registration_from_preview, __rule_result
+     * @param array<string, mixed> $ruleResult  Structured result from evaluateRulesForUser().
+     *                                           Ignored for preview flow (uses __rule_result from $overrides).
      *
      * @return User|false
      */
-    public function createUserFromOAuthResource(array $resource_array, array $overrides = [])
+    public function createUserFromOAuthResource(array $resource_array, array $overrides = [], array $ruleResult = [])
     {
         if (!empty($overrides['__registration_from_preview'])) {
             $login = trim((string) ($overrides['name'] ?? ''));
@@ -1530,6 +1515,9 @@ class Provider extends CommonDBTM
                 'firstname' => trim((string) ($overrides['firstname'] ?? '')),
                 'realname'  => trim((string) ($overrides['realname'] ?? '')),
             ];
+            // Use the rule result that was captured at the time the preview
+            // session was created and stored in the session by storePendingRegistrationSession().
+            $ruleResult = is_array($overrides['__rule_result'] ?? null) ? $overrides['__rule_result'] : [];
         } else {
             $resolved = $this->resolveLoginAndEmailFromResource($resource_array);
             if (!$resolved['authorized']) {
@@ -1565,7 +1553,10 @@ class Provider extends CommonDBTM
         $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
-        $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
+        // Entity, profile and recursive flag come from the rules engine.
+        $entitiesId = (int) ($ruleResult['entities_id'] ?? 0);
+        $profilesId = (int) ($ruleResult['profiles_id'] ?? 0);
+        $isRecursive = (bool) ($ruleResult['is_recursive'] ?? false);
 
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
         if ($picture === null && isset($resource_array['picture'])) {
@@ -1603,7 +1594,7 @@ class Provider extends CommonDBTM
                 return false;
             }
 
-            if (!$this->ensureProfileForNewUser($user, $entitiesId)) {
+            if (!$this->ensureProfileForNewUser($user, $entitiesId, $profilesId, $isRecursive)) {
                 return false;
             }
 
@@ -1634,8 +1625,9 @@ class Provider extends CommonDBTM
 
     /**
      * @param array<string, mixed> $resource_array
+     * @param array<string, mixed> $ruleResult     Structured result from evaluateRulesForUser().
      */
-    public function storePendingRegistrationSession(array $resource_array): void
+    public function storePendingRegistrationSession(array $resource_array, array $ruleResult = []): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             Session::start();
@@ -1653,6 +1645,7 @@ class Provider extends CommonDBTM
             'login'       => $resolved['login'] !== false ? (string) $resolved['login'] : '',
             'email'       => $resolved['email'] ?? '',
             'remote_id'   => $remote_id !== null ? (string) $remote_id : '',
+            'rule_result' => $ruleResult,
         ];
     }
 
@@ -1743,7 +1736,7 @@ class Provider extends CommonDBTM
         // --- 3. Ensure the user has at least one profile before login.
         // This covers existing users who have no profile assigned —
         // ensureProfileForNewUser() would otherwise only run for newly auto-registered users.
-        $this->ensureProfileForNewUser($user, 0);
+        $this->ensureProfileForNewUser($user, 0, 0, false);
 
         // --- 4. Login via external auth (password unused) ---
         $auth = new Auth();
@@ -1900,10 +1893,7 @@ class Provider extends CommonDBTM
             return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
         }
 
-        if (empty($this->fields['auto_register'])) {
-            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
-            return self::LOGIN_FAILURE;
-        }
+        // ── New-user registration path ──────────────────────────────────────
 
         $gate = $this->resolveLoginAndEmailFromResource($resource_array);
         if (!$gate['authorized']) {
@@ -1922,12 +1912,29 @@ class Provider extends CommonDBTM
             return self::LOGIN_FAILURE;
         }
 
-        if (!empty($this->fields['registration_preview'])) {
-            $this->storePendingRegistrationSession($resource_array);
+        // Evaluate all SSO rules with the new-user context so that
+        // auto_register, registration_preview, entity, profile and group
+        // assignments are all driven by the rules engine.
+        $ssoGroups  = $this->extractUserGroupsFromResource($resource_array);
+        $ruleResult = $this->evaluateRulesForUser(
+            (string) $gate['login'],
+            $gate['email'],
+            $ssoGroups,
+            true,
+            $resource_array
+        );
+
+        if (!$ruleResult['auto_register']) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
+            return self::LOGIN_FAILURE;
+        }
+
+        if ($ruleResult['registration_preview']) {
+            $this->storePendingRegistrationSession($resource_array, $ruleResult);
             return self::LOGIN_REGISTRATION_PREVIEW;
         }
 
-        $user = $this->createUserFromOAuthResource($resource_array);
+        $user = $this->createUserFromOAuthResource($resource_array, [], $ruleResult);
         if (!$user || !$user->getID()) {
             $this->lastLoginError = "SSO login failed via provider '$providerName': User auto-registration failed";
             return self::LOGIN_FAILURE;
@@ -2291,9 +2298,18 @@ class Provider extends CommonDBTM
         $groups = $this->extractUserGroupsFromResource($resourceOwner);
 
         if ($mode === self::USER_GROUP_SYNC_RULE_MATCHED) {
-            $this->applyPluginGroupRules($user, $groups);
+            $this->applyPluginGroupRules($user, $groups, $resourceOwner);
         } else {
-            $this->assignGroupsToUser($user, $groups, $mode);
+            // Evaluate rules to obtain the entity and is_recursive values for
+            // any groups that may need to be auto-created in SYNC_ALL mode.
+            $ruleResult = $this->evaluateRulesForUser(
+                (string) ($user->fields['name'] ?? ''),
+                null,
+                $groups,
+                false,
+                $resourceOwner
+            );
+            $this->assignGroupsToUser($user, $groups, $mode, $ruleResult['entities_id'], $ruleResult['is_recursive']);
         }
     }
 
@@ -2424,7 +2440,7 @@ class Provider extends CommonDBTM
     /**
      * @param string[] $groups
      */
-    private function assignGroupsToUser(User $user, array $groups, int $mode): void
+    private function assignGroupsToUser(User $user, array $groups, int $mode, int $entitiesId = 0, bool $isRecursive = false): void
     {
         $groupUser = new \Group_User();
         $group = new \Group();
@@ -2444,11 +2460,10 @@ class Provider extends CommonDBTM
             $groupId = $this->resolveGroupIdFromClaimValue($group, $groupValue);
 
             if ($groupId === null && $mode === self::USER_GROUP_SYNC_ALL) {
-                $entitiesId = (int) ($this->fields['default_entities_id'] ?? 0);
                 $groupId = $group->add([
                     'name'         => $groupValue,
                     'entities_id'  => $entitiesId,
-                    'is_recursive' => 0,
+                    'is_recursive' => $isRecursive ? 1 : 0,
                     'comment'      => __('Created automatically by Single Sign-On', 'singlesignon'),
                     'add'          => 1,
                 ]);
@@ -2492,17 +2507,17 @@ class Provider extends CommonDBTM
     }
 
     /**
-     * Evaluate the plugin's SSO group rule collection and assign the user to
-     * every GLPI group returned by matching rules.  Dynamic group memberships
-     * that are no longer covered by the rules are removed, consistent with
-     * the behaviour of the other sync modes.
+     * Evaluate the plugin's SSO rules and assign the user to every GLPI group
+     * returned by matching rules.  Dynamic group memberships that are no longer
+     * covered by the rules are removed.
      *
      * This method is the entry-point for USER_GROUP_SYNC_RULE_MATCHED.  It
      * never creates new GLPI groups; it only references existing ones.
      *
-     * @param string[] $ssoGroups Raw IdP group name strings from the token claim.
+     * @param string[]             $ssoGroups    Raw IdP group name strings from the token claim.
+     * @param array<string, mixed> $resourceArray OAuth resource-owner data (for rule criteria).
      */
-    private function applyPluginGroupRules(User $user, array $ssoGroups): void
+    private function applyPluginGroupRules(User $user, array $ssoGroups, array $resourceArray = []): void
     {
         $groupUser = new \Group_User();
 
@@ -2512,7 +2527,14 @@ class Provider extends CommonDBTM
             'is_dynamic' => 1,
         ]);
 
-        $targetGroupIds = $this->getPluginRuleGroupIds($user, $ssoGroups);
+        $ruleResult = $this->evaluateRulesForUser(
+            (string) ($user->fields['name'] ?? ''),
+            null,
+            $ssoGroups,
+            false,
+            $resourceArray
+        );
+        $targetGroupIds = $ruleResult['groups_id'];
 
         $keepGroupIds = [];
         foreach ($targetGroupIds as $groupId) {
@@ -2546,50 +2568,51 @@ class Provider extends CommonDBTM
     }
 
     /**
-     * Run the plugin's SSO group rule collection and return the GLPI group IDs
-     * produced by all matching rules.
+     * Evaluate all SSO rules for the given user context and return a structured
+     * result containing every action field that was produced by matching rules.
      *
-     * @param string[] $ssoGroups Raw IdP group name strings.
-     * @return int[]
+     * @param string   $login        GLPI login name.
+     * @param ?string  $email        Full e-mail address, or null if not known.
+     * @param string[] $ssoGroups    Raw IdP group-name strings from the token.
+     * @param bool     $isNewUser    True when the user does not yet exist in GLPI.
+     * @param array    $resourceArray Full OAuth resource-owner data.
+     *
+     * @return array{
+     *   auto_register: bool,
+     *   registration_preview: bool,
+     *   entities_id: int,
+     *   is_recursive: bool,
+     *   profiles_id: int,
+     *   groups_id: int[]
+     * }
      */
-    private function getPluginRuleGroupIds(User $user, array $ssoGroups): array
-    {
+    private function evaluateRulesForUser(
+        string $login,
+        ?string $email,
+        array $ssoGroups,
+        bool $isNewUser,
+        array $resourceArray
+    ): array {
         if (!class_exists(RuleSinglesignonCollection::class)) {
-            return [];
+            return [
+                'auto_register'        => false,
+                'registration_preview' => false,
+                'entities_id'          => 0,
+                'is_recursive'         => false,
+                'profiles_id'          => 0,
+                'groups_id'            => [],
+            ];
         }
 
         $collection = new RuleSinglesignonCollection();
-        $actions = $collection->testAllRules(
-            // Initial input — prepareInputDataForProcess() will populate it
-            // from the params array below.
-            [],
-            [],
-            [
-                'sso_groups' => $ssoGroups,
-                'login'      => (string) ($user->fields['name'] ?? ''),
-            ],
+        return $collection->evaluateForUser(
+            $login,
+            $email,
+            $ssoGroups,
+            $isNewUser,
+            $resourceArray,
+            (int) ($this->fields['id'] ?? 0)
         );
-
-        $groupIds = [];
-        if (is_array($actions)) {
-            foreach ($actions as $action) {
-                if (!is_array($action)) {
-                    continue;
-                }
-                if (($action['field'] ?? null) !== 'groups_id') {
-                    continue;
-                }
-                if (!isset($action['value']) || !is_numeric($action['value'])) {
-                    continue;
-                }
-                $groupId = (int) $action['value'];
-                if ($groupId > 0) {
-                    $groupIds[] = $groupId;
-                }
-            }
-        }
-
-        return array_values(array_unique($groupIds));
     }
 
     private function sanitizeGroupClaimEntry(string $groupValue): ?string
