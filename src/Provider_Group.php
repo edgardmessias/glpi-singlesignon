@@ -30,6 +30,7 @@ use CommonDBRelation;
 use JsonPath\JsonObject;
 use Throwable;
 use User;
+use function Safe\preg_split;
 
 /**
  * Persists the mapping between a remote group identifier (the raw claim value
@@ -161,9 +162,6 @@ class Provider_Group extends CommonDBRelation
                 return [];
             }
             $items = preg_split('/[,\s]+/u', $value, -1, PREG_SPLIT_NO_EMPTY);
-            if ($items === false) {
-                return [];
-            }
             return array_values(array_unique($items));
         }
 

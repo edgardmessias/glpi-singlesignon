@@ -220,7 +220,7 @@ class Provider extends CommonDBTM
 
         $label = __('Authorization assignment rules');
         $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        $options['provider']['links'][$link] = RuleSinglesignonCollection::getSearchURL(false);
+        $options['provider']['links'][$link] = RuleSinglesignonCollection::getSearchURL();
 
         return $options;
     }

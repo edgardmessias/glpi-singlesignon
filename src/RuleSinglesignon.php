@@ -33,25 +33,21 @@ namespace GlpiPlugin\Singlesignon;
  * mirror GLPI's native RuleRight actions so that existing GLPI translations
  * are reused and the UI feels familiar to administrators.
  */
-class RuleSinglesignon extends \Rule
-{
+class RuleSinglesignon extends \Rule {
     // Use the standard 'config' right so that GLPI administrators can manage
     // these rules through the normal Rules interface.
     public static $rightname = 'config';
 
-    public function getTitle(): string
-    {
+    public function getTitle(): string {
         // Reuse the native GLPI translation for "Authorization assignment rules".
         return __('Authorization assignment rules');
     }
 
-    public static function canCreate(): bool
-    {
+    public static function canCreate(): bool {
         return static::canUpdate();
     }
 
-    public static function getIcon()
-    {
+    public static function getIcon() {
         return 'ti ti-user-check';
     }
 
@@ -60,36 +56,27 @@ class RuleSinglesignon extends \Rule
      * class.  GLPI's default implementation uses strtolower(static::class) which
      * produces a URL containing backslashes when the class is in a PHP namespace.
      *
-     * Plugin::getWebDir() is called with the default $full=true so that it
-     * prepends root_doc and returns an absolute (server-root-relative) path.
-     * Passing false would return a relative path such as "plugins/singlesignon"
-     * which browsers resolve relative to the current page and double the prefix.
-     *
      * @param bool $full When true, appends the itemtype query parameter.
      */
-    public static function getFormURL($full = true): string
-    {
-        $dir = \Plugin::getWebDir('singlesignon');
-        $url = $dir . '/front/rulesinglesignon.form.php';
+    public static function getFormURL($full = true): string {
+        global $CFG_GLPI;
+        $url = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/rulesinglesignon.form.php';
         return $full ? $url . '?itemtype=' . static::class : $url;
     }
 
     /**
      * Override to return the correct test URL for this plugin rule class.
      * GLPI's default implementation derives the URL from the class namespace,
-     * producing a capitalised path (/plugins/Singlesignon/...) that does not
-     * exist.  Here we explicitly use the lowercase plugin slug.
+     * producing a capitalised path (/plugins/Singlesignon/...) that does not exist.
      *
      * @param bool $full Unused – kept for signature compatibility.
      */
-    public static function getTestURL($full = true): string
-    {
-        $dir = \Plugin::getWebDir('singlesignon');
-        return $dir . '/front/rule.test.php';
+    public static function getTestURL($full = true): string {
+        global $CFG_GLPI;
+        return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/rule.test.php';
     }
 
-    public function showForm($ID, array $options = [])
-    {
+    public function showForm($ID, array $options = []) {
         $newItem = static::isNewID($ID);
         if (!$newItem) {
             $this->check($ID, READ);
@@ -126,8 +113,7 @@ class RuleSinglesignon extends \Rule
         return true;
     }
 
-    public function showRulePreviewCriteriasForm($rules_id)
-    {
+    public function showRulePreviewCriteriasForm($rules_id) {
         $criteria = $this->getAllCriteria();
         if (!$this->getRuleWithCriteriasAndActions($rules_id, true, false)) {
             return;
@@ -157,8 +143,7 @@ class RuleSinglesignon extends \Rule
         ]);
     }
 
-    public function getCriterias(): array
-    {
+    public function getCriterias(): array {
         return [
             // ── Identity ────────────────────────────────────────────────────
             'login' => [
@@ -207,8 +192,7 @@ class RuleSinglesignon extends \Rule
         ];
     }
 
-    public function getActions(): array
-    {
+    public function getActions(): array {
         return [
             // ── Flow control ─────────────────────────────────────────────────
             '_stop_rules_processing' => [
