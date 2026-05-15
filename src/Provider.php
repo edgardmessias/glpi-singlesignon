@@ -29,6 +29,7 @@ namespace GlpiPlugin\Singlesignon;
 use Throwable;
 use CommonDBTM;
 use JsonPath\JsonObject;
+use Location;
 use Session;
 use Dropdown;
 use Toolbox;
@@ -179,11 +180,6 @@ class Provider extends CommonDBTM
         $this->fields["groups_claim"] = '';
         $this->fields["resource_owner_auth_type"] = self::AUTH_HEADER_BEARER;
         $this->fields["resource_owner_picture_auth_type"] = self::AUTH_HEADER_BEARER;
-        $this->fields['auto_register'] = 0;
-        $this->fields['registration_preview'] = 0;
-        $this->fields['default_entities_id'] = 0;
-        $this->fields['match_entity_by_email_domain'] = 0;
-        $this->fields['default_profiles_id'] = 0;
         $this->fields['ssl_verify_host'] = 1;
         $this->fields['ssl_verify_peer'] = 1;
     }
@@ -372,15 +368,6 @@ class Provider extends CommonDBTM
         if (array_key_exists('registration_preview', $input)) {
             $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
         }
-        if (array_key_exists('default_entities_id', $input)) {
-            $input['default_entities_id'] = (int) $input['default_entities_id'];
-        }
-        if (array_key_exists('match_entity_by_email_domain', $input)) {
-            $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
-        }
-        if (array_key_exists('default_profiles_id', $input)) {
-            $input['default_profiles_id'] = (int) $input['default_profiles_id'];
-        }
         if (array_key_exists('ssl_verify_host', $input)) {
             $input['ssl_verify_host'] = empty($input['ssl_verify_host']) ? 0 : 1;
         } else {
@@ -436,7 +423,7 @@ class Provider extends CommonDBTM
         return $mode;
     }
 
-    private function sanitizeUserGroupSyncMode($value): int
+    public function sanitizeUserGroupSyncMode($value): int
     {
         $mode = (int) $value;
         if (!in_array($mode, [
@@ -1554,13 +1541,74 @@ class Provider extends CommonDBTM
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
         // Entity, profile and recursive flag come from the rules engine.
-        $entitiesId = (int) ($ruleResult['entities_id'] ?? 0);
-        $profilesId = (int) ($ruleResult['profiles_id'] ?? 0);
+        $entitiesId  = (int)  ($ruleResult['_entities_id_default'] ?? 0);
+        $profilesId  = (int)  ($ruleResult['profiles_id'] ?? 0);
         $isRecursive = (bool) ($ruleResult['is_recursive'] ?? false);
 
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
         if ($picture === null && isset($resource_array['picture'])) {
             $picture = $resource_array['picture'];
+        }
+
+        // ── Phone / mobile ───────────────────────────────────────────────────
+        // Mapped values take priority; if mapping resolves an array from the
+        // JSONPath expression, normalizeJsonPathResult() already returns the
+        // first non-null scalar — no extra array-unpacking needed here.
+        // Fallback to well-known IdP attributes when no mapping is configured.
+        $phone  = $this->resolveFieldValueFromMappings($resource_array, 'phone');
+        $phone2 = $this->resolveFieldValueFromMappings($resource_array, 'phone2');
+        $mobile = $this->resolveFieldValueFromMappings($resource_array, 'mobile');
+
+        if ($phone === null) {
+            // Fallback: businessPhones IdP attribute — take first element only
+            $businessPhones = $resource_array['businessPhones'] ?? null;
+            if (is_array($businessPhones)) {
+                $phone = isset($businessPhones[0]) && trim((string) $businessPhones[0]) !== ''
+                    ? trim((string) $businessPhones[0]) : null;
+            } elseif (is_string($businessPhones) && trim($businessPhones) !== '') {
+                $phone = trim($businessPhones);
+            }
+        }
+        if ($phone2 === null) {
+            // Fallback: second businessPhones element
+            $businessPhones = $resource_array['businessPhones'] ?? null;
+            if (is_array($businessPhones) && isset($businessPhones[1]) && trim((string) $businessPhones[1]) !== '') {
+                $phone2 = trim((string) $businessPhones[1]);
+            }
+        }
+
+        if ($mobile === null) {
+            $mobileRaw = $resource_array['mobilePhone'] ?? null;
+            if (is_string($mobileRaw) && trim($mobileRaw) !== '') {
+                $mobile = trim($mobileRaw);
+            }
+        }
+
+        // ── Location ─────────────────────────────────────────────────────────
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        if ($locationName === null) {
+            $officeLocation = $resource_array['officeLocation'] ?? null;
+            if (is_string($officeLocation) && trim($officeLocation) !== '') {
+                $locationName = trim($officeLocation);
+            }
+        }
+        $locationsId = 0;
+        if ($locationName !== null && $locationName !== '') {
+            $loc = new Location();
+            $existing = $loc->find(['name' => $locationName], '', 1);
+            if ($existing !== []) {
+                $locationsId = (int) array_key_first($existing);
+            }
+        }
+
+        // ── Supervisor ───────────────────────────────────────────────────────
+        $supervisorName = $this->resolveFieldValueFromMappings($resource_array, 'supervisor');
+        $supervisorId = 0;
+        if ($supervisorName !== null && $supervisorName !== '') {
+            $supUser = new User();
+            if ($supUser->getFromDBbyName($supervisorName)) {
+                $supervisorId = (int) $supUser->fields['id'];
+            }
         }
 
         $userPost = [
@@ -1578,13 +1626,26 @@ class Provider extends CommonDBTM
         if ($entitiesId > 0) {
             $userPost['entities_id'] = $entitiesId;
         }
-
         if ($picture !== null && $picture !== '') {
             $userPost['picture'] = $picture;
         }
-
         if ($email !== null && $email !== '') {
             $userPost['_useremails'][-1] = $email;
+        }
+        if ($phone !== null && $phone !== '') {
+            $userPost['phone'] = $phone;
+        }
+        if ($phone2 !== null && $phone2 !== '') {
+            $userPost['phone2'] = $phone2;
+        }
+        if ($mobile !== null && $mobile !== '') {
+            $userPost['mobile'] = $mobile;
+        }
+        if ($locationsId > 0) {
+            $userPost['locations_id'] = $locationsId;
+        }
+        if ($supervisorId > 0) {
+            $userPost['users_id_supervisor'] = $supervisorId;
         }
 
         try {
@@ -1763,10 +1824,10 @@ class Provider extends CommonDBTM
         }
 
         try {
-            $this->syncOAuthGroups($user);
+            Provider_Group::syncGroups($this, $user);
         } catch (Exception $ex) {
             if ($this->debug) {
-                print_r("\nsyncOAuthGroups exception: " . $ex->getMessage() . "\n");
+                print_r("\nsyncGroups exception: " . $ex->getMessage() . "\n");
             }
         }
 
@@ -1915,7 +1976,7 @@ class Provider extends CommonDBTM
         // Evaluate all SSO rules with the new-user context so that
         // auto_register, registration_preview, entity, profile and group
         // assignments are all driven by the rules engine.
-        $ssoGroups  = $this->extractUserGroupsFromResource($resource_array);
+        $ssoGroups  = Provider_Group::extractUserGroupsFromResource($this, $resource_array);
         $ruleResult = $this->evaluateRulesForUser(
             (string) $gate['login'],
             $gate['email'],
@@ -2279,328 +2340,40 @@ class Provider extends CommonDBTM
         return $newPicture;
     }
 
-    private function syncOAuthGroups(User $user): void
-    {
-        if ($user->getID() <= 0) {
-            return;
-        }
-
-        $mode = $this->sanitizeUserGroupSyncMode($this->fields['user_group_sync_mode'] ?? self::USER_GROUP_SYNC_DISABLED);
-        if ($mode === self::USER_GROUP_SYNC_DISABLED) {
-            return;
-        }
-
-        $resourceOwner = $this->getResourceOwner();
-        if (!$resourceOwner || !is_array($resourceOwner)) {
-            return;
-        }
-
-        $groups = $this->extractUserGroupsFromResource($resourceOwner);
-
-        if ($mode === self::USER_GROUP_SYNC_RULE_MATCHED) {
-            $this->applyPluginGroupRules($user, $groups, $resourceOwner);
-        } else {
-            // Evaluate rules to obtain the entity and is_recursive values for
-            // any groups that may need to be auto-created in SYNC_ALL mode.
-            $ruleResult = $this->evaluateRulesForUser(
-                (string) ($user->fields['name'] ?? ''),
-                null,
-                $groups,
-                false,
-                $resourceOwner
-            );
-            $this->assignGroupsToUser($user, $groups, $mode, $ruleResult['entities_id'], $ruleResult['is_recursive']);
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $resource_array
-     * @return string[]
-     */
-    private function extractUserGroupsFromResource(array $resource_array): array
-    {
-        $groups = [];
-        $groupsClaim = trim((string) ($this->fields['groups_claim'] ?? ''));
-        if ($groupsClaim !== '') {
-            return array_slice(
-                $this->normalizeGroupClaimValue($this->getResourceOwnerValueByClaimPath($resource_array, $groupsClaim)),
-                0,
-                self::MAX_GROUPS_PER_SYNC,
-            );
-        }
-
-        $groupFields = ['groups', 'roles'];
-        foreach ($groupFields as $field) {
-            if (array_key_exists($field, $resource_array)) {
-                $groups = array_merge($groups, $this->normalizeGroupClaimValue($resource_array[$field]));
-            }
-        }
-
-        if (isset($resource_array['realm_access']) && is_array($resource_array['realm_access']) && array_key_exists('roles', $resource_array['realm_access'])) {
-            $groups = array_merge($groups, $this->normalizeGroupClaimValue($resource_array['realm_access']['roles']));
-        }
-
-        if (isset($resource_array['resource_access']) && is_array($resource_array['resource_access'])) {
-            foreach ($resource_array['resource_access'] as $clientRoles) {
-                if (!is_array($clientRoles) || !array_key_exists('roles', $clientRoles)) {
-                    continue;
-                }
-                $groups = array_merge($groups, $this->normalizeGroupClaimValue($clientRoles['roles']));
-            }
-        }
-
-        return array_slice(array_values(array_unique($groups)), 0, self::MAX_GROUPS_PER_SYNC);
-    }
-
-    /**
-     * @param mixed $value
-     * @return string[]
-     */
-    private function normalizeGroupClaimValue($value): array
-    {
-        if (is_string($value)) {
-            $value = trim($value);
-            if ($value === '' || strlen($value) > self::MAX_GROUP_CLAIM_STRING_LENGTH) {
-                return [];
-            }
-            $items = preg_split('/[,\s]+/u', $value, -1, PREG_SPLIT_NO_EMPTY);
-            if ($items === false) {
-                return [];
-            }
-            return array_values(array_unique($items));
-        }
-
-        if (is_numeric($value)) {
-            return [(string) $value];
-        }
-
-        if (!is_array($value)) {
-            return [];
-        }
-
-        $groups = [];
-        foreach ($value as $item) {
-            if (is_string($item)) {
-                $item = trim($item);
-                if ($item !== '') {
-                    $groups[] = $item;
-                }
-                continue;
-            }
-
-            if (is_numeric($item)) {
-                $groups[] = (string) $item;
-                continue;
-            }
-
-            if (is_array($item)) {
-                if (isset($item['displayName']) && is_string($item['displayName']) && trim($item['displayName']) !== '') {
-                    $groups[] = trim($item['displayName']);
-                    continue;
-                }
-                if (isset($item['name']) && is_string($item['name']) && trim($item['name']) !== '') {
-                    $groups[] = trim($item['name']);
-                    continue;
-                }
-                if (isset($item['id']) && (is_string($item['id']) || is_numeric($item['id']))) {
-                    $groups[] = (string) $item['id'];
-                }
-            }
-        }
-
-        return array_values(array_unique($groups));
-    }
-
-    /**
-     * @param array<string, mixed> $resource_array
-     * @return mixed
-     */
-    private function getResourceOwnerValueByClaimPath(array $resource_array, string $claimPath)
-    {
-        if (strlen($claimPath) > self::MAX_GROUP_CLAIM_PATH_LENGTH || str_contains($claimPath, '..')) {
-            return null;
-        }
-
-        $parts = array_values(array_filter(explode('.', $claimPath), static fn($part): bool => $part !== ''));
-        if ($parts === [] || count($parts) > self::MAX_GROUP_CLAIM_PATH_DEPTH) {
-            return null;
-        }
-
-        $value = $resource_array;
-        foreach ($parts as $part) {
-            if (!is_array($value) || !array_key_exists($part, $value)) {
-                return null;
-            }
-            $value = $value[$part];
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param string[] $groups
-     */
-    private function assignGroupsToUser(User $user, array $groups, int $mode, int $entitiesId = 0, bool $isRecursive = false): void
-    {
-        $groupUser = new \Group_User();
-        $group = new \Group();
-        $links = $groupUser->find([
-            'users_id'   => $user->getID(),
-            'is_dynamic' => 1,
-        ]);
-
-        $keepDynGroupIds = [];
-
-        foreach ($groups as $groupValue) {
-            $groupValue = $this->sanitizeGroupClaimEntry((string) $groupValue);
-            if ($groupValue === null) {
-                continue;
-            }
-
-            $groupId = $this->resolveGroupIdFromClaimValue($group, $groupValue);
-
-            if ($groupId === null && $mode === self::USER_GROUP_SYNC_ALL) {
-                $groupId = $group->add([
-                    'name'         => $groupValue,
-                    'entities_id'  => $entitiesId,
-                    'is_recursive' => $isRecursive ? 1 : 0,
-                    'comment'      => __('Created automatically by Single Sign-On', 'singlesignon'),
-                    'add'          => 1,
-                ]);
-                $groupId = is_numeric($groupId) ? (int) $groupId : null;
-            }
-
-            if ($groupId === null) {
-                continue;
-            }
-
-            // Persist (or update) the remote_id → groups_id mapping so future
-            // logins can find the correct GLPI group even after a rename.
-            $this->ensureGroupMapping($groupValue, $groupId);
-
-            if ($groupUser->getFromDBByCrit([
-                'users_id'  => $user->getID(),
-                'groups_id' => $groupId,
-            ])) {
-                $keepDynGroupIds[] = $groupId;
-                continue;
-            }
-
-            $linkId = $groupUser->add([
-                'users_id'    => $user->getID(),
-                'groups_id'   => $groupId,
-                'is_dynamic'  => 1,
-            ]);
-            if (is_numeric($linkId)) {
-                $keepDynGroupIds[] = $groupId;
-            }
-        }
-
-        $keepDynGroupIds = array_values(array_unique(array_map('intval', $keepDynGroupIds)));
-        foreach ($links as $link) {
-            $linkedGroupId = (int) ($link['groups_id'] ?? 0);
-            if ($linkedGroupId <= 0 || in_array($linkedGroupId, $keepDynGroupIds, true)) {
-                continue;
-            }
-            $groupUser->delete(['id' => (int) $link['id']], true);
-        }
-    }
-
-    /**
-     * Evaluate the plugin's SSO rules and assign the user to every GLPI group
-     * returned by matching rules.  Dynamic group memberships that are no longer
-     * covered by the rules are removed.
-     *
-     * This method is the entry-point for USER_GROUP_SYNC_RULE_MATCHED.  It
-     * never creates new GLPI groups; it only references existing ones.
-     *
-     * @param string[]             $ssoGroups    Raw IdP group name strings from the token claim.
-     * @param array<string, mixed> $resourceArray OAuth resource-owner data (for rule criteria).
-     */
-    private function applyPluginGroupRules(User $user, array $ssoGroups, array $resourceArray = []): void
-    {
-        $groupUser = new \Group_User();
-
-        // Snapshot all current dynamic group memberships before we start.
-        $links = $groupUser->find([
-            'users_id'   => $user->getID(),
-            'is_dynamic' => 1,
-        ]);
-
-        $ruleResult = $this->evaluateRulesForUser(
-            (string) ($user->fields['name'] ?? ''),
-            null,
-            $ssoGroups,
-            false,
-            $resourceArray
-        );
-        $targetGroupIds = $ruleResult['groups_id'];
-
-        $keepGroupIds = [];
-        foreach ($targetGroupIds as $groupId) {
-            if ($groupUser->getFromDBByCrit([
-                'users_id'  => $user->getID(),
-                'groups_id' => $groupId,
-            ])) {
-                $keepGroupIds[] = $groupId;
-                continue;
-            }
-
-            $linkId = $groupUser->add([
-                'users_id'   => $user->getID(),
-                'groups_id'  => $groupId,
-                'is_dynamic' => 1,
-            ]);
-            if (is_numeric($linkId)) {
-                $keepGroupIds[] = $groupId;
-            }
-        }
-
-        // Remove dynamic groups no longer covered by the current rule results.
-        $keepGroupIds = array_values(array_unique(array_map('intval', $keepGroupIds)));
-        foreach ($links as $link) {
-            $linkedGroupId = (int) ($link['groups_id'] ?? 0);
-            if ($linkedGroupId <= 0 || in_array($linkedGroupId, $keepGroupIds, true)) {
-                continue;
-            }
-            $groupUser->delete(['id' => (int) $link['id']], true);
-        }
-    }
-
     /**
      * Evaluate all SSO rules for the given user context and return a structured
-     * result containing every action field that was produced by matching rules.
+     * result containing every action field produced by matching rules.
      *
      * @param string   $login        GLPI login name.
      * @param ?string  $email        Full e-mail address, or null if not known.
      * @param string[] $ssoGroups    Raw IdP group-name strings from the token.
      * @param bool     $isNewUser    True when the user does not yet exist in GLPI.
      * @param array    $resourceArray Full OAuth resource-owner data.
-     *
-     * @return array{
-     *   auto_register: bool,
-     *   registration_preview: bool,
-     *   entities_id: int,
-     *   is_recursive: bool,
-     *   profiles_id: int,
-     *   groups_id: int[]
-     * }
+     * @return array
      */
-    private function evaluateRulesForUser(
+    public function evaluateRulesForUser(
         string $login,
         ?string $email,
-        array $ssoGroups,
-        bool $isNewUser,
-        array $resourceArray
+        array $ssoGroups = [],
+        bool $isNewUser = false,
+        array $resourceArray = []
     ): array {
         if (!class_exists(RuleSinglesignonCollection::class)) {
             return [
-                'auto_register'        => false,
-                'registration_preview' => false,
-                'entities_id'          => 0,
-                'is_recursive'         => false,
-                'profiles_id'          => 0,
-                'groups_id'            => [],
+                'auto_register'          => false,
+                'registration_preview'   => false,
+                '_entities_id_default'   => 0,
+                'is_recursive'           => false,
+                'is_active'              => null,
+                'profiles_id'            => 0,
+                '_profiles_id_default'   => 0,
+                'specific_groups_id'     => [],
+                'groups_id'              => 0,
+                'timezone'               => '',
+                'language'               => '',
+                '_ignore_user_import'    => false,
+                '_deny_login'            => false,
+                '_stop_rules_processing' => false,
             ];
         }
 
@@ -2613,104 +2386,6 @@ class Provider extends CommonDBTM
             $resourceArray,
             (int) ($this->fields['id'] ?? 0)
         );
-    }
-
-    private function sanitizeGroupClaimEntry(string $groupValue): ?string
-    {
-        $groupValue = trim($groupValue);
-        if ($groupValue === '') {
-            return null;
-        }
-
-        // Keep only predictable UTF-8 group names from external OAuth payloads.
-        if (preg_match('/^[\p{L}\p{N}\s._@:\-]+$/u', $groupValue) !== 1) {
-            return null;
-        }
-
-        $length = function_exists('mb_strlen') ? mb_strlen($groupValue, 'UTF-8') : strlen($groupValue);
-        if ($length > self::MAX_GROUP_NAME_LENGTH) {
-            return null;
-        }
-
-        return $groupValue;
-    }
-
-    private function resolveGroupIdFromClaimValue(\Group $group, string $groupValue): ?int
-    {
-        // Check the stable provider→group mapping table first.  This survives
-        // GLPI group renames because the record is keyed by GLPI groups_id.
-        $mapping = (new Provider_Group())->find([
-            'plugin_singlesignon_providers_id' => $this->fields['id'],
-            'remote_id' => $groupValue,
-        ], '', 1);
-        if ($mapping !== []) {
-            $row = current($mapping);
-            $mappedId = (int) ($row['groups_id'] ?? 0);
-            if ($mappedId > 0 && $group->getFromDB($mappedId)) {
-                return $mappedId;
-            }
-        }
-
-        // Numeric claim values may be used as a direct GLPI group ID.
-        if (is_numeric($groupValue)) {
-            $groupId = (int) $groupValue;
-            if ($groupId > 0 && $group->getFromDB($groupId)) {
-                return $groupId;
-            }
-        }
-
-        // Fall back to a name-based lookup in the GLPI groups table.
-        $found = $group->find(['name' => $groupValue], '', 1);
-        if ($found === []) {
-            return null;
-        }
-
-        $firstKey = array_key_first($found);
-        if (!is_numeric($firstKey)) {
-            return null;
-        }
-
-        return (int) $firstKey;
-    }
-
-    /**
-     * Upserts the remote_id → groups_id mapping in the providers_groups table.
-     *
-     * Existing GLPI group names and properties are never touched; only the
-     * cross-reference record in this plugin's own table is created or updated.
-     * If the mapping already exists and points to the same GLPI group, the
-     * method is a no-op.
-     */
-    private function ensureGroupMapping(string $remoteId, int $groupId): void
-    {
-        global $DB;
-
-        $table = Provider_Group::getTable();
-        $providerId = (int) $this->fields['id'];
-
-        $existing = $DB->request([
-            'SELECT' => ['id', 'groups_id'],
-            'FROM'   => $table,
-            'WHERE'  => [
-                'plugin_singlesignon_providers_id' => $providerId,
-                'remote_id' => $remoteId,
-            ],
-        ]);
-
-        foreach ($existing as $row) {
-            if ((int) $row['groups_id'] !== $groupId) {
-                // The GLPI group ID changed (e.g. deleted and recreated) — update it.
-                $DB->update($table, ['groups_id' => $groupId], ['id' => (int) $row['id']]);
-            }
-            // Either way the record exists; nothing further to do.
-            return;
-        }
-
-        $DB->insert($table, [
-            'plugin_singlesignon_providers_id' => $providerId,
-            'groups_id' => $groupId,
-            'remote_id' => $remoteId,
-        ]);
     }
 
     private function shouldSyncOAuthPhoto(User $user): bool

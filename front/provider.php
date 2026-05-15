@@ -40,7 +40,7 @@ $rulesUrl = ToolboxPlugin::getRulesUrl();
 echo '<div class="d-flex justify-content-end mb-2 px-3">';
 echo '<a href="' . htmlspecialchars($rulesUrl, ENT_QUOTES, 'UTF-8') . '" class="btn btn-sm btn-outline-secondary">';
 echo '<i class="ti ti-list-check me-1"></i>';
-echo htmlspecialchars(__('SSO rules — Authorization assignment rules', 'singlesignon'), ENT_QUOTES, 'UTF-8');
+echo htmlspecialchars(__('Authorization assignment rules'), ENT_QUOTES, 'UTF-8');
 echo '</a>';
 echo '</div>';
 

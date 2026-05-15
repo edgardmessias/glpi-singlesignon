@@ -32,6 +32,8 @@ namespace GlpiPlugin\Singlesignon;
  * All rules in this collection are evaluated (stop_on_first_match = false) so
  * that a user can be assigned to multiple GLPI groups by separate rules and
  * so that a "default" catch-all rule can be overridden by more specific ones.
+ * A rule may set the `_stop_rules_processing` action to terminate evaluation
+ * early, mimicking the native RuleRight behaviour.
  *
  * The caller passes a params array to prepareInputDataForProcess().  Supported
  * params keys are:
@@ -40,7 +42,8 @@ namespace GlpiPlugin\Singlesignon;
  *   - 'email'          => string     full e-mail address
  *   - 'firstname'      => string
  *   - 'realname'       => string
- *   - 'officeLocation' => string     IdP officeLocation claim value
+ *   - 'location'       => string     IdP location claim value (officeLocation fallback)
+ *   - 'supervisor'     => string     supervisor user name (for criterion matching)
  *   - 'is_new_user'    => bool       true when the user does not yet exist in GLPI
  *   - 'provider_id'    => int        ID of the SSO provider that triggered the login
  */
@@ -57,7 +60,8 @@ class RuleSinglesignonCollection extends \RuleCollection
 
     public function getTitle(): string
     {
-        return __('SSO rules — Authorization assignment rules', 'singlesignon');
+        // Reuse the native GLPI translation for "Authorization assignment rules".
+        return __('Authorization assignment rules');
     }
 
     /**
@@ -77,19 +81,12 @@ class RuleSinglesignonCollection extends \RuleCollection
         }
         if (isset($params['email']) && is_string($params['email'])) {
             $input['email'] = $params['email'];
-            $parts = explode('@', $params['email'], 2);
-            if (isset($parts[1])) {
-                $input['email_domain'] = strtolower($parts[1]);
-            }
         }
         if (isset($params['firstname']) && is_string($params['firstname'])) {
             $input['firstname'] = $params['firstname'];
         }
         if (isset($params['realname']) && is_string($params['realname'])) {
             $input['realname'] = $params['realname'];
-        }
-        if (isset($params['officeLocation']) && is_string($params['officeLocation'])) {
-            $input['officeLocation'] = $params['officeLocation'];
         }
         if (isset($params['is_new_user'])) {
             $input['is_new_user'] = $params['is_new_user'] ? '1' : '0';
@@ -117,10 +114,18 @@ class RuleSinglesignonCollection extends \RuleCollection
      * @return array{
      *   auto_register: bool,
      *   registration_preview: bool,
-     *   entities_id: int,
+     *   _entities_id_default: int,
      *   is_recursive: bool,
+     *   is_active: bool|null,
      *   profiles_id: int,
-     *   groups_id: int[]
+     *   _profiles_id_default: int,
+     *   specific_groups_id: int[],
+     *   groups_id: int,
+     *   timezone: string,
+     *   language: string,
+     *   _ignore_user_import: bool,
+     *   _deny_login: bool,
+     *   _stop_rules_processing: bool
      * }
      */
     public function evaluateForUser(
@@ -132,26 +137,33 @@ class RuleSinglesignonCollection extends \RuleCollection
         int $providerId = 0
     ): array {
         $result = [
-            'auto_register'        => false,
-            'registration_preview' => false,
-            'entities_id'          => 0,
-            'is_recursive'         => false,
-            'profiles_id'          => 0,
-            'groups_id'            => [],
+            'auto_register'          => false,
+            'registration_preview'   => false,
+            '_entities_id_default'   => 0,
+            'is_recursive'           => false,
+            'is_active'              => null,  // null = do not change
+            'profiles_id'            => 0,
+            '_profiles_id_default'   => 0,
+            'specific_groups_id'     => [],
+            'groups_id'              => 0,
+            'timezone'               => '',
+            'language'               => '',
+            '_ignore_user_import'    => false,
+            '_deny_login'            => false,
+            '_stop_rules_processing' => false,
         ];
 
         $actions = $this->testAllRules(
             [],
             [],
             [
-                'login'          => $login,
-                'email'          => $email ?? '',
-                'sso_groups'     => $ssoGroups,
-                'is_new_user'    => $isNewUser,
-                'firstname'      => (string) ($resourceArray['given_name'] ?? $resourceArray['firstname'] ?? ''),
-                'realname'       => (string) ($resourceArray['family_name'] ?? $resourceArray['realname'] ?? ''),
-                'officeLocation' => (string) ($resourceArray['officeLocation'] ?? ''),
-                'provider_id'    => $providerId,
+                'login'        => $login,
+                'email'        => $email ?? '',
+                'sso_groups'   => $ssoGroups,
+                'is_new_user'  => $isNewUser,
+                'firstname'    => (string) ($resourceArray['given_name'] ?? $resourceArray['firstname'] ?? ''),
+                'realname'     => (string) ($resourceArray['family_name'] ?? $resourceArray['realname'] ?? ''),
+                'provider_id'  => $providerId,
             ]
         );
 
@@ -172,24 +184,58 @@ class RuleSinglesignonCollection extends \RuleCollection
                 case 'registration_preview':
                     $result['registration_preview'] = (bool) $value;
                     break;
-                case 'entities_id':
-                    $result['entities_id'] = (int) $value;
+                case '_entities_id_default':
+                    $result['_entities_id_default'] = (int) $value;
                     break;
                 case 'is_recursive':
                     $result['is_recursive'] = (bool) $value;
                     break;
+                case 'is_active':
+                    $result['is_active'] = (bool) $value;
+                    break;
                 case 'profiles_id':
                     $result['profiles_id'] = (int) $value;
                     break;
+                case '_profiles_id_default':
+                    $result['_profiles_id_default'] = (int) $value;
+                    break;
+                case 'specific_groups_id':
+                    if (is_numeric($value) && (int) $value > 0) {
+                        $result['specific_groups_id'][] = (int) $value;
+                    }
+                    break;
                 case 'groups_id':
                     if (is_numeric($value) && (int) $value > 0) {
-                        $result['groups_id'][] = (int) $value;
+                        $result['groups_id'] = (int) $value;
+                    }
+                    break;
+                case 'timezone':
+                    if (is_string($value) && $value !== '') {
+                        $result['timezone'] = $value;
+                    }
+                    break;
+                case 'language':
+                    if (is_string($value) && $value !== '') {
+                        $result['language'] = $value;
+                    }
+                    break;
+                case '_ignore_user_import':
+                    $result['_ignore_user_import'] = (bool) $value;
+                    break;
+                case '_deny_login':
+                    $result['_deny_login'] = (bool) $value;
+                    break;
+                case '_stop_rules_processing':
+                    if ((bool) $value) {
+                        $result['_stop_rules_processing'] = true;
+                        // Stop processing further actions from this point.
+                        break 2;
                     }
                     break;
             }
         }
 
-        $result['groups_id'] = array_values(array_unique($result['groups_id']));
+        $result['specific_groups_id'] = array_values(array_unique($result['specific_groups_id']));
         return $result;
     }
 }

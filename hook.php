@@ -383,6 +383,28 @@ function plugin_singlesignon_install()
         }
     }
 
+    /**
+     * Version 2.2.0: rename the 'entities_id' rule action field to '_entities_id_default'
+     * to align with GLPI's native RuleRight action naming convention.
+     */
+    if (version_compare($currentVersion, '2.2.0', '<')) {
+        if ($DB->tableExists('glpi_ruleactions')) {
+            // Rename entities_id → _entities_id_default for all SSO rules.
+            $DB->update(
+                'glpi_ruleactions',
+                ['field' => '_entities_id_default'],
+                [
+                    'field'    => 'entities_id',
+                    'rules_id' => new \QuerySubQuery([
+                        'SELECT' => 'id',
+                        'FROM'   => 'glpi_rules',
+                        'WHERE'  => ['sub_type' => $ruleSubtype],
+                    ]),
+                ],
+            );
+        }
+    }
+
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
     Config::setConfigurationValues('plugin:singlesignon', $current);
 

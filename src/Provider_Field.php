@@ -72,6 +72,11 @@ class Provider_Field extends CommonDBTM
             'lastname'   => __('Last name'),
             'fullname'   => __('Full name'),
             'avatar_url' => __('Avatar URL', 'singlesignon'),
+            'location'   => __('Location'),
+            'supervisor' => __('Supervisor'),
+            'phone'      => __('Phone'),
+            'phone2'     => __('Phone 2'),
+            'mobile'     => __('Cell phone'),
         ];
     }
 

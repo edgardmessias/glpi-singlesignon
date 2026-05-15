@@ -142,10 +142,10 @@
     {% set _rules_url = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getRulesUrl'], []) %}
     {% set _rules_link %}
         <a href="{{ _rules_url }}" class="btn btn-sm btn-outline-secondary">
-            <i class="ti ti-list-check me-1"></i>{{ __('Manage SSO rules (registration, entity, profile and group assignment)', 'singlesignon') }}
+            <i class="ti ti-list-check me-1"></i>{{ __('Authorization assignment rules') }}
         </a>
     {% endset %}
-    {{ fields.htmlField('', _rules_link, __('SSO rules', 'singlesignon'), field_opts) }}
+    {{ fields.htmlField('', _rules_link, __('Authorization assignment rules'), field_opts) }}
     {% else %}
     {{ fields.htmlField('', '<span class="text-muted">' ~ __('Save the provider first to access the rules engine.', 'singlesignon') ~ '</span>', __('SSO rules', 'singlesignon'), field_opts) }}
     {% endif %}

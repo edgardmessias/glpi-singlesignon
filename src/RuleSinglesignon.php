@@ -29,10 +29,9 @@ namespace GlpiPlugin\Singlesignon;
 /**
  * Rule class for the SSO rules engine.
  *
- * Each rule can match on IdP claim values (login, email, groups, location, …)
- * and produce actions that drive user registration, entity/profile assignment,
- * and group membership.  This replaces the old per-provider "Registration"
- * fields and the "Entity / Recursive for new groups" settings.
+ * Criteria mirror the user attributes available from the IdP token; actions
+ * mirror GLPI's native RuleRight actions so that existing GLPI translations
+ * are reused and the UI feels familiar to administrators.
  */
 class RuleSinglesignon extends \Rule
 {
@@ -42,7 +41,8 @@ class RuleSinglesignon extends \Rule
 
     public function getTitle(): string
     {
-        return __('SSO rules — Authorization assignment rules', 'singlesignon');
+        // Reuse the native GLPI translation for "Authorization assignment rules".
+        return __('Authorization assignment rules');
     }
 
     /**
@@ -69,44 +69,38 @@ class RuleSinglesignon extends \Rule
         return [
             // ── Identity ────────────────────────────────────────────────────
             'login' => [
-                'name' => __('Login'),
-                'type' => 'text',
+                'name'  => __('Login'),
+                'type'  => 'text',
+                'table' => '',
             ],
             'email' => [
-                'name' => __('Email'),
-                'type' => 'text',
-            ],
-            'email_domain' => [
-                'name'    => __('Email domain', 'singlesignon'),
-                'type'    => 'text',
-                // virtual = true: value is injected by prepareInputDataForProcess()
-                // and the rule engine does not attempt a DB lookup.
-                'virtual' => true,
+                'name'  => __('Email'),
+                'type'  => 'text',
+                'table' => '',
             ],
             'firstname' => [
-                'name' => __('First name'),
-                'type' => 'text',
+                'name'  => __('First name'),
+                'type'  => 'text',
+                'table' => '',
             ],
             'realname' => [
-                'name' => __('Last name'),
-                'type' => 'text',
+                'name'  => __('Last name'),
+                'type'  => 'text',
+                'table' => '',
             ],
             // ── IdP claim values ────────────────────────────────────────────
             'SSO_GROUPS' => [
                 'name'    => __('SSO Group (IdP claim)', 'singlesignon'),
                 'type'    => 'text',
                 'virtual' => true,
-            ],
-            'officeLocation' => [
-                'name'    => __('Office location (IdP claim)', 'singlesignon'),
-                'type'    => 'text',
-                'virtual' => true,
+                'table'   => '',
             ],
             // ── Context ─────────────────────────────────────────────────────
             'is_new_user' => [
                 'name'    => __('Is new user (first registration)', 'singlesignon'),
                 'type'    => 'yesonly',
                 'virtual' => true,
+                'table'   => '',
             ],
             'provider_id' => [
                 'name'  => __('SSO Provider', 'singlesignon'),
@@ -120,7 +114,79 @@ class RuleSinglesignon extends \Rule
     public function getActions(): array
     {
         return [
-            // ── Registration gate ────────────────────────────────────────────
+            // ── Flow control ─────────────────────────────────────────────────
+            '_stop_rules_processing' => [
+                'name'          => __('Skip remaining rules'),
+                'type'          => 'yesonly',
+                'force_actions' => ['assign'],
+            ],
+            // ── Profile / entity / recursive ─────────────────────────────────
+            'profiles_id' => [
+                'name'          => __('Profiles'),
+                'type'          => 'dropdown',
+                'table'         => 'glpi_profiles',
+                'field'         => 'name',
+                'force_actions' => ['assign'],
+            ],
+            'is_recursive' => [
+                'name'          => __('Recursive'),
+                'type'          => 'yesno',
+                'force_actions' => ['assign'],
+            ],
+            'is_active' => [
+                'name'          => __('Active'),
+                'type'          => 'yesno',
+                'force_actions' => ['assign'],
+            ],
+            '_ignore_user_import' => [
+                'name'          => __('Ignore import'),
+                'type'          => 'yesonly',
+                'force_actions' => ['assign'],
+            ],
+            '_entities_id_default' => [
+                'name'          => __('Default entity'),
+                'type'          => 'dropdown',
+                'table'         => 'glpi_entities',
+                'field'         => 'completename',
+                'force_actions' => ['assign'],
+            ],
+            'specific_groups_id' => [
+                'name'          => __('Groups'),
+                'type'          => 'dropdown',
+                'table'         => 'glpi_groups',
+                'field'         => 'completename',
+                'force_actions' => ['assign'],
+            ],
+            'groups_id' => [
+                'name'          => __('Default group'),
+                'type'          => 'dropdown',
+                'table'         => 'glpi_groups',
+                'field'         => 'completename',
+                'force_actions' => ['assign'],
+            ],
+            '_profiles_id_default' => [
+                'name'          => __('Default profile'),
+                'type'          => 'dropdown',
+                'table'         => 'glpi_profiles',
+                'field'         => 'name',
+                'force_actions' => ['assign'],
+            ],
+            'timezone' => [
+                'name'          => __('Time zone'),
+                'type'          => 'timezone',
+                'force_actions' => ['assign'],
+            ],
+            'language' => [
+                'name'          => __('Language'),
+                'type'          => 'language',
+                'force_actions' => ['assign'],
+            ],
+            '_deny_login' => [
+                'name'          => __('Deny login'),
+                'type'          => 'yesonly',
+                'force_actions' => ['assign'],
+            ],
+            // ── SSO-specific registration gate ───────────────────────────────
             'auto_register' => [
                 'name'          => __('Allow automatic registration', 'singlesignon'),
                 'type'          => 'yesno',
@@ -129,33 +195,6 @@ class RuleSinglesignon extends \Rule
             'registration_preview' => [
                 'name'          => __('Confirm registration before creating account', 'singlesignon'),
                 'type'          => 'yesno',
-                'force_actions' => ['assign'],
-            ],
-            // ── Assignment ──────────────────────────────────────────────────
-            'entities_id' => [
-                'name'          => __('Default entity for new users and groups', 'singlesignon'),
-                'type'          => 'dropdown',
-                'table'         => 'glpi_entities',
-                'field'         => 'completename',
-                'force_actions' => ['assign'],
-            ],
-            'is_recursive' => [
-                'name'          => __('Recursive for new users and groups', 'singlesignon'),
-                'type'          => 'yesno',
-                'force_actions' => ['assign'],
-            ],
-            'profiles_id' => [
-                'name'          => __('Default profile when GLPI has no default', 'singlesignon'),
-                'type'          => 'dropdown',
-                'table'         => 'glpi_profiles',
-                'field'         => 'name',
-                'force_actions' => ['assign'],
-            ],
-            'groups_id' => [
-                'name'          => __('Group'),
-                'type'          => 'dropdown',
-                'table'         => 'glpi_groups',
-                'field'         => 'completename',
                 'force_actions' => ['assign'],
             ],
         ];
