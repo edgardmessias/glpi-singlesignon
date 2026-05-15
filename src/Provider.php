@@ -197,30 +197,32 @@ class Provider extends CommonDBTM
 
     public static function getAdditionalMenuOptions()
     {
-        $options = parent::getAdditionalMenuOptions();
-        if (!is_array($options)) {
-            $options = [];
+        $options = [
+            'provider' => [
+                'title' => static::getTypeName(Session::getPluralNumber()),
+                'page'  => static::getSearchURL(false),
+                'links' => [
+                    'search' => static::getSearchURL(false),
+                ],
+            ],
+            'rules' => [
+                'title' => __('Authorization assignment rules'),
+                'page'  => RuleSinglesignonCollection::getSearchURL(false),
+                'links' => [
+                    'search' => RuleSinglesignonCollection::getSearchURL(false),
+                ],
+            ],
+        ];
+
+        if (static::canCreate()) {
+            $options['provider']['links']['add'] = static::getFormURL(false);
         }
 
         $label = __('Authorization assignment rules');
         $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        $options['singlesignon']['links'][$link] = RuleSinglesignonCollection::getSearchURL();
+        $options['provider']['links'][$link] = RuleSinglesignonCollection::getSearchURL(false);
 
         return $options;
-    }
-
-    public static function getAdditionalMenuLinks()
-    {
-        $links = parent::getAdditionalMenuLinks();
-        if (!is_array($links)) {
-            $links = [];
-        }
-
-        $label = __('Authorization assignment rules');
-        $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        $links[$link] = RuleSinglesignonCollection::getSearchURL(false);
-
-        return $links;
     }
 
     public function prepareInputForAdd($input)
