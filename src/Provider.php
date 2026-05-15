@@ -68,18 +68,12 @@ class Provider extends CommonDBTM
     public const PHOTO_SYNC_DISABLED = 0;
     public const PHOTO_SYNC_IF_EMPTY = 1;
     public const PHOTO_SYNC_ALWAYS = 2;
-    public const USER_GROUP_SYNC_DISABLED = 0;
-    public const USER_GROUP_SYNC_ALL = 1;
-    public const USER_GROUP_SYNC_RULE_MATCHED = 2;
 
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
     public const AUTH_HEADER_DISABLED = 'disabled';
     private const MAX_GROUPS_PER_SYNC = 200;
     private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
-    private const MAX_GROUP_CLAIM_PATH_LENGTH = 1024;
-    private const MAX_GROUP_CLAIM_PATH_DEPTH = 10;
-    private const MAX_GROUP_NAME_LENGTH = 255;
 
     // From CommonDBTM
     public $dohistory = true;
@@ -176,8 +170,6 @@ class Provider extends CommonDBTM
         $this->fields["type"] = 'generic';
         $this->fields["is_active"] = 1;
         $this->fields["user_photo_sync_mode"] = self::PHOTO_SYNC_DISABLED;
-        $this->fields["user_group_sync_mode"] = self::USER_GROUP_SYNC_DISABLED;
-        $this->fields["groups_claim"] = '';
         $this->fields["resource_owner_auth_type"] = self::AUTH_HEADER_BEARER;
         $this->fields["resource_owner_picture_auth_type"] = self::AUTH_HEADER_BEARER;
         $this->fields['ssl_verify_host'] = 1;
@@ -352,8 +344,6 @@ class Provider extends CommonDBTM
         }
 
         $input['user_photo_sync_mode'] = $this->sanitizePhotoSyncMode($input['user_photo_sync_mode'] ?? null);
-        $input['user_group_sync_mode'] = $this->sanitizeUserGroupSyncMode($input['user_group_sync_mode'] ?? null);
-        $input['groups_claim'] = trim((string) ($input['groups_claim'] ?? ''));
         $input['resource_owner_auth_type'] = $this->sanitizeAuthorizationType($input['resource_owner_auth_type'] ?? null);
         $input['resource_owner_picture_auth_type'] = $this->sanitizeAuthorizationType($input['resource_owner_picture_auth_type'] ?? null);
         $input['resource_owner_custom_headers'] = trim((string) ($input['resource_owner_custom_headers'] ?? ''));
@@ -391,15 +381,6 @@ class Provider extends CommonDBTM
         ];
     }
 
-    public static function getUserGroupSyncModes(): array
-    {
-        return [
-            (string) self::USER_GROUP_SYNC_DISABLED => __('Disabled'),
-            (string) self::USER_GROUP_SYNC_ALL => __('Import all groups from OAuth claim', 'singlesignon'),
-            (string) self::USER_GROUP_SYNC_RULE_MATCHED => __('Assign existing groups via SSO group rules (no auto-import)', 'singlesignon'),
-        ];
-    }
-
     public static function getAuthorizationTypes(): array
     {
         return [
@@ -418,20 +399,6 @@ class Provider extends CommonDBTM
             self::PHOTO_SYNC_ALWAYS,
         ], true)) {
             return self::PHOTO_SYNC_DISABLED;
-        }
-
-        return $mode;
-    }
-
-    public function sanitizeUserGroupSyncMode($value): int
-    {
-        $mode = (int) $value;
-        if (!in_array($mode, [
-            self::USER_GROUP_SYNC_DISABLED,
-            self::USER_GROUP_SYNC_ALL,
-            self::USER_GROUP_SYNC_RULE_MATCHED,
-        ], true)) {
-            return self::USER_GROUP_SYNC_DISABLED;
         }
 
         return $mode;
@@ -1346,23 +1313,6 @@ class Provider extends CommonDBTM
     {
         $firstname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'firstname') ?? ''));
         $lastname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'lastname') ?? ''));
-        $fullname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'fullname') ?? ''));
-
-        if ($firstname === '' && $lastname === '' && $fullname !== '') {
-            $parts = preg_split('/\s+/u', $fullname, 2, PREG_SPLIT_NO_EMPTY) ?: [];
-            $firstname = $parts[0] ?? '';
-            $lastname = $parts[1] ?? '';
-        } elseif ($firstname !== '' && $lastname === '' && $fullname !== '') {
-            $parts = preg_split('/\s+/u', $fullname, 2, PREG_SPLIT_NO_EMPTY) ?: [];
-            if (($parts[1] ?? '') !== '') {
-                $lastname = $parts[1];
-            }
-        } elseif ($firstname === '' && $lastname !== '' && $fullname !== '') {
-            $parts = preg_split('/\s+/u', $fullname, 2, PREG_SPLIT_NO_EMPTY) ?: [];
-            if (($parts[0] ?? '') !== '') {
-                $firstname = $parts[0];
-            }
-        }
 
         if ($firstname === '' && isset($resource_array['given_name'])) {
             $firstname = trim((string) $resource_array['given_name']);

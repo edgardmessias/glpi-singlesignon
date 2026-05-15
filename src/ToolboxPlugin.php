@@ -75,6 +75,16 @@ class ToolboxPlugin
         return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/rulesinglesignon.php';
     }
 
+    /**
+     * Returns the URL of the plugin's SSO rules reset endpoint.
+     */
+    public static function getResetRulesUrl(): string
+    {
+        global $CFG_GLPI;
+
+        return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/rulesinglesignon_reset.php';
+    }
+
     public static function isDefault($row, $query = [])
     {
         return $row['is_default'] == 1;

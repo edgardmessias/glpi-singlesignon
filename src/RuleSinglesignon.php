@@ -64,6 +64,20 @@ class RuleSinglesignon extends \Rule
         return $full ? $url . '?itemtype=' . static::class : $url;
     }
 
+    /**
+     * Override to return the correct test URL for this plugin rule class.
+     * GLPI's default implementation derives the URL from the class namespace,
+     * producing a capitalised path (/plugins/Singlesignon/...) that does not
+     * exist.  Here we explicitly use the lowercase plugin slug.
+     *
+     * @param bool $full Unused – kept for signature compatibility.
+     */
+    public static function getTestURL($full = true): string
+    {
+        $dir = \Plugin::getWebDir('singlesignon');
+        return $dir . '/front/rule.test.php';
+    }
+
     public function getCriterias(): array
     {
         return [
@@ -88,6 +102,31 @@ class RuleSinglesignon extends \Rule
                 'type'  => 'text',
                 'table' => '',
             ],
+            'phone' => [
+                'name'  => __('Phone'),
+                'type'  => 'text',
+                'table' => '',
+            ],
+            'phone2' => [
+                'name'  => __('Phone 2'),
+                'type'  => 'text',
+                'table' => '',
+            ],
+            'mobile' => [
+                'name'  => __('Cell phone'),
+                'type'  => 'text',
+                'table' => '',
+            ],
+            'location' => [
+                'name'  => __('Location'),
+                'type'  => 'text',
+                'table' => '',
+            ],
+            'supervisor' => [
+                'name'  => __('Supervisor'),
+                'type'  => 'text',
+                'table' => '',
+            ],
             // ── IdP claim values ────────────────────────────────────────────
             'SSO_GROUPS' => [
                 'name'    => __('SSO Group (IdP claim)', 'singlesignon'),
@@ -98,7 +137,7 @@ class RuleSinglesignon extends \Rule
             // ── Context ─────────────────────────────────────────────────────
             'is_new_user' => [
                 'name'    => __('Is new user (first registration)', 'singlesignon'),
-                'type'    => 'yesonly',
+                'type'    => 'yesno',
                 'virtual' => true,
                 'table'   => '',
             ],

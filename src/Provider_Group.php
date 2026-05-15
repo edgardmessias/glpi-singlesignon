@@ -27,6 +27,8 @@ declare(strict_types=1);
 namespace GlpiPlugin\Singlesignon;
 
 use CommonDBRelation;
+use JsonPath\JsonObject;
+use Throwable;
 use User;
 
 /**
@@ -53,8 +55,6 @@ class Provider_Group extends CommonDBRelation
 
     private const MAX_GROUPS_PER_SYNC = 200;
     private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
-    private const MAX_GROUP_CLAIM_PATH_LENGTH = 1024;
-    private const MAX_GROUP_CLAIM_PATH_DEPTH = 10;
     private const MAX_GROUP_NAME_LENGTH = 255;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -62,20 +62,13 @@ class Provider_Group extends CommonDBRelation
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Synchronize OAuth groups for the given user according to the provider's
-     * configured synchronization mode.
+     * Synchronize OAuth groups for the given user using the SSO rules engine.
+     * Groups are always processed via rule-based assignment; there is no
+     * automatic group import mode.
      */
     public static function syncGroups(Provider $provider, User $user): void
     {
         if ($user->getID() <= 0) {
-            return;
-        }
-
-        $mode = $provider->sanitizeUserGroupSyncMode(
-            $provider->fields['user_group_sync_mode'] ?? Provider::USER_GROUP_SYNC_DISABLED
-        );
-
-        if ($mode === Provider::USER_GROUP_SYNC_DISABLED) {
             return;
         }
 
@@ -85,28 +78,7 @@ class Provider_Group extends CommonDBRelation
         }
 
         $groups = static::extractUserGroupsFromResource($provider, $resourceOwner);
-
-        if ($mode === Provider::USER_GROUP_SYNC_RULE_MATCHED) {
-            static::applyPluginGroupRules($provider, $user, $groups, $resourceOwner);
-        } else {
-            // Evaluate rules to obtain entity/is_recursive values for any
-            // groups that may need to be auto-created in SYNC_ALL mode.
-            $ruleResult = $provider->evaluateRulesForUser(
-                (string) ($user->fields['name'] ?? ''),
-                null,
-                $groups,
-                false,
-                $resourceOwner
-            );
-            static::assignGroupsToUser(
-                $provider,
-                $user,
-                $groups,
-                $mode,
-                $ruleResult['_entities_id_default'],
-                $ruleResult['is_recursive']
-            );
-        }
+        static::applyPluginGroupRules($provider, $user, $groups, $resourceOwner);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -115,7 +87,8 @@ class Provider_Group extends CommonDBRelation
 
     /**
      * Extract the list of group-name strings from the OAuth resource-owner
-     * payload according to the provider's configured group claim path.
+     * payload.  Checks the provider's 'groups' field mappings first, then
+     * falls back to well-known group/role claim keys.
      *
      * @param array<string, mixed> $resource_array
      * @return string[]
@@ -123,17 +96,30 @@ class Provider_Group extends CommonDBRelation
     public static function extractUserGroupsFromResource(Provider $provider, array $resource_array): array
     {
         $groups = [];
-        $groupsClaim = trim((string) ($provider->fields['groups_claim'] ?? ''));
-        if ($groupsClaim !== '') {
-            return array_slice(
-                static::normalizeGroupClaimValue(
-                    static::getResourceOwnerValueByClaimPath($resource_array, $groupsClaim)
-                ),
-                0,
-                self::MAX_GROUPS_PER_SYNC,
-            );
+        $providerId = (int) ($provider->fields['id'] ?? 0);
+
+        // Check for 'groups' type field mappings configured by the admin.
+        if ($providerId > 0) {
+            $groupMappings = Provider_Field::getMappingsForProvider($providerId, 'groups', true);
+            foreach ($groupMappings as $mapping) {
+                $jsonPath = trim((string) ($mapping['jsonpath'] ?? ''));
+                if ($jsonPath === '') {
+                    continue;
+                }
+                try {
+                    $json   = new JsonObject($resource_array);
+                    $result = $json->get($jsonPath);
+                } catch (Throwable) {
+                    continue;
+                }
+                $extracted = static::normalizeGroupClaimValue($result);
+                if ($extracted !== []) {
+                    return array_slice($extracted, 0, self::MAX_GROUPS_PER_SYNC);
+                }
+            }
         }
 
+        // Default extraction: well-known group/role claim keys.
         $groupFields = ['groups', 'roles'];
         foreach ($groupFields as $field) {
             if (array_key_exists($field, $resource_array)) {
@@ -224,124 +210,13 @@ class Provider_Group extends CommonDBRelation
     }
 
     /**
-     * Walk a dot-separated claim path into the resource-owner array and return
-     * the value found, or null when the path does not match.
-     *
-     * @param array<string, mixed> $resource_array
-     * @return mixed
-     */
-    private static function getResourceOwnerValueByClaimPath(array $resource_array, string $claimPath)
-    {
-        if (strlen($claimPath) > self::MAX_GROUP_CLAIM_PATH_LENGTH || str_contains($claimPath, '..')) {
-            return null;
-        }
-
-        $parts = array_values(array_filter(explode('.', $claimPath), static fn($part): bool => $part !== ''));
-        if ($parts === [] || count($parts) > self::MAX_GROUP_CLAIM_PATH_DEPTH) {
-            return null;
-        }
-
-        $value = $resource_array;
-        foreach ($parts as $part) {
-            if (!is_array($value) || !array_key_exists($part, $value)) {
-                return null;
-            }
-            $value = $value[$part];
-        }
-
-        return $value;
-    }
-
-    /**
-     * Assign (or remove) dynamic group memberships for a user based on the
-     * provided list of IdP group-name strings.
-     *
-     * Groups that exist in GLPI are linked dynamically.  In SYNC_ALL mode,
-     * groups that do not yet exist in GLPI are created automatically.
-     * Any dynamic membership that is no longer covered by the current group
-     * list is removed.
-     *
-     * @param string[] $groups
-     */
-    private static function assignGroupsToUser(
-        Provider $provider,
-        User $user,
-        array $groups,
-        int $mode,
-        int $entitiesId = 0,
-        bool $isRecursive = false
-    ): void {
-        $groupUser = new \Group_User();
-        $group = new \Group();
-        $links = $groupUser->find([
-            'users_id'   => $user->getID(),
-            'is_dynamic' => 1,
-        ]);
-
-        $keepDynGroupIds = [];
-
-        foreach ($groups as $groupValue) {
-            $groupValue = static::sanitizeGroupClaimEntry((string) $groupValue);
-            if ($groupValue === null) {
-                continue;
-            }
-
-            $groupId = static::resolveGroupIdFromClaimValue($provider, $group, $groupValue);
-
-            if ($groupId === null && $mode === Provider::USER_GROUP_SYNC_ALL) {
-                $groupId = $group->add([
-                    'name'         => $groupValue,
-                    'entities_id'  => $entitiesId,
-                    'is_recursive' => $isRecursive ? 1 : 0,
-                    'comment'      => __('Created automatically by Single Sign-On', 'singlesignon'),
-                    'add'          => 1,
-                ]);
-                $groupId = is_numeric($groupId) ? (int) $groupId : null;
-            }
-
-            if ($groupId === null) {
-                continue;
-            }
-
-            // Persist (or update) the remote_id → groups_id mapping so future
-            // logins can find the correct GLPI group even after a rename.
-            static::ensureGroupMapping($provider, $groupValue, $groupId);
-
-            if ($groupUser->getFromDBByCrit([
-                'users_id'  => $user->getID(),
-                'groups_id' => $groupId,
-            ])) {
-                $keepDynGroupIds[] = $groupId;
-                continue;
-            }
-
-            $linkId = $groupUser->add([
-                'users_id'   => $user->getID(),
-                'groups_id'  => $groupId,
-                'is_dynamic' => 1,
-            ]);
-            if (is_numeric($linkId)) {
-                $keepDynGroupIds[] = $groupId;
-            }
-        }
-
-        $keepDynGroupIds = array_values(array_unique(array_map('intval', $keepDynGroupIds)));
-        foreach ($links as $link) {
-            $linkedGroupId = (int) ($link['groups_id'] ?? 0);
-            if ($linkedGroupId <= 0 || in_array($linkedGroupId, $keepDynGroupIds, true)) {
-                continue;
-            }
-            $groupUser->delete(['id' => (int) $link['id']], true);
-        }
-    }
-
-    /**
      * Evaluate the plugin's SSO rules and assign the user to every GLPI group
-     * returned by matching rules.  Dynamic group memberships that are no longer
-     * covered by the rules are removed.
+     * returned by matching rules.  Dynamic group memberships that were
+     * previously assigned by this engine but are no longer covered by the
+     * current rule results are removed.  If no rules assign any groups, existing
+     * dynamic memberships are left untouched.
      *
-     * This method is the entry-point for USER_GROUP_SYNC_RULE_MATCHED.  It
-     * never creates new GLPI groups; it only references existing ones.
+     * This method never creates new GLPI groups; it only references existing ones.
      *
      * @param string[]             $ssoGroups    Raw IdP group name strings from the token claim.
      * @param array<string, mixed> $resourceArray OAuth resource-owner data (for rule criteria).
@@ -389,82 +264,19 @@ class Provider_Group extends CommonDBRelation
             }
         }
 
-        // Remove dynamic groups no longer covered by the current rule results.
-        $keepGroupIds = array_values(array_unique(array_map('intval', $keepGroupIds)));
-        foreach ($links as $link) {
-            $linkedGroupId = (int) ($link['groups_id'] ?? 0);
-            if ($linkedGroupId <= 0 || in_array($linkedGroupId, $keepGroupIds, true)) {
-                continue;
-            }
-            $groupUser->delete(['id' => (int) $link['id']], true);
-        }
-    }
-
-    /**
-     * Sanitise a raw group claim string entry for safe storage and comparison.
-     * Returns null when the value should be skipped.
-     */
-    private static function sanitizeGroupClaimEntry(string $groupValue): ?string
-    {
-        $groupValue = trim($groupValue);
-        if ($groupValue === '') {
-            return null;
-        }
-
-        // Keep only predictable UTF-8 group names from external OAuth payloads.
-        if (preg_match('/^[\p{L}\p{N}\s._@:\-]+$/u', $groupValue) !== 1) {
-            return null;
-        }
-
-        $length = function_exists('mb_strlen') ? mb_strlen($groupValue, 'UTF-8') : strlen($groupValue);
-        if ($length > self::MAX_GROUP_NAME_LENGTH) {
-            return null;
-        }
-
-        return $groupValue;
-    }
-
-    /**
-     * Resolve a GLPI group ID from an IdP claim value by checking the
-     * stable provider→group mapping table, then numeric direct lookup, then
-     * falling back to a name-based lookup in the GLPI groups table.
-     */
-    private static function resolveGroupIdFromClaimValue(Provider $provider, \Group $group, string $groupValue): ?int
-    {
-        // Check the stable provider→group mapping table first.  This survives
-        // GLPI group renames because the record is keyed by GLPI groups_id.
-        $mapping = (new Provider_Group())->find([
-            'plugin_singlesignon_providers_id' => $provider->fields['id'],
-            'remote_id' => $groupValue,
-        ], '', 1);
-        if ($mapping !== []) {
-            $row = current($mapping);
-            $mappedId = (int) ($row['groups_id'] ?? 0);
-            if ($mappedId > 0 && $group->getFromDB($mappedId)) {
-                return $mappedId;
+        // Only remove dynamic groups that are no longer covered when the rule
+        // engine has explicitly assigned at least one group.  If no rules
+        // matched any group action we leave existing dynamic memberships intact.
+        if (!empty($targetGroupIds)) {
+            $keepGroupIds = array_values(array_unique(array_map('intval', $keepGroupIds)));
+            foreach ($links as $link) {
+                $linkedGroupId = (int) ($link['groups_id'] ?? 0);
+                if ($linkedGroupId <= 0 || in_array($linkedGroupId, $keepGroupIds, true)) {
+                    continue;
+                }
+                $groupUser->delete(['id' => (int) $link['id']], true);
             }
         }
-
-        // Numeric claim values may be used as a direct GLPI group ID.
-        if (is_numeric($groupValue)) {
-            $groupId = (int) $groupValue;
-            if ($groupId > 0 && $group->getFromDB($groupId)) {
-                return $groupId;
-            }
-        }
-
-        // Fall back to a name-based lookup in the GLPI groups table.
-        $found = $group->find(['name' => $groupValue], '', 1);
-        if ($found === []) {
-            return null;
-        }
-
-        $firstKey = array_key_first($found);
-        if (!is_numeric($firstKey)) {
-            return null;
-        }
-
-        return (int) $firstKey;
     }
 
     /**

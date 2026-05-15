@@ -68,8 +68,6 @@ function plugin_singlesignon_install()
             `url_access_token`           VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_resource_owner_details` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `user_photo_sync_mode`       INT NOT NULL DEFAULT '0',
-            `user_group_sync_mode`       INT NOT NULL DEFAULT '0',
-            `groups_claim`               VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `resource_owner_auth_type`   VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
             `resource_owner_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
             `resource_owner_picture_auth_type` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
@@ -209,25 +207,9 @@ function plugin_singlesignon_install()
             'after' => 'user_photo_sync_mode',
         ],
     );
-    $migration->addField(
-        $providersTable,
-        'user_group_sync_mode',
-        'integer',
-        [
-            'value' => 0,
-            'after' => 'user_photo_sync_mode',
-        ],
-    );
-    $migration->addField(
-        $providersTable,
-        'groups_claim',
-        'string',
-        [
-            'nodefault' => true,
-            'null'      => true,
-            'after'     => 'user_group_sync_mode',
-        ],
-    );
+    // user_group_sync_mode and groups_claim were present in versions < 2.3.0 and are
+    // dropped in the 2.3.0 migration below.
+    // Do NOT re-add them here so that fresh installs never create these columns.
     $migration->addField(
         $providersTable,
         'resource_owner_custom_headers',
@@ -369,7 +351,7 @@ function plugin_singlesignon_install()
             'is_recursive' => 1,
             'is_active'    => 1,
             'name'         => __('Default SSO rule', 'singlesignon'),
-            'description'  => __('No criteria — applies to all SSO logins. Edit to enable auto-registration and set default entity/profile.', 'singlesignon'),
+            'comment'      => __('No criteria — applies to all SSO logins. Edit to enable auto-registration and set default entity/profile.', 'singlesignon'),
             'match'        => \Rule::AND_MATCHING,
             'ranking'      => $nextRank,
         ]);
@@ -403,6 +385,75 @@ function plugin_singlesignon_install()
                 ],
             );
         }
+    }
+
+    /**
+     * Version 2.3.0:
+     *  - Migrate groups_claim field values to Provider_Field 'groups' mappings.
+     *  - Drop user_group_sync_mode and groups_claim columns.
+     *  - Move default-rule text from description to comment column.
+     *  - Delete fullname field mappings (field type removed).
+     */
+    if (version_compare($currentVersion, '2.3.0', '<')) {
+        // Migrate existing groups_claim values to the new 'groups' field mapping.
+        if ($DB->tableExists($providersTable) && $DB->fieldExists($providersTable, 'groups_claim')) {
+            foreach ($DB->request(['FROM' => $providersTable, 'WHERE' => ['NOT' => ['groups_claim' => ['', null]]]]) as $providerRow) {
+                $providerId     = (int) $providerRow['id'];
+                $groupsClaimRaw = trim((string) $providerRow['groups_claim']);
+                if ($groupsClaimRaw === '') {
+                    continue;
+                }
+
+                // Convert dot-notation path to a JSONPath expression.
+                $jsonPath = str_starts_with($groupsClaimRaw, '$') ? $groupsClaimRaw : '$.' . $groupsClaimRaw;
+
+                // Only create a mapping if none exists yet for this provider+type.
+                $existingGroups = countElementsInTable(
+                    $providersFieldsTable,
+                    ['plugin_singlesignon_providers_id' => $providerId, 'field_type' => 'groups']
+                );
+                if ($existingGroups === 0) {
+                    $maxOrder = 0;
+                    foreach ($DB->request([
+                        'SELECT' => ['MAX' => 'sort_order AS max_order'],
+                        'FROM'   => $providersFieldsTable,
+                        'WHERE'  => ['plugin_singlesignon_providers_id' => $providerId],
+                    ]) as $row) {
+                        $maxOrder = (int) ($row['max_order'] ?? 0);
+                    }
+
+                    $DB->insert($providersFieldsTable, [
+                        'plugin_singlesignon_providers_id' => $providerId,
+                        'field_type'                       => 'groups',
+                        'jsonpath'                         => $jsonPath,
+                        'is_active'                        => 1,
+                        'sort_order'                       => $maxOrder + 10,
+                        'date_creation'                    => date('Y-m-d H:i:s'),
+                        'date_mod'                         => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            }
+        }
+
+        // Remove fullname field mappings (field type no longer supported).
+        if ($DB->tableExists($providersFieldsTable)) {
+            $DB->delete($providersFieldsTable, ['field_type' => 'fullname']);
+        }
+
+        // Move default-rule text from description to comment.
+        if ($DB->tableExists('glpi_rules')) {
+            $defaultRuleText = __('No criteria — applies to all SSO logins. Edit to enable auto-registration and set default entity/profile.', 'singlesignon');
+            $DB->update(
+                'glpi_rules',
+                ['comment' => $defaultRuleText, 'description' => ''],
+                ['sub_type' => $ruleSubtype, 'description' => $defaultRuleText],
+            );
+        }
+
+        // Drop the columns now that data has been migrated.
+        $migration->dropField($providersTable, 'user_group_sync_mode');
+        $migration->dropField($providersTable, 'groups_claim');
+        $migration->executeMigration();
     }
 
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;

@@ -88,6 +88,21 @@ class RuleSinglesignonCollection extends \RuleCollection
         if (isset($params['realname']) && is_string($params['realname'])) {
             $input['realname'] = $params['realname'];
         }
+        if (isset($params['phone']) && is_string($params['phone'])) {
+            $input['phone'] = $params['phone'];
+        }
+        if (isset($params['phone2']) && is_string($params['phone2'])) {
+            $input['phone2'] = $params['phone2'];
+        }
+        if (isset($params['mobile']) && is_string($params['mobile'])) {
+            $input['mobile'] = $params['mobile'];
+        }
+        if (isset($params['location']) && is_string($params['location'])) {
+            $input['location'] = $params['location'];
+        }
+        if (isset($params['supervisor']) && is_string($params['supervisor'])) {
+            $input['supervisor'] = $params['supervisor'];
+        }
         if (isset($params['is_new_user'])) {
             $input['is_new_user'] = $params['is_new_user'] ? '1' : '0';
         }
@@ -163,6 +178,11 @@ class RuleSinglesignonCollection extends \RuleCollection
                 'is_new_user'  => $isNewUser,
                 'firstname'    => (string) ($resourceArray['given_name'] ?? $resourceArray['firstname'] ?? ''),
                 'realname'     => (string) ($resourceArray['family_name'] ?? $resourceArray['realname'] ?? ''),
+                'phone'        => (string) ($resourceArray['phone'] ?? (is_array($resourceArray['businessPhones'] ?? null) ? ($resourceArray['businessPhones'][0] ?? '') : '') ?: ''),
+                'phone2'       => (string) ($resourceArray['phone2'] ?? (is_array($resourceArray['businessPhones'] ?? null) ? ($resourceArray['businessPhones'][1] ?? '') : '') ?: ''),
+                'mobile'       => (string) ($resourceArray['mobile'] ?? $resourceArray['mobilePhone'] ?? ''),
+                'location'     => (string) ($resourceArray['location'] ?? $resourceArray['officeLocation'] ?? ''),
+                'supervisor'   => (string) ($resourceArray['supervisor'] ?? $resourceArray['manager'] ?? ''),
                 'provider_id'  => $providerId,
             ]
         );

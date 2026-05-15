@@ -34,8 +34,6 @@
 ])]) %}
 {% set _tip_domains = call('nl2br', [__('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces) (optional).', 'singlesignon')]) %}
 {% set _tip_photo_sync = call('nl2br', [__('Choose when user avatars should be synchronized during login.', 'singlesignon')]) %}
-{% set _tip_group_sync = call('nl2br', [__('Choose how OAuth groups should be synchronized during login.', 'singlesignon')]) %}
-{% set _tip_groups_claim = call('nl2br', [__('Claim used to extract user groups from the OAuth response. Supports dot notation for nested fields (example: realm_access.roles). Leave empty to use default claims (groups, roles).', 'singlesignon')]) %}
 {% set _tip_resource_owner_auth = call('nl2br', [__('Controls how Authorization header is built for Resource Owner Details requests.', 'singlesignon')]) %}
 {% set _tip_picture_auth = call('nl2br', [__('Controls how Authorization header is built for avatar download requests.', 'singlesignon')]) %}
 {% set _tip_custom_headers = call('nl2br', [__('One header per line (format: Header-Name: value). Supported placeholders: <token> and <access_token>. Example: api-key: <token>', 'singlesignon')]) %}
@@ -140,26 +138,24 @@
 
     {% if provider_id %}
     {% set _rules_url = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getRulesUrl'], []) %}
+    {% set _reset_url = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getResetRulesUrl'], []) %}
     {% set _rules_link %}
-        <a href="{{ _rules_url }}" class="btn btn-sm btn-outline-secondary">
-            <i class="ti ti-list-check me-1"></i>{{ __('Authorization assignment rules') }}
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ _rules_url }}" class="btn btn-sm btn-outline-secondary">
+                <i class="ti ti-list-check me-1"></i>{{ __('Authorization assignment rules') }}
+            </a>
+            <form method="post" action="{{ _reset_url }}" onsubmit="return confirm('{{ __('Delete all existing rules and restore the default rule?', 'singlesignon')|e('js') }}');" style="display:inline">
+                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="ti ti-refresh me-1"></i>{{ __('Reset rules', 'singlesignon') }}
+                </button>
+            </form>
+        </div>
     {% endset %}
     {{ fields.htmlField('', _rules_link, __('Authorization assignment rules'), field_opts) }}
     {% else %}
     {{ fields.htmlField('', '<span class="text-muted">' ~ __('Save the provider first to access the rules engine.', 'singlesignon') ~ '</span>', __('SSO rules', 'singlesignon'), field_opts) }}
     {% endif %}
-
-    <div class="col-12">
-        <div class="hr-text my-3">{{ __('User group synchronization', 'singlesignon') }}</div>
-    </div>
-
-    {{ fields.dropdownArrayField('user_group_sync_mode', provider.fields.user_group_sync_mode|default(0), call(['GlpiPlugin\\Singlesignon\\Provider', 'getUserGroupSyncModes'], []), __('Synchronization mode', 'singlesignon'), {
-        helper: _tip_group_sync
-    }|merge(field_opts)) }}
-    {{ fields.textField('groups_claim', provider.fields.groups_claim|default(''), __('Group claim', 'singlesignon'), {
-        helper: _tip_groups_claim
-    }|merge(field_opts)) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>
