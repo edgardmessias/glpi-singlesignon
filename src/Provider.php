@@ -195,11 +195,8 @@ class Provider extends CommonDBTM
         return true;
     }
 
-public static function getAdditionalMenuOptions()
+    public static function getAdditionalMenuOptions()
     {
-        $itemtype = static::class;
-
-        // 1. Definição da estrutura do Menu (sem afetar o breadcrumb atual)
         $options = [
             'provider' => [
                 'title' => static::getTypeName(Session::getPluralNumber()),
@@ -217,21 +214,13 @@ public static function getAdditionalMenuOptions()
             ],
         ];
 
-        // 2. Definição dos Botões de Ação do Header (usando static::class)
-        // Ao omitir 'title' e 'page' aqui, evitamos a criação do nó extra no breadcrumb.
-        $options[$itemtype] = [
-            'links' => []
-        ];
-
         if (static::canCreate()) {
-            $options[$itemtype]['links']['add'] = static::getFormURL(false);
+            $options['provider']['links']['add'] = static::getFormURL(false);
         }
 
         $label = __('Authorization assignment rules');
         $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        
-        // Injeta o botão customizado diretamente ao lado do botão "Add"
-        $options[$itemtype]['links'][$link] = RuleSinglesignonCollection::getSearchURL();
+        $options['provider']['links'][$link] = RuleSinglesignonCollection::getSearchURL();
 
         return $options;
     }
