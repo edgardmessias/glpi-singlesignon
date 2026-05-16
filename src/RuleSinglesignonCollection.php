@@ -204,12 +204,10 @@ class RuleSinglesignonCollection extends \RuleCollection {
             return $result;
         }
 
-        foreach ($actions as $action) {
-            if (!is_array($action)) {
+        foreach ($actions as $field => $value) {
+            if (is_array($value)) {
                 continue;
             }
-            $field = $action['field'] ?? null;
-            $value = $action['value'] ?? null;
             switch ($field) {
                 case '_entities_id_default':
                     $result['_entities_id_default'] = (int) $value;
