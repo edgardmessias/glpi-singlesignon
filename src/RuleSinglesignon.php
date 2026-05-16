@@ -64,7 +64,8 @@ class RuleSinglesignon extends \Rule {
      */
     public static function getSearchURL($full = true): string {
         global $CFG_GLPI;
-        return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/rulesinglesignon.php';
+        $url = '/plugins/singlesignon/front/rulesinglesignon.php';
+        return $full ? $CFG_GLPI['root_doc'] . $url : $url;
     }
 
     /**
