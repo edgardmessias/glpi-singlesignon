@@ -63,6 +63,10 @@ class RuleSinglesignonCollection extends \RuleCollection {
         return static::canUpdate();
     }
 
+    public static function canPurge(): bool {
+        return static::canUpdate();
+    }
+
     /**
      * Override to return a lowercase plugin path so the GLPI router can find
      * the test page.  The default implementation derives the path from the

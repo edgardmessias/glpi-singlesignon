@@ -195,6 +195,12 @@ class Provider extends CommonDBTM
         return true;
     }
 
+    /**
+     * NOTE: changes to this menu are stored in the PHP session, so they only
+     * take effect after the session is refreshed.  If the new menu entry does
+     * not appear, log out and log back in, or disable/re-enable the plugin
+     * through the GLPI Plugins page to force a session reset.
+     */
     public static function getAdditionalMenuOptions()
     {
         return [

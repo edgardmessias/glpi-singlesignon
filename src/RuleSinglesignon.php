@@ -47,6 +47,10 @@ class RuleSinglesignon extends \Rule {
         return static::canUpdate();
     }
 
+    public static function canPurge(): bool {
+        return static::canUpdate();
+    }
+
     public static function getIcon() {
         return 'ti ti-user-check';
     }
