@@ -197,16 +197,26 @@ class Provider extends CommonDBTM
 
     public static function getAdditionalMenuOptions()
     {
-        $options = parent::getAdditionalMenuOptions();
-        if (!is_array($options)) {
-            $options = [];
-        }
+        return [
+            'rules' => [
+                'title' => __('Authorization assignment rules'),
+                'page'  => RuleSinglesignonCollection::getSearchURL(false),
+                'links' => [
+                    'search' => RuleSinglesignonCollection::getSearchURL(false),
+                ],
+            ],
+        ];
+    }
+
+    public static function getAdditionalMenuLinks()
+    {
+        $links = parent::getAdditionalMenuLinks() ?: [];
 
         $label = __('Authorization assignment rules');
         $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        $options['singlesignon']['links'][$link] = RuleSinglesignonCollection::getSearchURL();
+        $links[$link] = RuleSinglesignonCollection::getSearchURL();
 
-        return $options;
+        return $links;
     }
 
     public function prepareInputForAdd($input)
