@@ -56,51 +56,6 @@ class RuleSinglesignon extends \Rule {
     }
 
     /**
-     * Override to return the correct collection class name for this rule.
-     * GLPI's default implementation replaces "Rule" with "RuleCollection",
-     * which would produce "RuleCollectionSinglesignon" for this class.
-     */
-    public function getCollectionClassName(): string {
-        return RuleSinglesignonCollection::class;
-    }
-
-    /**
-     * Override to return the correct list URL for this plugin rule class.
-     * GLPI's default implementation derives the URL from the class namespace,
-     * producing a non-routable path when the class is namespaced.
-     *
-     * @param bool $full When true, appends the root_doc.
-     */
-    public static function getSearchURL($full = true): string {
-        global $CFG_GLPI;
-        $url = '/plugins/singlesignon/front/rulesinglesignon.php';
-        return $full ? $CFG_GLPI['root_doc'] . $url : $url;
-    }
-
-    /**
-     * Override to return the correct front-end path for this namespaced plugin
-     * class.  GLPI's default implementation uses strtolower(static::class) which
-     * produces a URL containing backslashes when the class is in a PHP namespace.
-     *
-     * We pass the collection class name as the `itemtype` parameter so that
-     * GLPI's navigation header correctly identifies the pagination context
-     * (the list of rules from the search page).
-     *
-     * @param bool $full When true, prepends the root_doc and appends the itemtype query parameter;
-     *                   when false, returns only the path relative to the web root
-     *                   (`/plugins/singlesignon/front/rulesinglesignon.form.php`).
-     */
-    public static function getFormURL($full = true): string {
-        global $CFG_GLPI;
-        $url = '/plugins/singlesignon/front/rulesinglesignon.form.php';
-        if ($full) {
-            $url = $CFG_GLPI['root_doc'] . $url;
-            return $url . '?itemtype=' . rawurlencode(RuleSinglesignonCollection::class);
-        }
-        return $url;
-    }
-
-    /**
      * Override to return the correct test URL for this plugin rule class.
      * GLPI's default implementation derives the URL from the class namespace,
      * producing a capitalised path (/plugins/Singlesignon/...) that does not exist.
