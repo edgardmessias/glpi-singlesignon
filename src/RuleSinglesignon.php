@@ -56,6 +56,18 @@ class RuleSinglesignon extends \Rule {
     }
 
     /**
+     * Override to return the correct list URL for this plugin rule class.
+     * GLPI's default implementation derives the URL from the class namespace,
+     * producing a non-routable path when the class is namespaced.
+     *
+     * @param bool $full When true, appends the root_doc.
+     */
+    public static function getSearchURL($full = true): string {
+        global $CFG_GLPI;
+        return $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/rulesinglesignon.php';
+    }
+
+    /**
      * Override to return the correct front-end path for this namespaced plugin
      * class.  GLPI's default implementation uses strtolower(static::class) which
      * produces a URL containing backslashes when the class is in a PHP namespace.
