@@ -73,7 +73,8 @@ class RuleSinglesignon extends \Rule {
      * class.  GLPI's default implementation uses strtolower(static::class) which
      * produces a URL containing backslashes when the class is in a PHP namespace.
      *
-     * @param bool $full When true, prepends the root_doc.
+     * @param bool $full When true, prepends the root_doc and appends itemtype;
+     *                   when false, returns only the relative form path.
      */
     public static function getFormURL($full = true): string {
         global $CFG_GLPI;
