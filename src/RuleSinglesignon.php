@@ -56,6 +56,15 @@ class RuleSinglesignon extends \Rule {
     }
 
     /**
+     * Override to return the correct collection class name for this rule.
+     * GLPI's default implementation replaces "Rule" with "RuleCollection",
+     * which would produce "RuleCollectionSinglesignon" for this class.
+     */
+    public function getCollectionClassName(): string {
+        return RuleSinglesignonCollection::class;
+    }
+
+    /**
      * Override to return the correct list URL for this plugin rule class.
      * GLPI's default implementation derives the URL from the class namespace,
      * producing a non-routable path when the class is namespaced.
@@ -73,6 +82,10 @@ class RuleSinglesignon extends \Rule {
      * class.  GLPI's default implementation uses strtolower(static::class) which
      * produces a URL containing backslashes when the class is in a PHP namespace.
      *
+     * We pass the collection class name as the `itemtype` parameter so that
+     * GLPI's navigation header correctly identifies the pagination context
+     * (the list of rules from the search page).
+     *
      * @param bool $full When true, prepends the root_doc and appends the itemtype query parameter;
      *                   when false, returns only the path relative to the web root
      *                   (`/plugins/singlesignon/front/rulesinglesignon.form.php`).
@@ -82,7 +95,7 @@ class RuleSinglesignon extends \Rule {
         $url = '/plugins/singlesignon/front/rulesinglesignon.form.php';
         if ($full) {
             $url = $CFG_GLPI['root_doc'] . $url;
-            return $url . '?itemtype=' . rawurlencode(static::class);
+            return $url . '?itemtype=' . rawurlencode(RuleSinglesignonCollection::class);
         }
         return $url;
     }
