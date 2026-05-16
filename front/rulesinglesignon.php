@@ -22,7 +22,18 @@
  * ---------------------------------------------------------------------
  */
 
+use GlpiPlugin\Singlesignon\RuleSinglesignon;
 use GlpiPlugin\Singlesignon\RuleSinglesignonCollection;
 
+include '../../../inc/includes.php';
+
 $rulecollection = new RuleSinglesignonCollection();
+
+// Fix for GLPI's AJAX navigation appending to the pagination list infinitely.
+// GLPI core's RuleCollection::showListRules calls Session::initNavigateListItems
+// without a URL. On AJAX navigation, this causes it to return early without
+// clearing the session array, causing the list to grow on every visit.
+// By explicitly calling it here WITH a URL, we force it to initialize correctly.
+Session::initNavigateListItems(RuleSinglesignon::class, '', RuleSinglesignonCollection::getSearchURL());
+
 include(GLPI_ROOT . '/front/rule.common.php');
