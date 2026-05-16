@@ -80,8 +80,9 @@ class RuleSinglesignon extends \Rule {
         $url = '/plugins/singlesignon/front/rulesinglesignon.form.php';
         if ($full) {
             $url = $CFG_GLPI['root_doc'] . $url;
+            return $url . '?itemtype=' . rawurlencode(static::class);
         }
-        return $url . '?itemtype=' . rawurlencode(static::class);
+        return $url;
     }
 
     /**
