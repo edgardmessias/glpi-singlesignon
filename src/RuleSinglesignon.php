@@ -74,7 +74,8 @@ class RuleSinglesignon extends \Rule {
      * produces a URL containing backslashes when the class is in a PHP namespace.
      *
      * @param bool $full When true, prepends the root_doc and appends the itemtype query parameter;
-     *                   when false, returns only the relative form path.
+     *                   when false, returns only the path relative to the web root
+     *                   (`/plugins/singlesignon/front/rulesinglesignon.form.php`).
      */
     public static function getFormURL($full = true): string {
         global $CFG_GLPI;
