@@ -197,8 +197,11 @@ class Provider extends CommonDBTM
 
     public static function getAdditionalMenuOptions()
     {
+        // Use static::class to ensure GLPI matches the key to the active view
+        $itemtype = static::class;
+
         $options = [
-            'provider' => [
+            $itemtype => [
                 'title' => static::getTypeName(Session::getPluralNumber()),
                 'page'  => static::getSearchURL(false),
                 'links' => [
@@ -215,12 +218,12 @@ class Provider extends CommonDBTM
         ];
 
         if (static::canCreate()) {
-            $options['provider']['links']['add'] = static::getFormURL(false);
+            $options[$itemtype]['links']['add'] = static::getFormURL(false);
         }
 
         $label = __('Authorization assignment rules');
         $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        $options['provider']['links'][$link] = RuleSinglesignonCollection::getSearchURL();
+        $options[$itemtype]['links'][$link] = RuleSinglesignonCollection::getSearchURL();
 
         return $options;
     }
