@@ -197,9 +197,25 @@ class Provider extends CommonDBTM
 
     public static function getAdditionalMenuOptions()
     {
-        $options = parent::getAdditionalMenuOptions();
-        if (!is_array($options)) {
-            $options = [];
+        $options = [
+            'singlesignon' => [
+                'title' => static::getTypeName(Session::getPluralNumber()),
+                'page'  => static::getSearchURL(false),
+                'links' => [
+                    'search' => static::getSearchURL(false),
+                ],
+            ],
+            'rules' => [
+                'title' => __('Authorization assignment rules'),
+                'page'  => RuleSinglesignonCollection::getSearchURL(false),
+                'links' => [
+                    'search' => RuleSinglesignonCollection::getSearchURL(false),
+                ],
+            ],
+        ];
+
+        if (static::canCreate()) {
+            $options['singlesignon']['links']['add'] = static::getFormURL(false);
         }
 
         $label = __('Authorization assignment rules');
