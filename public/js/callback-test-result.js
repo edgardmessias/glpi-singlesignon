@@ -64,9 +64,8 @@
             window.clearTimeout(resetTimer);
         }
 
-        copyButton.classList.toggle('btn-outline-secondary', !isError);
-        copyButton.classList.toggle('btn-outline-danger', isError);
-        copyButton.classList.toggle('btn-outline-success', !isError);
+        copyButton.classList.remove('btn-outline-secondary', 'btn-outline-danger', 'btn-outline-success');
+        copyButton.classList.add(isError ? 'btn-outline-danger' : 'btn-outline-success');
         copyButton.innerHTML = `<i class="ti ${isError ? 'ti-alert-circle' : 'ti-check'}"></i><span>${label}</span>`;
 
         resetTimer = window.setTimeout(function () {
