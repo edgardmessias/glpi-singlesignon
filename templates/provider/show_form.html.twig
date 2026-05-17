@@ -160,9 +160,8 @@
         <div class="hr-text my-3">{{ __('Personalization') }}</div>
     </div>
 
-    {% set bgcolor_extra = '<label class="align-middle ms-3 mb-0" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', class: 'align-middle mt-0', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
-    {% set color_extra = '<label class="align-middle ms-3 mb-0" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', class: 'align-middle mt-0', checked: (provider.fields.color|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}    {{ fields.colorField('bgcolor', provider.fields.bgcolor|default(''), __('Background color'), {
-        add_field_html: bgcolor_extra,
+    {% set bgcolor_extra = '<label class="align-self-center ms-auto mb-0" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', class: 'align-middle mt-0', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
+    {% set color_extra = '<label class="align-self-center ms-auto mb-0" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', class: 'align-middle mt-0', checked: (provider.fields.color|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}        add_field_html: bgcolor_extra,
         inline_add_field_html: true
     }|merge(field_opts)) }}
     {{ fields.colorField('color', provider.fields.color|default(''), __('Color'), {
@@ -172,7 +171,8 @@
 
     {% if provider.fields.picture|default('') is not empty %}
         {% set picture_field = call('Html::image', [call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPictureUrl'], [provider.fields.picture]), {style: picture_style, class: 'picture_square'}])|raw %}
-        {% set picture_extra = '<label class="align-middle ms-3 mb-0" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture', class: 'align-middle mt-0'}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}    {% else %}
+        {% set picture_extra = '<label class="align-self-center ms-auto mb-0" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture', class: 'align-middle mt-0'}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
+    {% else %}
         {% set picture_field = inputs.file('picture', null, {onlyimages: true}) %}
         {% set picture_extra = '' %}
     {% endif %}
