@@ -136,7 +136,7 @@ class RuleSinglesignon extends \Rule {
 
     public function getCriterias(): array {
         return [
-            __('Global criteria', 'singlesignon'),
+            __('Global criteria'),
             'login' => [
                 'name'    => __('Login'),
                 'type'    => 'text',
