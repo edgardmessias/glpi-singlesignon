@@ -171,6 +171,7 @@ class Provider_Field extends CommonDBTM
             ['field_type' => 'username', 'jsonpath' => '$.displayName', 'is_active' => 1, 'sort_order' => 130],
             ['field_type' => 'firstname', 'jsonpath' => '$.givenName', 'is_active' => 1, 'sort_order' => 135],
             ['field_type' => 'lastname', 'jsonpath' => '$.surname', 'is_active' => 1, 'sort_order' => 136],
+            ['field_type' => 'fullname', 'jsonpath' => '$.displayName', 'is_active' => 1, 'sort_order' => 137],
             ['field_type' => 'avatar_url', 'jsonpath' => '$.picture', 'is_active' => 1, 'sort_order' => 140],
             ['field_type' => 'groups', 'jsonpath' => '$.roles', 'is_active' => 0, 'sort_order' => 150],
         ];
