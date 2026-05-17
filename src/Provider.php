@@ -775,7 +775,9 @@ class Provider extends CommonDBTM
         $links = parent::getAdditionalMenuLinks() ?: [];
         if (Session::haveRight('rule_right', READ)) {
             $label = htmlspecialchars(__('Authorization assignment rules', 'singlesignon'), ENT_QUOTES, 'UTF-8');
-            $links['<i class="ti ti-list-check" title="' . $label . '"></i><span class="d-none d-xxl-block">' . $label . '</span>'] = '/front/ruleright.php';
+            $icon = '<i class="ti ti-list-check" title="' . $label . '"></i>';
+            $text = '<span class="d-none d-xxl-block">' . $label . '</span>';
+            $links[$icon . $text] = '/front/ruleright.php';
         }
         return $links;
     }

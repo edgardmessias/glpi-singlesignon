@@ -56,6 +56,26 @@
         return;
     }
 
+    const originalButtonHtml = copyButton.innerHTML;
+    let resetTimer = null;
+
+    const showCopyStatus = function (label, isError) {
+        if (resetTimer) {
+            window.clearTimeout(resetTimer);
+        }
+
+        copyButton.classList.toggle('btn-outline-secondary', !isError);
+        copyButton.classList.toggle('btn-outline-danger', isError);
+        copyButton.classList.toggle('btn-outline-success', !isError);
+        copyButton.innerHTML = `<i class="ti ${isError ? 'ti-alert-circle' : 'ti-check'}"></i><span>${label}</span>`;
+
+        resetTimer = window.setTimeout(function () {
+            copyButton.classList.remove('btn-outline-danger', 'btn-outline-success');
+            copyButton.classList.add('btn-outline-secondary');
+            copyButton.innerHTML = originalButtonHtml;
+        }, 2000);
+    };
+
     const copyToClipboard = function (text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             return navigator.clipboard.writeText(text);
@@ -82,6 +102,12 @@
     };
 
     copyButton.addEventListener('click', function () {
-        copyToClipboard(copySource.value || '');
+        copyToClipboard(copySource.value || '')
+            .then(function () {
+                showCopyStatus(copyButton.dataset.copySuccessLabel || 'Copied', false);
+            })
+            .catch(function () {
+                showCopyStatus(copyButton.dataset.copyErrorLabel || 'Copy failed', true);
+            });
     });
 }());
