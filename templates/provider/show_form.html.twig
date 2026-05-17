@@ -161,7 +161,9 @@
     </div>
 
     {% set bgcolor_extra = '<label class="align-self-center ms-auto mb-0" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', class: 'align-middle mt-0', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
-    {% set color_extra = '<label class="align-self-center ms-auto mb-0" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', class: 'align-middle mt-0', checked: (provider.fields.color|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}        add_field_html: bgcolor_extra,
+    {% set color_extra = '<label class="align-self-center ms-auto mb-0" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', class: 'align-middle mt-0', checked: (provider.fields.color|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
+    {{ fields.colorField('bgcolor', provider.fields.bgcolor|default(''), __('Background color'), {
+        add_field_html: bgcolor_extra,
         inline_add_field_html: true
     }|merge(field_opts)) }}
     {{ fields.colorField('color', provider.fields.color|default(''), __('Color'), {
