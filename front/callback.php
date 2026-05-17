@@ -94,6 +94,7 @@ if ($test_cookie) {
     $field_types = Provider_Field::getFieldTypes();
     $active_mappings = Provider_Field::getMappingsForProvider((int) $provider_id, null, true);
     $default_mappings = Provider_Field::getDefaultMappings((string) $signon_provider->fields['type']);
+    $copy_payload_sections = [];
 
     try {
         $resource_owner_pretty = json_encode(
@@ -119,6 +120,72 @@ if ($test_cookie) {
         $callback_context_pretty = (string) __('Unable to encode callback context.', 'singlesignon');
     }
 
+    $copy_payload_sections[] = sprintf(
+        "%s: %s (%s)",
+        __('Provider', 'singlesignon'),
+        (string) ($signon_provider->fields['name'] ?? ''),
+        (string) ($signon_provider->fields['type'] ?? ''),
+    );
+
+    $resolved_lines = [(string) __('Resolved fields', 'singlesignon')];
+    foreach ($field_types as $field_key => $field_label) {
+        $data = $resolved_fields[$field_key] ?? ['value' => null, 'jsonpath' => null, 'source' => null];
+        $source = match ($data['source'] ?? null) {
+            'provider' => __('Provider mapping', 'singlesignon'),
+            'default'  => __('Default mapping', 'singlesignon'),
+            default    => '-',
+        };
+
+        $resolved_lines[] = sprintf(
+            "- %s [%s]\n  %s: %s\n  %s: %s\n  %s: %s",
+            $field_label,
+            $field_key,
+            __('Value'),
+            ($data['value'] ?? null) !== null && $data['value'] !== '' ? (string) $data['value'] : (string) __('Not resolved', 'singlesignon'),
+            __('JSONPath', 'singlesignon'),
+            (string) ($data['jsonpath'] ?? '-') ?: '-',
+            __('Source'),
+            $source,
+        );
+    }
+    $copy_payload_sections[] = implode("\n", $resolved_lines);
+
+    $active_lines = [(string) __('Active mappings', 'singlesignon')];
+    if ($active_mappings === []) {
+        $active_lines[] = (string) __('No active mappings found.', 'singlesignon');
+    } else {
+        foreach ($active_mappings as $row) {
+            $active_lines[] = sprintf(
+                "- %s | %s | %s: %s",
+                (string) ($row['field_type'] ?? ''),
+                (string) ($row['jsonpath'] ?? ''),
+                __('Order'),
+                (string) ($row['sort_order'] ?? ''),
+            );
+        }
+    }
+    $copy_payload_sections[] = implode("\n", $active_lines);
+
+    $default_lines = [(string) __('Default mappings', 'singlesignon')];
+    if ($default_mappings === []) {
+        $default_lines[] = (string) __('No default mappings found for this provider type.', 'singlesignon');
+    } else {
+        foreach ($default_mappings as $row) {
+            $default_lines[] = sprintf(
+                "- %s | %s | %s: %s",
+                (string) ($row['field_type'] ?? ''),
+                (string) ($row['jsonpath'] ?? ''),
+                __('Order'),
+                (string) ($row['sort_order'] ?? ''),
+            );
+        }
+    }
+    $copy_payload_sections[] = implode("\n", $default_lines);
+
+    $copy_payload_sections[] = (string) __('Resource Owner', 'singlesignon') . "\n" . $resource_owner_pretty;
+    $copy_payload_sections[] = (string) __('Callback context', 'singlesignon') . "\n" . $callback_context_pretty;
+    $copy_payload = implode("\n\n", $copy_payload_sections);
+
     Html::nullHeader("Login", ToolboxPlugin::getBaseURL() . '/index.php');
     echo TemplateRenderer::getInstance()->render('@singlesignon/provider/callback_test_result.html.twig', [
         'provider'                => $signon_provider,
@@ -128,6 +195,7 @@ if ($test_cookie) {
         'callback_context_pretty' => $callback_context_pretty,
         'active_mappings'         => $active_mappings,
         'default_mappings'        => $default_mappings,
+        'copy_payload'            => $copy_payload,
     ]);
     Html::nullFooter();
     return;

@@ -174,6 +174,14 @@ class ToolboxPlugin
         return self::getBaseURL() . Plugin::getPhpDir("singlesignon", false) . '/front/picture.send.php?path=' . $path;
     }
 
+    public static function getPublicAssetUrl(string $path): string
+    {
+        return self::getBaseURL()
+            . Plugin::getPhpDir('singlesignon', false)
+            . '/public/'
+            . ltrim($path, '/');
+    }
+
     public static function savePicture($src, $uniq_prefix = "")
     {
 

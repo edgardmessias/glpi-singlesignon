@@ -39,7 +39,9 @@
             <p class="text-muted">
                 {{ __('Map incoming IdP role/group claim values to existing GLPI groups.', 'singlesignon') }}
             </p>
-            <table class="table table-striped table-hover align-middle" id="sso-role-mappings-table">
+            <table class="table table-striped table-hover align-middle"
+                   id="sso-role-mappings-table"
+                   data-restore-label="{{ __('Restore') }}">
                 <thead>
                     <tr>
                         <th>{{ __('Role / Group key', 'singlesignon') }}</th>
@@ -139,4 +141,4 @@
 })();
 </script>
 
-{{ include('@singlesignon/provider/_mapping_row_actions.html.twig') }}
+<script type="text/javascript" src="{{ call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPublicAssetUrl'], ['js/mapping-row-actions.js']) }}"></script>

@@ -145,7 +145,7 @@
         __('Default entity for new users', 'singlesignon'),
         field_opts|merge({ display_emptychoice: true })
     ) }}
-    {{ fields.dropdownYesNo('default_entities_id_is_recursive', provider.fields.default_entities_id_is_recursive|default(0), __('Recursive'), field_opts) }}
+    {{ fields.dropdownYesNo('default_entities_id_is_recursive', provider.fields.default_entities_id_is_recursive|default(0), __('Recursive (entity)', 'singlesignon'), field_opts) }}
     {{ fields.dropdownField(
         'Profile',
         'default_profiles_id',
@@ -153,7 +153,7 @@
         __('Default profile when GLPI has no default', 'singlesignon'),
         field_opts|merge({ display_emptychoice: true })
     ) }}
-    {{ fields.dropdownYesNo('default_profiles_id_is_recursive', provider.fields.default_profiles_id_is_recursive|default(0), __('Recursive'), field_opts) }}
+    {{ fields.dropdownYesNo('default_profiles_id_is_recursive', provider.fields.default_profiles_id_is_recursive|default(0), __('Recursive (profile)', 'singlesignon'), field_opts) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>

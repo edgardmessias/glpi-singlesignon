@@ -40,7 +40,7 @@ Each vendor uses different field names. Microsoft Graph, Google, GitHub, and cus
 For each type (for example **Email**):
 
 1. Try your **active** mappings in **sort order** until one returns a non-empty value.  
-2. If none work, use the plugin’s **preset defaults** for that provider type (Azure, Google, …).  
+2. If none work, use the plugin’s **preset defaults** for that provider type.  
 3. If still empty, use **generic** built-in guesses (common keys like `email`, `sub`, …).
 
 So your custom rows are tried **before** the defaults.
@@ -78,20 +78,6 @@ If a path points to a list, the plugin uses the first usable value it finds.
 When no custom field mappings are saved for a provider, the plugin uses **built-in defaults** based on the provider type.  
 Built-in defaults are tried in the order shown (lowest sort order first).
 
-### Azure AD / Microsoft Entra (type `azure`)
-
-| Field type | JSONPath | Active | Sort |
-|-----------|---------|--------|------|
-| ID | `$.id` | ✓ | 10 |
-| ID | `$.userPrincipalName` | ✓ | 20 |
-| Email | `$.mail` | ✓ | 30 |
-| Email | `$.userPrincipalName` | ✓ | 40 |
-| Login | `$.userPrincipalName` | ✓ | 50 |
-| Login | `$.displayName` | ✓ | 60 |
-| First name | `$.givenName` | ✓ | 70 |
-| Last name | `$.surname` | ✓ | 80 |
-| Full name | `$.displayName` | ✓ | 90 |
-
 ### Generic / OIDC (type `generic` — fallback for any unknown provider type)
 
 | Field type | JSONPath | Active | Sort |
@@ -117,7 +103,7 @@ Built-in defaults are tried in the order shown (lowest sort order first).
 | Roles (IdP Claim) | `$.groups` | ✗ | 150 |
 | Roles (IdP Claim) | `$.roles` | ✗ | 160 |
 
-> **Tip:** For other providers (Google, GitHub, Facebook, LinkedIn, Instagram) built-in defaults are stored in `providers.json` in the plugin root.  You can override any of them by creating a custom mapping with a lower sort order.
+> **Tip:** Built-in provider defaults (including Azure, Google, GitHub, Facebook, LinkedIn, and Instagram) are stored in `providers.json` in the plugin root. You can override any of them by creating a custom mapping with a lower sort order.
 
 ---
 

@@ -20,14 +20,6 @@
  # ---------------------------------------------------------------------
  #}
 
-{% set rows = mappings|length > 0 ? mappings : [{
-   id: 0,
-   field_type: 'id',
-   jsonpath: '',
-   is_active: 1,
-   sort_order: 10
-}] %}
-
 <form method="post" action="{{ form_action }}">
     <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="plugin_singlesignon_providers_id" value="{{ provider_id }}"/>
@@ -40,7 +32,9 @@
             <p class="text-muted">
                 {{ __('Configure JSONPath rules used to extract fields from Resource Owner response.', 'singlesignon') }}
             </p>
-            <table class="table table-striped table-hover align-middle" id="sso-field-mappings-table">
+            <table class="table table-striped table-hover align-middle"
+                   id="sso-field-mappings-table"
+                   data-restore-label="{{ __('Restore') }}">
                 <thead>
                     <tr>
                         <th>{{ __('Type') }}</th>
@@ -51,7 +45,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for map in rows %}
+                    {% for map in mappings %}
                         {% set is_saved = (map.id|default(0)) > 0 %}
                         <tr data-row data-saved="{{ is_saved ? '1' : '0' }}">
                             <td>
@@ -154,4 +148,4 @@
 })();
 </script>
 
-{{ include('@singlesignon/provider/_mapping_row_actions.html.twig') }}
+<script type="text/javascript" src="{{ call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPublicAssetUrl'], ['js/mapping-row-actions.js']) }}"></script>

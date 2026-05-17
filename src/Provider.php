@@ -101,8 +101,6 @@ class Provider extends CommonDBTM
      */
     protected $_resource_owner = null;
 
-    public $debug = false;
-
     /**
      * Human-readable reason for the last LOGIN_FAILURE, populated by login() and performGlpiLogin().
      * Empty string when no failure has occurred yet.
@@ -774,12 +772,29 @@ class Provider extends CommonDBTM
 
     public static function getAdditionalMenuLinks(): array
     {
-        $links = [];
+        $links = parent::getAdditionalMenuLinks() ?: [];
         if (Session::haveRight('rule_right', READ)) {
-            $title = htmlspecialchars(__('Authorizations assignment rules'), ENT_QUOTES, 'UTF-8');
-            $links['<i class="ti ti-shield-check"></i> ' . $title] = '/front/ruleright.php';
+            $label = htmlspecialchars(__('Authorization assignment rules', 'singlesignon'), ENT_QUOTES, 'UTF-8');
+            $links['<i class="ti ti-list-check" title="' . $label . '"></i><span class="d-none d-xxl-block">' . $label . '</span>'] = '/front/ruleright.php';
         }
         return $links;
+    }
+
+    public static function getAdditionalMenuOptions(): array
+    {
+        if (!Session::haveRight('rule_right', READ)) {
+            return [];
+        }
+
+        return [
+            'rules' => [
+                'title' => __('Authorization assignment rules', 'singlesignon'),
+                'page'  => '/front/ruleright.php',
+                'links' => [
+                    'search' => '/front/ruleright.php',
+                ],
+            ],
+        ];
     }
 
     public static function getDefault($type, $key, $default = null)
@@ -1036,17 +1051,11 @@ class Provider extends CommonDBTM
         ]), $msgerr);
 
         if ($msgerr) {
-            if ($this->debug) {
-                print_r("\ngetAccessToken error: " . $msgerr . "\n");
-            }
             return false;
         }
 
         try {
             $data = json_decode($content, true);
-            if ($this->debug) {
-                print_r("\ngetAccessToken:\n" . print_r($data, true));
-            }
             if (isset($data['error_description'])) {
                 echo '<style>#page .center small { font-weight: normal; }</style>
             <script type="text/javascript">
@@ -1059,11 +1068,7 @@ class Provider extends CommonDBTM
                 return false;
             }
             $this->_token = $data['access_token'];
-        } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\ngetAccessToken exception: " . $ex->getMessage() . "\n");
-                print_r($content);
-            }
+        } catch (Exception) {
             return false;
         }
 
@@ -1095,14 +1100,8 @@ class Provider extends CommonDBTM
 
         try {
             $data = json_decode($content, true);
-            if ($this->debug) {
-                print_r("\ngetResourceOwner:\n" . print_r($data, true));
-            }
             $this->_resource_owner = $data;
-        } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\ngetResourceOwner exception:\n" . $ex->getMessage() . "\n");
-            }
+        } catch (Exception) {
             return false;
         }
 
@@ -1114,15 +1113,8 @@ class Provider extends CommonDBTM
 
             try {
                 $data = json_decode($content, true);
-                if ($this->debug) {
-                    print_r("\nlinkedin:\n" . print_r($content, true));
-                }
-
                 $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
-            } catch (Exception $ex) {
-                if ($this->debug) {
-                    print_r("\nlinkedin exception:\n" . $ex->getMessage() . "\n");
-                }
+            } catch (Exception) {
                 return false;
             }
         }
@@ -1133,15 +1125,28 @@ class Provider extends CommonDBTM
     private function getFallbackFieldMappingsByType(string $fieldType): array
     {
         $providerType = $this->getClientType();
-        $defaults = Provider_Field::getDefaultMappings($providerType);
-        if ($defaults === []) {
-            $defaults = Provider_Field::getDefaultMappings('generic');
+        $providerDefaults = Provider_Field::getDefaultMappings($providerType);
+        $genericDefaults = $providerType === 'generic'
+            ? []
+            : Provider_Field::getDefaultMappings('generic');
+
+        $defaults = [];
+        $seen = [];
+        foreach (array_merge($providerDefaults, $genericDefaults) as $row) {
+            if ($row['field_type'] !== $fieldType || (int) $row['is_active'] !== 1) {
+                continue;
+            }
+
+            $key = $row['field_type'] . '|' . $row['jsonpath'];
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $defaults[] = $row;
         }
 
-        return array_values(array_filter(
-            $defaults,
-            static fn(array $row): bool => $row['field_type'] === $fieldType && $row['is_active'] === 1,
-        ));
+        return $defaults;
     }
 
     /**
@@ -1720,10 +1725,7 @@ class Provider extends CommonDBTM
             $this->linkRemoteUserToProvider((int) $user->fields['id'], (string) $remote_id);
 
             return $user;
-        } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\ncreateUserFromOAuthResource: " . $ex->getMessage() . "\n");
-            }
+        } catch (Exception) {
             return false;
         }
     }
@@ -1852,10 +1854,7 @@ class Provider extends CommonDBTM
 
         try {
             Provider_Group::syncGroups($this, $user);
-        } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\nsyncGroups exception: " . $ex->getMessage() . "\n");
-            }
+        } catch (Exception) {
         }
 
         // --- 3. Login via external auth (password unused) ---
@@ -1884,10 +1883,7 @@ class Provider extends CommonDBTM
 
         try {
             $this->syncOAuthPhoto($user);
-        } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
-            }
+        } catch (Exception) {
         }
 
         return true;
@@ -2134,9 +2130,6 @@ class Provider extends CommonDBTM
         }
 
         $picture = $this->storeOAuthPhoto($user, $img);
-        if ($this->debug) {
-            print_r($picture ?: false);
-        }
         return $picture;
     }
 
