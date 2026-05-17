@@ -152,23 +152,6 @@ function plugin_singlesignon_install()
         );
     }
 
-    if (!$DB->tableExists($providersGroupsTable)) {
-        $DB->doQuery(
-            "CREATE TABLE `$providersGroupsTable` (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
-            `groups_id` INT NOT NULL DEFAULT '0',
-            `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-            `is_active` TINYINT(1) NOT NULL DEFAULT '1',
-            PRIMARY KEY (`id`),
-            UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`),
-            KEY `groups_id` (`groups_id`)
-         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
-        );
-    }
-
-    $migration->addField($providersGroupsTable, 'is_active', 'bool', ['value' => 1]);
-
     /**
      * Version 2.0.0
      */
@@ -247,6 +230,9 @@ function plugin_singlesignon_install()
     $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
     $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
 
+    /**
+     * Add display preferences
+     */
     if (!countElementsInTable('glpi_displaypreferences', ['itemtype' => Provider::class])) {
         $preferences = [
             ['itemtype' => Provider::class, 'num' => 2, 'rank' => 1, 'users_id' => 0],
@@ -261,11 +247,24 @@ function plugin_singlesignon_install()
         }
     }
 
-    $migration->executeMigration();
+    /**
+     * Version 2.1.0
+     */
+    if (!$DB->tableExists($providersGroupsTable)) {
+        $DB->doQuery(
+            "CREATE TABLE `$providersGroupsTable` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
+            `groups_id` INT NOT NULL DEFAULT '0',
+            `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+            `is_active` TINYINT(1) NOT NULL DEFAULT '1',
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`),
+            KEY `groups_id` (`groups_id`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        );
+    }
 
-    // Legacy cleanup for columns removed in older versions.
-    $migration->dropField($providersTable, 'user_group_sync_mode');
-    $migration->dropField($providersTable, 'groups_claim');
     $migration->executeMigration();
 
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
