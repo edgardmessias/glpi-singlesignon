@@ -37,7 +37,7 @@ if (file_exists($plugin_autoload)) {
     require_once $plugin_autoload;
 }
 
-define('PLUGIN_SINGLESIGNON_VERSION', '2.5.0');
+define('PLUGIN_SINGLESIGNON_VERSION', '2.1.0');
 
 // Minimal GLPI version, inclusive
 define('PLUGIN_SINGLESIGNON_MIN_GLPI', '11.0.0');
