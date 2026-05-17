@@ -34,10 +34,10 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Html::helpHeader(__('Single Sign-on', 'singlesignon'), $_SERVER['PHP_SELF']);
 }
 
-Search::show(Provider::class);
-
 
 //checkTypeRight('PluginExampleExample',"r");
 
+
+Search::show(Provider::class);
 
 Html::footer();
