@@ -132,7 +132,7 @@ function plugin_singlesignon_check_prerequisites()
 
     // Check if Composer's autoload file exists
     if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
-        echo htmlspecialchars(__("The <code>vendor/</code> folder is missing. Please run <code>composer install --no-dev</code> inside the plugin directory, or download the official release archive.", 'singlesignon'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        echo htmlspecialchars(__("The \"vendor/\" folder is missing. Please run \"composer install --no-dev\" inside the plugin directory, or download the official release archive.", 'singlesignon'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         return false;
     }
 
