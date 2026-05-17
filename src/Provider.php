@@ -1510,7 +1510,24 @@ class Provider extends CommonDBTM
         // ── E-mail ───────────────────────────────────────────────────────────
         $emailRaw = $this->resolveFieldValueFromMappings($resource_array, 'email');
         if ($emailRaw !== null && $emailRaw !== '') {
-            $userUpdate['_useremails'][-1] = $emailRaw;
+            global $DB;
+            $emailExists = false;
+            if ($DB !== null) {
+                $existingEmails = $DB->request([
+                    'FROM'  => 'glpi_useremails',
+                    'WHERE' => [
+                        'users_id' => (int) $user->fields['id'],
+                        'email'    => $emailRaw,
+                    ],
+                    'LIMIT' => 1,
+                ]);
+                if (count($existingEmails) > 0) {
+                    $emailExists = true;
+                }
+            }
+            if (!$emailExists) {
+                $userUpdate['_useremails'][-1] = $emailRaw;
+            }
         }
 
         if ($userUpdate === []) {
