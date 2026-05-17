@@ -71,6 +71,7 @@ class Provider extends CommonDBTM
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
     public const AUTH_HEADER_DISABLED = 'disabled';
+
     // From CommonDBTM
     public $dohistory = true;
     public static $rightname = 'config';
@@ -169,6 +170,11 @@ class Provider extends CommonDBTM
         $this->fields["user_photo_sync_mode"] = self::PHOTO_SYNC_DISABLED;
         $this->fields["resource_owner_auth_type"] = self::AUTH_HEADER_BEARER;
         $this->fields["resource_owner_picture_auth_type"] = self::AUTH_HEADER_BEARER;
+        $this->fields['auto_register'] = 0;
+        $this->fields['registration_preview'] = 0;
+        $this->fields['default_entities_id'] = 0;
+        $this->fields['match_entity_by_email_domain'] = 0;
+        $this->fields['default_profiles_id'] = 0;
         $this->fields['ssl_verify_host'] = 1;
         $this->fields['ssl_verify_peer'] = 1;
     }
@@ -346,15 +352,11 @@ class Provider extends CommonDBTM
         $input['resource_owner_custom_headers'] = trim((string) ($input['resource_owner_custom_headers'] ?? ''));
         $input['resource_owner_picture_custom_headers'] = trim((string) ($input['resource_owner_picture_custom_headers'] ?? ''));
 
-        // These fields have been moved to the rules engine; only process them
-        // when they are explicitly present in the submitted form data so that
-        // removing them from the UI does not reset the stored DB value.
-        if (array_key_exists('auto_register', $input)) {
-            $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
-        }
-        if (array_key_exists('registration_preview', $input)) {
-            $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
-        }
+        $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
+        $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
+        $input['default_entities_id'] = (int) ($input['default_entities_id'] ?? 0);
+        $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
+        $input['default_profiles_id'] = (int) ($input['default_profiles_id'] ?? 0);
         if (array_key_exists('ssl_verify_host', $input)) {
             $input['ssl_verify_host'] = empty($input['ssl_verify_host']) ? 0 : 1;
         } else {
@@ -927,7 +929,7 @@ class Provider extends CommonDBTM
         // If there is no 'code' in the request, this is the initial (request) step: generate the CSRF token and save the redirect in the session.
         // When 'code' is present, this is the response step returned by the provider after authentication.
         if (!isset($_GET['code'])) {
-            // Generate CSRF token for OAuth state to validate the response step.
+            // Generate CSRF token for OAuth state to validate the response step
             $state = Session::getNewCSRFToken();
 
             if (isset($_REQUEST['redirect'])) {
@@ -973,7 +975,7 @@ class Provider extends CommonDBTM
         $code = $_GET['code'] ?? '';
         $state = $_GET['state'] ?? '';
 
-        // Validate state against the CSRF token stored by GLPI.
+        // Validate state against stored CSRF token
         Session::checkCSRF([
             '_glpi_csrf_token' => $state,
         ]);
@@ -1101,13 +1103,13 @@ class Provider extends CommonDBTM
             try {
                 $data = json_decode($content, true);
                 if ($this->debug) {
-                    print_r("linkedin: " . $content);
+                    print_r("\nlinkedin:\n" . print_r($content, true));
                 }
 
                 $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
             } catch (Exception $ex) {
                 if ($this->debug) {
-                    print_r("\nlinkedin exception: " . $ex->getMessage() . "\n");
+                    print_r("\nlinkedin exception:\n" . $ex->getMessage() . "\n");
                 }
                 return false;
             }
@@ -1268,6 +1270,23 @@ class Provider extends CommonDBTM
     {
         $firstname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'firstname') ?? ''));
         $lastname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'lastname') ?? ''));
+        $fullname = trim((string) ($this->resolveFieldValueFromMappings($resource_array, 'fullname') ?? ''));
+
+        if ($firstname === '' && $lastname === '' && $fullname !== '') {
+            $parts = preg_split('/\s+/u', $fullname, 2, PREG_SPLIT_NO_EMPTY) ?: [];
+            $firstname = $parts[0] ?? '';
+            $lastname = $parts[1] ?? '';
+        } elseif ($firstname !== '' && $lastname === '' && $fullname !== '') {
+            $parts = preg_split('/\s+/u', $fullname, 2, PREG_SPLIT_NO_EMPTY) ?: [];
+            if (($parts[1] ?? '') !== '') {
+                $lastname = $parts[1];
+            }
+        } elseif ($firstname === '' && $lastname !== '' && $fullname !== '') {
+            $parts = preg_split('/\s+/u', $fullname, 2, PREG_SPLIT_NO_EMPTY) ?: [];
+            if (($parts[0] ?? '') !== '') {
+                $firstname = $parts[0];
+            }
+        }
 
         if ($firstname === '' && isset($resource_array['given_name'])) {
             $firstname = trim((string) $resource_array['given_name']);
@@ -1338,6 +1357,37 @@ class Provider extends CommonDBTM
         ];
     }
 
+    private function resolveEntitiesIdForNewUser(array $resource_array, ?string $email): int
+    {
+        global $DB;
+
+        if (isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation']) && $resource_array['officeLocation'] !== '') {
+            foreach ($DB->request([
+                'FROM'  => 'glpi_entities',
+                'WHERE' => ['name' => $resource_array['officeLocation']],
+                'LIMIT' => 1,
+            ]) as $entity) {
+                return (int) $entity['id'];
+            }
+        }
+
+        if (!empty($this->fields['match_entity_by_email_domain']) && $email !== null && $email !== '') {
+            $parts = explode('@', $email, 2);
+            if (isset($parts[1])) {
+                $domain = strtolower(trim($parts[1]));
+                foreach ($DB->request(['FROM' => 'glpi_entities']) as $entity) {
+                    if (strcasecmp(strtolower((string) $entity['name']), $domain) === 0) {
+                        return (int) $entity['id'];
+                    }
+                }
+            }
+        }
+
+        $default = (int) ($this->fields['default_entities_id'] ?? 0);
+
+        return $default > 0 ? $default : 0;
+    }
+
     private function ensureProfileForNewUser(User $user, int $entitiesId, int $profilesId, bool $isRecursive): bool
     {
         if (Profile::getDefault() != 0) {
@@ -1346,29 +1396,30 @@ class Provider extends CommonDBTM
 
         global $DB;
 
+        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
+
+        $datasProfiles = [];
+        foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
+            $datasProfiles[] = $data;
+        }
+
         $datasEntities = [];
         foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
             $datasEntities[] = $data;
         }
 
-        if ($profilesId > 0) {
-            // Use the profile specified by the rule result.
+        if ($configuredProfile > 0) {
+            $profileId = $configuredProfile;
             $entityForProfile = $entitiesId > 0 ? $entitiesId : (int) ($datasEntities[0]['id'] ?? 0);
         } else {
-            // Fall back to the very first available profile when neither GLPI
-            // nor the rules engine has a configured default.
-            $datasProfiles = [];
-            foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
-                $datasProfiles[] = $data;
-            }
             if (count($datasProfiles) === 0 || count($datasEntities) === 0) {
                 return false;
             }
-            $profilesId       = (int) $datasProfiles[0]['id'];
+            $profileId        = (int) $datasProfiles[0]['id'];
             $entityForProfile = (int) $datasEntities[0]['id'];
         }
 
-        if ($profilesId <= 0 || $entityForProfile <= 0) {
+        if ($profileId <= 0 || $entityForProfile <= 0) {
             return false;
         }
 
@@ -1377,13 +1428,18 @@ class Provider extends CommonDBTM
             'users_id'     => (int) $user->fields['id'],
             'entities_id'  => $entityForProfile,
             'is_recursive' => $isRecursive ? 1 : 0,
-            'profiles_id'  => $profilesId,
+            'profiles_id'  => $profileId,
         ]);
 
         return true;
     }
 
-    /**
+    /** 
+     * Mapped values take priority; if mapping resolves an array from the
+     * JSONPath expression, normalizeJsonPathResult() already returns the
+     * first non-null scalar — no extra array-unpacking needed here.
+     * Fallback to well-known IdP attributes when no mapping is configured.
+     * 
      * @param array<string, mixed> $overrides   name, firstname, realname, _email, remote_id,
      *                                           __registration_from_preview
      *
@@ -1440,20 +1496,16 @@ class Provider extends CommonDBTM
         $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
-        $entitiesId = 0;
-        $profilesId = 0;
+        $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
         $isRecursive = false;
 
+        // ── Picture ──────────────────────────────────────────────────────────
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
         if ($picture === null && isset($resource_array['picture'])) {
             $picture = $resource_array['picture'];
         }
 
         // ── Phone / mobile ───────────────────────────────────────────────────
-        // Mapped values take priority; if mapping resolves an array from the
-        // JSONPath expression, normalizeJsonPathResult() already returns the
-        // first non-null scalar — no extra array-unpacking needed here.
-        // Fallback to well-known IdP attributes when no mapping is configured.
         $phone  = $this->resolveFieldValueFromMappings($resource_array, 'phone');
         $phone2 = $this->resolveFieldValueFromMappings($resource_array, 'phone2');
         $mobile = $this->resolveFieldValueFromMappings($resource_array, 'mobile');
