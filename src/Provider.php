@@ -44,7 +44,6 @@ use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
 use GlpiPlugin\Singlesignon\Provider_Group;
-use GlpiPlugin\Singlesignon\RuleSinglesignonCollection;
 
 use function Safe\file_get_contents;
 use function Safe\fclose;
@@ -157,6 +156,7 @@ class Provider extends CommonDBTM
         $this->addDefaultFormTab($ong);
         $this->addStandardTab(self::class, $ong, $options);
         $this->addStandardTab(Provider_Field::class, $ong, $options);
+        $this->addStandardTab(Provider_Group::class, $ong, $options);
         $this->addStandardTab('Log', $ong, $options);
 
         return $ong;
@@ -193,36 +193,6 @@ class Provider extends CommonDBTM
         }
 
         return true;
-    }
-
-    /**
-     * NOTE: changes to this menu are stored in the PHP session, so they only
-     * take effect after the session is refreshed.  If the new menu entry does
-     * not appear, log out and log back in, or disable/re-enable the plugin
-     * through the GLPI Plugins page to force a session reset.
-     */
-    public static function getAdditionalMenuOptions()
-    {
-        return [
-            'rules' => [
-                'title' => __('Authorization assignment rules'),
-                'page'  => RuleSinglesignonCollection::getSearchURL(false),
-                'links' => [
-                    'search' => RuleSinglesignonCollection::getSearchURL(false),
-                ],
-            ],
-        ];
-    }
-
-    public static function getAdditionalMenuLinks()
-    {
-        $links = parent::getAdditionalMenuLinks() ?: [];
-
-        $label = __('Authorization assignment rules');
-        $link = "<i class=\"ti ti-list-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
-        $links[$link] = RuleSinglesignonCollection::getSearchURL();
-
-        return $links;
     }
 
     public function prepareInputForAdd($input)
@@ -1415,13 +1385,11 @@ class Provider extends CommonDBTM
 
     /**
      * @param array<string, mixed> $overrides   name, firstname, realname, _email, remote_id,
-     *                                           __registration_from_preview, __rule_result
-     * @param array<string, mixed> $ruleResult  Structured result from evaluateRulesForUser().
-     *                                           Ignored for preview flow (uses __rule_result from $overrides).
+     *                                           __registration_from_preview
      *
      * @return User|false
      */
-    public function createUserFromOAuthResource(array $resource_array, array $overrides = [], array $ruleResult = [])
+    public function createUserFromOAuthResource(array $resource_array, array $overrides = [])
     {
         if (!empty($overrides['__registration_from_preview'])) {
             $login = trim((string) ($overrides['name'] ?? ''));
@@ -1437,9 +1405,6 @@ class Provider extends CommonDBTM
                 'firstname' => trim((string) ($overrides['firstname'] ?? '')),
                 'realname'  => trim((string) ($overrides['realname'] ?? '')),
             ];
-            // Use the rule result that was captured at the time the preview
-            // session was created and stored in the session by storePendingRegistrationSession().
-            $ruleResult = is_array($overrides['__rule_result'] ?? null) ? $overrides['__rule_result'] : [];
         } else {
             $resolved = $this->resolveLoginAndEmailFromResource($resource_array);
             if (!$resolved['authorized']) {
@@ -1475,10 +1440,9 @@ class Provider extends CommonDBTM
         $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
-        // Entity, profile and recursive flag come from the rules engine.
-        $entitiesId  = (int)  ($ruleResult['_entities_id_default'] ?? 0);
-        $profilesId  = (int)  ($ruleResult['profiles_id'] ?? 0);
-        $isRecursive = (bool) ($ruleResult['is_recursive'] ?? false);
+        $entitiesId = 0;
+        $profilesId = 0;
+        $isRecursive = false;
 
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
         if ($picture === null && isset($resource_array['picture'])) {
@@ -1621,9 +1585,8 @@ class Provider extends CommonDBTM
 
     /**
      * @param array<string, mixed> $resource_array
-     * @param array<string, mixed> $ruleResult     Structured result from evaluateRulesForUser().
      */
-    public function storePendingRegistrationSession(array $resource_array, array $ruleResult = []): void
+    public function storePendingRegistrationSession(array $resource_array): void
     {
         if (session_status() === PHP_SESSION_NONE) {
             Session::start();
@@ -1641,7 +1604,6 @@ class Provider extends CommonDBTM
             'login'       => $resolved['login'] !== false ? (string) $resolved['login'] : '',
             'email'       => $resolved['email'] ?? '',
             'remote_id'   => $remote_id !== null ? (string) $remote_id : '',
-            'rule_result' => $ruleResult,
         ];
     }
 
@@ -1729,6 +1691,14 @@ class Provider extends CommonDBTM
             break;
         }
 
+        try {
+            Provider_Group::syncGroups($this, $user);
+        } catch (Exception $ex) {
+            if ($this->debug) {
+                print_r("\nsyncGroups exception: " . $ex->getMessage() . "\n");
+            }
+        }
+
         // --- 3. Ensure the user has at least one profile before login.
         // This covers existing users who have no profile assigned —
         // ensureProfileForNewUser() would otherwise only run for newly auto-registered users.
@@ -1756,14 +1726,6 @@ class Provider extends CommonDBTM
         // --- 6. Success: restore session snapshot and optional photo sync ---
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
-        }
-
-        try {
-            Provider_Group::syncGroups($this, $user);
-        } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\nsyncGroups exception: " . $ex->getMessage() . "\n");
-            }
         }
 
         try {
@@ -1913,23 +1875,12 @@ class Provider extends CommonDBTM
             return self::LOGIN_FAILURE;
         }
 
-        // Evaluate all SSO rules with the new-user context so that
-        // entity, profile and group assignments are driven by the rules engine.
-        $ssoGroups  = Provider_Group::extractUserGroupsFromResource($this, $resource_array);
-        $ruleResult = $this->evaluateRulesForUser(
-            (string) $gate['login'],
-            $gate['email'],
-            $ssoGroups,
-            true,
-            $resource_array
-        );
-
         if ($this->fields['registration_preview']) {
-            $this->storePendingRegistrationSession($resource_array, $ruleResult);
+            $this->storePendingRegistrationSession($resource_array);
             return self::LOGIN_REGISTRATION_PREVIEW;
         }
 
-        $user = $this->createUserFromOAuthResource($resource_array, [], $ruleResult);
+        $user = $this->createUserFromOAuthResource($resource_array);
         if (!$user || !$user->getID()) {
             $this->lastLoginError = "SSO login failed via provider '$providerName': User auto-registration failed";
             return self::LOGIN_FAILURE;
@@ -2272,52 +2223,6 @@ class Provider extends CommonDBTM
         }
 
         return $newPicture;
-    }
-
-    /**
-     * Evaluate all SSO rules for the given user context and return a structured
-     * result containing every action field produced by matching rules.
-     *
-     * @param string   $login        GLPI login name.
-     * @param ?string  $email        Full e-mail address, or null if not known.
-     * @param string[] $ssoGroups    Raw IdP group-name strings from the token.
-     * @param bool     $isNewUser    True when the user does not yet exist in GLPI.
-     * @param array    $resourceArray Full OAuth resource-owner data.
-     * @return array
-     */
-    public function evaluateRulesForUser(
-        string $login,
-        ?string $email,
-        array $ssoGroups = [],
-        bool $isNewUser = false,
-        array $resourceArray = []
-    ): array {
-        if (!class_exists(RuleSinglesignonCollection::class)) {
-            return [
-                '_entities_id_default'   => 0,
-                'is_recursive'           => false,
-                'is_active'              => null,
-                'profiles_id'            => 0,
-                '_profiles_id_default'   => 0,
-                'specific_groups_id'     => [],
-                'groups_id'              => 0,
-                'timezone'               => '',
-                'language'               => '',
-                '_ignore_user_import'    => false,
-                '_deny_login'            => false,
-                '_stop_rules_processing' => false,
-            ];
-        }
-
-        $collection = new RuleSinglesignonCollection();
-        return $collection->evaluateForUser(
-            $login,
-            $email,
-            $ssoGroups,
-            $isNewUser,
-            $resourceArray,
-            (int) ($this->fields['id'] ?? 0)
-        );
     }
 
     private function shouldSyncOAuthPhoto(User $user): bool

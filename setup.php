@@ -29,8 +29,6 @@ use GlpiPlugin\Singlesignon\Preference;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
 use GlpiPlugin\Singlesignon\Provider_Group;
-use GlpiPlugin\Singlesignon\RuleSinglesignon;
-use GlpiPlugin\Singlesignon\RuleSinglesignonCollection;
 
 use function Safe\define;
 
@@ -39,7 +37,7 @@ if (file_exists($plugin_autoload)) {
     require_once $plugin_autoload;
 }
 
-define('PLUGIN_SINGLESIGNON_VERSION', '2.4.0');
+define('PLUGIN_SINGLESIGNON_VERSION', '2.5.0');
 
 // Minimal GLPI version, inclusive
 define('PLUGIN_SINGLESIGNON_MIN_GLPI', '11.0.0');
@@ -71,16 +69,6 @@ function plugin_singlesignon_boot(): void
         '#^/front/register_preview\\.php$#',
         Firewall::STRATEGY_NO_CHECK,
     );
-    Firewall::addPluginStrategyForLegacyScripts(
-        'singlesignon',
-        '#^/front/rule\\.test\\.php$#',
-        Firewall::STRATEGY_AUTHENTICATED,
-    );
-    Firewall::addPluginStrategyForLegacyScripts(
-        'singlesignon',
-        '#^/front/rulesengine\\.test\\.php$#',
-        Firewall::STRATEGY_AUTHENTICATED,
-    );
 }
 
 // Init the hooks of the plugins -Needed
@@ -96,8 +84,6 @@ function plugin_init_singlesignon()
     Plugin::registerClass(Provider::class);
     Plugin::registerClass(Provider_Field::class);
     Plugin::registerClass(Provider_Group::class);
-    Plugin::registerClass(RuleSinglesignon::class);
-    Plugin::registerClass(RuleSinglesignonCollection::class, ['rulecollections_types' => true]);
 
     $PLUGIN_HOOKS[Hooks::CONFIG_PAGE]['singlesignon'] = 'front/provider.php';
     $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = [LoginRenderer::class, 'onPostInit'];

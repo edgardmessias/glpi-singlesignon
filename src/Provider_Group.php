@@ -27,7 +27,12 @@ declare(strict_types=1);
 namespace GlpiPlugin\Singlesignon;
 
 use CommonDBRelation;
+use CommonGLPI;
+use Glpi\Application\View\TemplateRenderer;
+use Html;
 use JsonPath\JsonObject;
+use Plugin;
+use Session;
 use Throwable;
 use User;
 use function Safe\preg_split;
@@ -57,6 +62,51 @@ class Provider_Group extends CommonDBRelation
     private const MAX_GROUPS_PER_SYNC = 200;
     private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
 
+    public static function getTypeName($nb = 0)
+    {
+        return _n('Role mapping', 'Role mappings', $nb, 'singlesignon');
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::canUpdate();
+    }
+
+    public static function canDelete(): bool
+    {
+        return static::canUpdate();
+    }
+
+    public static function canPurge(): bool
+    {
+        return static::canUpdate();
+    }
+
+    public static function canView(): bool
+    {
+        return static::canUpdate();
+    }
+
+    public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
+    {
+        if ($item instanceof Provider) {
+            return self::createTabEntry(__('Role mappings', 'singlesignon'), 0, self::class, 'ti ti-users-group');
+        }
+
+        return '';
+    }
+
+    public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
+    {
+        if (!$item instanceof Provider) {
+            return false;
+        }
+
+        $tab = new self();
+        $tab->showProviderTab($item);
+        return true;
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Public entry points
     // ─────────────────────────────────────────────────────────────────────────
@@ -77,8 +127,51 @@ class Provider_Group extends CommonDBRelation
             return;
         }
 
-        $groups = static::extractUserGroupsFromResource($provider, $resourceOwner);
-        self::applyPluginGroupRules($provider, $user, $groups, $resourceOwner);
+        $providerId = (int) ($provider->fields['id'] ?? 0);
+        if ($providerId <= 0) {
+            return;
+        }
+
+        $claims = static::extractUserGroupsFromResource($provider, $resourceOwner);
+        $targetGroupIds = self::getGlpiGroupsForClaims($providerId, $claims);
+        $managedGroupIds = self::getConfiguredGlpiGroups($providerId);
+
+        $groupUser = new \Group_User();
+        $links = $groupUser->find([
+            'users_id'   => $user->getID(),
+            'is_dynamic' => 1,
+        ]);
+
+        $keepGroupIds = [];
+        foreach ($targetGroupIds as $groupId) {
+            if ($groupUser->getFromDBByCrit([
+                'users_id'  => $user->getID(),
+                'groups_id' => $groupId,
+            ])) {
+                $keepGroupIds[] = $groupId;
+                continue;
+            }
+
+            $linkId = $groupUser->add([
+                'users_id'   => $user->getID(),
+                'groups_id'  => $groupId,
+                'is_dynamic' => 1,
+            ]);
+            if (is_numeric($linkId)) {
+                $keepGroupIds[] = $groupId;
+            }
+        }
+
+        $managedMap = array_fill_keys(array_map('intval', $managedGroupIds), true);
+        $keepMap = array_fill_keys(array_map('intval', $keepGroupIds), true);
+
+        foreach ($links as $link) {
+            $linkedGroupId = (int) ($link['groups_id'] ?? 0);
+            if ($linkedGroupId <= 0 || !isset($managedMap[$linkedGroupId]) || isset($keepMap[$linkedGroupId])) {
+                continue;
+            }
+            $groupUser->delete(['id' => (int) $link['id']], true);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -206,74 +299,66 @@ class Provider_Group extends CommonDBRelation
         return array_values(array_unique($groups));
     }
 
+    public static function getGlpiGroupsForClaims(int $providerId, array $claimValues): array
+    {
+        global $DB;
+
+        $normalizedClaims = [];
+        foreach ($claimValues as $value) {
+            $claim = trim((string) $value);
+            if ($claim !== '') {
+                $normalizedClaims[] = $claim;
+            }
+        }
+        $normalizedClaims = array_values(array_unique($normalizedClaims));
+        if ($providerId <= 0 || $normalizedClaims === []) {
+            return [];
+        }
+
+        $groupIds = [];
+        foreach ($DB->request([
+            'SELECT' => ['groups_id'],
+            'FROM'   => self::getTable(),
+            'WHERE'  => [
+                'plugin_singlesignon_providers_id' => $providerId,
+                'remote_id'                        => $normalizedClaims,
+            ],
+        ]) as $row) {
+            $groupId = (int) ($row['groups_id'] ?? 0);
+            if ($groupId > 0) {
+                $groupIds[] = $groupId;
+            }
+        }
+
+        return array_values(array_unique($groupIds));
+    }
+
     /**
-     * Evaluate the plugin's SSO rules and assign the user to every GLPI group
-     * returned by matching rules.  Dynamic group memberships that were
-     * previously assigned by this engine but are no longer covered by the
-     * current rule results are removed.  If no rules assign any groups, existing
-     * dynamic memberships are left untouched.
-     *
-     * This method never creates new GLPI groups; it only references existing ones.
-     *
-     * @param string[]             $ssoGroups    Raw IdP group name strings from the token claim.
-     * @param array<string, mixed> $resourceArray OAuth resource-owner data (for rule criteria).
+     * @return int[]
      */
-    private static function applyPluginGroupRules(
-        Provider $provider,
-        User $user,
-        array $ssoGroups,
-        array $resourceArray = []
-    ): void {
-        $groupUser = new \Group_User();
+    private static function getConfiguredGlpiGroups(int $providerId): array
+    {
+        global $DB;
 
-        // Snapshot all current dynamic group memberships before we start.
-        $links = $groupUser->find([
-            'users_id'   => $user->getID(),
-            'is_dynamic' => 1,
-        ]);
+        if ($providerId <= 0) {
+            return [];
+        }
 
-        $ruleResult = $provider->evaluateRulesForUser(
-            (string) ($user->fields['name'] ?? ''),
-            null,
-            $ssoGroups,
-            false,
-            $resourceArray
-        );
-        $targetGroupIds = $ruleResult['specific_groups_id'];
-
-        $keepGroupIds = [];
-        foreach ($targetGroupIds as $groupId) {
-            if ($groupUser->getFromDBByCrit([
-                'users_id'  => $user->getID(),
-                'groups_id' => $groupId,
-            ])) {
-                $keepGroupIds[] = $groupId;
-                continue;
-            }
-
-            $linkId = $groupUser->add([
-                'users_id'   => $user->getID(),
-                'groups_id'  => $groupId,
-                'is_dynamic' => 1,
-            ]);
-            if (is_numeric($linkId)) {
-                $keepGroupIds[] = $groupId;
+        $groupIds = [];
+        foreach ($DB->request([
+            'SELECT' => ['groups_id'],
+            'FROM'   => self::getTable(),
+            'WHERE'  => [
+                'plugin_singlesignon_providers_id' => $providerId,
+            ],
+        ]) as $row) {
+            $groupId = (int) ($row['groups_id'] ?? 0);
+            if ($groupId > 0) {
+                $groupIds[] = $groupId;
             }
         }
 
-        // Only remove dynamic groups that are no longer covered when the rule
-        // engine has explicitly assigned at least one group.  If no rules
-        // matched any group action we leave existing dynamic memberships intact.
-        if (!empty($targetGroupIds)) {
-            $keepGroupIds = array_values(array_unique(array_map('intval', $keepGroupIds)));
-            foreach ($links as $link) {
-                $linkedGroupId = (int) ($link['groups_id'] ?? 0);
-                if ($linkedGroupId <= 0 || in_array($linkedGroupId, $keepGroupIds, true)) {
-                    continue;
-                }
-                $groupUser->delete(['id' => (int) $link['id']], true);
-            }
-        }
+        return array_values(array_unique($groupIds));
     }
 
     /**
@@ -314,5 +399,144 @@ class Provider_Group extends CommonDBRelation
             'groups_id' => $groupId,
             'remote_id' => $remoteId,
         ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public static function getMappingsForProvider(int $providerId): array
+    {
+        global $DB;
+
+        if ($providerId <= 0) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($DB->request([
+            'FROM'  => self::getTable(),
+            'WHERE' => ['plugin_singlesignon_providers_id' => $providerId],
+            'ORDER' => ['remote_id ASC', 'id ASC'],
+        ]) as $row) {
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    public function showProviderTab(Provider $provider): void
+    {
+        if (!$provider->getID()) {
+            echo '<div class="center">' . htmlspecialchars(
+                __('Save this provider before editing role mappings.', 'singlesignon'),
+                ENT_QUOTES | ENT_SUBSTITUTE,
+                'UTF-8',
+            ) . '</div>';
+            return;
+        }
+
+        echo TemplateRenderer::getInstance()->render('@singlesignon/provider/show_role_mappings_tab.html.twig', [
+            'provider'      => $provider,
+            'provider_id'   => (int) $provider->getID(),
+            'mappings'      => static::getMappingsForProvider((int) $provider->getID()),
+            'group_options' => static::getGroupOptions(),
+            'form_action'   => ToolboxPlugin::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/provider_group.form.php',
+        ]);
+    }
+
+    public function executeFormAction(array $input): void
+    {
+        if (!isset($input['plugin_singlesignon_providers_id'])) {
+            return;
+        }
+
+        $providerId = (int) $input['plugin_singlesignon_providers_id'];
+        if ($providerId <= 0) {
+            return;
+        }
+
+        $provider = new Provider();
+        if (!$provider->getFromDB($providerId)) {
+            return;
+        }
+
+        if (!$provider->can($providerId, UPDATE)) {
+            return;
+        }
+
+        $rows = $input['_role_mappings'] ?? [];
+        if (!is_array($rows)) {
+            $rows = [];
+        }
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $mappingId = (int) ($row['id'] ?? 0);
+            $delete = (int) ($row['_delete'] ?? 0) === 1;
+            $remoteId = trim((string) ($row['remote_id'] ?? ''));
+            $groupId = (int) ($row['groups_id'] ?? 0);
+
+            if ($mappingId > 0 && $delete) {
+                $this->deleteByCriteria([
+                    'id' => $mappingId,
+                    'plugin_singlesignon_providers_id' => $providerId,
+                ]);
+                continue;
+            }
+
+            if ($remoteId === '' || $groupId <= 0) {
+                continue;
+            }
+
+            $payload = [
+                'plugin_singlesignon_providers_id' => $providerId,
+                'remote_id'                        => $remoteId,
+                'groups_id'                        => $groupId,
+            ];
+
+            if ($mappingId > 0) {
+                $payload['id'] = $mappingId;
+                $this->update($payload);
+            } else {
+                $this->add($payload);
+            }
+        }
+
+        Session::addMessageAfterRedirect(__s('Role mappings updated.', 'singlesignon'));
+        Html::back();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function getGroupOptions(): array
+    {
+        global $DB;
+
+        $groups = [];
+        foreach ($DB->request([
+            'SELECT' => ['id', 'completename', 'name'],
+            'FROM'   => 'glpi_groups',
+            'ORDER'  => ['completename ASC', 'name ASC'],
+        ]) as $row) {
+            $groupId = (int) ($row['id'] ?? 0);
+            if ($groupId <= 0) {
+                continue;
+            }
+
+            $label = trim((string) ($row['completename'] ?? ''));
+            if ($label === '') {
+                $label = trim((string) ($row['name'] ?? ''));
+            }
+            if ($label === '') {
+                $label = (string) $groupId;
+            }
+            $groups[$groupId] = $label;
+        }
+
+        return $groups;
     }
 }

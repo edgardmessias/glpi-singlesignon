@@ -22,8 +22,16 @@
  * ---------------------------------------------------------------------
  */
 
-// Delegate rule testing to GLPI core's rule test endpoint.
-// GLPI's own front/rule.test.php handles all rule types and this plugin
-// registers the correct itemtype via the query-string parameters forwarded
-// from the rule form's "Test" button.
-include GLPI_ROOT . '/front/rule.test.php';
+use GlpiPlugin\Singlesignon\Provider_Group;
+
+include(__DIR__ . '/../../../inc/includes.php');
+
+Session::checkRight('config', UPDATE);
+
+$mapping = new Provider_Group();
+if (isset($_POST['update_role_mappings'])) {
+    $mapping->executeFormAction($_POST);
+    return;
+}
+
+Html::back();

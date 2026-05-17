@@ -25,8 +25,6 @@
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Group;
-use GlpiPlugin\Singlesignon\RuleSinglesignon;
-use GlpiPlugin\Singlesignon\RuleSinglesignonCollection;
 
 function plugin_singlesignon_install()
 {
@@ -265,224 +263,140 @@ function plugin_singlesignon_install()
 
     $migration->executeMigration();
 
+    // Legacy cleanup for columns removed in older versions.
+    $migration->dropField($providersTable, 'default_entities_id');
+    $migration->dropField($providersTable, 'match_entity_by_email_domain');
+    $migration->dropField($providersTable, 'default_profiles_id');
+    $migration->dropField($providersTable, 'user_group_sync_mode');
+    $migration->dropField($providersTable, 'groups_claim');
+    $migration->executeMigration();
+
+    // Remove fullname field mappings (field type no longer supported).
+    if ($DB->tableExists($providersFieldsTable)) {
+        $DB->delete($providersFieldsTable, ['field_type' => 'fullname']);
+    }
+
     /**
-     * Version 2.1.0: migrate Registration/group-sync fields to the rules engine
-     * and drop the now-redundant DB columns.
+     * Version 2.5.0:
+     *  - Convert legacy custom SSO rules into provider role mappings.
+     *  - Remove legacy custom SSO rules after conversion.
      */
-    $ruleSubtype = RuleSinglesignon::class;
+    if (version_compare($currentVersion, '2.5.0', '<')) {
+        $legacyRuleSubtype = 'GlpiPlugin\\Singlesignon\\RuleSinglesignon';
+        $ruleIds = [];
+        $providerIdsByRule = [];
+        $claimsByRule = [];
+        $groupsByRule = [];
 
-    if (version_compare($currentVersion, '2.1.0', '<')) {
-        // ── Data migration ──────────────────────────────────────────────────
-        // Create per-provider rules for any existing provider that had
-        // auto_register = 1 so that existing behaviour is preserved.
-        if ($DB->tableExists($providersTable) && $DB->fieldExists($providersTable, 'auto_register')) {
-            foreach ($DB->request(['FROM' => $providersTable, 'WHERE' => ['auto_register' => 1]]) as $providerRow) {
-                // Skip if a rule for this provider was already created in a
-                // previous (failed or partial) upgrade attempt.
-                $alreadyHasProviderRule = countElementsInTable('glpi_rulecriteria', [
-                    'criteria' => 'provider_id',
-                    'pattern'  => (int) $providerRow['id'],
-                ]) > 0;
-
-                if ($alreadyHasProviderRule) {
-                    continue;
+        if ($DB->tableExists('glpi_rules')) {
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_rules',
+                'WHERE'  => ['sub_type' => $legacyRuleSubtype],
+            ]) as $ruleRow) {
+                $ruleId = (int) ($ruleRow['id'] ?? 0);
+                if ($ruleId > 0) {
+                    $ruleIds[] = $ruleId;
                 }
-
-                $nextRank = countElementsInTable('glpi_rules', ['sub_type' => $ruleSubtype]) + 1;
-
-                $rule   = new RuleSinglesignon();
-                $ruleId = $rule->add([
-                    'sub_type'     => $ruleSubtype,
-                    'entities_id'  => 0,
-                    'is_recursive' => 1,
-                    'is_active'    => 1,
-                    'name'         => sprintf(__('Auto-migrated rule for provider: %s', 'singlesignon'), strip_tags((string) $providerRow['name'])),
-                    'match'        => \Rule::AND_MATCHING,
-                    'ranking'      => $nextRank,
-                ]);
-
-                if (!is_numeric($ruleId) || (int) $ruleId <= 0) {
-                    continue;
-                }
-
-                $ruleAction = new \RuleAction();
-                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'auto_register',        'value' => 1]);
-                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'registration_preview',  'value' => (int) ($providerRow['registration_preview'] ?? 0)]);
-                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'entities_id',           'value' => (int) ($providerRow['default_entities_id'] ?? 0)]);
-                $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'is_recursive',          'value' => 0]);
-                if ((int) ($providerRow['default_profiles_id'] ?? 0) > 0) {
-                    $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'profiles_id', 'value' => (int) $providerRow['default_profiles_id']]);
-                }
-
-                $ruleCriteria = new \RuleCriteria();
-                $ruleCriteria->add([
-                    'rules_id'  => (int) $ruleId,
-                    'criteria'  => 'provider_id',
-                    'condition' => \Rule::PATTERN_IS,
-                    'pattern'   => (int) $providerRow['id'],
-                ]);
             }
         }
 
-        // ── Drop migrated columns ────────────────────────────────────────────
-        // migration->dropField() is a no-op when the column does not exist, so
-        // this is safe for fresh installs where the columns were never created.
-        $migration->dropField($providersTable, 'default_entities_id');
-        $migration->dropField($providersTable, 'match_entity_by_email_domain');
-        $migration->dropField($providersTable, 'default_profiles_id');
-        $migration->executeMigration();
-    }
+        if ($ruleIds !== [] && $DB->tableExists('glpi_rulecriteria')) {
+            foreach ($DB->request([
+                'SELECT' => ['rules_id', 'criteria', 'pattern'],
+                'FROM'   => 'glpi_rulecriteria',
+                'WHERE'  => ['rules_id' => $ruleIds],
+            ]) as $criteriaRow) {
+                $ruleId = (int) ($criteriaRow['rules_id'] ?? 0);
+                $criteria = (string) ($criteriaRow['criteria'] ?? '');
+                $pattern = trim((string) ($criteriaRow['pattern'] ?? ''));
 
-    // ── Ensure the global default rule exists ────────────────────────────────
-    // Run on every install/upgrade so fresh installs and upgrades both have the
-    // conservative catch-all rule visible in the UI.
-    $defaultRuleExists = countElementsInTable('glpi_rules', [
-        'sub_type' => $ruleSubtype,
-        'name'     => __('Default SSO rule', 'singlesignon'),
-    ]) > 0;
-
-    if (!$defaultRuleExists) {
-        $nextRank = countElementsInTable('glpi_rules', ['sub_type' => $ruleSubtype]) + 1;
-
-        $rule   = new RuleSinglesignon();
-        $ruleId = $rule->add([
-            'sub_type'     => $ruleSubtype,
-            'entities_id'  => 0,
-            'is_recursive' => 1,
-            'is_active'    => 1,
-            'name'         => __('Default SSO rule', 'singlesignon'),
-            'description'  => __('No criteria — applies to all SSO logins. Edit to set default entity/profile.', 'singlesignon'),
-            'match'        => \Rule::AND_MATCHING,
-            'ranking'      => $nextRank,
-        ]);
-
-        if (is_numeric($ruleId) && (int) $ruleId > 0) {
-            $ruleAction = new \RuleAction();
-            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'entities_id',  'value' => 0]);
-            $ruleAction->add(['rules_id' => (int) $ruleId, 'action_type' => 'assign', 'field' => 'is_recursive', 'value' => 0]);
-        }
-    }
-
-    /**
-     * Version 2.2.0: rename the 'entities_id' rule action field to '_entities_id_default'
-     * to align with GLPI's native RuleRight action naming convention.
-     */
-    if (version_compare($currentVersion, '2.2.0', '<')) {
-        if ($DB->tableExists('glpi_ruleactions')) {
-            // Rename entities_id → _entities_id_default for all SSO rules.
-            $DB->update(
-                'glpi_ruleactions',
-                ['field' => '_entities_id_default'],
-                [
-                    'field'    => 'entities_id',
-                    'rules_id' => new \Glpi\DBAL\QuerySubQuery([
-                        'SELECT' => 'id',
-                        'FROM'   => 'glpi_rules',
-                        'WHERE'  => ['sub_type' => $ruleSubtype],
-                    ]),
-                ],
-            );
-        }
-    }
-
-    /**
-     * Version 2.3.0:
-     *  - Migrate groups_claim field values to Provider_Field 'groups' mappings.
-     *  - Drop user_group_sync_mode and groups_claim columns.
-     *  - Move default-rule text from description to comment column.
-     *  - Delete fullname field mappings (field type removed).
-     */
-    if (version_compare($currentVersion, '2.3.0', '<')) {
-        // Migrate existing groups_claim values to the new 'groups' field mapping.
-        if ($DB->tableExists($providersTable) && $DB->fieldExists($providersTable, 'groups_claim')) {
-            foreach ($DB->request(['FROM' => $providersTable, 'WHERE' => ['NOT' => ['groups_claim' => ['', null]]]]) as $providerRow) {
-                $providerId     = (int) $providerRow['id'];
-                $groupsClaimRaw = trim((string) $providerRow['groups_claim']);
-                if ($groupsClaimRaw === '') {
+                if ($ruleId <= 0 || $pattern === '') {
                     continue;
                 }
 
-                // Convert dot-notation path to a JSONPath expression.
-                $jsonPath = str_starts_with($groupsClaimRaw, '$') ? $groupsClaimRaw : '$.' . $groupsClaimRaw;
-
-                // Only create a mapping if none exists yet for this provider+type.
-                $existingGroups = countElementsInTable(
-                    $providersFieldsTable,
-                    ['plugin_singlesignon_providers_id' => $providerId, 'field_type' => 'groups']
-                );
-                if ($existingGroups === 0) {
-                    $maxOrder = 0;
-                    foreach ($DB->request([
-                        'SELECT' => ['MAX' => 'sort_order AS max_order'],
-                        'FROM'   => $providersFieldsTable,
-                        'WHERE'  => ['plugin_singlesignon_providers_id' => $providerId],
-                    ]) as $row) {
-                        $maxOrder = (int) ($row['max_order'] ?? 0);
+                if ($criteria === 'provider_id') {
+                    $providerId = (int) $pattern;
+                    if ($providerId > 0) {
+                        $providerIdsByRule[$ruleId][] = $providerId;
                     }
+                    continue;
+                }
 
-                    $DB->insert($providersFieldsTable, [
-                        'plugin_singlesignon_providers_id' => $providerId,
-                        'field_type'                       => 'groups',
-                        'jsonpath'                         => $jsonPath,
-                        'is_active'                        => 1,
-                        'sort_order'                       => $maxOrder + 10,
-                        'date_creation'                    => date('Y-m-d H:i:s'),
-                        'date_mod'                         => date('Y-m-d H:i:s'),
-                    ]);
+                if ($criteria === 'SSO_GROUPS') {
+                    $claimsByRule[$ruleId][] = $pattern;
                 }
             }
         }
 
-        // Remove fullname field mappings (field type no longer supported).
-        if ($DB->tableExists($providersFieldsTable)) {
-            $DB->delete($providersFieldsTable, ['field_type' => 'fullname']);
-        }
-
-        // Move default-rule text from description to comment.
-        if ($DB->tableExists('glpi_rules')) {
-            $defaultRuleText = __('No criteria — applies to all SSO logins. Edit to enable auto-registration and set default entity/profile.', 'singlesignon');
-            $DB->update(
-                'glpi_rules',
-                ['comment' => $defaultRuleText, 'description' => ''],
-                ['sub_type' => $ruleSubtype, 'description' => $defaultRuleText],
-            );
-        }
-
-        // Drop the columns now that data has been migrated.
-        $migration->dropField($providersTable, 'user_group_sync_mode');
-        $migration->dropField($providersTable, 'groups_claim');
-        $migration->executeMigration();
-    }
-
-    /**
-     * Version 2.4.0:
-     *  - Move default-rule text back from comment to description column.
-     *  - Remove auto_register and registration_preview rule actions (these
-     *    settings are now provider-level fields, not rule actions).
-     */
-    if (version_compare($currentVersion, '2.4.0', '<')) {
-        if ($DB->tableExists('glpi_rules')) {
-            $oldRuleText = __('No criteria — applies to all SSO logins. Edit to enable auto-registration and set default entity/profile.', 'singlesignon');
-            $newRuleText = __('No criteria — applies to all SSO logins. Edit to set default entity/profile.', 'singlesignon');
-            // Move text back to description for rules still carrying the old comment value.
-            $DB->update(
-                'glpi_rules',
-                ['description' => $newRuleText, 'comment' => ''],
-                ['sub_type' => $ruleSubtype, 'comment' => $oldRuleText],
-            );
-        }
-        if ($DB->tableExists('glpi_ruleactions')) {
-            $DB->delete(
-                'glpi_ruleactions',
-                [
-                    'field'    => ['auto_register', 'registration_preview'],
-                    'rules_id' => new \Glpi\DBAL\QuerySubQuery([
-                        'SELECT' => 'id',
-                        'FROM'   => 'glpi_rules',
-                        'WHERE'  => ['sub_type' => $ruleSubtype],
-                    ]),
+        if ($ruleIds !== [] && $DB->tableExists('glpi_ruleactions')) {
+            foreach ($DB->request([
+                'SELECT' => ['rules_id', 'field', 'value'],
+                'FROM'   => 'glpi_ruleactions',
+                'WHERE'  => [
+                    'rules_id' => $ruleIds,
+                    'field'    => 'specific_groups_id',
                 ],
-            );
+            ]) as $actionRow) {
+                $ruleId = (int) ($actionRow['rules_id'] ?? 0);
+                $groupId = (int) ($actionRow['value'] ?? 0);
+                if ($ruleId > 0 && $groupId > 0) {
+                    $groupsByRule[$ruleId][] = $groupId;
+                }
+            }
+        }
+
+        foreach ($ruleIds as $ruleId) {
+            $providerIds = array_values(array_unique(array_map('intval', $providerIdsByRule[$ruleId] ?? [])));
+            $claims = array_values(array_unique(array_filter(array_map(
+                static fn($v) => trim((string) $v),
+                $claimsByRule[$ruleId] ?? []
+            ))));
+            $groupIds = array_values(array_unique(array_map('intval', $groupsByRule[$ruleId] ?? [])));
+
+            if ($providerIds === [] || $claims === [] || $groupIds === []) {
+                continue;
+            }
+
+            foreach ($providerIds as $providerId) {
+                if ($providerId <= 0) {
+                    continue;
+                }
+                foreach ($claims as $claim) {
+                    if ($claim === '') {
+                        continue;
+                    }
+                    foreach ($groupIds as $groupId) {
+                        if ($groupId <= 0) {
+                            continue;
+                        }
+                        $exists = countElementsInTable($providersGroupsTable, [
+                            'plugin_singlesignon_providers_id' => $providerId,
+                            'remote_id'                        => $claim,
+                        ]) > 0;
+                        if ($exists) {
+                            continue;
+                        }
+                        $DB->insert($providersGroupsTable, [
+                            'plugin_singlesignon_providers_id' => $providerId,
+                            'groups_id'                        => $groupId,
+                            'remote_id'                        => $claim,
+                        ]);
+                    }
+                }
+            }
+        }
+
+        if ($ruleIds !== []) {
+            if ($DB->tableExists('glpi_ruleactions')) {
+                $DB->delete('glpi_ruleactions', ['rules_id' => $ruleIds]);
+            }
+            if ($DB->tableExists('glpi_rulecriteria')) {
+                $DB->delete('glpi_rulecriteria', ['rules_id' => $ruleIds]);
+            }
+            if ($DB->tableExists('glpi_rules')) {
+                $DB->delete('glpi_rules', ['id' => $ruleIds]);
+            }
         }
     }
 
