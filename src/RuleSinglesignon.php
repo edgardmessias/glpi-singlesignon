@@ -158,6 +158,13 @@ class RuleSinglesignon extends \Rule {
                 'field'   => 'location',
                 'virtual' => true,
             ],
+            'SSO_GROUPS' => [
+                'name'    => __('Role', 'singlesignon'),
+                'type'    => 'text',
+                'table'   => '',
+                'field'   => 'SSO_GROUPS',
+                'virtual' => true,
+            ],
             'supervisor' => [
                 'name'    => __('Supervisor'),
                 'type'    => 'text',
@@ -170,14 +177,6 @@ class RuleSinglesignon extends \Rule {
                 'type'  => 'dropdown',
                 'table' => 'glpi_plugin_singlesignon_providers',
                 'field' => 'name',
-            ],
-            __('IdP Criteria', 'singlesignon'),
-            'SSO_GROUPS' => [
-                'name'    => __('(SSO) Roles (IdP Claim)', 'singlesignon'),
-                'type'    => 'text',
-                'table'   => '',
-                'field'   => 'SSO_GROUPS',
-                'virtual' => true,
             ],
         ];
     }
