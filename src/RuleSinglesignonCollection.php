@@ -197,11 +197,10 @@ TWIG, $twig_params);
         $columns['rank'] = __('Position');
         $columns['sort'] = '';
 
-        $safeContainerClass = preg_replace('/[^A-Za-z0-9_-]/', '_', static::class);
-        if (!is_string($safeContainerClass) || $safeContainerClass === '') {
-            $classParts = explode('\\', static::class);
-            $safeContainerClass = end($classParts) ?: 'RuleCollection';
-        }
+        $classParts = explode('\\', static::class);
+        $classBasename = end($classParts) ?: 'RuleCollection';
+        $safeContainerClass = preg_replace('/[^A-Za-z0-9_-]/', '_', $classBasename);
+        $safeContainerClass = is_string($safeContainerClass) && $safeContainerClass !== '' ? $safeContainerClass : 'RuleCollection';
 
         \Glpi\Application\View\TemplateRenderer::getInstance()->display('components/datatable.html.twig', [
             'datatable_id' => 'rulelist',
@@ -237,12 +236,13 @@ TWIG, $twig_params);
             ],
         ]);
         $collection_classname = jsescape(static::class);
+        $placeholderColspan = count($columns) + 1;
         echo <<<HTML
             <script>
                 $(() => {
                     sortable('#rulelist tbody', {
                         handle: '.grip-rule',
-                        placeholder: '<tr><td colspan="8" class="sortable-placeholder">&nbsp;</td></tr>'
+                        placeholder: '<tr><td colspan="{$placeholderColspan}" class="sortable-placeholder">&nbsp;</td></tr>'
                     })[0].addEventListener('sortupdate', (e) => {
                        const sort_detail = e.detail;
                        const new_index = sort_detail.destination.index;
