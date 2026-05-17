@@ -1143,42 +1143,20 @@ class Provider extends CommonDBTM
         return $defaults;
     }
 
-    /**
-     * Strip keys whose names start with '@' (e.g. '@odata.context' from
-     * Microsoft Graph) before handing the array to the JsonPath library.
-     * Those keys use the '@' character which is a reserved token in JsonPath,
-     * and some library versions fail silently when they appear at the top level.
-     *
-     * @param array<string, mixed> $resourceArray
-     * @return array<string, mixed>
-     */
-    private function sanitizeResourceArrayForJsonPath(array $resourceArray): array
-    {
-        $sanitized = [];
-        foreach ($resourceArray as $key => $value) {
-            if (is_string($key) && $key !== '' && $key[0] !== '@') {
-                $sanitized[$key] = $value;
-            }
-        }
-        return $sanitized;
-    }
-
     private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
     {
         try {
-            $sanitized = $this->sanitizeResourceArrayForJsonPath($resourceArray);
-            $jsonObject = json_decode(json_encode($sanitized), false);
-            $json = new JsonObject($jsonObject);
+            $json = new JsonObject($resourceArray);
             $result = $json->get($jsonPath);
         } catch (Throwable $e) {
-            return "EXCEPTION: " . $e->getMessage();
+            Toolbox::logInFile(
+                "php-errors",
+                $e->getMessage() . "\n" . $e->getTraceAsString()
+            );
+            return null;
         }
 
-        $normalized = $this->normalizeJsonPathResult($result);
-        if ($normalized === null) {
-            return "RESULT WAS NULL FOR " . $jsonPath;
-        }
-        return $normalized;
+        return $this->normalizeJsonPathResult($result);
     }
 
     private function normalizeJsonPathResult($result): ?string
