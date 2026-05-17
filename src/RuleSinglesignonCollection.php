@@ -198,6 +198,9 @@ TWIG, $twig_params);
         $columns['sort'] = '';
 
         $safeContainerClass = preg_replace('/[^A-Za-z0-9_-]/', '_', static::class);
+        if (!is_string($safeContainerClass) || $safeContainerClass === '') {
+            $safeContainerClass = 'RuleSinglesignonCollection';
+        }
 
         \Glpi\Application\View\TemplateRenderer::getInstance()->display('components/datatable.html.twig', [
             'datatable_id' => 'rulelist',
