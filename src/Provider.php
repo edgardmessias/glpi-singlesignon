@@ -770,34 +770,25 @@ class Provider extends CommonDBTM
         return 'ti ti-lock';
     }
 
-    public static function getAdditionalMenuLinks(): array
+    /**
+     * NOTE: changes to this menu are stored in the PHP session, so they only
+     * take effect after the session is refreshed.  If the new menu entry does
+     * not appear, log out and log back in, or disable/re-enable the plugin
+     * through the GLPI Plugins page to force a session reset.
+     */
+    public static function getAdditionalMenuLinks()
     {
         $links = parent::getAdditionalMenuLinks() ?: [];
-        if (Session::haveRight('rule_right', READ)) {
-            $label = __('Authorization assignment rules', 'singlesignon');
-            $title = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
-            $icon = '<i class="ti ti-list-check" title="' . $title . '"></i>';
-            $text = '<span class="d-none d-xxl-block">' . $label . '</span>';
-            $links[$icon . $text] = '/front/ruleright.php';
+
+        if (\RuleRight::canView()) {
+            $label = __('Authorization assignment rules');
+            $link = "<i class=\"ti ti-user-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
+            $url = Toolbox::getItemTypeSearchURL('RuleRight');
+
+            $links[$link] = $url;
         }
+
         return $links;
-    }
-
-    public static function getAdditionalMenuOptions(): array
-    {
-        if (!Session::haveRight('rule_right', READ)) {
-            return [];
-        }
-
-        return [
-            'rules' => [
-                'title' => __('Authorization assignment rules', 'singlesignon'),
-                'page'  => '/front/ruleright.php',
-                'links' => [
-                    'search' => '/front/ruleright.php',
-                ],
-            ],
-        ];
     }
 
     public static function getDefault($type, $key, $default = null)
