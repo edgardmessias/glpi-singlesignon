@@ -199,7 +199,8 @@ TWIG, $twig_params);
 
         $safeContainerClass = preg_replace('/[^A-Za-z0-9_-]/', '_', static::class);
         if (!is_string($safeContainerClass) || $safeContainerClass === '') {
-            $safeContainerClass = 'RuleSinglesignonCollection';
+            $classParts = explode('\\', static::class);
+            $safeContainerClass = end($classParts) ?: 'RuleCollection';
         }
 
         \Glpi\Application\View\TemplateRenderer::getInstance()->display('components/datatable.html.twig', [
