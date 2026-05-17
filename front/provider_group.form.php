@@ -31,6 +31,18 @@ Session::checkRight('config', UPDATE);
 // Render a new empty table row with a GLPI Group dropdown (called via AJAX when clicking Add).
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'new_row') {
     $idx = max(0, (int) ($_GET['idx'] ?? 0));
+    $providerId = (int) ($_GET['provider_id'] ?? 0);
+
+    // Validate that the provider exists and the current user can update it.
+    if ($providerId <= 0) {
+        http_response_code(400);
+        return;
+    }
+    $providerCheck = new \GlpiPlugin\Singlesignon\Provider();
+    if (!$providerCheck->getFromDB($providerId) || !$providerCheck->can($providerId, UPDATE)) {
+        http_response_code(403);
+        return;
+    }
 
     $groupDropdown = Dropdown::show('Group', [
         'name'                => "_role_mappings[{$idx}][groups_id]",

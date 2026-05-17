@@ -152,11 +152,9 @@
                 deleteFlag.value = '1';
             }
             row.style.opacity = '0.4';
-            row.querySelectorAll('input, select, button').forEach(el => {
-                el.disabled = true;
-            });
-            button.disabled = false;
-            button.textContent = '{{ __('Undo')|e('js') }}';
+            row.style.pointerEvents = 'none';
+            button.style.pointerEvents = 'auto';
+            button.style.opacity = '1';
             button.dataset.undo = '1';
         } else {
             row.remove();
@@ -178,9 +176,9 @@
             deleteFlag.value = '0';
         }
         row.style.opacity = '';
-        row.querySelectorAll('input, select').forEach(el => {
-            el.disabled = false;
-        });
+        row.style.pointerEvents = '';
+        button.style.pointerEvents = '';
+        button.style.opacity = '';
         delete button.dataset.undo;
         button.innerHTML = '<i class="ti ti-trash"></i> {{ __('Remove')|e('js') }}';
     });
