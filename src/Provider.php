@@ -1170,11 +1170,15 @@ class Provider extends CommonDBTM
             $jsonObject = json_decode(json_encode($sanitized), false);
             $json = new JsonObject($jsonObject);
             $result = $json->get($jsonPath);
-        } catch (Throwable) {
-            return null;
+        } catch (Throwable $e) {
+            return "EXCEPTION: " . $e->getMessage();
         }
 
-        return $this->normalizeJsonPathResult($result);
+        $normalized = $this->normalizeJsonPathResult($result);
+        if ($normalized === null) {
+            return "RESULT WAS NULL FOR " . $jsonPath;
+        }
+        return $normalized;
     }
 
     private function normalizeJsonPathResult($result): ?string
