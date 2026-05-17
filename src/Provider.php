@@ -1388,7 +1388,7 @@ class Provider extends CommonDBTM
         return $default > 0 ? $default : 0;
     }
 
-    private function ensureProfileForNewUser(User $user, int $entitiesId, int $profilesId, bool $isRecursive): bool
+    private function ensureProfileForNewUser(User $user, int $entitiesId): bool
     {
         if (Profile::getDefault() != 0) {
             return true;
@@ -1402,7 +1402,6 @@ class Provider extends CommonDBTM
         foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
             $datasProfiles[] = $data;
         }
-
         $datasEntities = [];
         foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
             $datasEntities[] = $data;
@@ -1427,7 +1426,7 @@ class Provider extends CommonDBTM
         $pu->add([
             'users_id'     => (int) $user->fields['id'],
             'entities_id'  => $entityForProfile,
-            'is_recursive' => $isRecursive ? 1 : 0,
+            'is_recursive' => 0,
             'profiles_id'  => $profileId,
         ]);
 
@@ -1497,8 +1496,6 @@ class Provider extends CommonDBTM
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
         $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
-        $profilesId = 0;
-        $isRecursive = false;
 
         // ── Picture ──────────────────────────────────────────────────────────
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
@@ -1607,7 +1604,7 @@ class Provider extends CommonDBTM
                 return false;
             }
 
-            if (!$this->ensureProfileForNewUser($user, $entitiesId, $profilesId, $isRecursive)) {
+            if (!$this->ensureProfileForNewUser($user, $entitiesId)) {
                 return false;
             }
 
@@ -1752,16 +1749,11 @@ class Provider extends CommonDBTM
             }
         }
 
-        // --- 3. Ensure the user has at least one profile before login.
-        // This covers existing users who have no profile assigned —
-        // ensureProfileForNewUser() would otherwise only run for newly auto-registered users.
-        $this->ensureProfileForNewUser($user, 0, 0, false);
-
-        // --- 4. Login via external auth (password unused) ---
+        // --- 3. Login via external auth (password unused) ---
         $auth = new Auth();
         $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
 
-        // --- 5. Post-login cleanup (success or failure): undo temporary SSO context ---
+        // --- 4. Post-login cleanup (success or failure): undo temporary SSO context ---
         unset($_SESSION['glpi_remote_user']);
 
         $CFG_GLPI['ssovariables_id'] = $original_ssovariables_id;
@@ -1776,7 +1768,7 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        // --- 6. Success: restore session snapshot and optional photo sync ---
+        // --- 5. Success: restore session snapshot and optional photo sync ---
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
         }
@@ -1905,6 +1897,10 @@ class Provider extends CommonDBTM
         }
 
         // ── New-user registration path ──────────────────────────────────────
+
+        if (empty($this->fields['auto_register'])) {
+            return self::LOGIN_FAILURE;
+        }
 
         $gate = $this->resolveLoginAndEmailFromResource($resource_array);
         if (!$gate['authorized']) {
