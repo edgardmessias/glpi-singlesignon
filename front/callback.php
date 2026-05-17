@@ -90,6 +90,10 @@ if ($test_cookie) {
     unset($_COOKIE['glpi_singlesignon_test']);
     $resource_owner = $signon_provider->getResourceOwner();
     $resource_owner_array = is_array($resource_owner) ? $resource_owner : [];
+    
+    $id_token_payload = $signon_provider->getIdTokenPayload();
+    $id_token_payload_array = is_array($id_token_payload) ? $id_token_payload : ['error' => 'No ID token payload or unable to parse'];
+
     $resolved_fields = $signon_provider->getResolvedFieldsForDebug($resource_owner_array);
     $field_types = Provider_Field::getFieldTypes();
     $active_mappings = Provider_Field::getMappingsForProvider((int) $provider_id, null, true);
@@ -105,12 +109,22 @@ if ($test_cookie) {
         $resource_owner_pretty = (string) __('Unable to encode resource owner payload.', 'singlesignon');
     }
 
+    try {
+        $id_token_payload_pretty = json_encode(
+            $id_token_payload_array,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+        );
+    } catch (Throwable) {
+        $id_token_payload_pretty = (string) __('Unable to encode ID token payload.', 'singlesignon');
+    }
+
     $callback_context = [
         'provider_id'   => (int) $provider_id,
         'provider_name' => (string) ($signon_provider->fields['name'] ?? ''),
         'provider_type' => (string) ($signon_provider->fields['type'] ?? ''),
         'query_params'  => $_GET,
     ];
+
     try {
         $callback_context_pretty = json_encode(
             $callback_context,

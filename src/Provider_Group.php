@@ -187,8 +187,8 @@ class Provider_Group extends CommonDBRelation
 
     /**
      * Extract the list of group-name strings from the OAuth resource-owner
-     * payload.  Checks the provider's 'groups' field mappings first, then
-     * falls back to well-known group/role claim keys.
+     * payload.  Checks the provider's 'roles' field mappings first, then
+     * falls back to well-known role/group claim keys.
      *
      * @param array<string, mixed> $resource_array
      * @return string[]
@@ -197,21 +197,33 @@ class Provider_Group extends CommonDBRelation
     {
         $groups = [];
         $providerId = (int) ($provider->fields['id'] ?? 0);
+        $idTokenPayload = $provider->getIdTokenPayload();
 
-        // Check for 'groups' type field mappings configured by the admin.
+        // Check for 'roles' type field mappings configured by the admin.
         if ($providerId > 0) {
-            $groupMappings = Provider_Field::getMappingsForProvider($providerId, 'groups', true);
+            $groupMappings = Provider_Field::getMappingsForProvider($providerId, 'roles', true);
             foreach ($groupMappings as $mapping) {
                 $jsonPath = trim((string) ($mapping['jsonpath'] ?? ''));
                 if ($jsonPath === '') {
                     continue;
                 }
+                $result = null;
                 try {
                     $json   = new JsonObject($resource_array);
                     $result = $json->get($jsonPath);
                 } catch (Throwable) {
-                    continue;
+                    $result = null;
                 }
+                
+                if ($result === null && is_array($idTokenPayload)) {
+                    try {
+                        $jsonJwt   = new JsonObject($idTokenPayload);
+                        $result = $jsonJwt->get($jsonPath);
+                    } catch (Throwable) {
+                        $result = null;
+                    }
+                }
+
                 $extracted = self::normalizeGroupClaimValue($result);
                 if ($extracted !== []) {
                     return array_slice($extracted, 0, self::MAX_GROUPS_PER_SYNC);
@@ -219,11 +231,13 @@ class Provider_Group extends CommonDBRelation
             }
         }
 
-        // Default extraction: well-known group/role claim keys.
-        $groupFields = ['groups', 'roles'];
+        // Default extraction: well-known role/group claim keys.
+        $groupFields = ['roles', 'groups'];
         foreach ($groupFields as $field) {
             if (array_key_exists($field, $resource_array)) {
                 $groups = array_merge($groups, self::normalizeGroupClaimValue($resource_array[$field]));
+            } elseif (is_array($idTokenPayload) && array_key_exists($field, $idTokenPayload)) {
+                $groups = array_merge($groups, self::normalizeGroupClaimValue($idTokenPayload[$field]));
             }
         }
 
@@ -233,10 +247,24 @@ class Provider_Group extends CommonDBRelation
             && array_key_exists('roles', $resource_array['realm_access'])
         ) {
             $groups = array_merge($groups, self::normalizeGroupClaimValue($resource_array['realm_access']['roles']));
+        } elseif (
+            is_array($idTokenPayload)
+            && isset($idTokenPayload['realm_access'])
+            && is_array($idTokenPayload['realm_access'])
+            && array_key_exists('roles', $idTokenPayload['realm_access'])
+        ) {
+            $groups = array_merge($groups, self::normalizeGroupClaimValue($idTokenPayload['realm_access']['roles']));
         }
 
         if (isset($resource_array['resource_access']) && is_array($resource_array['resource_access'])) {
             foreach ($resource_array['resource_access'] as $clientRoles) {
+                if (!is_array($clientRoles) || !array_key_exists('roles', $clientRoles)) {
+                    continue;
+                }
+                $groups = array_merge($groups, self::normalizeGroupClaimValue($clientRoles['roles']));
+            }
+        } elseif (is_array($idTokenPayload) && isset($idTokenPayload['resource_access']) && is_array($idTokenPayload['resource_access'])) {
+            foreach ($idTokenPayload['resource_access'] as $clientRoles) {
                 if (!is_array($clientRoles) || !array_key_exists('roles', $clientRoles)) {
                     continue;
                 }

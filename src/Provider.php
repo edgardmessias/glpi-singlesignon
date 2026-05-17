@@ -99,6 +99,12 @@ class Provider extends CommonDBTM
      *
      * @var null|array
      */
+    protected $_id_token_payload = null;
+
+    /**
+     *
+     * @var null|array
+     */
     protected $_resource_owner = null;
 
     /**
@@ -1062,11 +1068,29 @@ class Provider extends CommonDBTM
                 return false;
             }
             $this->_token = $data['access_token'];
+
+            if (isset($data['id_token'])) {
+                $parts = explode('.', $data['id_token']);
+                if (count($parts) >= 2) {
+                    $payloadStr = base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1]));
+                    if ($payloadStr !== false) {
+                        $this->_id_token_payload = json_decode($payloadStr, true) ?: null;
+                    }
+                }
+            }
         } catch (Exception) {
             return false;
         }
 
         return $this->_token;
+    }
+
+    /**
+     * @return null|array
+     */
+    public function getIdTokenPayload()
+    {
+        return $this->_id_token_payload;
     }
 
     /**
@@ -1200,6 +1224,8 @@ class Provider extends CommonDBTM
             $mappings = Provider_Field::getMappingsForProvider($providerId, $fieldType, true);
         }
 
+        $idTokenPayload = $this->getIdTokenPayload();
+
         foreach ($mappings as $mapping) {
             $jsonPath = trim((string) ($mapping['jsonpath'] ?? ''));
             if ($jsonPath === '') {
@@ -1213,6 +1239,17 @@ class Provider extends CommonDBTM
                     'jsonpath' => $jsonPath,
                     'source'   => 'provider',
                 ];
+            }
+
+            if (is_array($idTokenPayload)) {
+                $valueFromJwt = $this->getResourceOwnerValueByJsonPath($idTokenPayload, $jsonPath);
+                if ($valueFromJwt !== null) {
+                    return [
+                        'value'    => $valueFromJwt,
+                        'jsonpath' => $jsonPath,
+                        'source'   => 'provider (jwt)',
+                    ];
+                }
             }
         }
 
@@ -1230,6 +1267,17 @@ class Provider extends CommonDBTM
                     'jsonpath' => $jsonPath,
                     'source'   => 'default',
                 ];
+            }
+
+            if (is_array($idTokenPayload)) {
+                $valueFromJwt = $this->getResourceOwnerValueByJsonPath($idTokenPayload, $jsonPath);
+                if ($valueFromJwt !== null) {
+                    return [
+                        'value'    => $valueFromJwt,
+                        'jsonpath' => $jsonPath,
+                        'source'   => 'default (jwt)',
+                    ];
+                }
             }
         }
 
