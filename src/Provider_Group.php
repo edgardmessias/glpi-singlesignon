@@ -90,7 +90,11 @@ class Provider_Group extends CommonDBRelation
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         if ($item instanceof Provider) {
-            return self::createTabEntry(__('Role mappings', 'singlesignon'), 0, self::class, 'ti ti-users');
+            $count = countElementsInTable(
+                (new self())->getTable(),
+                ['plugin_singlesignon_providers_id' => $item->getID()],
+            );
+            return self::createTabEntry(__('Role mappings', 'singlesignon'), $count, self::class, 'ti ti-users');
         }
 
         return '';

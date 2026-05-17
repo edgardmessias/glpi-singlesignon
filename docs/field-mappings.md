@@ -73,9 +73,55 @@ If a path points to a list, the plugin uses the first usable value it finds.
 
 **Avatar does not download** — Ensure **Avatar URL** is a full `https://…` address the GLPI **server** can reach; adjust **Photo Authorization** if the image URL needs special headers (see [Configuration](configuration.md)).
 
+## Default mappings
+
+When no custom field mappings are saved for a provider, the plugin uses **built-in defaults** based on the provider type.  
+Built-in defaults are tried in the order shown (lowest sort order first).
+
+### Azure AD / Microsoft Entra (type `azure`)
+
+| Field type | JSONPath | Active | Sort |
+|-----------|---------|--------|------|
+| ID | `$.id` | ✓ | 10 |
+| ID | `$.userPrincipalName` | ✓ | 20 |
+| Email | `$.mail` | ✓ | 30 |
+| Email | `$.userPrincipalName` | ✓ | 40 |
+| Login | `$.userPrincipalName` | ✓ | 50 |
+| Login | `$.displayName` | ✓ | 60 |
+| First name | `$.givenName` | ✓ | 70 |
+| Last name | `$.surname` | ✓ | 80 |
+| Full name | `$.displayName` | ✓ | 90 |
+
+### Generic / OIDC (type `generic` — fallback for any unknown provider type)
+
+| Field type | JSONPath | Active | Sort |
+|-----------|---------|--------|------|
+| ID | `$.id` | ✓ | 10 |
+| ID | `$.username` | ✓ | 20 |
+| ID | `$.sub` | ✓ | 30 |
+| Email | `$.email` | ✓ | 40 |
+| Email | `$['e-mail']` | ✓ | 50 |
+| Email | `$['email-address']` | ✓ | 60 |
+| Email | `$.mail` | ✓ | 70 |
+| Email | `$.userPrincipalName` | ✓ | 75 |
+| Login | `$.userPrincipalName` | ✓ | 80 |
+| Login | `$.login` | ✓ | 90 |
+| Login | `$.username` | ✓ | 100 |
+| Login | `$.id` | ✓ | 110 |
+| Login | `$.name` | ✓ | 120 |
+| Login | `$.displayName` | ✓ | 130 |
+| First name | `$.givenName` | ✓ | 135 |
+| Last name | `$.surname` | ✓ | 136 |
+| Full name | `$.displayName` | ✓ | 137 |
+| Picture URL | `$.picture` | ✓ | 140 |
+| Roles (IdP Claim) | `$.groups` | ✗ | 150 |
+| Roles (IdP Claim) | `$.roles` | ✗ | 160 |
+
+> **Tip:** For other providers (Google, GitHub, Facebook, LinkedIn, Instagram) built-in defaults are stored in `providers.json` in the plugin root.  You can override any of them by creating a custom mapping with a lower sort order.
+
 ---
 
-## Related
+
 
 - [Configuration](configuration.md) — OAuth URLs, registration, photo sync  
 - [FAQ](faq.md) — login fails, wrong user, redirect issues  

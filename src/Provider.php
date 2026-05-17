@@ -772,6 +772,16 @@ class Provider extends CommonDBTM
         return 'ti ti-lock';
     }
 
+    public static function getAdditionalMenuLinks(): array
+    {
+        $links = [];
+        if (Session::haveRight('rule_right', READ)) {
+            $title = htmlspecialchars(__('Authorizations assignment rules'), ENT_QUOTES, 'UTF-8');
+            $links['<i class="ti ti-shield-check"></i> ' . $title] = '/front/ruleright.php';
+        }
+        return $links;
+    }
+
     public static function getDefault($type, $key, $default = null)
     {
         if (static::$default === null) {
@@ -1134,10 +1144,30 @@ class Provider extends CommonDBTM
         ));
     }
 
+    /**
+     * Strip keys whose names start with '@' (e.g. '@odata.context' from
+     * Microsoft Graph) before handing the array to the JsonPath library.
+     * Those keys use the '@' character which is a reserved token in JsonPath,
+     * and some library versions fail silently when they appear at the top level.
+     *
+     * @param array<string, mixed> $resourceArray
+     * @return array<string, mixed>
+     */
+    private function sanitizeResourceArrayForJsonPath(array $resourceArray): array
+    {
+        $sanitized = [];
+        foreach ($resourceArray as $key => $value) {
+            if (is_string($key) && $key !== '' && $key[0] !== '@') {
+                $sanitized[$key] = $value;
+            }
+        }
+        return $sanitized;
+    }
+
     private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
     {
         try {
-            $json = new JsonObject($resourceArray);
+            $json = new JsonObject($this->sanitizeResourceArrayForJsonPath($resourceArray));
             $result = $json->get($jsonPath);
         } catch (Throwable) {
             return null;

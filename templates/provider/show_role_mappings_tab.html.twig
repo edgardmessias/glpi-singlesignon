@@ -94,7 +94,8 @@
         </div>
         <div class="card-footer text-end">
             <button type="submit" name="update_role_mappings" class="btn btn-primary">
-                {{ __('Save') }}
+                <i class="ti ti-device-floppy"></i>
+                <span>{{ _x('button', 'Save') }}</span>
             </button>
         </div>
     </div>
@@ -135,44 +136,7 @@
             console.error('Failed to add role mapping row', e);
         }
     });
-
-    table.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-remove-row]');
-        if (!button) {
-            return;
-        }
-        const row = button.closest('tr[data-row]');
-        if (!row) {
-            return;
-        }
-        if (button.dataset.undo) {
-            // Undo pending deletion
-            const deleteFlag = row.querySelector('.sso-delete-flag');
-            if (deleteFlag) {
-                deleteFlag.value = '0';
-            }
-            row.style.opacity = '';
-            row.style.pointerEvents = '';
-            button.style.pointerEvents = '';
-            button.style.opacity = '';
-            delete button.dataset.undo;
-            button.innerHTML = '<i class="ti ti-trash"></i> {{ __('Remove')|e('js') }}';
-            return;
-        }
-        const isSaved = row.dataset.saved === '1';
-        if (isSaved) {
-            const deleteFlag = row.querySelector('.sso-delete-flag');
-            if (deleteFlag) {
-                deleteFlag.value = '1';
-            }
-            row.style.opacity = '0.4';
-            row.style.pointerEvents = 'none';
-            button.style.pointerEvents = 'auto';
-            button.style.opacity = '1';
-            button.dataset.undo = '1';
-        } else {
-            row.remove();
-        }
-    });
 })();
 </script>
+
+{{ include('@singlesignon/provider/_mapping_row_actions.html.twig') }}

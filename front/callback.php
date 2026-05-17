@@ -200,7 +200,7 @@ $url_redirect = rtrim($url_redirect, '?'); // remove `?` when there is no parame
 $loginError = $signon_provider->getLastLoginError();
 if ($loginError !== '') {
     $client_ip = ToolboxPlugin::getClientIp();
-    Toolbox::logInFile('access-errors', "$loginError [client: $client_ip]", true);
+    Toolbox::logInFile('access-errors', "$loginError [client: $client_ip]\n", true);
 }
 
 // we have done at least a good login? No, we return.

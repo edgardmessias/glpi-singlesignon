@@ -163,6 +163,7 @@ class Provider_Field extends CommonDBTM
             ['field_type' => 'email', 'jsonpath' => '$[\'e-mail\']', 'is_active' => 1, 'sort_order' => 50],
             ['field_type' => 'email', 'jsonpath' => '$[\'email-address\']', 'is_active' => 1, 'sort_order' => 60],
             ['field_type' => 'email', 'jsonpath' => '$.mail', 'is_active' => 1, 'sort_order' => 70],
+            ['field_type' => 'email', 'jsonpath' => '$.userPrincipalName', 'is_active' => 1, 'sort_order' => 75],
             ['field_type' => 'username', 'jsonpath' => '$.userPrincipalName', 'is_active' => 1, 'sort_order' => 80],
             ['field_type' => 'username', 'jsonpath' => '$.login', 'is_active' => 1, 'sort_order' => 90],
             ['field_type' => 'username', 'jsonpath' => '$.username', 'is_active' => 1, 'sort_order' => 100],
@@ -181,7 +182,11 @@ class Provider_Field extends CommonDBTM
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         if ($item instanceof Provider) {
-            return self::createTabEntry(__('Field mappings', 'singlesignon'), 0, self::class, 'ti ti-list-search');
+            $count = countElementsInTable(
+                (new self())->getTable(),
+                ['plugin_singlesignon_providers_id' => $item->getID()],
+            );
+            return self::createTabEntry(__('Field mappings', 'singlesignon'), $count, self::class, 'ti ti-list-search');
         }
 
         return '';
