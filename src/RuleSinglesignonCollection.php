@@ -89,8 +89,15 @@ class RuleSinglesignonCollection extends \RuleCollection {
     }
 
     /**
-     * Override core rendering to force a CSS/JS-safe container id for massive
-     * actions when the collection class is namespaced.
+     * Override GLPI's default list renderer to keep massive-actions working for
+     * namespaced plugin rule collections.
+     *
+     * Core `RuleCollection::showListRules()` uses `static::class` inside the
+     * massive-action container id. For namespaced classes this injects `\` in
+     * the id, which breaks the jQuery selector used by the Actions modal to
+     * collect checked rows, producing "No selected items" even when rows are
+     * selected. This override keeps the core behavior but forces a safe
+     * container slug for selector compatibility.
      *
      * @param string $target
      * @param array<string, mixed> $options
@@ -190,7 +197,7 @@ TWIG, $twig_params);
         $columns['rank'] = __('Position');
         $columns['sort'] = '';
 
-        $safeContainerClass = preg_replace('/[^A-Za-z0-9_-]/', '_', static::class) ?? static::class;
+        $safeContainerClass = preg_replace('/[^A-Za-z0-9_-]/', '_', static::class);
 
         \Glpi\Application\View\TemplateRenderer::getInstance()->display('components/datatable.html.twig', [
             'datatable_id' => 'rulelist',
