@@ -1497,6 +1497,7 @@ class Provider extends CommonDBTM
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
         $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
+        $profilesId = 0;
         $isRecursive = false;
 
         // ── Picture ──────────────────────────────────────────────────────────
