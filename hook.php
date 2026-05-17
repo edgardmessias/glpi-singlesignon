@@ -159,12 +159,15 @@ function plugin_singlesignon_install()
             `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
             `groups_id` INT NOT NULL DEFAULT '0',
             `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+            `is_active` TINYINT(1) NOT NULL DEFAULT '1',
             PRIMARY KEY (`id`),
             UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`),
             KEY `groups_id` (`groups_id`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         );
     }
+
+    $migration->addField($providersGroupsTable, 'is_active', 'bool', ['value' => 1]);
 
     /**
      * Version 2.0.0
@@ -205,9 +208,6 @@ function plugin_singlesignon_install()
             'after' => 'user_photo_sync_mode',
         ],
     );
-    // user_group_sync_mode and groups_claim were present in versions < 2.3.0 and are
-    // dropped in the 2.3.0 migration below.
-    // Do NOT re-add them here so that fresh installs never create these columns.
     $migration->addField(
         $providersTable,
         'resource_owner_custom_headers',
@@ -240,9 +240,9 @@ function plugin_singlesignon_install()
 
     $migration->addField($providersTable, 'auto_register', 'bool', ['value' => 0]);
     $migration->addField($providersTable, 'registration_preview', 'bool', ['value' => 0]);
-    // default_entities_id, match_entity_by_email_domain and default_profiles_id were
-    // present in versions < 2.1.0 and are dropped in the 2.1.0 migration below.
-    // Do NOT re-add them here so that fresh installs never create these columns.
+    $migration->addField($providersTable, 'default_entities_id', 'integer', ['value' => 0]);
+    $migration->addField($providersTable, 'match_entity_by_email_domain', 'bool', ['value' => 0]);
+    $migration->addField($providersTable, 'default_profiles_id', 'integer', ['value' => 0]);
 
     $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
     $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
@@ -264,141 +264,9 @@ function plugin_singlesignon_install()
     $migration->executeMigration();
 
     // Legacy cleanup for columns removed in older versions.
-    $migration->dropField($providersTable, 'default_entities_id');
-    $migration->dropField($providersTable, 'match_entity_by_email_domain');
-    $migration->dropField($providersTable, 'default_profiles_id');
     $migration->dropField($providersTable, 'user_group_sync_mode');
     $migration->dropField($providersTable, 'groups_claim');
     $migration->executeMigration();
-
-    // Remove fullname field mappings (field type no longer supported).
-    if ($DB->tableExists($providersFieldsTable)) {
-        $DB->delete($providersFieldsTable, ['field_type' => 'fullname']);
-    }
-
-    /**
-     * Version 2.5.0:
-     *  - Convert legacy custom SSO rules into provider role mappings.
-     *  - Remove legacy custom SSO rules after conversion.
-     */
-    if (version_compare($currentVersion, '2.5.0', '<')) {
-        $legacyRuleSubtype = 'GlpiPlugin\\Singlesignon\\RuleSinglesignon';
-        $ruleIds = [];
-        $providerIdsByRule = [];
-        $claimsByRule = [];
-        $groupsByRule = [];
-
-        if ($DB->tableExists('glpi_rules')) {
-            foreach ($DB->request([
-                'SELECT' => ['id'],
-                'FROM'   => 'glpi_rules',
-                'WHERE'  => ['sub_type' => $legacyRuleSubtype],
-            ]) as $ruleRow) {
-                $ruleId = (int) ($ruleRow['id'] ?? 0);
-                if ($ruleId > 0) {
-                    $ruleIds[] = $ruleId;
-                }
-            }
-        }
-
-        if ($ruleIds !== [] && $DB->tableExists('glpi_rulecriteria')) {
-            foreach ($DB->request([
-                'SELECT' => ['rules_id', 'criteria', 'pattern'],
-                'FROM'   => 'glpi_rulecriteria',
-                'WHERE'  => ['rules_id' => $ruleIds],
-            ]) as $criteriaRow) {
-                $ruleId = (int) ($criteriaRow['rules_id'] ?? 0);
-                $criteria = (string) ($criteriaRow['criteria'] ?? '');
-                $pattern = trim((string) ($criteriaRow['pattern'] ?? ''));
-
-                if ($ruleId <= 0 || $pattern === '') {
-                    continue;
-                }
-
-                if ($criteria === 'provider_id') {
-                    $providerId = (int) $pattern;
-                    if ($providerId > 0) {
-                        $providerIdsByRule[$ruleId][] = $providerId;
-                    }
-                    continue;
-                }
-
-                if ($criteria === 'SSO_GROUPS') {
-                    $claimsByRule[$ruleId][] = $pattern;
-                }
-            }
-        }
-
-        if ($ruleIds !== [] && $DB->tableExists('glpi_ruleactions')) {
-            foreach ($DB->request([
-                'SELECT' => ['rules_id', 'field', 'value'],
-                'FROM'   => 'glpi_ruleactions',
-                'WHERE'  => [
-                    'rules_id' => $ruleIds,
-                    'field'    => 'specific_groups_id',
-                ],
-            ]) as $actionRow) {
-                $ruleId = (int) ($actionRow['rules_id'] ?? 0);
-                $groupId = (int) ($actionRow['value'] ?? 0);
-                if ($ruleId > 0 && $groupId > 0) {
-                    $groupsByRule[$ruleId][] = $groupId;
-                }
-            }
-        }
-
-        foreach ($ruleIds as $ruleId) {
-            $providerIds = array_values(array_unique(array_map('intval', $providerIdsByRule[$ruleId] ?? [])));
-            $claims = array_values(array_unique(array_filter(array_map(
-                static fn($v) => trim((string) $v),
-                $claimsByRule[$ruleId] ?? []
-            ))));
-            $groupIds = array_values(array_unique(array_map('intval', $groupsByRule[$ruleId] ?? [])));
-
-            if ($providerIds === [] || $claims === [] || $groupIds === []) {
-                continue;
-            }
-
-            foreach ($providerIds as $providerId) {
-                if ($providerId <= 0) {
-                    continue;
-                }
-                foreach ($claims as $claim) {
-                    if ($claim === '') {
-                        continue;
-                    }
-                    foreach ($groupIds as $groupId) {
-                        if ($groupId <= 0) {
-                            continue;
-                        }
-                        $exists = countElementsInTable($providersGroupsTable, [
-                            'plugin_singlesignon_providers_id' => $providerId,
-                            'remote_id'                        => $claim,
-                        ]) > 0;
-                        if ($exists) {
-                            continue;
-                        }
-                        $DB->insert($providersGroupsTable, [
-                            'plugin_singlesignon_providers_id' => $providerId,
-                            'groups_id'                        => $groupId,
-                            'remote_id'                        => $claim,
-                        ]);
-                    }
-                }
-            }
-        }
-
-        if ($ruleIds !== []) {
-            if ($DB->tableExists('glpi_ruleactions')) {
-                $DB->delete('glpi_ruleactions', ['rules_id' => $ruleIds]);
-            }
-            if ($DB->tableExists('glpi_rulecriteria')) {
-                $DB->delete('glpi_rulecriteria', ['rules_id' => $ruleIds]);
-            }
-            if ($DB->tableExists('glpi_rules')) {
-                $DB->delete('glpi_rules', ['id' => $ruleIds]);
-            }
-        }
-    }
 
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
     Config::setConfigurationValues('plugin:singlesignon', $current);

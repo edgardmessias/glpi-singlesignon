@@ -130,22 +130,6 @@ Same idea as for the profile request, but used when **downloading the image file
 
 ---
 
-## User group synchronization
-
-### Synchronization mode
-
-Controls how groups from OAuth claims are applied on login:
-
-- **Disabled** — do not synchronize groups.
-- **Import all groups from OAuth claim** — import every group returned by the claim.
-- **Import only groups allowed by matching GLPI authorization rules** — assigns the user to existing GLPI groups via the plugin's SSO group rules engine. Rules match against raw IdP group name strings; no new GLPI groups are created automatically.
-
-### Group claim
-
-Claim used to read the user groups from the OAuth profile (default behavior checks common claims such as `groups` and `roles`). Dot notation is supported for nested claims, for example `realm_access.roles`.
-
----
-
 ## Personalization
 
 ### Background color / Color / Picture

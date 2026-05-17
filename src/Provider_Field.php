@@ -70,7 +70,8 @@ class Provider_Field extends CommonDBTM
             'email'      => __('Email'),
             'firstname'  => __('First name'),
             'lastname'   => __('Last name'),
-            'avatar_url' => __('Picture'),
+            'fullname'   => __('Full name'),
+            'avatar_url' => __('Picture URL', 'singlesignon'),
             'location'   => __('Location'),
             'supervisor' => __('Supervisor'),
             'phone'      => __('Phone'),
@@ -171,7 +172,7 @@ class Provider_Field extends CommonDBTM
             ['field_type' => 'firstname', 'jsonpath' => '$.givenName', 'is_active' => 1, 'sort_order' => 135],
             ['field_type' => 'lastname', 'jsonpath' => '$.surname', 'is_active' => 1, 'sort_order' => 136],
             ['field_type' => 'avatar_url', 'jsonpath' => '$.picture', 'is_active' => 1, 'sort_order' => 140],
-            ['field_type' => 'groups', 'jsonpath' => '$.groups', 'is_active' => 0, 'sort_order' => 150],
+            ['field_type' => 'groups', 'jsonpath' => '$.roles', 'is_active' => 0, 'sort_order' => 150],
         ];
     }
 

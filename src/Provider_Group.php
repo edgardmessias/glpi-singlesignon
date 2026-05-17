@@ -90,7 +90,7 @@ class Provider_Group extends CommonDBRelation
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         if ($item instanceof Provider) {
-            return self::createTabEntry(__('Role mappings', 'singlesignon'), 0, self::class, 'ti ti-users-group');
+            return self::createTabEntry(__('Role mappings', 'singlesignon'), 0, self::class, 'ti ti-users');
         }
 
         return '';
@@ -322,6 +322,7 @@ class Provider_Group extends CommonDBRelation
             'WHERE'  => [
                 'plugin_singlesignon_providers_id' => $providerId,
                 'remote_id'                        => $normalizedClaims,
+                'is_active'                        => 1,
             ],
         ]) as $row) {
             $groupId = (int) ($row['groups_id'] ?? 0);
@@ -350,6 +351,7 @@ class Provider_Group extends CommonDBRelation
             'FROM'   => self::getTable(),
             'WHERE'  => [
                 'plugin_singlesignon_providers_id' => $providerId,
+                'is_active'                        => 1,
             ],
         ]) as $row) {
             $groupId = (int) ($row['groups_id'] ?? 0);
@@ -436,11 +438,10 @@ class Provider_Group extends CommonDBRelation
         }
 
         echo TemplateRenderer::getInstance()->render('@singlesignon/provider/show_role_mappings_tab.html.twig', [
-            'provider'      => $provider,
-            'provider_id'   => (int) $provider->getID(),
-            'mappings'      => static::getMappingsForProvider((int) $provider->getID()),
-            'group_options' => static::getGroupOptions(),
-            'form_action'   => ToolboxPlugin::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/provider_group.form.php',
+            'provider'    => $provider,
+            'provider_id' => (int) $provider->getID(),
+            'mappings'    => static::getMappingsForProvider((int) $provider->getID()),
+            'form_action' => ToolboxPlugin::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/provider_group.form.php',
         ]);
     }
 
@@ -478,6 +479,7 @@ class Provider_Group extends CommonDBRelation
             $delete = (int) ($row['_delete'] ?? 0) === 1;
             $remoteId = trim((string) ($row['remote_id'] ?? ''));
             $groupId = (int) ($row['groups_id'] ?? 0);
+            $isActive = (int) (($row['is_active'] ?? 1) ? 1 : 0);
 
             if ($mappingId > 0 && $delete) {
                 $this->deleteByCriteria([
@@ -495,6 +497,7 @@ class Provider_Group extends CommonDBRelation
                 'plugin_singlesignon_providers_id' => $providerId,
                 'remote_id'                        => $remoteId,
                 'groups_id'                        => $groupId,
+                'is_active'                        => $isActive,
             ];
 
             if ($mappingId > 0) {
@@ -509,34 +512,4 @@ class Provider_Group extends CommonDBRelation
         Html::back();
     }
 
-    /**
-     * @return array<int, string>
-     */
-    private static function getGroupOptions(): array
-    {
-        global $DB;
-
-        $groups = [];
-        foreach ($DB->request([
-            'SELECT' => ['id', 'completename', 'name'],
-            'FROM'   => 'glpi_groups',
-            'ORDER'  => ['completename ASC', 'name ASC'],
-        ]) as $row) {
-            $groupId = (int) ($row['id'] ?? 0);
-            if ($groupId <= 0) {
-                continue;
-            }
-
-            $label = trim((string) ($row['completename'] ?? ''));
-            if ($label === '') {
-                $label = trim((string) ($row['name'] ?? ''));
-            }
-            if ($label === '') {
-                $label = (string) $groupId;
-            }
-            $groups[$groupId] = $label;
-        }
-
-        return $groups;
-    }
 }

@@ -23,7 +23,8 @@
 {% set rows = mappings|length > 0 ? mappings : [{
    id: 0,
    remote_id: '',
-   groups_id: 0
+   groups_id: 0,
+   is_active: 1
 }] %}
 
 <form method="post" action="{{ form_action }}">
@@ -43,15 +44,19 @@
                     <tr>
                         <th>{{ __('Role / Group key', 'singlesignon') }}</th>
                         <th>{{ __('Group') }}</th>
+                        <th class="text-center">{{ __('Active') }}</th>
                         <th class="text-center">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for map in rows %}
                         {% set is_saved = (map.id|default(0)) > 0 %}
-                        <tr data-row>
+                        <tr data-row data-saved="{{ is_saved ? '1' : '0' }}">
                             <td>
                                 <input type="hidden" name="_role_mappings[{{ loop.index0 }}][id]" value="{{ map.id|default(0) }}"/>
+                                {% if is_saved %}
+                                    <input type="hidden" class="sso-delete-flag" name="_role_mappings[{{ loop.index0 }}][_delete]" value="0"/>
+                                {% endif %}
                                 <input type="text"
                                        class="form-control"
                                        name="_role_mappings[{{ loop.index0 }}][remote_id]"
@@ -59,24 +64,25 @@
                                        placeholder="admin"/>
                             </td>
                             <td>
-                                <select class="form-select" name="_role_mappings[{{ loop.index0 }}][groups_id]">
-                                    <option value="0">{{ __('Select a group') }}</option>
-                                    {% for id, label in group_options %}
-                                        <option value="{{ id }}" {% if id == map.groups_id %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
+                                {{ call('Dropdown::show', ['Group', {
+                                    name: '_role_mappings[' ~ loop.index0 ~ '][groups_id]',
+                                    value: map.groups_id|default(0),
+                                    display: false,
+                                    width: '100%',
+                                    rand: 'sg_' ~ loop.index0
+                                }])|raw }}
                             </td>
                             <td class="text-center">
-                                {% if is_saved %}
-                                    <input type="checkbox"
-                                           class="form-check-input"
-                                           name="_role_mappings[{{ loop.index0 }}][_delete]"
-                                           value="1"/>
-                                {% else %}
-                                    <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
-                                        <i class="ti ti-trash"></i> {{ __('Remove') }}
-                                    </button>
-                                {% endif %}
+                                <input type="checkbox"
+                                       class="form-check-input"
+                                       name="_role_mappings[{{ loop.index0 }}][is_active]"
+                                       value="1"
+                                       {% if map.is_active|default(1) %}checked{% endif %}/>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
+                                    <i class="ti ti-trash"></i> {{ __('Remove') }}
+                                </button>
                             </td>
                         </tr>
                     {% endfor %}
@@ -102,37 +108,32 @@
         return;
     }
 
-    const groups = {{ group_options|json_encode|raw }};
-
-    const buildOptions = () => {
-        const defaultOption = `<option value="0">{{ __('Select a group')|e('js') }}</option>`;
-        const groupOptions = Object.entries(groups)
-            .map(([id, label]) => `<option value="${id}">${label}</option>`)
-            .join('');
-        return defaultOption + groupOptions;
-    };
+    const providerId = {{ provider_id|json_encode|raw }};
+    const formUrl = {{ form_action|json_encode|raw }};
 
     const nextIndex = () => table.querySelectorAll('tbody tr[data-row]').length;
 
-    addBtn.addEventListener('click', () => {
+    addBtn.addEventListener('click', async () => {
         const idx = nextIndex();
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-row', '1');
-        tr.innerHTML = `
-            <td>
-                <input type="hidden" name="_role_mappings[${idx}][id]" value="0"/>
-                <input type="text" class="form-control" name="_role_mappings[${idx}][remote_id]" placeholder="admin"/>
-            </td>
-            <td>
-                <select class="form-select" name="_role_mappings[${idx}][groups_id]">${buildOptions()}</select>
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
-                    <i class="ti ti-trash"></i> {{ __('Remove')|e('js') }}
-                </button>
-            </td>
-        `;
-        table.querySelector('tbody')?.appendChild(tr);
+        try {
+            const url = `${formUrl}?action=new_row&provider_id=${encodeURIComponent(providerId)}&idx=${encodeURIComponent(idx)}`;
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) {
+                return;
+            }
+            const html = await response.text();
+            const tbody = table.querySelector('tbody');
+            if (tbody) {
+                const range = document.createRange();
+                range.selectNodeContents(tbody);
+                const fragment = range.createContextualFragment(html);
+                tbody.appendChild(fragment);
+            }
+        } catch (e) {
+            console.error('Failed to add role mapping row', e);
+        }
     });
 
     table.addEventListener('click', (event) => {
@@ -141,9 +142,47 @@
             return;
         }
         const row = button.closest('tr[data-row]');
-        if (row) {
+        if (!row) {
+            return;
+        }
+        const isSaved = row.dataset.saved === '1';
+        if (isSaved) {
+            const deleteFlag = row.querySelector('.sso-delete-flag');
+            if (deleteFlag) {
+                deleteFlag.value = '1';
+            }
+            row.style.opacity = '0.4';
+            row.querySelectorAll('input, select, button').forEach(el => {
+                el.disabled = true;
+            });
+            button.disabled = false;
+            button.textContent = '{{ __('Undo')|e('js') }}';
+            button.dataset.undo = '1';
+        } else {
             row.remove();
         }
+    });
+
+    // Handle undo
+    table.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-undo]');
+        if (!button) {
+            return;
+        }
+        const row = button.closest('tr[data-row]');
+        if (!row) {
+            return;
+        }
+        const deleteFlag = row.querySelector('.sso-delete-flag');
+        if (deleteFlag) {
+            deleteFlag.value = '0';
+        }
+        row.style.opacity = '';
+        row.querySelectorAll('input, select').forEach(el => {
+            el.disabled = false;
+        });
+        delete button.dataset.undo;
+        button.innerHTML = '<i class="ti ti-trash"></i> {{ __('Remove')|e('js') }}';
     });
 })();
 </script>

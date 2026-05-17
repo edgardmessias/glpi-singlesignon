@@ -28,6 +28,44 @@ include(__DIR__ . '/../../../inc/includes.php');
 
 Session::checkRight('config', UPDATE);
 
+// Render a new empty table row with a GLPI Group dropdown (called via AJAX when clicking Add).
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'new_row') {
+    $idx = max(0, (int) ($_GET['idx'] ?? 0));
+
+    $groupDropdown = Dropdown::show('Group', [
+        'name'                => "_role_mappings[{$idx}][groups_id]",
+        'value'               => 0,
+        'display'             => false,
+        'width'               => '100%',
+        'rand'                => 'sg_' . $idx,
+        'display_emptychoice' => true,
+        'emptylabel'          => __('Select a group'),
+    ]);
+
+    $removeLabel = htmlspecialchars(__('Remove'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $activeLabel = htmlspecialchars(__('Active'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+    echo '<tr data-row data-saved="0">';
+    echo '<td>';
+    echo '<input type="hidden" name="_role_mappings[' . $idx . '][id]" value="0"/>';
+    echo '<input type="text" class="form-control" name="_role_mappings[' . $idx . '][remote_id]"';
+    echo ' placeholder="' . htmlspecialchars(__('admin'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"/>';
+    echo '</td>';
+    echo '<td>' . $groupDropdown . '</td>';
+    echo '<td class="text-center">';
+    echo '<input type="checkbox" class="form-check-input"';
+    echo ' name="_role_mappings[' . $idx . '][is_active]" value="1" checked';
+    echo ' title="' . $activeLabel . '"/>';
+    echo '</td>';
+    echo '<td class="text-center">';
+    echo '<button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>';
+    echo '<i class="ti ti-trash"></i> ' . $removeLabel;
+    echo '</button>';
+    echo '</td>';
+    echo '</tr>';
+    return;
+}
+
 $mapping = new Provider_Group();
 if (isset($_POST['update_role_mappings'])) {
     $mapping->executeFormAction($_POST);

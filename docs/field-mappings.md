@@ -26,11 +26,12 @@ Each vendor uses different field names. Microsoft Graph, Google, GitHub, and cus
 | Type | Role in GLPI |
 |------|----------------|
 | **ID** | Stable id from the provider (links the same person across logins). Often a numeric id or a `sub` value. |
-| **Username** | Login name when you are **not** using “email as login”. |
+| **Login** | Login name when you are **not** using “email as login”. |
 | **Email** | Email address; used heavily to find or create users. |
 | **First name** / **Last name** | Given name and family name in GLPI. |
 | **Full name** | One string; can be split if **Split Name** is enabled on the provider. |
-| **Avatar URL** | Address of the user’s picture; photo sync uses this URL. |
+| **Picture URL** | Address of the user’s picture; photo sync uses this URL. |
+| **Roles (IdP Claim)** | Raw role/group strings from the identity provider; used by the **Role mappings** tab to assign the user to GLPI groups on login. |
 
 ---
 
