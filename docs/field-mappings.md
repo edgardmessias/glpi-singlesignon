@@ -75,7 +75,7 @@ If a path points to a list, the plugin uses the first usable value it finds.
 
 ## Default mappings
 
-When no custom field mappings are saved for a provider, the plugin uses **built-in defaults** based on the provider type.  
+When no custom field mappings are saved for a provider, the plugin uses **built-in defaults** based on the provider type (Azure, Google, …).  
 Built-in defaults are tried in the order shown (lowest sort order first).
 
 ### Generic / OIDC (type `generic` — fallback for any unknown provider type)
@@ -107,7 +107,7 @@ Built-in defaults are tried in the order shown (lowest sort order first).
 
 ---
 
-
+## Related
 
 - [Configuration](configuration.md) — OAuth URLs, registration, photo sync  
 - [FAQ](faq.md) — login fails, wrong user, redirect issues  
