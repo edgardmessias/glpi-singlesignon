@@ -76,7 +76,7 @@ class Provider_Field extends CommonDBTM
             'phone'      => __('Phone'),
             'phone2'     => __('Phone 2'),
             'mobile'     => __('Cell phone'),
-            'groups'     => __('Groups'),
+            'groups'     => __('Roles (IdP Claim)', 'singlesignon'),
         ];
     }
 

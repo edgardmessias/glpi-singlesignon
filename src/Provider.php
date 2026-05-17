@@ -1908,6 +1908,11 @@ class Provider extends CommonDBTM
             return self::LOGIN_FAILURE;
         }
 
+        if (!$this->fields['auto_register']) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
+            return self::LOGIN_FAILURE;
+        }
+
         // Evaluate all SSO rules with the new-user context so that
         // entity, profile and group assignments are driven by the rules engine.
         $ssoGroups  = Provider_Group::extractUserGroupsFromResource($this, $resource_array);
@@ -1918,11 +1923,6 @@ class Provider extends CommonDBTM
             true,
             $resource_array
         );
-
-        if (!$this->fields['auto_register']) {
-            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
-            return self::LOGIN_FAILURE;
-        }
 
         if ($this->fields['registration_preview']) {
             $this->storePendingRegistrationSession($resource_array, $ruleResult);

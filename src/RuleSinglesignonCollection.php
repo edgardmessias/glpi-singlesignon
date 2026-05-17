@@ -88,6 +88,215 @@ class RuleSinglesignonCollection extends \RuleCollection {
         return $full ? $CFG_GLPI['root_doc'] . $url : $url;
     }
 
+    /**
+     * Override core rendering to force a CSS/JS-safe container id for massive
+     * actions when the collection class is namespaced.
+     *
+     * @param string $target
+     * @param array<string, mixed> $options
+     */
+    public function showListRules($target, $options = []): void
+    {
+        global $CFG_GLPI;
+
+        $p['inherited'] = 1;
+        $p['childrens'] = 0;
+        $p['active']    = false;
+        $p['condition'] = 0;
+        $p['_glpi_tab'] = $options['_glpi_tab'];
+        $p['display_criterias'] = false;
+        $p['display_actions']   = false;
+
+        foreach (['inherited', 'childrens', 'condition'] as $param) {
+            if (isset($options[$param]) && $this->isRuleRecursive()) {
+                $p[$param] = (int) $options[$param];
+            }
+        }
+
+        foreach (['display_criterias', 'display_actions'] as $param) {
+            if (isset($options[$param])) {
+                $p[$param] = (bool) $options[$param];
+            }
+        }
+
+        $rule              = $this->getRuleClass();
+        $display_entities  = ($this->isRuleRecursive() && ($p['inherited'] || $p['childrens']));
+        $display_criterias = $p['display_criterias'];
+        $display_actions   = $p['display_actions'];
+
+        $canedit = self::canUpdate() && !$display_entities;
+
+        $use_conditions = false;
+        if ($rule->useConditions()) {
+            $p['condition'] = (int) \Session::getSavedOption(static::class, 'condition', 0);
+            if ($p['condition'] === 0) {
+                $p['condition'] = $this->getDefaultRuleConditionForList();
+            }
+            $use_conditions = true;
+            $twig_params = [
+                'label' => __('Rules used for'),
+                'conditions' => $rule::getConditionsArray(),
+                'p' => $p,
+            ];
+            echo \Glpi\Application\View\TemplateRenderer::getInstance()->renderFromStringTemplate(<<<TWIG
+                {% import 'components/form/fields_macros.html.twig' as fields %}
+                <div class="d-flex justify-content-center">
+                    {{ fields.dropdownArrayField('condition', p.condition, conditions, label, {
+                        on_change: 'reloadTab("start=0&inherited=' ~ p.inherited ~ '&childrens=' ~ p.childrens ~ '&condition=" + this.value)'
+                    }) }}
+                </div>
+TWIG, $twig_params);
+        }
+
+        $nb         = $this->getCollectionSize((bool) $p['inherited'], $p['condition'], $p['childrens']);
+        $p['start'] = $options['start'] ?? 0;
+
+        if ($p['start'] >= $nb) {
+            $p['start'] = 0;
+        }
+
+        $p['limit'] = $_SESSION['glpilist_limit'];
+        $this->getCollectionPart($p);
+
+        $ruletype = static::getRuleClassName();
+
+        \Session::initNavigateListItems($ruletype);
+        $entries = [];
+        for ($i = $p['start'], $j = 0; isset($this->RuleList->list[$j]); $i++, $j++) {
+            $entries[] = [
+                'itemtype' => $ruletype,
+                'id'       => $this->RuleList->list[$j]->fields['id'],
+            ] + $this->RuleList->list[$j]->getDataForList($display_criterias, $display_actions, $display_entities, $canedit);
+            \Session::addToNavigateListItems($ruletype, $this->RuleList->list[$j]->fields['id']);
+        }
+
+        $columns = [
+            'name' => __('Name'),
+            'description' => __('Description'),
+        ];
+        if ($use_conditions) {
+            $columns['condition'] = __('Use rule for');
+        }
+        if ($display_criterias) {
+            $columns['criteria'] = \RuleCriteria::getTypeName(\Session::getPluralNumber());
+        }
+        if ($display_actions) {
+            $columns['actions'] = \RuleAction::getTypeName(\Session::getPluralNumber());
+        }
+        $columns['is_active'] = __('Active');
+        if ($display_entities) {
+            $columns['entity'] = \Entity::getTypeName(1);
+        }
+        $columns['rank'] = __('Position');
+        $columns['sort'] = '';
+
+        $safeContainerClass = preg_replace('/[^A-Za-z0-9_-]/', '_', static::class) ?? static::class;
+
+        \Glpi\Application\View\TemplateRenderer::getInstance()->display('components/datatable.html.twig', [
+            'datatable_id' => 'rulelist',
+            'table_class_style' => 'table-striped table-hover card-table',
+            'is_tab' => true,
+            'start' => $p['start'],
+            'limit' => $p['limit'],
+            'nofilter' => true,
+            'nosort' => true,
+            'super_header' => $this->getTitle(),
+            'columns' => $columns,
+            'formatters' => [
+                'rank' => 'raw_html',
+                'name' => 'raw_html',
+                'criteria' => 'raw_html',
+                'actions' => 'raw_html',
+                'entity' => 'raw_html',
+                'is_active' => 'raw_html',
+                'sort' => 'raw_html',
+            ],
+            'entries' => $entries,
+            'total_number' => $nb,
+            'showmassiveactions' => true,
+            'massiveactionparams' => [
+                'num_displayed' => count($entries),
+                'container'     => 'mass' . $safeContainerClass . mt_rand(),
+                'extraparams'   => [
+                    'entity' => $this->entity,
+                    'condition' => $p['condition'],
+                    'rule_class_name' => static::getRuleClassName(),
+                ],
+                'item'          => $this,
+            ],
+        ]);
+        $collection_classname = jsescape(static::class);
+        echo <<<HTML
+            <script>
+                $(() => {
+                    sortable('#rulelist tbody', {
+                        handle: '.grip-rule',
+                        placeholder: '<tr><td colspan="8" class="sortable-placeholder">&nbsp;</td></tr>'
+                    })[0].addEventListener('sortupdate', (e) => {
+                       const sort_detail = e.detail;
+                       const new_index = sort_detail.destination.index;
+                       const old_index = sort_detail.origin.index;
+
+                       $.post(CFG_GLPI['root_doc'] + '/ajax/rule.php', {
+                          'action': 'move_rule',
+                          'rule_id': sort_detail.item.dataset.id,
+                          'collection_classname':  "{$collection_classname}",
+                          'sort_action': (old_index > new_index) ? 'before' : 'after',
+                          'ref_id': sort_detail.destination.itemsBeforeUpdate[new_index].dataset.id,
+                       });
+
+                       displayAjaxMessageAfterRedirect();
+                    });
+                });
+            </script>
+HTML;
+
+        $url = $CFG_GLPI["root_doc"];
+        $url .= static::getRulesTestURL();
+
+        $twig_params = [
+            'rule_class' => $rule::class,
+            'can_reset' => $rule instanceof \Rule && $rule::hasDefaultRules() && \Config::canUpdate()
+                && \Session::getActiveEntity() === 0 && \Session::getIsActiveEntityRecursive(),
+            'can_replay' => $this->can_replay_rules,
+            'reset_label' => __('Reset rules'),
+            'reset_warning' => __('Rules will be erased and recreated from defaults. All existing rules will be lost.'),
+            'test_label' => __('Test rules engine'),
+            'replay_label' => __('Replay the dictionary rules'),
+            'test_url' => $url . "?sub_type=" . $rule::class . "&condition={$p['condition']}",
+        ];
+        echo \Glpi\Application\View\TemplateRenderer::getInstance()->renderFromStringTemplate(<<<TWIG
+            <div class="d-flex justify-content-center">
+                {% if can_reset %}
+                    <button type="button" class="btn btn-ghost-danger mx-1" data-bs-toggle="modal" data-bs-target="#reset_rules">
+                        {{ reset_label }}
+                    </button>
+
+                    {% set reset_btn %}
+                        <a class="btn btn-danger w-100" role="button" href="{{ rule_class|itemtype_search_path }}?reinit=true&amp;subtype={{ rule_class|url_encode }}">
+                            {{ reset_label }}
+                        </a>
+                    {% endset %}
+
+                    {{ include('components/danger_modal.html.twig', {
+                        'modal_id': 'reset_rules',
+                        'confirm_btn': reset_btn,
+                        'content': reset_warning
+                    }) }}
+                {% endif %}
+                <button type="button" class="btn btn-primary mx-1" data-bs-toggle="modal" data-bs-target="#allruletest">{{ test_label }}</button>
+                {% do call('Ajax::createIframeModalWindow', ['allruletest', test_url, {title: test_label}]) %}
+                {% if can_replay %}
+                    <a class="btn btn-primary mx-1" role="button" href="{{ rule_class|itemtype_search_path }}?replay_rule=replay_rule">{{ replay_label }}</a>
+                {% endif %}
+            </div>
+TWIG, $twig_params);
+
+        echo "<div class='mb-2'>";
+        $this->showAdditionalInformationsInForm($target);
+        echo "</div>";
+    }
+
     public static function getAdditionalMenuOptions() {
         $options = parent::getAdditionalMenuOptions();
         if (!is_array($options)) {

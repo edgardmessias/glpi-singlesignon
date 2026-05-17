@@ -136,7 +136,7 @@ class RuleSinglesignon extends \Rule {
 
     public function getCriterias(): array {
         return [
-            // ── Identity ────────────────────────────────────────────────────
+            __('Global criteria', 'singlesignon'),
             'login' => [
                 'name'    => __('Login'),
                 'type'    => 'text',
@@ -165,20 +165,19 @@ class RuleSinglesignon extends \Rule {
                 'field'   => 'supervisor',
                 'virtual' => true,
             ],
-            // ── IdP claim values ────────────────────────────────────────────
-            'SSO_GROUPS' => [
-                'name'    => __('Group'),
-                'type'    => 'text',
-                'table'   => '',
-                'field'   => 'SSO_GROUPS',
-                'virtual' => true,
-            ],
-            // ── Context ─────────────────────────────────────────────────────
             'provider_id' => [
                 'name'  => __('SSO Provider', 'singlesignon'),
                 'type'  => 'dropdown',
                 'table' => 'glpi_plugin_singlesignon_providers',
                 'field' => 'name',
+            ],
+            __('IdP Criteria', 'singlesignon'),
+            'SSO_GROUPS' => [
+                'name'    => __('(SSO) Roles (IdP Claim)', 'singlesignon'),
+                'type'    => 'text',
+                'table'   => '',
+                'field'   => 'SSO_GROUPS',
+                'virtual' => true,
             ],
         ];
     }
