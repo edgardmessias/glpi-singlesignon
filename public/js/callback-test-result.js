@@ -56,7 +56,7 @@
         return;
     }
 
-    const copyText = function (text) {
+    const copyToClipboard = function (text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             return navigator.clipboard.writeText(text);
         }
@@ -82,6 +82,6 @@
     };
 
     copyButton.addEventListener('click', function () {
-        copyText(copySource.value || '');
+        copyToClipboard(copySource.value || '');
     });
 }());

@@ -1131,18 +1131,18 @@ class Provider extends CommonDBTM
             : Provider_Field::getDefaultMappings('generic');
 
         $defaults = [];
-        $seen = [];
+        $seenKeys = [];
         foreach (array_merge($providerDefaults, $genericDefaults) as $row) {
             if ($row['field_type'] !== $fieldType || (int) $row['is_active'] !== 1) {
                 continue;
             }
 
             $key = $row['field_type'] . '|' . $row['jsonpath'];
-            if (isset($seen[$key])) {
+            if (isset($seenKeys[$key])) {
                 continue;
             }
 
-            $seen[$key] = true;
+            $seenKeys[$key] = true;
             $defaults[] = $row;
         }
 
