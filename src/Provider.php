@@ -173,8 +173,9 @@ class Provider extends CommonDBTM
         $this->fields['auto_register'] = 0;
         $this->fields['registration_preview'] = 0;
         $this->fields['default_entities_id'] = 0;
-        $this->fields['match_entity_by_email_domain'] = 0;
+        $this->fields['default_entities_id_is_recursive'] = 0;
         $this->fields['default_profiles_id'] = 0;
+        $this->fields['default_profiles_id_is_recursive'] = 0;
         $this->fields['ssl_verify_host'] = 1;
         $this->fields['ssl_verify_peer'] = 1;
     }
@@ -355,8 +356,9 @@ class Provider extends CommonDBTM
         $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
         $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
         $input['default_entities_id'] = (int) ($input['default_entities_id'] ?? 0);
-        $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
+        $input['default_entities_id_is_recursive'] = empty($input['default_entities_id_is_recursive']) ? 0 : 1;
         $input['default_profiles_id'] = (int) ($input['default_profiles_id'] ?? 0);
+        $input['default_profiles_id_is_recursive'] = empty($input['default_profiles_id_is_recursive']) ? 0 : 1;
         if (array_key_exists('ssl_verify_host', $input)) {
             $input['ssl_verify_host'] = empty($input['ssl_verify_host']) ? 0 : 1;
         } else {
@@ -1357,32 +1359,8 @@ class Provider extends CommonDBTM
         ];
     }
 
-    private function resolveEntitiesIdForNewUser(array $resource_array, ?string $email): int
+    private function resolveEntitiesIdForNewUser(): int
     {
-        global $DB;
-
-        if (isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation']) && $resource_array['officeLocation'] !== '') {
-            foreach ($DB->request([
-                'FROM'  => 'glpi_entities',
-                'WHERE' => ['name' => $resource_array['officeLocation']],
-                'LIMIT' => 1,
-            ]) as $entity) {
-                return (int) $entity['id'];
-            }
-        }
-
-        if (!empty($this->fields['match_entity_by_email_domain']) && $email !== null && $email !== '') {
-            $parts = explode('@', $email, 2);
-            if (isset($parts[1])) {
-                $domain = strtolower(trim($parts[1]));
-                foreach ($DB->request(['FROM' => 'glpi_entities']) as $entity) {
-                    if (strcasecmp(strtolower((string) $entity['name']), $domain) === 0) {
-                        return (int) $entity['id'];
-                    }
-                }
-            }
-        }
-
         $default = (int) ($this->fields['default_entities_id'] ?? 0);
 
         return $default > 0 ? $default : 0;
@@ -1426,11 +1404,108 @@ class Provider extends CommonDBTM
         $pu->add([
             'users_id'     => (int) $user->fields['id'],
             'entities_id'  => $entityForProfile,
-            'is_recursive' => 0,
+            'is_recursive' => (int) ($this->fields['default_profiles_id_is_recursive'] ?? 0),
             'profiles_id'  => $profileId,
         ]);
 
         return true;
+    }
+
+    /**
+     * Update an existing GLPI user's profile fields from the OAuth resource-owner payload.
+     *
+     * Only non-empty values from the IdP response are written so that existing
+     * GLPI data is preserved when the IdP does not supply a particular field.
+     *
+     * @param array<string, mixed> $resource_array
+     */
+    private function syncUserFieldsFromResource(User $user, array $resource_array): void
+    {
+        $userUpdate = [];
+
+        // ── Name ─────────────────────────────────────────────────────────────
+        $names = $this->resolveRegistrationNames($resource_array);
+        if ($names['firstname'] !== '') {
+            $userUpdate['firstname'] = $names['firstname'];
+        }
+        if ($names['realname'] !== '') {
+            $userUpdate['realname'] = $names['realname'];
+        }
+
+        // ── Phone / mobile ───────────────────────────────────────────────────
+        $phone  = $this->resolveFieldValueFromMappings($resource_array, 'phone');
+        $phone2 = $this->resolveFieldValueFromMappings($resource_array, 'phone2');
+        $mobile = $this->resolveFieldValueFromMappings($resource_array, 'mobile');
+
+        if ($phone === null) {
+            $businessPhones = $resource_array['businessPhones'] ?? null;
+            if (is_array($businessPhones)) {
+                $phone = isset($businessPhones[0]) && trim((string) $businessPhones[0]) !== ''
+                    ? trim((string) $businessPhones[0]) : null;
+            } elseif (is_string($businessPhones) && trim($businessPhones) !== '') {
+                $phone = trim($businessPhones);
+            }
+        }
+        if ($phone2 === null) {
+            $businessPhones = $resource_array['businessPhones'] ?? null;
+            if (is_array($businessPhones) && isset($businessPhones[1]) && trim((string) $businessPhones[1]) !== '') {
+                $phone2 = trim((string) $businessPhones[1]);
+            }
+        }
+        if ($mobile === null) {
+            $mobileRaw = $resource_array['mobilePhone'] ?? null;
+            if (is_string($mobileRaw) && trim($mobileRaw) !== '') {
+                $mobile = trim($mobileRaw);
+            }
+        }
+
+        if ($phone !== null && $phone !== '') {
+            $userUpdate['phone'] = $phone;
+        }
+        if ($phone2 !== null && $phone2 !== '') {
+            $userUpdate['phone2'] = $phone2;
+        }
+        if ($mobile !== null && $mobile !== '') {
+            $userUpdate['mobile'] = $mobile;
+        }
+
+        // ── Location ─────────────────────────────────────────────────────────
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        if ($locationName === null) {
+            $officeLocation = $resource_array['officeLocation'] ?? null;
+            if (is_string($officeLocation) && trim($officeLocation) !== '') {
+                $locationName = trim($officeLocation);
+            }
+        }
+        if ($locationName !== null && $locationName !== '') {
+            $loc = new Location();
+            $existing = $loc->find(['name' => $locationName], '', 1);
+            if ($existing !== []) {
+                $userUpdate['locations_id'] = (int) array_key_first($existing);
+            }
+        }
+
+        // ── Supervisor ───────────────────────────────────────────────────────
+        $supervisorName = $this->resolveFieldValueFromMappings($resource_array, 'supervisor');
+        if ($supervisorName !== null && $supervisorName !== '') {
+            $supUser = new User();
+            if ($supUser->getFromDBbyName($supervisorName)) {
+                $userUpdate['users_id_supervisor'] = (int) $supUser->fields['id'];
+            }
+        }
+
+        // ── E-mail ───────────────────────────────────────────────────────────
+        $emailRaw = $this->resolveFieldValueFromMappings($resource_array, 'email');
+        if ($emailRaw !== null && $emailRaw !== '') {
+            $userUpdate['_useremails'][-1] = $emailRaw;
+        }
+
+        if ($userUpdate === []) {
+            return;
+        }
+
+        $userUpdate['id'] = (int) $user->fields['id'];
+        $user->update($userUpdate);
     }
 
     /** 
@@ -1466,17 +1541,20 @@ class Provider extends CommonDBTM
                 return false;
             }
 
+            // ── Login ────────────────────────────────────────────────────────────
             $login = $overrides['name'] ?? $resolved['login'];
             if ($login === false || $login === '' || $login === null) {
                 return false;
             }
             $login = (string) $login;
 
+            // ── E-mail ───────────────────────────────────────────────────────────
             $email = $resolved['email'];
             if (isset($overrides['_email'])) {
                 $email = (string) $overrides['_email'];
             }
 
+            // ── Name ─────────────────────────────────────────────────────────────
             $names = $this->resolveRegistrationNames($resource_array);
             if (isset($overrides['firstname'])) {
                 $names['firstname'] = (string) $overrides['firstname'];
@@ -1485,6 +1563,7 @@ class Provider extends CommonDBTM
                 $names['realname'] = (string) $overrides['realname'];
             }
 
+            // ── ID ───────────────────────────────────────────────────────────────
             $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
             if ($remote_id === null || $remote_id === '') {
                 return false;
@@ -1495,7 +1574,7 @@ class Provider extends CommonDBTM
         $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
-        $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
+        $entitiesId = $this->resolveEntitiesIdForNewUser();
 
         // ── Picture ──────────────────────────────────────────────────────────
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
@@ -1893,12 +1972,14 @@ class Provider extends CommonDBTM
 
         $user = $this->findUser($resource_array);
         if ($user) {
+            $this->syncUserFieldsFromResource($user, $resource_array);
             return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
         }
 
         // ── New-user registration path ──────────────────────────────────────
 
         if (empty($this->fields['auto_register'])) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
             return self::LOGIN_FAILURE;
         }
 
@@ -1916,11 +1997,6 @@ class Provider extends CommonDBTM
         $remoteForReg = $this->resolveFieldValueFromMappings($resource_array, 'id');
         if ($remoteForReg === null || $remoteForReg === '') {
             $this->lastLoginError = "SSO login failed via provider '$providerName': Could not resolve remote user ID from the identity provider response";
-            return self::LOGIN_FAILURE;
-        }
-
-        if (!$this->fields['auto_register']) {
-            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
             return self::LOGIN_FAILURE;
         }
 

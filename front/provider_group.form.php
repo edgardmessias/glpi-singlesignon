@@ -23,6 +23,8 @@
  */
 
 use GlpiPlugin\Singlesignon\Provider_Group;
+use Glpi\Exception\Http\BadRequestHttpException;
+use Glpi\Exception\Http\AccessDeniedHttpException;
 
 include(__DIR__ . '/../../../inc/includes.php');
 
@@ -35,13 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
 
     // Validate that the provider exists and the current user can update it.
     if ($providerId <= 0) {
-        http_response_code(400);
-        return;
+        throw new BadRequestHttpException();
     }
     $providerCheck = new \GlpiPlugin\Singlesignon\Provider();
     if (!$providerCheck->getFromDB($providerId) || !$providerCheck->can($providerId, UPDATE)) {
-        http_response_code(403);
-        return;
+        throw new AccessDeniedHttpException();
     }
 
     $groupDropdown = Dropdown::show('Group', [

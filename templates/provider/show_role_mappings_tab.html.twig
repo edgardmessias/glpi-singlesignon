@@ -145,6 +145,20 @@
         if (!row) {
             return;
         }
+        if (button.dataset.undo) {
+            // Undo pending deletion
+            const deleteFlag = row.querySelector('.sso-delete-flag');
+            if (deleteFlag) {
+                deleteFlag.value = '0';
+            }
+            row.style.opacity = '';
+            row.style.pointerEvents = '';
+            button.style.pointerEvents = '';
+            button.style.opacity = '';
+            delete button.dataset.undo;
+            button.innerHTML = '<i class="ti ti-trash"></i> {{ __('Remove')|e('js') }}';
+            return;
+        }
         const isSaved = row.dataset.saved === '1';
         if (isSaved) {
             const deleteFlag = row.querySelector('.sso-delete-flag');
@@ -159,28 +173,6 @@
         } else {
             row.remove();
         }
-    });
-
-    // Handle undo
-    table.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-undo]');
-        if (!button) {
-            return;
-        }
-        const row = button.closest('tr[data-row]');
-        if (!row) {
-            return;
-        }
-        const deleteFlag = row.querySelector('.sso-delete-flag');
-        if (deleteFlag) {
-            deleteFlag.value = '0';
-        }
-        row.style.opacity = '';
-        row.style.pointerEvents = '';
-        button.style.pointerEvents = '';
-        button.style.opacity = '';
-        delete button.dataset.undo;
-        button.innerHTML = '<i class="ti ti-trash"></i> {{ __('Remove')|e('js') }}';
     });
 })();
 </script>

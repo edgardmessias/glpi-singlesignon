@@ -479,7 +479,7 @@ class Provider_Group extends CommonDBRelation
             $delete = (int) ($row['_delete'] ?? 0) === 1;
             $remoteId = trim((string) ($row['remote_id'] ?? ''));
             $groupId = (int) ($row['groups_id'] ?? 0);
-            $isActive = (int) (($row['is_active'] ?? 1) ? 1 : 0);
+            $isActive = (int) (($row['is_active'] ?? 0) ? 1 : 0);
 
             if ($mappingId > 0 && $delete) {
                 $this->deleteByCriteria([
