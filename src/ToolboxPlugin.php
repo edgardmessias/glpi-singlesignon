@@ -65,10 +65,6 @@ class ToolboxPlugin
         return $url;
     }
 
-
-
-
-
     public static function isDefault($row, $query = [])
     {
         return $row['is_default'] == 1;
