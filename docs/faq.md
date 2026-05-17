@@ -182,7 +182,7 @@ Search the log for the user's login name, the provider name, or the string `sing
 
 ---
 
-
+## Getting help
 
 Open an issue with **GLPI version**, **plugin version**, provider type (**Generic**, **Azure**, …), and **redacted** settings (never paste **Client Secret**).
 
