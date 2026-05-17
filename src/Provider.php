@@ -1166,7 +1166,9 @@ class Provider extends CommonDBTM
     private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
     {
         try {
-            $json = new JsonObject($this->sanitizeResourceArrayForJsonPath($resourceArray));
+            $sanitized = $this->sanitizeResourceArrayForJsonPath($resourceArray);
+            $jsonObject = json_decode(json_encode($sanitized), false);
+            $json = new JsonObject($jsonObject);
             $result = $json->get($jsonPath);
         } catch (Throwable) {
             return null;
