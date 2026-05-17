@@ -92,7 +92,7 @@ class Provider_Group extends CommonDBRelation
         if ($item instanceof Provider) {
             $count = countElementsInTable(
                 (new self())->getTable(),
-                ['plugin_singlesignon_providers_id' => $item->getID()],
+                ['plugin_singlesignon_providers_id' => $item->getID()]
             );
             return self::createTabEntry(__('Role mappings', 'singlesignon'), $count, self::class, 'ti ti-users');
         }

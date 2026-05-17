@@ -184,7 +184,7 @@ class Provider_Field extends CommonDBTM
         if ($item instanceof Provider) {
             $count = countElementsInTable(
                 (new self())->getTable(),
-                ['plugin_singlesignon_providers_id' => $item->getID()],
+                ['plugin_singlesignon_providers_id' => $item->getID()]
             );
             return self::createTabEntry(__('Field mappings', 'singlesignon'), $count, self::class, 'ti ti-list-search');
         }
