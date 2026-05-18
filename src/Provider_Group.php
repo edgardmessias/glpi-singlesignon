@@ -254,9 +254,11 @@ class Provider_Group extends CommonDBRelation
             }
         }
 
+        $removedGroupIds = [];
         foreach ($existingDynamicRows as $row) {
             $rowId = (int) ($row['id'] ?? 0);
             $roleId = (int) ($row['plugin_singlesignon_providers_roles_id'] ?? 0);
+            $groupId = (int) ($row['groups_id'] ?? 0);
             if ($rowId <= 0 || $roleId <= 0 || isset($targetRoleToGroup[$roleId])) {
                 continue;
             }
@@ -265,18 +267,23 @@ class Provider_Group extends CommonDBRelation
 
             if ($roleRow === false) {
                 $DB->delete($dynamicTable, ['id' => $rowId]);
+                if ($groupId > 0) {
+                    $removedGroupIds[] = $groupId;
+                }
                 continue;
             }
 
-            if (
-                (int) ($roleRow['plugin_singlesignon_providers_id'] ?? 0) !== $providerId
-                || (int) ($roleRow['is_active'] ?? 0) !== 1
-            ) {
-                $DB->delete($dynamicTable, ['id' => $rowId]);
+            if ((int) ($roleRow['plugin_singlesignon_providers_id'] ?? 0) !== $providerId) {
                 continue;
+            }
+
+            $DB->delete($dynamicTable, ['id' => $rowId]);
+            if ($groupId > 0) {
+                $removedGroupIds[] = $groupId;
             }
         }
 
+        $managedGroupIds = array_values(array_unique(array_merge($managedGroupIds, $removedGroupIds)));
         $managedMap = array_fill_keys(array_map('intval', $managedGroupIds), true);
         $keepMap = array_fill_keys(array_map('intval', $keepGroupIds), true);
 
