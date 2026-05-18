@@ -20,6 +20,14 @@
  # ---------------------------------------------------------------------
  #}
 
+{% set rows = mappings|length > 0 ? mappings : [{
+   id: 0,
+   field_type: 'id',
+   jsonpath: '',
+   is_active: 1,
+   sort_order: 10
+}] %}
+
 <form method="post" action="{{ form_action }}">
     <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="plugin_singlesignon_providers_id" value="{{ provider_id }}"/>
