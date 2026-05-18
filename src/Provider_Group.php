@@ -54,7 +54,7 @@ class Provider_Group extends CommonDBRelation
 {
     private const ROLES_TABLE = 'glpi_plugin_singlesignon_providers_roles';
     private const DYNAMIC_GROUPS_TABLE = 'glpi_plugin_singlesignon_providers_groups';
-    public static $table = self::ROLES_TABLE;
+    public static $table = 'glpi_plugin_singlesignon_providers_roles';
 
     // From CommonDBRelation
     public static $itemtype_1 = Provider::class;
@@ -266,14 +266,14 @@ class Provider_Group extends CommonDBRelation
             $roleRow = $roleInfoById[$roleId] ?? false;
 
             if ($roleRow === false) {
-                $DB->delete($dynamicTable, ['id' => $rowId]);
-                if ($groupId > 0) {
-                    $removedGroupIds[] = $groupId;
-                }
-                continue;
+                $shouldDelete = true;
+            } elseif ((int) ($roleRow['plugin_singlesignon_providers_id'] ?? 0) !== $providerId) {
+                $shouldDelete = false;
+            } else {
+                $shouldDelete = true;
             }
 
-            if ((int) ($roleRow['plugin_singlesignon_providers_id'] ?? 0) !== $providerId) {
+            if (!$shouldDelete) {
                 continue;
             }
 

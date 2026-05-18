@@ -276,6 +276,8 @@ function plugin_singlesignon_install()
         && $DB->fieldExists($providersGroupsTable, 'remote_id')
         && $DB->fieldExists($providersGroupsTable, 'is_active')
     ) {
+        // INSERT IGNORE avoids duplicate key errors when this migration runs more
+        // than once and some rows were already copied to providers_roles.
         $DB->doQuery(
             "INSERT IGNORE INTO `$providersRolesTable` (`plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`)
              SELECT `plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`
@@ -287,12 +289,13 @@ function plugin_singlesignon_install()
     if (!$DB->tableExists($providersGroupsTable)) {
         $providersGroupsNeedsRebuild = true;
     } else {
-        $providersGroupsNeedsRebuild = !$DB->fieldExists($providersGroupsTable, 'users_id')
+        $hasMissingRequiredFields = !$DB->fieldExists($providersGroupsTable, 'users_id')
             || !$DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_roles_id')
-            || !$DB->fieldExists($providersGroupsTable, 'groups_id')
-            || $DB->fieldExists($providersGroupsTable, 'is_active')
+            || !$DB->fieldExists($providersGroupsTable, 'groups_id');
+        $hasLegacyRoleMappingFields = $DB->fieldExists($providersGroupsTable, 'is_active')
             || $DB->fieldExists($providersGroupsTable, 'remote_id')
             || $DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_id');
+        $providersGroupsNeedsRebuild = $hasMissingRequiredFields || $hasLegacyRoleMappingFields;
     }
 
     if ($providersGroupsNeedsRebuild) {
