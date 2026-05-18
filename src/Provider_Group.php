@@ -388,13 +388,28 @@ class Provider_Group extends CommonDBRelation
         $dynamicTable = self::getTable();
         $groupUser = new \Group_User();
 
-        // Use a broad select for backward compatibility with older installs that
-        // may still expose legacy column names for the user foreign key.
-        foreach ($DB->request([
-            'SELECT' => ['*'],
-            'FROM'   => $dynamicTable,
-            'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
-        ]) as $row) {
+        $rows = [];
+        try {
+            foreach ($DB->request([
+                'SELECT' => ['id', 'users_id', 'groups_id'],
+                'FROM'   => $dynamicTable,
+                'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
+            ]) as $row) {
+                $rows[] = $row;
+            }
+        } catch (Throwable) {
+            // Backward compatibility for older schemas that stored the user FK
+            // as `plugin_singlesignon_providers_users_id` in this table.
+            foreach ($DB->request([
+                'SELECT' => ['id', 'plugin_singlesignon_providers_users_id', 'groups_id'],
+                'FROM'   => $dynamicTable,
+                'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
+            ]) as $row) {
+                $rows[] = $row;
+            }
+        }
+
+        foreach ($rows as $row) {
             $userId = (int) ($row['users_id'] ?? $row['plugin_singlesignon_providers_users_id'] ?? 0);
             $groupId = (int) ($row['groups_id'] ?? 0);
 
