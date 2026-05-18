@@ -53,7 +53,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for map in mappings %}
+                    {% for map in rows %}
                         {% set is_saved = (map.id|default(0)) > 0 %}
                         <tr data-row data-saved="{{ is_saved ? '1' : '0' }}">
                             <td>
