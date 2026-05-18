@@ -47,8 +47,8 @@ use Session;
  *
  * A companion table `glpi_plugin_singlesignon_providers_groups` tracks the
  * dynamic group memberships that were actually applied at login time; those
- * rows are managed by {@see Provider_Group::syncGroups()} and cleaned up via
- * {@see Provider_Group::removeDynamicGroupsForRole()}.
+ * rows are managed by {@see Provider_Group::syncGroups()}, which also cleans
+ * up stale memberships whenever the user logs in.
  */
 class Provider_Role extends CommonDBRelation
 {
@@ -218,11 +218,6 @@ class Provider_Role extends CommonDBRelation
             ];
 
             if ($mappingId > 0) {
-                // If the mapping is being deactivated, remove dynamic group links now
-                // so users do not retain the group until their next SSO login.
-                if (!$isActive) {
-                    Provider_Group::removeDynamicGroupsForRole($mappingId);
-                }
                 $payload['id'] = $mappingId;
                 $this->update($payload);
             } else {
@@ -232,15 +227,6 @@ class Provider_Role extends CommonDBRelation
 
         Session::addMessageAfterRedirect(__s('Role mappings updated.', 'singlesignon'));
         Html::back();
-    }
-
-    /**
-     * Called by GLPI when a role-mapping record is permanently deleted.
-     * Cleans up all dynamic group memberships that referenced this mapping.
-     */
-    public function cleanDBonPurge(): void
-    {
-        Provider_Group::removeDynamicGroupsForRole($this->getID());
     }
 
     // ─────────────────────────────────────────────────────────────────────────

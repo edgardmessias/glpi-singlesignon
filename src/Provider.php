@@ -255,20 +255,6 @@ class Provider extends CommonDBTM
         if ($providerId > 0) {
             $rolesTable = Provider_Role::getTable();
 
-            // For each role mapping belonging to this provider, remove the
-            // dynamic group memberships from every affected user before the
-            // mapping row itself is deleted.
-            foreach ($DB->request([
-                'SELECT' => ['id'],
-                'FROM'   => $rolesTable,
-                'WHERE'  => ['plugin_singlesignon_providers_id' => $providerId],
-            ]) as $row) {
-                $roleId = (int) ($row['id'] ?? 0);
-                if ($roleId > 0) {
-                    Provider_Group::removeDynamicGroupsForRole($roleId);
-                }
-            }
-
             // Delete all role mappings for this provider.
             $DB->delete($rolesTable, ['plugin_singlesignon_providers_id' => $providerId]);
         }

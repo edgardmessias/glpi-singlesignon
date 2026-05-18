@@ -42,8 +42,8 @@ use function Safe\preg_split;
  * applying or removing the corresponding dynamic GLPI group memberships.
  *
  * The dynamic assignments are tracked in
- * `glpi_plugin_singlesignon_providers_groups` so that they can be revoked
- * when a mapping is deactivated or purged without waiting for the next login.
+ * `glpi_plugin_singlesignon_providers_groups` so that stale memberships can be
+ * revoked on the user's next SSO login.
  */
 class Provider_Group extends CommonDBRelation
 {
@@ -374,48 +374,6 @@ class Provider_Group extends CommonDBRelation
         }
 
         return array_values(array_unique($groups));
-    }
-
-    /**
-     * Remove all dynamic-group tracking rows for the given role mapping and, for
-     * each affected user, delete the corresponding Group_User link only when it
-     * is flagged as `is_dynamic`.
-     *
-     * This is called both when a role mapping is purged and when it is deactivated
-     * (is_active set to 0), so that GLPI group memberships are kept in sync
-     * without waiting for the next SSO login.
-     */
-    public static function removeDynamicGroupsForRole(int $roleId): void
-    {
-        global $DB;
-
-        if ($roleId <= 0) {
-            return;
-        }
-
-        $groupUser = new \Group_User();
-
-        foreach ($DB->request([
-            'SELECT' => ['id', 'users_id', 'groups_id'],
-            'FROM'   => self::getTable(),
-            'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
-        ]) as $row) {
-            $userId = (int) ($row['users_id'] ?? 0);
-            $groupId = (int) ($row['groups_id'] ?? 0);
-
-            if ($userId > 0 && $groupId > 0) {
-                $links = $groupUser->find([
-                    'users_id'   => $userId,
-                    'groups_id'  => $groupId,
-                    'is_dynamic' => 1,
-                ]);
-                foreach ($links as $link) {
-                    $groupUser->delete(['id' => (int) $link['id']], true);
-                }
-            }
-
-            $DB->delete(self::getTable(), ['id' => (int) $row['id']]);
-        }
     }
 
 }
