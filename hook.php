@@ -53,7 +53,7 @@ function plugin_singlesignon_install()
     if (!$DB->tableExists($providersTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersTable` (
-            `id`                         INT NOT NULL AUTO_INCREMENT,
+            `id`                         INT UNSIGNED NOT NULL AUTO_INCREMENT,
             `is_default`                 TINYINT(1) NOT NULL DEFAULT '0',
             `popup`                      TINYINT(1) NOT NULL DEFAULT '0',
             `split_domain`               TINYINT(1) NOT NULL DEFAULT '0',
@@ -67,7 +67,7 @@ function plugin_singlesignon_install()
             `url_authorize`              VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_access_token`           VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_resource_owner_details` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
-            `user_photo_sync_mode`       INT NOT NULL DEFAULT '0',
+            `user_photo_sync_mode`       INT UNSIGNED NOT NULL DEFAULT '0',
             `resource_owner_auth_type`   VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
             `resource_owner_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
             `resource_owner_picture_auth_type` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
@@ -278,7 +278,7 @@ function plugin_singlesignon_install()
         $DB->doQuery(
             "CREATE TABLE `$providersGroupsTable` (
             `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            `users_id` INT NOT NULL DEFAULT '0',
+            `users_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `plugin_singlesignon_providers_roles_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `groups_id` INT UNSIGNED NOT NULL DEFAULT '0',
             PRIMARY KEY (`id`),
