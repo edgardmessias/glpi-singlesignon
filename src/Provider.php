@@ -1994,9 +1994,10 @@ class Provider extends CommonDBTM
         }
 
         // --- 2. Login ---
-        if (($user->fields['authtype'] ?? null) == Auth::LDAP) {
+        if (($user->fields['authtype'] ?? null) === Auth::LDAP) {
             // For LDAP users, bypass the temp-password flow to avoid an unnecessary LDAP
-            // round-trip; initialise the session directly instead.
+            // round-trip. The authtype is temporarily overridden to DB_GLPI so that
+            // Session::init() initialises the session without attempting a live LDAP bind.
             $auth = new Auth();
             $auth->user = $user;
             $auth->auth_succeded = true;
@@ -2016,11 +2017,14 @@ class Provider extends CommonDBTM
             $tempPassword = bin2hex(random_bytes(64));
             $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
-            $auth = new Auth();
-            $authResult = $auth->login($user->fields['name'], $tempPassword, false, $remember_me);
-
-            // Restore the original password hash immediately after login.
-            $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+            try {
+                $auth = new Auth();
+                $authResult = $auth->login($user->fields['name'], $tempPassword, false, $remember_me);
+            } finally {
+                // Restore the original password hash unconditionally to ensure it is never
+                // left in a temporary state even if login throws an exception.
+                $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+            }
         }
 
         if (!$authResult) {
