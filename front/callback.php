@@ -148,11 +148,11 @@ if ($test_cookie) {
     foreach ($field_types as $field_key => $field_label) {
         $data = $resolved_fields[$field_key] ?? ['value' => null, 'jsonpath' => null, 'source' => null];
         $source = match ($data['source'] ?? null) {
-            'provider' => __('Provider mapping', 'singlesignon'),
+            'provider'       => __('Provider mapping', 'singlesignon'),
             'provider (jwt)' => __('Provider mapping (JWT)', 'singlesignon'),
-            'default'  => __('Default mapping', 'singlesignon'),
-            'default (jwt)' => __('Default mapping (JWT)', 'singlesignon'),
-            default    => '-',
+            'default'        => __('Default mapping', 'singlesignon'),
+            'default (jwt)'  => __('Default mapping (JWT)', 'singlesignon'),
+            default          => '-',
         };
 
         $resolved_lines[] = sprintf(
