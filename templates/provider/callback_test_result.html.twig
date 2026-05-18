@@ -93,7 +93,16 @@
                                         <td><code>{{ field_key }}</code> - {{ field_label }}</td>
                                         <td>
                                             {% if data.value is not null and data.value != '' %}
-                                                <code>{{ data.value }}</code>
+                                                {% set values = data.values|default([]) %}
+                                                {% if values is iterable and values|length > 0 %}
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        {% for item in values %}
+                                                            <code>{{ item }}</code>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% else %}
+                                                    <code>{{ data.value }}</code>
+                                                {% endif %}
                                             {% else %}
                                                 <span class="text-muted">{{ __('Not resolved', 'singlesignon') }}</span>
                                             {% endif %}

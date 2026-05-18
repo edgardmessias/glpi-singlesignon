@@ -70,8 +70,8 @@ class LoginRenderer
      */
     private static function handleFederatedLogout(): void
     {
-        $logoutUrl = trim((string) ($_SESSION[Provider::LOGOUT_URL_SESSION_KEY] ?? ''));
-        $providerId = (int) ($_SESSION[Provider::LOGOUT_PROVIDER_ID_SESSION_KEY] ?? 0);
+        $logoutUrl = trim((string) ($_SESSION[Provider::LOGOUT_URL_SESSION_KEY] ?? $_COOKIE[Provider::LOGOUT_URL_COOKIE_KEY] ?? ''));
+        $providerId = (int) ($_SESSION[Provider::LOGOUT_PROVIDER_ID_SESSION_KEY] ?? $_COOKIE[Provider::LOGOUT_PROVIDER_ID_COOKIE_KEY] ?? 0);
         if ($logoutUrl === '' || $providerId <= 0 || !filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
             return;
         }
@@ -87,6 +87,8 @@ class LoginRenderer
             return;
         }
 
+        unset($_SESSION[Provider::LOGOUT_URL_SESSION_KEY], $_SESSION[Provider::LOGOUT_PROVIDER_ID_SESSION_KEY]);
+        Provider::clearLogoutCookies();
         Session::cleanOnLogout();
         Html::redirect($logoutUrl);
     }

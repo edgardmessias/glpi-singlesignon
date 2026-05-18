@@ -65,6 +65,8 @@ class Provider extends CommonDBTM
     public const PENDING_REGISTRATION_SESSION_KEY = 'glpi_singlesignon_pending_registration';
     public const LOGOUT_URL_SESSION_KEY = 'glpi_singlesignon_logout_url';
     public const LOGOUT_PROVIDER_ID_SESSION_KEY = 'glpi_singlesignon_logout_provider_id';
+    public const LOGOUT_URL_COOKIE_KEY = 'glpi_singlesignon_logout_url';
+    public const LOGOUT_PROVIDER_ID_COOKIE_KEY = 'glpi_singlesignon_logout_provider_id';
 
     public const PHOTO_SYNC_DISABLED = 0;
     public const PHOTO_SYNC_IF_EMPTY = 1;
@@ -972,6 +974,46 @@ class Provider extends CommonDBTM
     }
 
     /**
+     * @return array{expires?: int, path: string, secure: bool, httponly: bool, samesite: string}
+     */
+    private static function getLogoutCookieOptions(?int $expires = null): array
+    {
+        global $CFG_GLPI;
+
+        $path = '/';
+        if (isset($CFG_GLPI['root_doc']) && is_string($CFG_GLPI['root_doc']) && $CFG_GLPI['root_doc'] !== '') {
+            $path = $CFG_GLPI['root_doc'];
+        }
+
+        $options = [
+            'path'     => $path,
+            'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ];
+
+        if ($expires !== null) {
+            $options['expires'] = $expires;
+        }
+
+        return $options;
+    }
+
+    private static function persistLogoutCookies(string $logoutUrl, int $providerId): void
+    {
+        $expires = time() + 86400;
+        setcookie(self::LOGOUT_URL_COOKIE_KEY, $logoutUrl, self::getLogoutCookieOptions($expires));
+        setcookie(self::LOGOUT_PROVIDER_ID_COOKIE_KEY, (string) $providerId, self::getLogoutCookieOptions($expires));
+    }
+
+    public static function clearLogoutCookies(): void
+    {
+        setcookie(self::LOGOUT_URL_COOKIE_KEY, '', self::getLogoutCookieOptions(time() - 3600));
+        setcookie(self::LOGOUT_PROVIDER_ID_COOKIE_KEY, '', self::getLogoutCookieOptions(time() - 3600));
+        unset($_COOKIE[self::LOGOUT_URL_COOKIE_KEY], $_COOKIE[self::LOGOUT_PROVIDER_ID_COOKIE_KEY]);
+    }
+
+    /**
      * Handles the OAuth authorization callback from the identity provider.
      * This function validates the CSRF (state) token, extracts the authorization code,
      * and may perform a redirect depending on the authentication step.
@@ -1271,20 +1313,18 @@ class Provider extends CommonDBTM
     }
 
     /**
-     * Resolve a debug value for a mapped field, joining all role values when needed.
+     * Resolve debug values for a mapped field.
+     *
+     * @return list<string>
      */
-    private function getDebugFieldValueByJsonPath(array $resourceArray, string $jsonPath, string $fieldType): ?string
+    private function getDebugFieldValuesByJsonPath(array $resourceArray, string $jsonPath, string $fieldType): array
     {
         if ($fieldType !== 'roles') {
-            return $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
+            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
+            return $value !== null ? [$value] : [];
         }
 
-        $values = $this->getResourceOwnerValuesByJsonPath($resourceArray, $jsonPath);
-        if ($values === []) {
-            return null;
-        }
-
-        return implode(', ', $values);
+        return $this->getResourceOwnerValuesByJsonPath($resourceArray, $jsonPath);
     }
 
     private function resolveFieldValueFromMappings(array $resourceArray, string $fieldType): ?string
@@ -1294,7 +1334,7 @@ class Provider extends CommonDBTM
     }
 
     /**
-     * @return array{value: ?string, jsonpath: ?string, source: ?string}
+     * @return array{value: ?string, values: list<string>, jsonpath: ?string, source: ?string}
      */
     private function resolveFieldDebugDetailsFromMappings(array $resourceArray, string $fieldType): array
     {
@@ -1312,20 +1352,22 @@ class Provider extends CommonDBTM
                 continue;
             }
 
-            $value = $this->getDebugFieldValueByJsonPath($resourceArray, $jsonPath, $fieldType);
-            if ($value !== null) {
+            $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
+            if ($values !== []) {
                 return [
-                    'value'    => $value,
+                    'value'    => $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null),
+                    'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'provider',
                 ];
             }
 
             if (is_array($idTokenPayload)) {
-                $valueFromJwt = $this->getDebugFieldValueByJsonPath($idTokenPayload, $jsonPath, $fieldType);
-                if ($valueFromJwt !== null) {
+                $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
+                if ($valuesFromJwt !== []) {
                     return [
-                        'value'    => $valueFromJwt,
+                        'value'    => $fieldType === 'roles' ? implode(', ', $valuesFromJwt) : ($valuesFromJwt[0] ?? null),
+                        'values'   => $valuesFromJwt,
                         'jsonpath' => $jsonPath,
                         'source'   => 'provider (jwt)',
                     ];
@@ -1340,20 +1382,22 @@ class Provider extends CommonDBTM
                 continue;
             }
 
-            $value = $this->getDebugFieldValueByJsonPath($resourceArray, $jsonPath, $fieldType);
-            if ($value !== null) {
+            $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
+            if ($values !== []) {
                 return [
-                    'value'    => $value,
+                    'value'    => $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null),
+                    'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'default',
                 ];
             }
 
             if (is_array($idTokenPayload)) {
-                $valueFromJwt = $this->getDebugFieldValueByJsonPath($idTokenPayload, $jsonPath, $fieldType);
-                if ($valueFromJwt !== null) {
+                $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
+                if ($valuesFromJwt !== []) {
                     return [
-                        'value'    => $valueFromJwt,
+                        'value'    => $fieldType === 'roles' ? implode(', ', $valuesFromJwt) : ($valuesFromJwt[0] ?? null),
+                        'values'   => $valuesFromJwt,
                         'jsonpath' => $jsonPath,
                         'source'   => 'default (jwt)',
                     ];
@@ -1363,13 +1407,14 @@ class Provider extends CommonDBTM
 
         return [
             'value'    => null,
+            'values'   => [],
             'jsonpath' => null,
             'source'   => null,
         ];
     }
 
     /**
-     * @return array<string, array{value: ?string, jsonpath: ?string, source: ?string}>
+     * @return array<string, array{value: ?string, values: list<string>, jsonpath: ?string, source: ?string}>
      */
     public function getResolvedFieldsForDebug(array $resourceArray): array
     {
@@ -2015,12 +2060,15 @@ class Provider extends CommonDBTM
             $_SESSION[self::LOGOUT_URL_SESSION_KEY] = $logoutUrl;
             if ($providerId > 0) {
                 $_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY] = $providerId;
+                self::persistLogoutCookies($logoutUrl, $providerId);
             } else {
                 unset($_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY]);
+                self::clearLogoutCookies();
             }
         } else {
             unset($_SESSION[self::LOGOUT_URL_SESSION_KEY]);
             unset($_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY]);
+            self::clearLogoutCookies();
         }
 
         return true;
