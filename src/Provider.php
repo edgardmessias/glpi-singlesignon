@@ -75,6 +75,7 @@ class Provider extends CommonDBTM
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
     public const AUTH_HEADER_DISABLED = 'disabled';
+    public const LOGOUT_COOKIE_TTL_SECONDS = 86400;
 
     // From CommonDBTM
     public $dohistory = true;
@@ -1001,7 +1002,7 @@ class Provider extends CommonDBTM
 
     private static function persistLogoutCookies(string $logoutUrl, int $providerId): void
     {
-        $expires = time() + 86400;
+        $expires = time() + self::LOGOUT_COOKIE_TTL_SECONDS;
         setcookie(self::LOGOUT_URL_COOKIE_KEY, $logoutUrl, self::getLogoutCookieOptions($expires));
         setcookie(self::LOGOUT_PROVIDER_ID_COOKIE_KEY, (string) $providerId, self::getLogoutCookieOptions($expires));
     }
