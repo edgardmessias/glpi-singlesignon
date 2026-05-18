@@ -1994,37 +1994,26 @@ class Provider extends CommonDBTM
         }
 
         // --- 2. Login ---
-        if (($user->fields['authtype'] ?? null) === Auth::LDAP) {
-            // For LDAP users, bypass the temp-password flow to avoid an unnecessary LDAP
-            // round-trip. The authtype is temporarily overridden to DB_GLPI so that
-            // Session::init() initialises the session without attempting a live LDAP bind.
+        // Use a temporary local password so that Auth::login runs the complete GLPI
+        // authentication pipeline, including the rules engine (rights/profile assignments).
+        // Simulating SSO/external auth (via $_SERVER or $_SESSION manipulation) does not
+        // trigger the rules engine; local DB authentication does.
+        $userId = $user->fields['id'];
+        $tempPassword = bin2hex(random_bytes(64));
+        $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+
+        // Force local authentication only for LDAP users to avoid a live LDAP query/bind.
+        $forceLocalAuthentication = (($user->fields['authtype'] ?? null) === Auth::LDAP);
+
+        try {
             $auth = new Auth();
-            $auth->user = $user;
-            $auth->auth_succeded = true;
-            $auth->extauth = 1;
-            $auth->user_present = 1;
-            $auth->user->fields['authtype'] = Auth::DB_GLPI;
-
-            Session::init($auth);
-
-            $authResult = $auth->auth_succeded;
-        } else {
-            // Use a temporary local password so that Auth::login runs the complete GLPI
-            // authentication pipeline, including the rules engine (rights/profile assignments).
-            // Simulating SSO/external auth (via $_SERVER or $_SESSION manipulation) does not
-            // trigger the rules engine; local DB authentication does.
-            $userId = $user->fields['id'];
-            $tempPassword = bin2hex(random_bytes(64));
-            $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
-
-            try {
-                $auth = new Auth();
-                $authResult = $auth->login($user->fields['name'], $tempPassword, false, $remember_me);
-            } finally {
-                // Restore the original password hash unconditionally to ensure it is never
-                // left in a temporary state even if login throws an exception.
-                $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
-            }
+            // We intentionally do not call Session::init() directly because it does not execute
+            // GLPI's rules engine; Auth::login is required to apply rules on login.
+            $authResult = $auth->login($user->fields['name'], $tempPassword, $forceLocalAuthentication, $remember_me);
+        } finally {
+            // Restore the original password hash unconditionally to ensure it is never
+            // left in a temporary state even if login throws an exception.
+            $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
         }
 
         if (!$authResult) {
