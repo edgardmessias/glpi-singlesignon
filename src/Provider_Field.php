@@ -256,6 +256,8 @@ class Provider_Field extends CommonDBTM
             $rows = [];
         }
 
+        // First pass: apply deletions so later updates/inserts are processed on the
+        // final row set selected by the admin in the same submit.
         foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
@@ -263,35 +265,51 @@ class Provider_Field extends CommonDBTM
 
             $mappingId = (int) ($row['id'] ?? 0);
             $delete = (int) ($row['_delete'] ?? 0) === 1;
-            $fieldType = (string) ($row['field_type'] ?? '');
-            $jsonpath = trim((string) ($row['jsonpath'] ?? ''));
-            $sortOrder = (int) ($row['sort_order'] ?? 0);
-            $isActive = (int) (($row['is_active'] ?? 0) ? 1 : 0);
 
             if ($mappingId > 0 && $delete) {
                 $this->deleteByCriteria([
                     'id' => $mappingId,
                     'plugin_singlesignon_providers_id' => $providerId,
                 ]);
-            } elseif (!in_array($fieldType, $types, true) || $jsonpath === '') {
-                continue;
-            } else {
-                $payload = [
-                    'plugin_singlesignon_providers_id' => $providerId,
-                    'field_type'                       => $fieldType,
-                    'jsonpath'                         => $jsonpath,
-                    'is_active'                        => $isActive,
-                    'sort_order'                       => $sortOrder,
-                ];
-
-                if ($mappingId > 0) {
-                    $payload['id'] = $mappingId;
-                    $this->update($payload);
-                    continue;
-                }
-
-                $this->add($payload);
             }
+        }
+
+        // Second pass: apply updates/inserts for rows not marked for deletion.
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $mappingId = (int) ($row['id'] ?? 0);
+            $delete = (int) ($row['_delete'] ?? 0) === 1;
+            if ($delete) {
+                continue;
+            }
+
+            $fieldType = (string) ($row['field_type'] ?? '');
+            $jsonpath = trim((string) ($row['jsonpath'] ?? ''));
+            $sortOrder = (int) ($row['sort_order'] ?? 0);
+            $isActive = (int) (($row['is_active'] ?? 0) ? 1 : 0);
+
+            if (!in_array($fieldType, $types, true) || $jsonpath === '') {
+                continue;
+            }
+
+            $payload = [
+                'plugin_singlesignon_providers_id' => $providerId,
+                'field_type'                       => $fieldType,
+                'jsonpath'                         => $jsonpath,
+                'is_active'                        => $isActive,
+                'sort_order'                       => $sortOrder,
+            ];
+
+            if ($mappingId > 0) {
+                $payload['id'] = $mappingId;
+                $this->update($payload);
+                continue;
+            }
+
+            $this->add($payload);
         }
 
         Session::addMessageAfterRedirect(__s('Field mappings updated.', 'singlesignon'));

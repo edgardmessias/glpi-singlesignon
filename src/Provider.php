@@ -1961,6 +1961,8 @@ class Provider extends CommonDBTM
         $_SESSION['glpi_remote_user'] = (string) $user->fields['name'];
 
         // --- 3. Login via external auth (password unused) ---
+        // Auth::login executes GLPI's standard authentication pipeline, including
+        // external-auth rights/profile rules, using the context prepared above.
         $auth = new Auth();
         $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
 

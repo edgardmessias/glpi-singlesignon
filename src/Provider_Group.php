@@ -389,7 +389,6 @@ class Provider_Group extends CommonDBRelation
             'FROM'   => self::getTable(),
             'WHERE'  => [
                 'plugin_singlesignon_providers_id' => $providerId,
-                'is_active'                        => 1,
             ],
         ]) as $row) {
             $groupId = (int) ($row['groups_id'] ?? 0);
