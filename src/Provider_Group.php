@@ -396,13 +396,13 @@ class Provider_Group extends CommonDBRelation
 
         $dynamicTable = self::getTable();
         $groupUser = new \Group_User();
-        $providerUser = new Provider_User();
 
         foreach ($DB->request([
+            'SELECT' => ['id', 'users_id', 'groups_id'],
             'FROM'   => $dynamicTable,
             'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
         ]) as $row) {
-            $userId = self::resolveDynamicRowUserId($row, $providerUser);
+            $userId = (int) ($row['users_id'] ?? 0);
             $groupId = (int) ($row['groups_id'] ?? 0);
 
             if ($userId > 0 && $groupId > 0) {
@@ -418,24 +418,6 @@ class Provider_Group extends CommonDBRelation
 
             $DB->delete($dynamicTable, ['id' => (int) $row['id']]);
         }
-    }
-
-    /**
-     * @param array<string, mixed> $row
-     */
-    private static function resolveDynamicRowUserId(array $row, Provider_User $providerUser): int
-    {
-        $userId = (int) ($row['users_id'] ?? 0);
-        if ($userId > 0) {
-            return $userId;
-        }
-
-        $providerUserId = (int) ($row['plugin_singlesignon_providers_users_id'] ?? 0);
-        if ($providerUserId <= 0 || !$providerUser->getFromDB($providerUserId)) {
-            return 0;
-        }
-
-        return (int) ($providerUser->fields['users_id'] ?? 0);
     }
 
 }
