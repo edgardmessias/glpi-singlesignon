@@ -26,104 +26,28 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-use CommonDBRelation;
-use CommonGLPI;
-use Glpi\Application\View\TemplateRenderer;
-use Html;
 use JsonPath\JsonObject;
-use Plugin;
-use Session;
 use Throwable;
 use User;
 use function Safe\preg_split;
 
 /**
- * Persists the mapping between a remote group identifier (the raw claim value
- * received from the IdP) and a GLPI group ID, per SSO provider.
+ * Synchronises OAuth group/role claims for a user at SSO login time.
  *
- * This stable record survives group renames in GLPI: when a GLPI group is
- * renamed the `groups_id` foreign key still points to the correct row, so
- * subsequent logins continue to resolve the right GLPI group for each remote
- * group claim value.
+ * This class is responsible for the runtime group-sync logic: extracting
+ * group/role claim values from the IdP resource-owner payload, resolving them
+ * against the configured role mappings (stored in
+ * `glpi_plugin_singlesignon_providers_roles` via {@see Provider_Role}), and
+ * applying or removing the corresponding dynamic GLPI group memberships.
  *
- * Static helper methods implement the full group-synchronization logic that
- * used to live in Provider.php so that group-related concerns are consolidated
- * here.
+ * The dynamic assignments are tracked in
+ * `glpi_plugin_singlesignon_providers_groups` so that they can be revoked
+ * when a mapping is deactivated or purged without waiting for the next login.
  */
-class Provider_Group extends CommonDBRelation
+class Provider_Group
 {
-    private const DYNAMIC_GROUPS_TABLE = 'glpi_plugin_singlesignon_providers_groups';
-    public static $table = 'glpi_plugin_singlesignon_providers_roles';
-
-    // From CommonDBRelation
-    public static $itemtype_1 = Provider::class;
-    public static $items_id_1 = 'plugin_singlesignon_providers_id';
-
-    public static $itemtype_2 = 'Group';
-    public static $items_id_2 = 'groups_id';
-
     private const MAX_GROUPS_PER_SYNC = 200;
     private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
-
-    public static function getDynamicGroupsTable(): string
-    {
-        return self::DYNAMIC_GROUPS_TABLE;
-    }
-
-    public static function getTypeName($nb = 0): string
-    {
-        return _n('Role mapping', 'Role mappings', $nb, 'singlesignon');
-    }
-
-    public static function canCreate(): bool
-    {
-        return static::canUpdate();
-    }
-
-    public static function canDelete(): bool
-    {
-        return static::canUpdate();
-    }
-
-    public static function canPurge(): bool
-    {
-        return static::canUpdate();
-    }
-
-    public static function canView(): bool
-    {
-        return static::canUpdate();
-    }
-
-    public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
-    {
-        if ($item instanceof Provider) {
-            $count = 0;
-             if ($_SESSION['glpishow_count_on_tabs']) {
-                 $count = countElementsInTable(
-                     (new self())->getTable(),
-                    [
-                        'plugin_singlesignon_providers_id' => $item->getID(),
-                        'is_active' => 1,
-                    ]
-                 );
-             }
-            return self::createTabEntry(__('Role mappings', 'singlesignon'), $count, self::class, 'ti ti-users');
-        }
-
-        return '';
-    }
-
-    public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
-    {
-        if (!$item instanceof Provider) {
-            return false;
-        }
-
-        $tab = new self();
-        $tab->showProviderTab($item);
-        return true;
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Public entry points
@@ -153,7 +77,7 @@ class Provider_Group extends CommonDBRelation
         }
 
         $claims = static::extractUserGroupsFromResource($provider, $resourceOwner);
-        $targetMappings = self::getRoleMappingsForClaims($providerId, $claims);
+        $targetMappings = Provider_Role::getRoleMappingsForClaims($providerId, $claims);
         $targetRoleToGroup = [];
         $targetGroupIds = [];
         foreach ($targetMappings as $mapping) {
@@ -166,7 +90,7 @@ class Provider_Group extends CommonDBRelation
             $targetGroupIds[] = $groupId;
         }
         $targetGroupIds = array_values(array_unique($targetGroupIds));
-        $managedGroupIds = self::getConfiguredGlpiGroups($providerId);
+        $managedGroupIds = Provider_Role::getConfiguredGlpiGroups($providerId);
 
         $groupUser = new \Group_User();
         $links = $groupUser->find([
@@ -194,7 +118,7 @@ class Provider_Group extends CommonDBRelation
             }
         }
 
-        $dynamicTable = self::getDynamicGroupsTable();
+        $dynamicTable = Provider_Role::getDynamicGroupsTable();
         /** @var array<int, array<string, mixed>> $existingDynamicRows */
         $existingDynamicRows = [];
         foreach ($DB->request([
@@ -246,7 +170,7 @@ class Provider_Group extends CommonDBRelation
         if ($existingRoleIds !== []) {
             foreach ($DB->request([
                 'SELECT' => ['id', 'plugin_singlesignon_providers_id', 'is_active'],
-                'FROM'   => self::getTable(),
+                'FROM'   => Provider_Role::getTable(),
                 'WHERE'  => ['id' => $existingRoleIds],
             ]) as $row) {
                 $roleInfoById[(int) $row['id']] = $row;
@@ -441,301 +365,6 @@ class Provider_Group extends CommonDBRelation
         }
 
         return array_values(array_unique($groups));
-    }
-
-    /**
-     * @param int $providerId
-     * @param array<int, mixed> $claimValues
-     * @return list<array{id: int, groups_id: int}>
-     */
-    public static function getRoleMappingsForClaims(int $providerId, array $claimValues): array
-    {
-        global $DB;
-
-        $normalizedClaims = [];
-        foreach ($claimValues as $value) {
-            $claim = trim((string) $value);
-            if ($claim !== '') {
-                $normalizedClaims[] = $claim;
-            }
-        }
-        $normalizedClaims = array_values(array_unique($normalizedClaims));
-        if ($providerId <= 0 || $normalizedClaims === []) {
-            return [];
-        }
-
-        $mappings = [];
-        foreach ($DB->request([
-            'SELECT' => ['id', 'groups_id'],
-            'FROM'   => self::getTable(),
-            'WHERE'  => [
-                'plugin_singlesignon_providers_id' => $providerId,
-                'remote_id'                        => $normalizedClaims,
-                'is_active'                        => 1,
-            ],
-        ]) as $row) {
-            $roleId = (int) ($row['id'] ?? 0);
-            $groupId = (int) ($row['groups_id'] ?? 0);
-            if ($roleId > 0 && $groupId > 0) {
-                $mappings[] = [
-                    'id'        => $roleId,
-                    'groups_id' => $groupId,
-                ];
-            }
-        }
-
-        return $mappings;
-    }
-
-    /**
-     * @return int[]
-     */
-    private static function getConfiguredGlpiGroups(int $providerId): array
-    {
-        global $DB;
-
-        if ($providerId <= 0) {
-            return [];
-        }
-
-        $groupIds = [];
-        foreach ($DB->request([
-            'SELECT' => ['groups_id'],
-            'FROM'   => self::getTable(),
-            'WHERE'  => [
-                'plugin_singlesignon_providers_id' => $providerId,
-            ],
-        ]) as $row) {
-            $groupId = (int) ($row['groups_id'] ?? 0);
-            if ($groupId > 0) {
-                $groupIds[] = $groupId;
-            }
-        }
-
-        return array_values(array_unique($groupIds));
-    }
-
-    /**
-     * Remove all dynamic-group tracking rows for the given role mapping and, for
-     * each affected user, delete the corresponding Group_User link only when it
-     * is flagged as `is_dynamic`.
-     *
-     * This is called both when a role mapping is purged and when it is deactivated
-     * (is_active set to 0), so that GLPI group memberships are kept in sync
-     * without waiting for the next SSO login.
-     */
-    public static function removeDynamicGroupsForRole(int $roleId): void
-    {
-        global $DB;
-
-        if ($roleId <= 0) {
-            return;
-        }
-
-        $dynamicTable = self::getDynamicGroupsTable();
-
-        $groupUser    = new \Group_User();
-
-        foreach ($DB->request([
-            'SELECT' => ['id', 'users_id', 'groups_id'],
-            'FROM'   => $dynamicTable,
-            'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
-        ]) as $row) {
-            $userId  = (int) ($row['users_id']  ?? 0);
-            $groupId = (int) ($row['groups_id'] ?? 0);
-
-            // Remove the Group_User membership only when it is a dynamic link.
-            if ($userId > 0 && $groupId > 0) {
-                $links = $groupUser->find([
-                    'users_id'   => $userId,
-                    'groups_id'  => $groupId,
-                    'is_dynamic' => 1,
-                ]);
-                foreach ($links as $link) {
-                    $groupUser->delete(['id' => (int) $link['id']], true);
-                }
-            }
-
-            // Remove the SSO tracking row.
-            $DB->delete($dynamicTable, ['id' => (int) $row['id']]);
-        }
-    }
-
-    /**
-     * Called by GLPI when a role-mapping record is permanently deleted.
-     * Cleans up all dynamic group memberships that referenced this mapping.
-     */
-    public function cleanDBonPurge(): void
-    {
-        self::removeDynamicGroupsForRole($this->getID());
-    }
-
-    /**
-     * Upserts the remote_id → groups_id mapping in the providers_roles table.
-     *
-     * Existing GLPI group names and properties are never touched; only the
-     * cross-reference record in this plugin's own table is created or updated.
-     * If the mapping already exists and points to the same GLPI group, the
-     * method is a no-op.
-     */
-    public static function ensureGroupMapping(Provider $provider, string $remoteId, int $groupId): void
-    {
-        global $DB;
-
-        $table = self::getTable();
-        $providerId = (int) $provider->fields['id'];
-
-        $existing = $DB->request([
-            'SELECT' => ['id', 'groups_id'],
-            'FROM'   => $table,
-            'WHERE'  => [
-                'plugin_singlesignon_providers_id' => $providerId,
-                'remote_id' => $remoteId,
-            ],
-        ]);
-
-        foreach ($existing as $row) {
-            if ((int) $row['groups_id'] !== $groupId) {
-                // The GLPI group ID changed (e.g. deleted and recreated) — update it.
-                $DB->update($table, ['groups_id' => $groupId], ['id' => (int) $row['id']]);
-            }
-            // Either way the record exists; nothing further to do.
-            return;
-        }
-
-        $DB->insert($table, [
-            'plugin_singlesignon_providers_id' => $providerId,
-            'groups_id' => $groupId,
-            'remote_id' => $remoteId,
-        ]);
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public static function getMappingsForProvider(int $providerId): array
-    {
-        global $DB;
-
-        if ($providerId <= 0) {
-            return [];
-        }
-
-        $rows = [];
-        foreach ($DB->request([
-            'FROM'  => self::getTable(),
-            'WHERE' => ['plugin_singlesignon_providers_id' => $providerId],
-            'ORDER' => ['remote_id ASC', 'id ASC'],
-        ]) as $row) {
-            $rows[] = $row;
-        }
-
-        return $rows;
-    }
-
-    public function showProviderTab(Provider $provider): void
-    {
-        if (!$provider->getID()) {
-            echo '<div class="center">' . htmlspecialchars(
-                __('Save this provider before editing role mappings.', 'singlesignon'),
-                ENT_QUOTES | ENT_SUBSTITUTE,
-                'UTF-8',
-            ) . '</div>';
-            return;
-        }
-
-        echo TemplateRenderer::getInstance()->render('@singlesignon/provider/show_role_mappings_tab.html.twig', [
-            'provider'    => $provider,
-            'provider_id' => (int) $provider->getID(),
-            'mappings'    => static::getMappingsForProvider((int) $provider->getID()),
-            'form_action' => ToolboxPlugin::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/provider_group.form.php',
-        ]);
-    }
-
-    public function executeFormAction(array $input): void
-    {
-        if (!isset($input['plugin_singlesignon_providers_id'])) {
-            return;
-        }
-
-        $providerId = (int) $input['plugin_singlesignon_providers_id'];
-        if ($providerId <= 0) {
-            return;
-        }
-
-        $provider = new Provider();
-        if (!$provider->getFromDB($providerId)) {
-            return;
-        }
-
-        if (!$provider->can($providerId, UPDATE)) {
-            return;
-        }
-
-        $rows = $input['_role_mappings'] ?? [];
-        if (!is_array($rows)) {
-            $rows = [];
-        }
-
-        // First pass: apply deletions so later updates/inserts can reuse remote_id values
-        // protected by the unique key (provider_id, remote_id).
-        foreach ($rows as $row) {
-            if (!is_array($row)) {
-                continue;
-            }
-
-            $mappingId = (int) ($row['id'] ?? 0);
-            $delete = (int) ($row['_delete'] ?? 0) === 1;
-            if ($mappingId > 0 && $delete) {
-                $this->deleteByCriteria([
-                    'id' => $mappingId,
-                    'plugin_singlesignon_providers_id' => $providerId,
-                ]);
-            }
-        }
-
-        // Second pass: apply updates/inserts for active rows.
-        foreach ($rows as $row) {
-            if (!is_array($row)) {
-                continue;
-            }
-
-            $mappingId = (int) ($row['id'] ?? 0);
-            $delete = (int) ($row['_delete'] ?? 0) === 1;
-            if ($delete) {
-                continue;
-            }
-
-            $remoteId = trim((string) ($row['remote_id'] ?? ''));
-            $groupId = (int) ($row['groups_id'] ?? 0);
-            $isActive = (int) (($row['is_active'] ?? 0) ? 1 : 0);
-
-            if ($remoteId === '' || $groupId <= 0) {
-                continue;
-            }
-
-            $payload = [
-                'plugin_singlesignon_providers_id' => $providerId,
-                'remote_id'                        => $remoteId,
-                'groups_id'                        => $groupId,
-                'is_active'                        => $isActive,
-            ];
-
-            if ($mappingId > 0) {
-                // If the mapping is being deactivated, remove dynamic group links now
-                // so users do not retain the group until their next SSO login.
-                if (!$isActive) {
-                    self::removeDynamicGroupsForRole($mappingId);
-                }
-                $payload['id'] = $mappingId;
-                $this->update($payload);
-            } else {
-                $this->add($payload);
-            }
-        }
-
-        Session::addMessageAfterRedirect(__s('Role mappings updated.', 'singlesignon'));
-        Html::back();
     }
 
 }

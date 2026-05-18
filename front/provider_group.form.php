@@ -22,7 +22,7 @@
  * ---------------------------------------------------------------------
  */
 
-use GlpiPlugin\Singlesignon\Provider_Group;
+use GlpiPlugin\Singlesignon\Provider_Role;
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\AccessDeniedHttpException;
 
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     return;
 }
 
-$mapping = new Provider_Group();
+$mapping = new Provider_Role();
 if (isset($_POST['update_role_mappings'])) {
     $mapping->executeFormAction($_POST);
     return;

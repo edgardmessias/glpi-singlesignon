@@ -44,6 +44,7 @@ use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
 use GlpiPlugin\Singlesignon\Provider_Group;
+use GlpiPlugin\Singlesignon\Provider_Role;
 
 use function Safe\file_get_contents;
 use function Safe\fclose;
@@ -161,7 +162,7 @@ class Provider extends CommonDBTM
         $this->addDefaultFormTab($ong);
         $this->addStandardTab(self::class, $ong, $options);
         $this->addStandardTab(Provider_Field::class, $ong, $options);
-        $this->addStandardTab(Provider_Group::class, $ong, $options);
+        $this->addStandardTab(Provider_Role::class, $ong, $options);
         $this->addStandardTab('Log', $ong, $options);
 
         return $ong;
@@ -252,7 +253,7 @@ class Provider extends CommonDBTM
 
         $providerId = $this->getID();
         if ($providerId > 0) {
-            $rolesTable = Provider_Group::getTable();
+            $rolesTable = Provider_Role::getTable();
 
             // For each role mapping belonging to this provider, remove the
             // dynamic group memberships from every affected user before the
@@ -264,7 +265,7 @@ class Provider extends CommonDBTM
             ]) as $row) {
                 $roleId = (int) ($row['id'] ?? 0);
                 if ($roleId > 0) {
-                    Provider_Group::removeDynamicGroupsForRole($roleId);
+                    Provider_Role::removeDynamicGroupsForRole($roleId);
                 }
             }
 
