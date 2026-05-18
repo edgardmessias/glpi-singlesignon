@@ -75,6 +75,7 @@ class Provider extends CommonDBTM
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
     public const AUTH_HEADER_DISABLED = 'disabled';
+    // Keep logout cookies for up to one day so SLO redirect survives the `/front/logout.php` request flow.
     public const LOGOUT_COOKIE_TTL_SECONDS = 86400;
 
     // From CommonDBTM
@@ -1347,6 +1348,7 @@ class Provider extends CommonDBTM
 
         // Roles may legitimately contain multiple entries (e.g., groups claim), while other mapped
         // fields are expected to resolve to a single scalar value for login/profile mapping.
+        // If a non-role JSONPath returns multiple values unexpectedly, only the first value is used.
         return $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null);
     }
 
