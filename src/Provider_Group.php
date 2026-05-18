@@ -388,6 +388,8 @@ class Provider_Group extends CommonDBRelation
         $dynamicTable = self::getTable();
         $groupUser = new \Group_User();
 
+        // Use a broad select for backward compatibility with older installs that
+        // may still expose legacy column names for the user foreign key.
         foreach ($DB->request([
             'SELECT' => ['*'],
             'FROM'   => $dynamicTable,
