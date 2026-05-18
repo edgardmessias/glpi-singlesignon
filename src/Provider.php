@@ -1956,7 +1956,7 @@ class Provider extends CommonDBTM
 
         // Mark this authentication as coming from remote user context so GLPI
         // applies the external-auth flow (including rights rules) on login.
-        $hadRemoteUser = array_key_exists('glpi_remote_user', $_SESSION);
+        $hadRemoteUser = isset($_SESSION['glpi_remote_user']);
         $originalRemoteUser = $hadRemoteUser ? $_SESSION['glpi_remote_user'] : null;
         $_SESSION['glpi_remote_user'] = (string) $user->fields['name'];
 
