@@ -52,6 +52,9 @@ use function Safe\preg_split;
  */
 class Provider_Group extends CommonDBRelation
 {
+    private const ROLES_TABLE = 'glpi_plugin_singlesignon_providers_roles';
+    private const DYNAMIC_GROUPS_TABLE = 'glpi_plugin_singlesignon_providers_groups';
+
     // From CommonDBRelation
     public static $itemtype_1 = Provider::class;
     public static $items_id_1 = 'plugin_singlesignon_providers_id';
@@ -61,6 +64,16 @@ class Provider_Group extends CommonDBRelation
 
     private const MAX_GROUPS_PER_SYNC = 200;
     private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
+
+    public static function getTable($classname = null)
+    {
+        return self::ROLES_TABLE;
+    }
+
+    public static function getDynamicGroupsTable(): string
+    {
+        return self::DYNAMIC_GROUPS_TABLE;
+    }
 
     public static function getTypeName($nb = 0)
     {
@@ -128,6 +141,8 @@ class Provider_Group extends CommonDBRelation
      */
     public static function syncGroups(Provider $provider, User $user): void
     {
+        global $DB;
+
         if ($user->getID() <= 0) {
             return;
         }
@@ -143,7 +158,19 @@ class Provider_Group extends CommonDBRelation
         }
 
         $claims = static::extractUserGroupsFromResource($provider, $resourceOwner);
-        $targetGroupIds = self::getGlpiGroupsForClaims($providerId, $claims);
+        $targetMappings = self::getRoleMappingsForClaims($providerId, $claims);
+        $targetRoleToGroup = [];
+        $targetGroupIds = [];
+        foreach ($targetMappings as $mapping) {
+            $roleId = (int) ($mapping['id'] ?? 0);
+            $groupId = (int) ($mapping['groups_id'] ?? 0);
+            if ($roleId <= 0 || $groupId <= 0) {
+                continue;
+            }
+            $targetRoleToGroup[$roleId] = $groupId;
+            $targetGroupIds[] = $groupId;
+        }
+        $targetGroupIds = array_values(array_unique($targetGroupIds));
         $managedGroupIds = self::getConfiguredGlpiGroups($providerId);
 
         $groupUser = new \Group_User();
@@ -170,6 +197,75 @@ class Provider_Group extends CommonDBRelation
             if (is_numeric($linkId)) {
                 $keepGroupIds[] = $groupId;
             }
+        }
+
+        $dynamicTable = self::getDynamicGroupsTable();
+        /** @var array<int, array<string, mixed>> $existingDynamicRows */
+        $existingDynamicRows = [];
+        foreach ($DB->request([
+            'SELECT' => ['id', 'plugin_singlesignon_providers_roles_id', 'groups_id'],
+            'FROM'   => $dynamicTable,
+            'WHERE'  => ['users_id' => (int) $user->getID()],
+        ]) as $row) {
+            $existingDynamicRows[] = $row;
+        }
+
+        $existingByRole = [];
+        foreach ($existingDynamicRows as $row) {
+            $roleId = (int) ($row['plugin_singlesignon_providers_roles_id'] ?? 0);
+            if ($roleId > 0) {
+                $existingByRole[$roleId] = $row;
+            }
+        }
+
+        foreach ($targetRoleToGroup as $roleId => $groupId) {
+            $existingRow = $existingByRole[$roleId] ?? null;
+            if ($existingRow !== null) {
+                if ((int) ($existingRow['groups_id'] ?? 0) !== $groupId) {
+                    $DB->update($dynamicTable, [
+                        'groups_id' => $groupId,
+                    ], [
+                        'id' => (int) $existingRow['id'],
+                    ]);
+                }
+                continue;
+            }
+
+            $DB->insert($dynamicTable, [
+                'users_id'                                 => (int) $user->getID(),
+                'plugin_singlesignon_providers_roles_id'  => (int) $roleId,
+                'groups_id'                                => (int) $groupId,
+            ]);
+        }
+
+        foreach ($existingDynamicRows as $row) {
+            $rowId = (int) ($row['id'] ?? 0);
+            $roleId = (int) ($row['plugin_singlesignon_providers_roles_id'] ?? 0);
+            if ($rowId <= 0 || $roleId <= 0 || isset($targetRoleToGroup[$roleId])) {
+                continue;
+            }
+
+            $roleRow = false;
+            foreach ($DB->request([
+                'SELECT' => ['plugin_singlesignon_providers_id', 'is_active'],
+                'FROM'   => self::getTable(),
+                'WHERE'  => ['id' => $roleId],
+                'LIMIT'  => 1,
+            ]) as $rowData) {
+                $roleRow = $rowData;
+                break;
+            }
+
+            if ($roleRow === false) {
+                $DB->delete($dynamicTable, ['id' => $rowId]);
+                continue;
+            }
+
+            if ((int) ($roleRow['plugin_singlesignon_providers_id'] ?? 0) !== $providerId) {
+                continue;
+            }
+
+            $DB->delete($dynamicTable, ['id' => $rowId]);
         }
 
         $managedMap = array_fill_keys(array_map('intval', $managedGroupIds), true);
@@ -337,7 +433,12 @@ class Provider_Group extends CommonDBRelation
         return array_values(array_unique($groups));
     }
 
-    public static function getGlpiGroupsForClaims(int $providerId, array $claimValues): array
+    /**
+     * @param int $providerId
+     * @param array<int, mixed> $claimValues
+     * @return list<array{id:int, groups_id:int}>
+     */
+    public static function getRoleMappingsForClaims(int $providerId, array $claimValues): array
     {
         global $DB;
 
@@ -353,9 +454,9 @@ class Provider_Group extends CommonDBRelation
             return [];
         }
 
-        $groupIds = [];
+        $mappings = [];
         foreach ($DB->request([
-            'SELECT' => ['groups_id'],
+            'SELECT' => ['id', 'groups_id'],
             'FROM'   => self::getTable(),
             'WHERE'  => [
                 'plugin_singlesignon_providers_id' => $providerId,
@@ -363,13 +464,17 @@ class Provider_Group extends CommonDBRelation
                 'is_active'                        => 1,
             ],
         ]) as $row) {
+            $roleId = (int) ($row['id'] ?? 0);
             $groupId = (int) ($row['groups_id'] ?? 0);
-            if ($groupId > 0) {
-                $groupIds[] = $groupId;
+            if ($roleId > 0 && $groupId > 0) {
+                $mappings[] = [
+                    'id'        => $roleId,
+                    'groups_id' => $groupId,
+                ];
             }
         }
 
-        return array_values(array_unique($groupIds));
+        return $mappings;
     }
 
     /**
@@ -401,7 +506,7 @@ class Provider_Group extends CommonDBRelation
     }
 
     /**
-     * Upserts the remote_id → groups_id mapping in the providers_groups table.
+     * Upserts the remote_id → groups_id mapping in the providers_roles table.
      *
      * Existing GLPI group names and properties are never touched; only the
      * cross-reference record in this plugin's own table is created or updated.

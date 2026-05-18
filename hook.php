@@ -43,7 +43,8 @@ function plugin_singlesignon_install()
 
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
-    $providersGroupsTable = Provider_Group::getTable();
+    $providersRolesTable = Provider_Group::getTable();
+    $providersGroupsTable = Provider_Group::getDynamicGroupsTable();
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
     $migration = new Migration(PLUGIN_SINGLESIGNON_VERSION);
@@ -252,9 +253,9 @@ function plugin_singlesignon_install()
     /**
      * Version 2.1.0
      */
-    if (!$DB->tableExists($providersGroupsTable)) {
+    if (!$DB->tableExists($providersRolesTable)) {
         $DB->doQuery(
-            "CREATE TABLE `$providersGroupsTable` (
+            "CREATE TABLE `$providersRolesTable` (
             `id` INT NOT NULL AUTO_INCREMENT,
             `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
             `groups_id` INT NOT NULL DEFAULT '0',
@@ -262,6 +263,47 @@ function plugin_singlesignon_install()
             `is_active` TINYINT(1) NOT NULL DEFAULT '1',
             PRIMARY KEY (`id`),
             UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`),
+            KEY `groups_id` (`groups_id`)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        );
+    }
+
+    // Migrate legacy role mappings from providers_groups to providers_roles, then
+    // repurpose providers_groups for dynamic user-role group links.
+    if (
+        $DB->tableExists($providersGroupsTable)
+        && $DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_id')
+        && $DB->fieldExists($providersGroupsTable, 'remote_id')
+        && $DB->fieldExists($providersGroupsTable, 'is_active')
+    ) {
+        $DB->doQuery(
+            "INSERT IGNORE INTO `$providersRolesTable` (`plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`)
+             SELECT `plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`
+             FROM `$providersGroupsTable`",
+        );
+    }
+
+    $providersGroupsNeedsRebuild = !$DB->tableExists($providersGroupsTable)
+        || !$DB->fieldExists($providersGroupsTable, 'users_id')
+        || !$DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_roles_id')
+        || !$DB->fieldExists($providersGroupsTable, 'groups_id')
+        || $DB->fieldExists($providersGroupsTable, 'is_active')
+        || $DB->fieldExists($providersGroupsTable, 'remote_id')
+        || $DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_id');
+
+    if ($providersGroupsNeedsRebuild) {
+        if ($DB->tableExists($providersGroupsTable)) {
+            $DB->dropTable($providersGroupsTable, true);
+        }
+
+        $DB->doQuery(
+            "CREATE TABLE `$providersGroupsTable` (
+            `id` INT NOT NULL AUTO_INCREMENT,
+            `users_id` INT NOT NULL DEFAULT '0',
+            `plugin_singlesignon_providers_roles_id` INT NOT NULL DEFAULT '0',
+            `groups_id` INT NOT NULL DEFAULT '0',
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `unicity_user_role` (`users_id`,`plugin_singlesignon_providers_roles_id`),
             KEY `groups_id` (`groups_id`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         );
@@ -282,7 +324,8 @@ function plugin_singlesignon_uninstall()
     Config::deleteConfigurationValues('plugin:singlesignon');
 
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
-    $providersGroupsTable = Provider_Group::getTable();
+    $providersRolesTable = Provider_Group::getTable();
+    $providersGroupsTable = Provider_Group::getDynamicGroupsTable();
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
@@ -292,6 +335,10 @@ function plugin_singlesignon_uninstall()
 
     if ($DB->tableExists($providersGroupsTable)) {
         $DB->dropTable($providersGroupsTable, true);
+    }
+
+    if ($DB->tableExists($providersRolesTable)) {
+        $DB->dropTable($providersRolesTable, true);
     }
 
     if ($DB->tableExists($providersFieldsTable)) {
