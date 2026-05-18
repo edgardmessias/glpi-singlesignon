@@ -1954,12 +1954,22 @@ class Provider extends CommonDBTM
         } catch (Exception) {
         }
 
+        // Mark this authentication as coming from remote user context so GLPI
+        // applies the external-auth flow (including rights rules) on login.
+        $hadRemoteUser = array_key_exists('glpi_remote_user', $_SESSION);
+        $originalRemoteUser = $hadRemoteUser ? $_SESSION['glpi_remote_user'] : null;
+        $_SESSION['glpi_remote_user'] = (string) $user->fields['name'];
+
         // --- 3. Login via external auth (password unused) ---
         $auth = new Auth();
         $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
 
         // --- 4. Post-login cleanup (success or failure): undo temporary SSO context ---
-        unset($_SESSION['glpi_remote_user']);
+        if ($hadRemoteUser) {
+            $_SESSION['glpi_remote_user'] = $originalRemoteUser;
+        } else {
+            unset($_SESSION['glpi_remote_user']);
+        }
 
         $CFG_GLPI['ssovariables_id'] = $original_ssovariables_id;
         if ($sso_variable_name !== '') {
