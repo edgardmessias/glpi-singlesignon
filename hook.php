@@ -276,8 +276,9 @@ function plugin_singlesignon_install()
         && $DB->fieldExists($providersGroupsTable, 'remote_id')
         && $DB->fieldExists($providersGroupsTable, 'is_active')
     ) {
-        // INSERT IGNORE avoids duplicate key errors when this migration runs more
-        // than once and some rows were already copied to providers_roles.
+        // This copy step only runs while legacy role-mapping columns still exist.
+        // INSERT IGNORE avoids duplicate key errors if the same migration step is
+        // retried after a partial run.
         $DB->doQuery(
             "INSERT IGNORE INTO `$providersRolesTable` (`plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`)
              SELECT `plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`

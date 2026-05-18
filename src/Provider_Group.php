@@ -52,7 +52,6 @@ use function Safe\preg_split;
  */
 class Provider_Group extends CommonDBRelation
 {
-    private const ROLES_TABLE = 'glpi_plugin_singlesignon_providers_roles';
     private const DYNAMIC_GROUPS_TABLE = 'glpi_plugin_singlesignon_providers_groups';
     public static $table = 'glpi_plugin_singlesignon_providers_roles';
 
@@ -265,13 +264,8 @@ class Provider_Group extends CommonDBRelation
 
             $roleRow = $roleInfoById[$roleId] ?? false;
 
-            if ($roleRow === false) {
-                $shouldDelete = true;
-            } elseif ((int) ($roleRow['plugin_singlesignon_providers_id'] ?? 0) !== $providerId) {
-                $shouldDelete = false;
-            } else {
-                $shouldDelete = true;
-            }
+            $shouldDelete = $roleRow === false
+                || (int) ($roleRow['plugin_singlesignon_providers_id'] ?? 0) === $providerId;
 
             if (!$shouldDelete) {
                 continue;
@@ -452,7 +446,7 @@ class Provider_Group extends CommonDBRelation
     /**
      * @param int $providerId
      * @param array<int, mixed> $claimValues
-     * @return list<array{id:int, groups_id:int}>
+     * @return list<array{id: int, groups_id: int}>
      */
     public static function getRoleMappingsForClaims(int $providerId, array $claimValues): array
     {
