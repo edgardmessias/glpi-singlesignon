@@ -1492,16 +1492,15 @@ class Provider extends CommonDBTM
         $emailRaw = $this->resolveFieldValueFromMappings($resource_array, 'email');
         $usernameRaw = $this->resolveFieldValueFromMappings($resource_array, 'username');
 
-        if ($use_email && $emailRaw !== null && $emailRaw !== '') {
-            return (string) $emailRaw;
+        $preferredRaw = $use_email ? $emailRaw : $usernameRaw;
+        $fallbackRaw = $use_email ? $usernameRaw : $emailRaw;
+
+        if ($preferredRaw !== null && $preferredRaw !== '') {
+            return (string) $preferredRaw;
         }
 
-        if ($usernameRaw !== null && $usernameRaw !== '') {
-            return (string) $usernameRaw;
-        }
-
-        if ($emailRaw !== null && $emailRaw !== '') {
-            return (string) $emailRaw;
+        if ($fallbackRaw !== null && $fallbackRaw !== '') {
+            return (string) $fallbackRaw;
         }
 
         return null;
@@ -1522,17 +1521,15 @@ class Provider extends CommonDBTM
             $use_email = !empty($this->fields['use_email_for_login']);
             $pendingEmail = trim((string) ($pendingRegistration['email'] ?? ''));
             $pendingLogin = trim((string) ($pendingRegistration['login'] ?? ''));
+            $preferredPending = $use_email ? $pendingEmail : $pendingLogin;
+            $fallbackPending = $use_email ? $pendingLogin : $pendingEmail;
 
-            if ($use_email && $pendingEmail !== '') {
-                return $pendingEmail;
+            if ($preferredPending !== '') {
+                return $preferredPending;
             }
 
-            if ($pendingLogin !== '') {
-                return $pendingLogin;
-            }
-
-            if ($pendingEmail !== '') {
-                return $pendingEmail;
+            if ($fallbackPending !== '') {
+                return $fallbackPending;
             }
         }
 
