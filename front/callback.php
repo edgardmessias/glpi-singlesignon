@@ -92,7 +92,6 @@ if ($test_cookie) {
     $resource_owner_array = is_array($resource_owner) ? $resource_owner : [];
     
     $id_token_payload = $signon_provider->getIdTokenPayload();
-    $id_token_payload_array = is_array($id_token_payload) ? $id_token_payload : ['error' => 'No ID token payload or unable to parse'];
 
     $resolved_fields = $signon_provider->getResolvedFieldsForDebug($resource_owner_array);
     $field_types = Provider_Field::getFieldTypes();
@@ -197,6 +196,7 @@ if ($test_cookie) {
     $copy_payload_sections[] = implode("\n", $default_lines);
 
     $copy_payload_sections[] = (string) __('Resource Owner', 'singlesignon') . "\n" . $resource_owner_pretty;
+    $copy_payload_sections[] = (string) __('ID Token (JWT)', 'singlesignon') . "\n" . $id_token_payload_pretty;
     $copy_payload_sections[] = (string) __('Callback context', 'singlesignon') . "\n" . $callback_context_pretty;
     $copy_payload = implode("\n\n", $copy_payload_sections);
 
@@ -206,6 +206,7 @@ if ($test_cookie) {
         'field_types'             => $field_types,
         'resolved_fields'         => $resolved_fields,
         'resource_owner_pretty'   => $resource_owner_pretty,
+        'id_token_payload_pretty' => $id_token_payload_pretty,
         'callback_context_pretty' => $callback_context_pretty,
         'active_mappings'         => $active_mappings,
         'default_mappings'        => $default_mappings,

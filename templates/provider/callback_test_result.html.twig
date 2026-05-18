@@ -130,7 +130,14 @@
                 </div>
 
                 <div class="tab-pane" id="tab-id-token">
-                    <pre class="mb-0" style="white-space: pre-wrap;">{{ id_token_payload_pretty }}</pre>
+                    {% if id_token_payload_pretty is empty %}
+                        <div class="p-3 text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ __('No ID token received or unable to parse.', 'singlesignon') }}
+                        </div>
+                    {% else %}
+                        <pre class="mb-0" style="white-space: pre-wrap;">{{ id_token_payload_pretty }}</pre>
+                    {% endif %}
                 </div>
 
                 <div class="tab-pane" id="tab-active-mappings">
