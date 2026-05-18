@@ -246,7 +246,32 @@ class Provider extends CommonDBTM
 
     public function cleanDBonPurge()
     {
+        global $DB;
+
         Toolbox::deletePicture($this->fields['picture']);
+
+        $providerId = $this->getID();
+        if ($providerId > 0) {
+            $rolesTable = Provider_Group::getTable();
+
+            // For each role mapping belonging to this provider, remove the
+            // dynamic group memberships from every affected user before the
+            // mapping row itself is deleted.
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => $rolesTable,
+                'WHERE'  => ['plugin_singlesignon_providers_id' => $providerId],
+            ]) as $row) {
+                $roleId = (int) ($row['id'] ?? 0);
+                if ($roleId > 0) {
+                    Provider_Group::removeDynamicGroupsForRole($roleId);
+                }
+            }
+
+            // Delete all role mappings for this provider.
+            $DB->delete($rolesTable, ['plugin_singlesignon_providers_id' => $providerId]);
+        }
+
         $this->deleteChildrenAndRelationsFromDb(
             [
                 'PluginSinglesignonProvider_User',

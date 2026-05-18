@@ -516,6 +516,60 @@ class Provider_Group extends CommonDBRelation
     }
 
     /**
+     * Remove all dynamic-group tracking rows for the given role mapping and, for
+     * each affected user, delete the corresponding Group_User link only when it
+     * is flagged as `is_dynamic`.
+     *
+     * This is called both when a role mapping is purged and when it is deactivated
+     * (is_active set to 0), so that GLPI group memberships are kept in sync
+     * without waiting for the next SSO login.
+     */
+    public static function removeDynamicGroupsForRole(int $roleId): void
+    {
+        global $DB;
+
+        if ($roleId <= 0) {
+            return;
+        }
+
+        $dynamicTable = self::getDynamicGroupsTable();
+        $groupUser    = new \Group_User();
+
+        foreach ($DB->request([
+            'SELECT' => ['id', 'users_id', 'groups_id'],
+            'FROM'   => $dynamicTable,
+            'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
+        ]) as $row) {
+            $userId  = (int) ($row['users_id']  ?? 0);
+            $groupId = (int) ($row['groups_id'] ?? 0);
+
+            // Remove the Group_User membership only when it is a dynamic link.
+            if ($userId > 0 && $groupId > 0) {
+                $links = $groupUser->find([
+                    'users_id'   => $userId,
+                    'groups_id'  => $groupId,
+                    'is_dynamic' => 1,
+                ]);
+                foreach ($links as $link) {
+                    $groupUser->delete(['id' => (int) $link['id']], true);
+                }
+            }
+
+            // Remove the SSO tracking row.
+            $DB->delete($dynamicTable, ['id' => (int) $row['id']]);
+        }
+    }
+
+    /**
+     * Called by GLPI when a role-mapping record is permanently deleted.
+     * Cleans up all dynamic group memberships that referenced this mapping.
+     */
+    public function cleanDBonPurge(): void
+    {
+        self::removeDynamicGroupsForRole($this->getID());
+    }
+
+    /**
      * Upserts the remote_id → groups_id mapping in the providers_roles table.
      *
      * Existing GLPI group names and properties are never touched; only the
@@ -667,6 +721,11 @@ class Provider_Group extends CommonDBRelation
             ];
 
             if ($mappingId > 0) {
+                // If the mapping is being deactivated, remove dynamic group links now
+                // so users do not retain the group until their next SSO login.
+                if (!$isActive) {
+                    self::removeDynamicGroupsForRole($mappingId);
+                }
                 $payload['id'] = $mappingId;
                 $this->update($payload);
             } else {
