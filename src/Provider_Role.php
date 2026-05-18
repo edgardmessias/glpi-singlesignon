@@ -53,13 +53,6 @@ use Session;
 class Provider_Role extends CommonDBRelation
 {
     /**
-     * Tracks which GLPI group was dynamically assigned to each user via a
-     * specific role mapping during the last SSO login. Used to clean up
-     * memberships when a mapping is deactivated or purged.
-     */
-    private const DYNAMIC_GROUPS_TABLE = 'glpi_plugin_singlesignon_providers_groups';
-
-    /**
      * Stores the role-mapping configuration:
      * provider + remote role/group key → GLPI group target.
      */
@@ -74,7 +67,7 @@ class Provider_Role extends CommonDBRelation
 
     public static function getDynamicGroupsTable(): string
     {
-        return self::DYNAMIC_GROUPS_TABLE;
+        return Provider_Group::getTable();
     }
 
     public static function getTypeName($nb = 0): string
@@ -360,39 +353,7 @@ class Provider_Role extends CommonDBRelation
      */
     public static function removeDynamicGroupsForRole(int $roleId): void
     {
-        global $DB;
-
-        if ($roleId <= 0) {
-            return;
-        }
-
-        $dynamicTable = self::getDynamicGroupsTable();
-
-        $groupUser    = new \Group_User();
-
-        foreach ($DB->request([
-            'SELECT' => ['id', 'users_id', 'groups_id'],
-            'FROM'   => $dynamicTable,
-            'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
-        ]) as $row) {
-            $userId  = (int) ($row['users_id']  ?? 0);
-            $groupId = (int) ($row['groups_id'] ?? 0);
-
-            // Remove the Group_User membership only when it is a dynamic link.
-            if ($userId > 0 && $groupId > 0) {
-                $links = $groupUser->find([
-                    'users_id'   => $userId,
-                    'groups_id'  => $groupId,
-                    'is_dynamic' => 1,
-                ]);
-                foreach ($links as $link) {
-                    $groupUser->delete(['id' => (int) $link['id']], true);
-                }
-            }
-
-            // Remove the SSO tracking row.
-            $DB->delete($dynamicTable, ['id' => (int) $row['id']]);
-        }
+        Provider_Group::removeDynamicGroupsForRole($roleId);
     }
 
     /**

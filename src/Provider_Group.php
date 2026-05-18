@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use CommonDBRelation;
 use JsonPath\JsonObject;
 use Throwable;
 use User;
@@ -44,10 +45,19 @@ use function Safe\preg_split;
  * `glpi_plugin_singlesignon_providers_groups` so that they can be revoked
  * when a mapping is deactivated or purged without waiting for the next login.
  */
-class Provider_Group
+class Provider_Group extends CommonDBRelation
 {
     private const MAX_GROUPS_PER_SYNC = 200;
     private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
+
+    public static $table = 'glpi_plugin_singlesignon_providers_groups';
+
+    // From CommonDBRelation
+    public static $itemtype_1 = Provider_Role::class;
+    public static $items_id_1 = 'plugin_singlesignon_providers_roles_id';
+
+    public static $itemtype_2 = 'User';
+    public static $items_id_2 = 'users_id';
 
     // ─────────────────────────────────────────────────────────────────────────
     // Public entry points
@@ -118,7 +128,7 @@ class Provider_Group
             }
         }
 
-        $dynamicTable = Provider_Role::getDynamicGroupsTable();
+        $dynamicTable = self::getTable();
         /** @var array<int, array<string, mixed>> $existingDynamicRows */
         $existingDynamicRows = [];
         foreach ($DB->request([
@@ -365,6 +375,40 @@ class Provider_Group
         }
 
         return array_values(array_unique($groups));
+    }
+
+    public static function removeDynamicGroupsForRole(int $roleId): void
+    {
+        global $DB;
+
+        if ($roleId <= 0) {
+            return;
+        }
+
+        $dynamicTable = self::getTable();
+        $groupUser = new \Group_User();
+
+        foreach ($DB->request([
+            'SELECT' => ['*'],
+            'FROM'   => $dynamicTable,
+            'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
+        ]) as $row) {
+            $userId = (int) ($row['users_id'] ?? $row['plugin_singlesignon_providers_users_id'] ?? 0);
+            $groupId = (int) ($row['groups_id'] ?? 0);
+
+            if ($userId > 0 && $groupId > 0) {
+                $links = $groupUser->find([
+                    'users_id'   => $userId,
+                    'groups_id'  => $groupId,
+                    'is_dynamic' => 1,
+                ]);
+                foreach ($links as $link) {
+                    $groupUser->delete(['id' => (int) $link['id']], true);
+                }
+            }
+
+            $DB->delete($dynamicTable, ['id' => (int) $row['id']]);
+        }
     }
 
 }

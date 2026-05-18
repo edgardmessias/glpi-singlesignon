@@ -24,6 +24,7 @@
 
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Provider;
+use GlpiPlugin\Singlesignon\Provider_Group;
 use GlpiPlugin\Singlesignon\Provider_Role;
 
 function plugin_singlesignon_install()
@@ -287,6 +288,10 @@ function plugin_singlesignon_install()
         );
     }
 
+    $migration->addField($providersGroupsTable, 'users_id', 'integer', ['value' => 0]);
+    $migration->addField($providersGroupsTable, 'plugin_singlesignon_providers_roles_id', 'integer', ['value' => 0]);
+    $migration->addField($providersGroupsTable, 'groups_id', 'integer', ['value' => 0]);
+
     $migration->executeMigration();
 
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
@@ -303,7 +308,7 @@ function plugin_singlesignon_uninstall()
 
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
     $providersRolesTable = Provider_Role::getTable();
-    $providersGroupsTable = Provider_Role::getDynamicGroupsTable();
+    $providersGroupsTable = Provider_Group::getTable();
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
