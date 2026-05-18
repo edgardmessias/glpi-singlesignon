@@ -128,12 +128,11 @@ class Provider_Group extends CommonDBRelation
             }
         }
 
-        $dynamicTable = self::getTable();
         /** @var array<int, array<string, mixed>> $existingDynamicRows */
         $existingDynamicRows = [];
         foreach ($DB->request([
             'SELECT' => ['id', 'plugin_singlesignon_providers_roles_id', 'groups_id'],
-            'FROM'   => $dynamicTable,
+            'FROM'   => self::getTable(),
             'WHERE'  => ['users_id' => (int) $user->getID()],
         ]) as $row) {
             $existingDynamicRows[] = $row;
@@ -151,7 +150,7 @@ class Provider_Group extends CommonDBRelation
             $existingRow = $existingByRole[$roleId] ?? null;
             if ($existingRow !== null) {
                 if ((int) ($existingRow['groups_id'] ?? 0) !== $groupId) {
-                    $DB->update($dynamicTable, [
+                    $DB->update(self::getTable(), [
                         'groups_id' => $groupId,
                     ], [
                         'id' => (int) $existingRow['id'],
@@ -160,7 +159,7 @@ class Provider_Group extends CommonDBRelation
                 continue;
             }
 
-            $DB->insert($dynamicTable, [
+            $DB->insert(self::getTable(), [
                 'users_id'                                 => (int) $user->getID(),
                 'plugin_singlesignon_providers_roles_id'  => (int) $roleId,
                 'groups_id'                                => (int) $groupId,
@@ -205,7 +204,7 @@ class Provider_Group extends CommonDBRelation
                 continue;
             }
 
-            $DB->delete($dynamicTable, ['id' => $rowId]);
+            $DB->delete(self::getTable(), ['id' => $rowId]);
             if ($groupId > 0) {
                 $removedGroupIds[] = $groupId;
             }
@@ -394,12 +393,11 @@ class Provider_Group extends CommonDBRelation
             return;
         }
 
-        $dynamicTable = self::getTable();
         $groupUser = new \Group_User();
 
         foreach ($DB->request([
             'SELECT' => ['id', 'users_id', 'groups_id'],
-            'FROM'   => $dynamicTable,
+            'FROM'   => self::getTable(),
             'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
         ]) as $row) {
             $userId = (int) ($row['users_id'] ?? 0);
@@ -416,7 +414,7 @@ class Provider_Group extends CommonDBRelation
                 }
             }
 
-            $DB->delete($dynamicTable, ['id' => (int) $row['id']]);
+            $DB->delete(self::getTable(), ['id' => (int) $row['id']]);
         }
     }
 
