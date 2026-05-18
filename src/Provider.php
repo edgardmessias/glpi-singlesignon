@@ -1486,6 +1486,59 @@ class Provider extends CommonDBTM
         ];
     }
 
+    private function resolveRawSsoLoginString(array $resource_array): ?string
+    {
+        $use_email = !empty($this->fields['use_email_for_login']);
+        $emailRaw = $this->resolveFieldValueFromMappings($resource_array, 'email');
+        $usernameRaw = $this->resolveFieldValueFromMappings($resource_array, 'username');
+
+        if ($use_email && $emailRaw !== null && $emailRaw !== '') {
+            return (string) $emailRaw;
+        }
+
+        if ($usernameRaw !== null && $usernameRaw !== '') {
+            return (string) $usernameRaw;
+        }
+
+        if ($emailRaw !== null && $emailRaw !== '') {
+            return (string) $emailRaw;
+        }
+
+        return null;
+    }
+
+    private function resolveSsoLoginContext(User $user): string
+    {
+        $resource_array = $this->getResourceOwner();
+        if (is_array($resource_array)) {
+            $rawLogin = $this->resolveRawSsoLoginString($resource_array);
+            if ($rawLogin !== null && $rawLogin !== '') {
+                return $rawLogin;
+            }
+        }
+
+        $pendingRegistration = self::getPendingRegistrationSession();
+        if (is_array($pendingRegistration)) {
+            $use_email = !empty($this->fields['use_email_for_login']);
+            $pendingEmail = trim((string) ($pendingRegistration['email'] ?? ''));
+            $pendingLogin = trim((string) ($pendingRegistration['login'] ?? ''));
+
+            if ($use_email && $pendingEmail !== '') {
+                return $pendingEmail;
+            }
+
+            if ($pendingLogin !== '') {
+                return $pendingLogin;
+            }
+
+            if ($pendingEmail !== '') {
+                return $pendingEmail;
+            }
+        }
+
+        return (string) ($user->fields['name'] ?? '');
+    }
+
     private function resolveEntitiesIdForNewUser(): int
     {
         $default = (int) ($this->fields['default_entities_id'] ?? 0);
@@ -1947,6 +2000,9 @@ class Provider extends CommonDBTM
         // --- 2. Temporary SSO variable context (restored in step 4) ---
         $original_ssovariables_id = $CFG_GLPI['ssovariables_id'];
         $sso_variable_name = '';
+        $hadSsoServerValue = false;
+        $originalSsoServerValue = null;
+        $ssoLoginContext = $this->resolveSsoLoginContext($user);
 
         $iterator = $DB->request([
             'FROM'  => 'glpi_ssovariables',
@@ -1957,8 +2013,13 @@ class Provider extends CommonDBTM
         foreach ($iterator as $row) {
             $CFG_GLPI['ssovariables_id'] = (int) $row['id'];
             $sso_variable_name = (string) $row['name'];
-            $_SERVER[$sso_variable_name] = $user->fields['name'];
             break;
+        }
+
+        if ($sso_variable_name !== '') {
+            $hadSsoServerValue = array_key_exists($sso_variable_name, $_SERVER);
+            $originalSsoServerValue = $hadSsoServerValue ? $_SERVER[$sso_variable_name] : null;
+            $_SERVER[$sso_variable_name] = $ssoLoginContext;
         }
 
         try {
@@ -1970,7 +2031,7 @@ class Provider extends CommonDBTM
         // applies the external-auth flow (including rights rules) on login.
         $hadRemoteUser = isset($_SESSION['glpi_remote_user']);
         $originalRemoteUser = $hadRemoteUser ? $_SESSION['glpi_remote_user'] : null;
-        $_SESSION['glpi_remote_user'] = (string) $user->fields['name'];
+        $_SESSION['glpi_remote_user'] = $ssoLoginContext;
 
         // --- 3. Login via external auth (password unused) ---
         // Auth::login executes GLPI's standard authentication pipeline, including
@@ -1987,7 +2048,11 @@ class Provider extends CommonDBTM
 
         $CFG_GLPI['ssovariables_id'] = $original_ssovariables_id;
         if ($sso_variable_name !== '') {
-            unset($_SERVER[$sso_variable_name]);
+            if ($hadSsoServerValue) {
+                $_SERVER[$sso_variable_name] = $originalSsoServerValue;
+            } else {
+                unset($_SERVER[$sso_variable_name]);
+            }
         }
 
         if (!$authResult) {
