@@ -1002,6 +1002,11 @@ class Provider extends CommonDBTM
 
     private static function persistLogoutCookies(string $logoutUrl, int $providerId): void
     {
+        if (!filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
+            self::clearLogoutCookies();
+            return;
+        }
+
         $expires = time() + self::LOGOUT_COOKIE_TTL_SECONDS;
         setcookie(self::LOGOUT_URL_COOKIE_KEY, $logoutUrl, self::getLogoutCookieOptions($expires));
         setcookie(self::LOGOUT_PROVIDER_ID_COOKIE_KEY, (string) $providerId, self::getLogoutCookieOptions($expires));
@@ -1334,6 +1339,15 @@ class Provider extends CommonDBTM
         return $result['value'];
     }
 
+    private function formatDebugFieldValue(array $values, string $fieldType): ?string
+    {
+        if ($values === []) {
+            return null;
+        }
+
+        return $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null);
+    }
+
     /**
      * @return array{value: ?string, values: list<string>, jsonpath: ?string, source: ?string}
      */
@@ -1356,7 +1370,7 @@ class Provider extends CommonDBTM
             $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
             if ($values !== []) {
                 return [
-                    'value'    => $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null),
+                    'value'    => $this->formatDebugFieldValue($values, $fieldType),
                     'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'provider',
@@ -1367,7 +1381,7 @@ class Provider extends CommonDBTM
                 $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
                 if ($valuesFromJwt !== []) {
                     return [
-                        'value'    => $fieldType === 'roles' ? implode(', ', $valuesFromJwt) : ($valuesFromJwt[0] ?? null),
+                        'value'    => $this->formatDebugFieldValue($valuesFromJwt, $fieldType),
                         'values'   => $valuesFromJwt,
                         'jsonpath' => $jsonPath,
                         'source'   => 'provider (jwt)',
@@ -1386,7 +1400,7 @@ class Provider extends CommonDBTM
             $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
             if ($values !== []) {
                 return [
-                    'value'    => $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null),
+                    'value'    => $this->formatDebugFieldValue($values, $fieldType),
                     'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'default',
@@ -1397,7 +1411,7 @@ class Provider extends CommonDBTM
                 $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
                 if ($valuesFromJwt !== []) {
                     return [
-                        'value'    => $fieldType === 'roles' ? implode(', ', $valuesFromJwt) : ($valuesFromJwt[0] ?? null),
+                        'value'    => $this->formatDebugFieldValue($valuesFromJwt, $fieldType),
                         'values'   => $valuesFromJwt,
                         'jsonpath' => $jsonPath,
                         'source'   => 'default (jwt)',
