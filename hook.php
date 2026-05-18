@@ -288,12 +288,6 @@ function plugin_singlesignon_install()
         );
     }
 
-    // `addField` is idempotent in GLPI migrations and safely upgrades older
-    // installs where these columns may be missing.
-    $migration->addField($providersGroupsTable, 'users_id', 'integer', ['value' => 0]);
-    $migration->addField($providersGroupsTable, 'plugin_singlesignon_providers_roles_id', 'integer', ['value' => 0]);
-    $migration->addField($providersGroupsTable, 'groups_id', 'integer', ['value' => 0]);
-
     $migration->executeMigration();
 
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;

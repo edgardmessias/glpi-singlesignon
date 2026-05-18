@@ -388,29 +388,12 @@ class Provider_Group extends CommonDBRelation
         $dynamicTable = self::getTable();
         $groupUser = new \Group_User();
 
-        $rows = [];
-        try {
-            foreach ($DB->request([
-                'SELECT' => ['id', 'users_id', 'groups_id'],
-                'FROM'   => $dynamicTable,
-                'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
-            ]) as $row) {
-                $rows[] = $row;
-            }
-        } catch (Throwable) {
-            // Backward compatibility for older schemas that stored the user FK
-            // as `plugin_singlesignon_providers_users_id` in this table.
-            foreach ($DB->request([
-                'SELECT' => ['id', 'plugin_singlesignon_providers_users_id', 'groups_id'],
-                'FROM'   => $dynamicTable,
-                'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
-            ]) as $row) {
-                $rows[] = $row;
-            }
-        }
-
-        foreach ($rows as $row) {
-            $userId = (int) ($row['users_id'] ?? $row['plugin_singlesignon_providers_users_id'] ?? 0);
+        foreach ($DB->request([
+            'SELECT' => ['id', 'users_id', 'groups_id'],
+            'FROM'   => $dynamicTable,
+            'WHERE'  => ['plugin_singlesignon_providers_roles_id' => $roleId],
+        ]) as $row) {
+            $userId = (int) ($row['users_id'] ?? 0);
             $groupId = (int) ($row['groups_id'] ?? 0);
 
             if ($userId > 0 && $groupId > 0) {
