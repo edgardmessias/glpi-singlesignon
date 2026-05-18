@@ -377,6 +377,15 @@ class Provider_Group extends CommonDBRelation
         return array_values(array_unique($groups));
     }
 
+    /**
+     * Remove all dynamic-group tracking rows for the given role mapping and, for
+     * each affected user, delete the corresponding Group_User link only when it
+     * is flagged as `is_dynamic`.
+     *
+     * This is called both when a role mapping is purged and when it is deactivated
+     * (is_active set to 0), so that GLPI group memberships are kept in sync
+     * without waiting for the next SSO login.
+     */
     public static function removeDynamicGroupsForRole(int $roleId): void
     {
         global $DB;
