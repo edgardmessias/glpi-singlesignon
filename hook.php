@@ -268,42 +268,7 @@ function plugin_singlesignon_install()
         );
     }
 
-    // Migrate legacy role mappings from providers_groups to providers_roles, then
-    // repurpose providers_groups for dynamic user-role group links.
-    if (
-        $DB->tableExists($providersGroupsTable)
-        && $DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_id')
-        && $DB->fieldExists($providersGroupsTable, 'remote_id')
-        && $DB->fieldExists($providersGroupsTable, 'is_active')
-    ) {
-        // This copy step only runs while legacy role-mapping columns still exist.
-        // INSERT IGNORE avoids duplicate key errors if the same migration step is
-        // retried after a partial run.
-        $DB->doQuery(
-            "INSERT IGNORE INTO `$providersRolesTable` (`plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`)
-             SELECT `plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`
-             FROM `$providersGroupsTable`",
-        );
-    }
-
-    $providersGroupsNeedsRebuild = false;
     if (!$DB->tableExists($providersGroupsTable)) {
-        $providersGroupsNeedsRebuild = true;
-    } else {
-        $hasMissingRequiredFields = !$DB->fieldExists($providersGroupsTable, 'users_id')
-            || !$DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_roles_id')
-            || !$DB->fieldExists($providersGroupsTable, 'groups_id');
-        $hasLegacyRoleMappingFields = $DB->fieldExists($providersGroupsTable, 'is_active')
-            || $DB->fieldExists($providersGroupsTable, 'remote_id')
-            || $DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_id');
-        $providersGroupsNeedsRebuild = $hasMissingRequiredFields || $hasLegacyRoleMappingFields;
-    }
-
-    if ($providersGroupsNeedsRebuild) {
-        if ($DB->tableExists($providersGroupsTable)) {
-            $DB->dropTable($providersGroupsTable, true);
-        }
-
         $DB->doQuery(
             "CREATE TABLE `$providersGroupsTable` (
             `id` INT NOT NULL AUTO_INCREMENT,
