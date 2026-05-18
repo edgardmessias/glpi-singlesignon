@@ -57,6 +57,8 @@ class LoginRenderer
             $mode = $_COOKIE['singlesignon_login_mode'] ?? 'oauth';
             return in_array($mode, ['oauth', 'classic'], true) ? $mode : 'oauth';
         }));
+
+        $env->addFunction(new TwigFunction('plugin_singlesignon_get_default_provider_url', fn($redirect = '') => self::getDefaultProviderUrl($redirect)));
     }
 
     public static function hasActiveProviders(): bool
@@ -75,6 +77,33 @@ class LoginRenderer
         if (is_dir($dir)) {
             Toolbox::deleteDir($dir);
         }
+    }
+
+    public static function getDefaultProviderUrl($redirect = ''): ?string
+    {
+        global $CFG_GLPI;
+
+        $provider = new Provider();
+        $providers = $provider->find(['`is_active` = 1', '`is_default` = 1'], 'name ASC');
+
+        if (empty($providers)) {
+            return null;
+        }
+
+        $row = reset($providers);
+
+        $showRemember = !empty($CFG_GLPI['login_remember_time']);
+        $rememberDefault = !empty($CFG_GLPI['login_remember_default']);
+
+        $query = [];
+        if ($redirect !== '') {
+            $query['redirect'] = $redirect;
+        }
+        if ($showRemember && $rememberDefault) {
+            $query['remember'] = '1';
+        }
+
+        return ToolboxPlugin::getCallbackUrl((int) $row['id'], $query);
     }
 
     public static function renderButtons($redirect = '')
