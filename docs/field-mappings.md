@@ -40,7 +40,7 @@ Each vendor uses different field names. Microsoft Graph, Google, GitHub, and cus
 For each type (for example **Email**):
 
 1. Try your **active** mappings in **sort order** until one returns a non-empty value.  
-2. If none work, use the plugin’s **preset defaults** for that provider type.  
+2. If none work, use the plugin’s **preset defaults** for that provider type (Azure, Google, …).  
 3. If still empty, use **generic** built-in guesses (common keys like `email`, `sub`, …).
 
 So your custom rows are tried **before** the defaults.
@@ -75,7 +75,7 @@ If a path points to a list, the plugin uses the first usable value it finds.
 
 ## Default mappings
 
-When no custom field mappings are saved for a provider, the plugin uses **built-in defaults** based on the provider type (Azure, Google, …).  
+When no custom field mappings are saved for a provider, the plugin uses **built-in defaults** based on the provider type.  
 Built-in defaults are tried in the order shown (lowest sort order first).
 
 ### Generic / OIDC (type `generic` — fallback for any unknown provider type)
