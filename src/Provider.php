@@ -1256,11 +1256,11 @@ class Provider extends CommonDBTM
         $normalized = [];
         foreach ($result as $value) {
             foreach ($this->normalizeJsonPathResults($value) as $normalizedValue) {
-                $normalized[] = $normalizedValue;
+                $normalized[$normalizedValue] = $normalizedValue;
             }
         }
 
-        return array_values(array_unique($normalized));
+        return array_values($normalized);
     }
 
     /**

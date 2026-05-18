@@ -75,8 +75,7 @@ class LoginRenderer
             return;
         }
 
-        $requestPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $requestPath = is_string($requestPath) ? $requestPath : '';
+        $requestPath = (string) ($_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '');
 
         if ($requestPath === '' || !str_ends_with($requestPath, '/front/logout.php')) {
             return;
