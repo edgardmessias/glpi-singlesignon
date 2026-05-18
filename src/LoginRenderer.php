@@ -26,9 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-use Html;
 use Plugin;
-use Session;
 use Glpi\Application\View\TemplateRenderer;
 use Glpi\Kernel\Kernel;
 use Toolbox;
@@ -43,8 +41,6 @@ class LoginRenderer
      */
     public static function onPostInit(): void
     {
-        self::handleFederatedLogout();
-
         $env = TemplateRenderer::getInstance()->getEnvironment();
 
         $dir = Plugin::getPhpDir('singlesignon') . '/templates/override';
@@ -63,34 +59,6 @@ class LoginRenderer
         }));
 
         $env->addFunction(new TwigFunction('plugin_singlesignon_get_default_provider_url', fn($redirect = '') => self::getDefaultProviderUrl($redirect)));
-    }
-
-    /**
-     * Intercept GLPI logout requests, clean the GLPI session, and redirect to the configured IdP SLO URL.
-     */
-    private static function handleFederatedLogout(): void
-    {
-        $logoutUrl = trim((string) ($_SESSION[Provider::LOGOUT_URL_SESSION_KEY] ?? $_COOKIE[Provider::LOGOUT_URL_COOKIE_KEY] ?? ''));
-        $providerId = (int) ($_SESSION[Provider::LOGOUT_PROVIDER_ID_SESSION_KEY] ?? $_COOKIE[Provider::LOGOUT_PROVIDER_ID_COOKIE_KEY] ?? 0);
-        if ($logoutUrl === '' || $providerId <= 0 || !filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
-            return;
-        }
-
-        $requestPath = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
-
-        if ($requestPath === '' || !str_ends_with($requestPath, '/front/logout.php')) {
-            return;
-        }
-
-        $provider = new Provider();
-        if (!$provider->getFromDB($providerId) || $provider->getLogoutUrl() !== $logoutUrl) {
-            return;
-        }
-
-        unset($_SESSION[Provider::LOGOUT_URL_SESSION_KEY], $_SESSION[Provider::LOGOUT_PROVIDER_ID_SESSION_KEY]);
-        Provider::clearLogoutCookies();
-        Session::cleanOnLogout();
-        Html::redirect($logoutUrl);
     }
 
     public static function hasActiveProviders(): bool

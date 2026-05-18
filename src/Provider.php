@@ -63,11 +63,6 @@ class Provider extends CommonDBTM
     public const LOGIN_REGISTRATION_PREVIEW = 2;
 
     public const PENDING_REGISTRATION_SESSION_KEY = 'glpi_singlesignon_pending_registration';
-    public const LOGOUT_URL_SESSION_KEY = 'glpi_singlesignon_logout_url';
-    public const LOGOUT_PROVIDER_ID_SESSION_KEY = 'glpi_singlesignon_logout_provider_id';
-    public const LOGOUT_URL_COOKIE_KEY = 'glpi_singlesignon_logout_url';
-    public const LOGOUT_PROVIDER_ID_COOKIE_KEY = 'glpi_singlesignon_logout_provider_id';
-
     public const PHOTO_SYNC_DISABLED = 0;
     public const PHOTO_SYNC_IF_EMPTY = 1;
     public const PHOTO_SYNC_ALWAYS = 2;
@@ -75,8 +70,6 @@ class Provider extends CommonDBTM
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
     public const AUTH_HEADER_DISABLED = 'disabled';
-    // Keep logout cookies for up to one day so SLO redirect survives the `/front/logout.php` request flow.
-    public const LOGOUT_COOKIE_TTL_SECONDS = 86400;
 
     // From CommonDBTM
     public $dohistory = true;
@@ -315,13 +308,6 @@ class Provider extends CommonDBTM
                 $error_detected[] = __s('The Resource Owner Details URL is invalid', 'singlesignon');
             }
 
-            if (
-                isset($input['url_logout'])
-                && $input['url_logout'] !== ''
-                && !filter_var($input['url_logout'], FILTER_VALIDATE_URL)
-            ) {
-                $error_detected[] = __s('The SLO URL is invalid', 'singlesignon');
-            }
         }
 
         if (count($error_detected)) {
@@ -533,14 +519,6 @@ class Provider extends CommonDBTM
             'table' => $this->getTable(),
             'field' => 'url_resource_owner_details',
             'name' => __('Resource Owner Details URL', 'singlesignon'),
-            'datatype' => 'weblink',
-        ];
-
-        $tab[] = [
-            'id' => 10,
-            'table' => $this->getTable(),
-            'field' => 'url_logout',
-            'name' => __('SLO URL', 'singlesignon'),
             'datatype' => 'weblink',
         ];
 
@@ -953,72 +931,6 @@ class Provider extends CommonDBTM
         }
 
         return $url;
-    }
-
-    /**
-     * Return the configured provider logout URL, or an empty string when none is set.
-     */
-    public function getLogoutUrl(): string
-    {
-        $type = $this->getClientType();
-
-        $value = static::getDefault($type, "url_logout", "");
-
-        $fields = $this->fields;
-
-        if (!isset($fields['url_logout']) || empty($fields['url_logout'])) {
-            $fields['url_logout'] = $value;
-        }
-
-        $fields = Plugin::doHookFunction("sso:url_logout", $fields);
-
-        return trim((string) ($fields['url_logout'] ?? ''));
-    }
-
-    /**
-     * @return array{expires?: int, path: string, secure: bool, httponly: bool, samesite: string}
-     */
-    private static function getLogoutCookieOptions(?int $expires = null): array
-    {
-        global $CFG_GLPI;
-
-        $path = '/';
-        if (isset($CFG_GLPI['root_doc']) && is_string($CFG_GLPI['root_doc']) && $CFG_GLPI['root_doc'] !== '') {
-            $path = $CFG_GLPI['root_doc'];
-        }
-
-        $options = [
-            'path'     => $path,
-            'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ];
-
-        if ($expires !== null) {
-            $options['expires'] = $expires;
-        }
-
-        return $options;
-    }
-
-    private static function persistLogoutCookies(string $logoutUrl, int $providerId): void
-    {
-        if (!filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
-            self::clearLogoutCookies();
-            return;
-        }
-
-        $expires = time() + self::LOGOUT_COOKIE_TTL_SECONDS;
-        setcookie(self::LOGOUT_URL_COOKIE_KEY, $logoutUrl, self::getLogoutCookieOptions($expires));
-        setcookie(self::LOGOUT_PROVIDER_ID_COOKIE_KEY, (string) $providerId, self::getLogoutCookieOptions($expires));
-    }
-
-    public static function clearLogoutCookies(): void
-    {
-        $expires = time() - 3600;
-        setcookie(self::LOGOUT_URL_COOKIE_KEY, '', self::getLogoutCookieOptions($expires));
-        setcookie(self::LOGOUT_PROVIDER_ID_COOKIE_KEY, '', self::getLogoutCookieOptions($expires));
-        unset($_COOKIE[self::LOGOUT_URL_COOKIE_KEY], $_COOKIE[self::LOGOUT_PROVIDER_ID_COOKIE_KEY]);
     }
 
     /**
@@ -2073,27 +1985,6 @@ class Provider extends CommonDBTM
         try {
             $this->syncOAuthPhoto($user);
         } catch (Exception) {
-        }
-
-        $logoutUrl = $this->getLogoutUrl();
-        if ($logoutUrl !== '') {
-            $providerId = (int) $this->getID();
-            $_SESSION[self::LOGOUT_URL_SESSION_KEY] = $logoutUrl;
-            if ($providerId > 0) {
-                $_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY] = $providerId;
-                if (filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
-                    self::persistLogoutCookies($logoutUrl, $providerId);
-                } else {
-                    self::clearLogoutCookies();
-                }
-            } else {
-                unset($_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY]);
-                self::clearLogoutCookies();
-            }
-        } else {
-            unset($_SESSION[self::LOGOUT_URL_SESSION_KEY]);
-            unset($_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY]);
-            self::clearLogoutCookies();
         }
 
         return true;
