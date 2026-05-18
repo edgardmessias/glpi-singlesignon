@@ -173,7 +173,6 @@ function plugin_singlesignon_install()
         );
     }
 
-    $migration->dropField($providersTable, 'url_logout');
     $migration->addField(
         $providersTable,
         'user_photo_sync_mode',
