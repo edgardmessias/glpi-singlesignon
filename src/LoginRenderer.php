@@ -67,8 +67,6 @@ class LoginRenderer
 
     private static function handleFederatedLogout(): void
     {
-        global $CFG_GLPI;
-
         $logoutUrl = trim((string) ($_SESSION[Provider::LOGOUT_URL_SESSION_KEY] ?? ''));
         if ($logoutUrl === '' || !filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
             return;
@@ -77,10 +75,7 @@ class LoginRenderer
         $requestPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
         $requestPath = is_string($requestPath) ? $requestPath : '';
 
-        $rootDoc = rtrim((string) ($CFG_GLPI['root_doc'] ?? ''), '/');
-        $expectedPath = ($rootDoc !== '' ? $rootDoc : '') . '/front/logout.php';
-
-        if ($requestPath === '' || ($requestPath !== $expectedPath && !str_ends_with($requestPath, '/front/logout.php'))) {
+        if ($requestPath === '' || !str_ends_with($requestPath, '/front/logout.php')) {
             return;
         }
 

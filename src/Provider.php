@@ -1226,13 +1226,13 @@ class Provider extends CommonDBTM
 
     private function normalizeJsonPathResults($result): array
     {
+        if (is_numeric($result)) {
+            return [(string) $result];
+        }
+
         if (is_string($result)) {
             $normalized = trim($result);
             return $normalized !== '' ? [$normalized] : [];
-        }
-
-        if (is_numeric($result)) {
-            return [(string) $result];
         }
 
         if (!is_array($result)) {
