@@ -95,11 +95,11 @@
                                             {% if data.value is not null and data.value != '' %}
                                                 {% set values = data.values|default([]) %}
                                                 {% if values is iterable and values|length > 0 %}
-                                                    <div class="d-flex flex-wrap">
+                                                    <ul class="list-unstyled d-flex flex-wrap mb-0">
                                                         {% for item in values %}
-                                                            <code class="me-1 mb-1">{{ item }}</code>
+                                                            <li class="me-1 mb-1"><code>{{ item }}</code></li>
                                                         {% endfor %}
-                                                    </div>
+                                                    </ul>
                                                 {% else %}
                                                     <code>{{ data.value }}</code>
                                                 {% endif %}

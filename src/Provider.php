@@ -1015,8 +1015,9 @@ class Provider extends CommonDBTM
 
     public static function clearLogoutCookies(): void
     {
-        setcookie(self::LOGOUT_URL_COOKIE_KEY, '', self::getLogoutCookieOptions(time() - 3600));
-        setcookie(self::LOGOUT_PROVIDER_ID_COOKIE_KEY, '', self::getLogoutCookieOptions(time() - 3600));
+        $expires = time() - 3600;
+        setcookie(self::LOGOUT_URL_COOKIE_KEY, '', self::getLogoutCookieOptions($expires));
+        setcookie(self::LOGOUT_PROVIDER_ID_COOKIE_KEY, '', self::getLogoutCookieOptions($expires));
         unset($_COOKIE[self::LOGOUT_URL_COOKIE_KEY], $_COOKIE[self::LOGOUT_PROVIDER_ID_COOKIE_KEY]);
     }
 
@@ -1348,7 +1349,8 @@ class Provider extends CommonDBTM
 
         // Roles may legitimately contain multiple entries (e.g., groups claim), while other mapped
         // fields are expected to resolve to a single scalar value for login/profile mapping.
-        // If a non-role JSONPath returns multiple values unexpectedly, only the first value is used.
+        // If a non-role JSONPath returns multiple values in edge cases (e.g. broad expressions),
+        // only the first value is used.
         return $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null);
     }
 
