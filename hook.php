@@ -43,8 +43,8 @@ function plugin_singlesignon_install()
 
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
-    $providersRolesTable = Provider_Role::getTable();
-    $providersGroupsTable = Provider_Role::getDynamicGroupsTable();
+    $providersRolesTable = 'glpi_plugin_singlesignon_providers_roles';
+    $providersGroupsTable = 'glpi_plugin_singlesignon_providers_groups';
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
     $migration = new Migration(PLUGIN_SINGLESIGNON_VERSION);
