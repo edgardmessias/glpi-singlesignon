@@ -183,12 +183,15 @@ class Provider_Field extends CommonDBTM
     {
         if ($item instanceof Provider) {
             $count = 0;
-            if ($_SESSION['glpishow_count_on_tabs']) {
-                $count = countElementsInTable(
-                    (new self())->getTable(),
-                    ['plugin_singlesignon_providers_id' => $item->getID()]
-                );
-            }
+             if ($_SESSION['glpishow_count_on_tabs']) {
+                 $count = countElementsInTable(
+                     (new self())->getTable(),
+                    [
+                        'plugin_singlesignon_providers_id' => $item->getID(),
+                        'is_active' => 1,
+                    ]
+                 );
+             }
             return self::createTabEntry(__('Field mappings', 'singlesignon'), $count, self::class, 'ti ti-list-search');
         }
 
