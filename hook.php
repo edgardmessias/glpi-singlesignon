@@ -43,7 +43,11 @@ function plugin_singlesignon_install()
 
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
+    // Stores role-mapping configuration per provider:
+    // provider + remote role/group key -> GLPI group target.
     $providersRolesTable = Provider_Group::getTable();
+    // Stores dynamic links created at login time:
+    // user + provider role mapping -> effective GLPI dynamic group assignment.
     $providersGroupsTable = Provider_Group::getDynamicGroupsTable();
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
@@ -268,7 +272,39 @@ function plugin_singlesignon_install()
         );
     }
 
+    // Migrate legacy role mappings from providers_groups to providers_roles before
+    // repurposing providers_groups as dynamic user-role links.
+    if (
+        $DB->tableExists($providersGroupsTable)
+        && $DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_id')
+        && $DB->fieldExists($providersGroupsTable, 'remote_id')
+        && $DB->fieldExists($providersGroupsTable, 'is_active')
+    ) {
+        $DB->doQuery(
+            "INSERT IGNORE INTO `$providersRolesTable` (`plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`)
+             SELECT `plugin_singlesignon_providers_id`, `groups_id`, `remote_id`, `is_active`
+             FROM `$providersGroupsTable`"
+        );
+    }
+
+    $providersGroupsNeedsRebuild = false;
     if (!$DB->tableExists($providersGroupsTable)) {
+        $providersGroupsNeedsRebuild = true;
+    } else {
+        $hasMissingRequiredFields = !$DB->fieldExists($providersGroupsTable, 'users_id')
+            || !$DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_roles_id')
+            || !$DB->fieldExists($providersGroupsTable, 'groups_id');
+        $hasLegacyRoleMappingFields = $DB->fieldExists($providersGroupsTable, 'is_active')
+            || $DB->fieldExists($providersGroupsTable, 'remote_id')
+            || $DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_id');
+        $providersGroupsNeedsRebuild = $hasMissingRequiredFields || $hasLegacyRoleMappingFields;
+    }
+
+    if ($providersGroupsNeedsRebuild) {
+        if ($DB->tableExists($providersGroupsTable)) {
+            $DB->dropTable($providersGroupsTable, true);
+        }
+
         $DB->doQuery(
             "CREATE TABLE `$providersGroupsTable` (
             `id` INT NOT NULL AUTO_INCREMENT,

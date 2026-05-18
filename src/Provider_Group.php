@@ -533,6 +533,18 @@ class Provider_Group extends CommonDBRelation
         }
 
         $dynamicTable = self::getDynamicGroupsTable();
+        if (
+            !$DB->tableExists($dynamicTable)
+            || !$DB->fieldExists($dynamicTable, 'id')
+            || !$DB->fieldExists($dynamicTable, 'users_id')
+            || !$DB->fieldExists($dynamicTable, 'groups_id')
+            || !$DB->fieldExists($dynamicTable, 'plugin_singlesignon_providers_roles_id')
+        ) {
+            // Older installs may still have the legacy providers_groups schema.
+            // In this case there is no dynamic user-role link to clean here.
+            return;
+        }
+
         $groupUser    = new \Group_User();
 
         foreach ($DB->request([
