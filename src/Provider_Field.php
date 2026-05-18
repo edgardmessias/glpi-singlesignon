@@ -256,8 +256,8 @@ class Provider_Field extends CommonDBTM
             $rows = [];
         }
 
-        // First pass: apply deletions so later updates/inserts are processed on the
-        // final row set selected by the admin in the same submit.
+        // First pass: apply deletions so update/insert runs against the final row set
+        // selected in the same submit (avoids stale-row side effects in one request).
         foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
@@ -274,7 +274,7 @@ class Provider_Field extends CommonDBTM
             }
         }
 
-        // Second pass: apply updates/inserts for rows not marked for deletion.
+        // Second pass: process remaining valid rows (not deleted) as update/insert.
         foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
