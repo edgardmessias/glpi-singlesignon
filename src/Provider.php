@@ -1345,6 +1345,8 @@ class Provider extends CommonDBTM
             return null;
         }
 
+        // Roles may legitimately contain multiple entries (e.g., groups claim), while other mapped
+        // fields are expected to resolve to a single scalar value for login/profile mapping.
         return $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null);
     }
 
@@ -2075,7 +2077,11 @@ class Provider extends CommonDBTM
             $_SESSION[self::LOGOUT_URL_SESSION_KEY] = $logoutUrl;
             if ($providerId > 0) {
                 $_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY] = $providerId;
-                self::persistLogoutCookies($logoutUrl, $providerId);
+                if (filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
+                    self::persistLogoutCookies($logoutUrl, $providerId);
+                } else {
+                    self::clearLogoutCookies();
+                }
             } else {
                 unset($_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY]);
                 self::clearLogoutCookies();
