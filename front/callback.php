@@ -149,7 +149,9 @@ if ($test_cookie) {
         $data = $resolved_fields[$field_key] ?? ['value' => null, 'jsonpath' => null, 'source' => null];
         $source = match ($data['source'] ?? null) {
             'provider' => __('Provider mapping', 'singlesignon'),
+            'provider (jwt)' => __('Provider mapping (JWT)', 'singlesignon'),
             'default'  => __('Default mapping', 'singlesignon'),
+            'default (jwt)' => __('Default mapping (JWT)', 'singlesignon'),
             default    => '-',
         };
 
