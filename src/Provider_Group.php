@@ -508,6 +508,8 @@ class Provider_Group extends CommonDBRelation
             $rows = [];
         }
 
+        // First pass: apply deletions so later updates/inserts can reuse remote_id values
+        // protected by the unique key (provider_id, remote_id).
         foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
@@ -515,17 +517,29 @@ class Provider_Group extends CommonDBRelation
 
             $mappingId = (int) ($row['id'] ?? 0);
             $delete = (int) ($row['_delete'] ?? 0) === 1;
-            $remoteId = trim((string) ($row['remote_id'] ?? ''));
-            $groupId = (int) ($row['groups_id'] ?? 0);
-            $isActive = (int) (($row['is_active'] ?? 0) ? 1 : 0);
-
             if ($mappingId > 0 && $delete) {
                 $this->deleteByCriteria([
                     'id' => $mappingId,
                     'plugin_singlesignon_providers_id' => $providerId,
                 ]);
+            }
+        }
+
+        // Second pass: apply updates/inserts for active rows.
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
                 continue;
             }
+
+            $mappingId = (int) ($row['id'] ?? 0);
+            $delete = (int) ($row['_delete'] ?? 0) === 1;
+            if ($delete) {
+                continue;
+            }
+
+            $remoteId = trim((string) ($row['remote_id'] ?? ''));
+            $groupId = (int) ($row['groups_id'] ?? 0);
+            $isActive = (int) (($row['is_active'] ?? 0) ? 1 : 0);
 
             if ($remoteId === '' || $groupId <= 0) {
                 continue;
