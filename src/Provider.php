@@ -63,6 +63,7 @@ class Provider extends CommonDBTM
     public const LOGIN_REGISTRATION_PREVIEW = 2;
 
     public const PENDING_REGISTRATION_SESSION_KEY = 'glpi_singlesignon_pending_registration';
+    public const LOGOUT_URL_SESSION_KEY = 'glpi_singlesignon_logout_url';
 
     public const PHOTO_SYNC_DISABLED = 0;
     public const PHOTO_SYNC_IF_EMPTY = 1;
@@ -308,6 +309,14 @@ class Provider extends CommonDBTM
             } elseif (!filter_var($input['url_resource_owner_details'], FILTER_VALIDATE_URL)) {
                 $error_detected[] = __s('The Resource Owner Details URL is invalid', 'singlesignon');
             }
+
+            if (
+                isset($input['url_logout'])
+                && $input['url_logout'] !== ''
+                && !filter_var($input['url_logout'], FILTER_VALIDATE_URL)
+            ) {
+                $error_detected[] = __s('The SLO URL is invalid', 'singlesignon');
+            }
         }
 
         if (count($error_detected)) {
@@ -525,6 +534,14 @@ class Provider extends CommonDBTM
         $tab[] = [
             'id' => 10,
             'table' => $this->getTable(),
+            'field' => 'url_logout',
+            'name' => __('SLO URL', 'singlesignon'),
+            'datatype' => 'weblink',
+        ];
+
+        $tab[] = [
+            'id' => 11,
+            'table' => $this->getTable(),
             'field' => 'is_active',
             'name' => __('Active'),
             'searchtype' => 'equals',
@@ -532,7 +549,7 @@ class Provider extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => 11,
+            'id' => 12,
             'table' => $this->getTable(),
             'field' => 'use_email_for_login',
             'name' => __('Use email field for login'),
@@ -541,7 +558,7 @@ class Provider extends CommonDBTM
         ];
 
         $tab[] = [
-            'id' => 12,
+            'id' => 13,
             'table' => $this->getTable(),
             'field' => 'split_name',
             'name' => __('Split name field for First & Last Name'),
@@ -933,6 +950,23 @@ class Provider extends CommonDBTM
         return $url;
     }
 
+    public function getLogoutUrl(): string
+    {
+        $type = $this->getClientType();
+
+        $value = static::getDefault($type, "url_logout", "");
+
+        $fields = $this->fields;
+
+        if (!isset($fields['url_logout']) || empty($fields['url_logout'])) {
+            $fields['url_logout'] = $value;
+        }
+
+        $fields = Plugin::doHookFunction("sso:url_logout", $fields);
+
+        return trim((string) ($fields['url_logout'] ?? ''));
+    }
+
     /**
      * Handles the OAuth authorization callback from the identity provider.
      * This function validates the CSRF (state) token, extracts the authorization code,
@@ -1167,7 +1201,7 @@ class Provider extends CommonDBTM
         return $defaults;
     }
 
-    private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
+    private function getResourceOwnerValuesByJsonPath(array $resourceArray, string $jsonPath): array
     {
         try {
             $json = new JsonObject($resourceArray);
@@ -1177,34 +1211,54 @@ class Provider extends CommonDBTM
                 "php-errors",
                 $e->getMessage() . "\n" . $e->getTraceAsString()
             );
-            return null;
+            return [];
         }
 
-        return $this->normalizeJsonPathResult($result);
+        return $this->normalizeJsonPathResults($result);
     }
 
-    private function normalizeJsonPathResult($result): ?string
+    private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
+    {
+        $values = $this->getResourceOwnerValuesByJsonPath($resourceArray, $jsonPath);
+
+        return $values[0] ?? null;
+    }
+
+    private function normalizeJsonPathResults($result): array
     {
         if (is_string($result)) {
-            return trim($result) !== '' ? $result : null;
+            $normalized = trim($result);
+            return $normalized !== '' ? [$normalized] : [];
         }
 
         if (is_numeric($result)) {
-            return (string) $result;
+            return [(string) $result];
         }
 
         if (!is_array($result)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($result as $value) {
+            $normalized = array_merge($normalized, $this->normalizeJsonPathResults($value));
+        }
+
+        return array_values(array_unique($normalized));
+    }
+
+    private function getDebugFieldValueByJsonPath(array $resourceArray, string $jsonPath, string $fieldType): ?string
+    {
+        if ($fieldType !== 'roles') {
+            return $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
+        }
+
+        $values = $this->getResourceOwnerValuesByJsonPath($resourceArray, $jsonPath);
+        if ($values === []) {
             return null;
         }
 
-        foreach ($result as $value) {
-            $normalized = $this->normalizeJsonPathResult($value);
-            if ($normalized !== null) {
-                return $normalized;
-            }
-        }
-
-        return null;
+        return implode(', ', $values);
     }
 
     private function resolveFieldValueFromMappings(array $resourceArray, string $fieldType): ?string
@@ -1232,7 +1286,7 @@ class Provider extends CommonDBTM
                 continue;
             }
 
-            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
+            $value = $this->getDebugFieldValueByJsonPath($resourceArray, $jsonPath, $fieldType);
             if ($value !== null) {
                 return [
                     'value'    => $value,
@@ -1242,7 +1296,7 @@ class Provider extends CommonDBTM
             }
 
             if (is_array($idTokenPayload)) {
-                $valueFromJwt = $this->getResourceOwnerValueByJsonPath($idTokenPayload, $jsonPath);
+                $valueFromJwt = $this->getDebugFieldValueByJsonPath($idTokenPayload, $jsonPath, $fieldType);
                 if ($valueFromJwt !== null) {
                     return [
                         'value'    => $valueFromJwt,
@@ -1260,7 +1314,7 @@ class Provider extends CommonDBTM
                 continue;
             }
 
-            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
+            $value = $this->getDebugFieldValueByJsonPath($resourceArray, $jsonPath, $fieldType);
             if ($value !== null) {
                 return [
                     'value'    => $value,
@@ -1270,7 +1324,7 @@ class Provider extends CommonDBTM
             }
 
             if (is_array($idTokenPayload)) {
-                $valueFromJwt = $this->getResourceOwnerValueByJsonPath($idTokenPayload, $jsonPath);
+                $valueFromJwt = $this->getDebugFieldValueByJsonPath($idTokenPayload, $jsonPath, $fieldType);
                 if ($valueFromJwt !== null) {
                     return [
                         'value'    => $valueFromJwt,
@@ -1927,6 +1981,13 @@ class Provider extends CommonDBTM
         try {
             $this->syncOAuthPhoto($user);
         } catch (Exception) {
+        }
+
+        $logoutUrl = $this->getLogoutUrl();
+        if ($logoutUrl !== '') {
+            $_SESSION[self::LOGOUT_URL_SESSION_KEY] = $logoutUrl;
+        } else {
+            unset($_SESSION[self::LOGOUT_URL_SESSION_KEY]);
         }
 
         return true;

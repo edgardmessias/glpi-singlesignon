@@ -26,7 +26,9 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Html;
 use Plugin;
+use Session;
 use Glpi\Application\View\TemplateRenderer;
 use Glpi\Kernel\Kernel;
 use Toolbox;
@@ -41,6 +43,8 @@ class LoginRenderer
      */
     public static function onPostInit(): void
     {
+        self::handleFederatedLogout();
+
         $env = TemplateRenderer::getInstance()->getEnvironment();
 
         $dir = Plugin::getPhpDir('singlesignon') . '/templates/override';
@@ -59,6 +63,29 @@ class LoginRenderer
         }));
 
         $env->addFunction(new TwigFunction('plugin_singlesignon_get_default_provider_url', fn($redirect = '') => self::getDefaultProviderUrl($redirect)));
+    }
+
+    private static function handleFederatedLogout(): void
+    {
+        global $CFG_GLPI;
+
+        $logoutUrl = trim((string) ($_SESSION[Provider::LOGOUT_URL_SESSION_KEY] ?? ''));
+        if ($logoutUrl === '' || !filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
+            return;
+        }
+
+        $requestPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        $requestPath = is_string($requestPath) ? $requestPath : '';
+
+        $rootDoc = rtrim((string) ($CFG_GLPI['root_doc'] ?? ''), '/');
+        $expectedPath = ($rootDoc !== '' ? $rootDoc : '') . '/front/logout.php';
+
+        if ($requestPath === '' || ($requestPath !== $expectedPath && !str_ends_with($requestPath, '/front/logout.php'))) {
+            return;
+        }
+
+        Session::cleanOnLogout();
+        Html::redirect($logoutUrl);
     }
 
     public static function hasActiveProviders(): bool
