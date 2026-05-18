@@ -65,6 +65,9 @@ class LoginRenderer
         $env->addFunction(new TwigFunction('plugin_singlesignon_get_default_provider_url', fn($redirect = '') => self::getDefaultProviderUrl($redirect)));
     }
 
+    /**
+     * Intercept GLPI logout requests and redirect to the configured IdP SLO URL.
+     */
     private static function handleFederatedLogout(): void
     {
         $logoutUrl = trim((string) ($_SESSION[Provider::LOGOUT_URL_SESSION_KEY] ?? ''));

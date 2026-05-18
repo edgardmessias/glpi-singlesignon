@@ -1201,6 +1201,11 @@ class Provider extends CommonDBTM
         return $defaults;
     }
 
+    /**
+     * Resolve all scalar values matching a JSONPath expression.
+     *
+     * @return list<string>
+     */
     private function getResourceOwnerValuesByJsonPath(array $resourceArray, string $jsonPath): array
     {
         try {
@@ -1224,7 +1229,13 @@ class Provider extends CommonDBTM
         return $values[0] ?? null;
     }
 
-    private function normalizeJsonPathResults($result): array
+    /**
+     * Recursively normalize a JSONPath result into a flat list of strings.
+     *
+     * @param mixed $result
+     * @return list<string>
+     */
+    private function normalizeJsonPathResults(mixed $result): array
     {
         if (is_numeric($result)) {
             return [(string) $result];
@@ -1247,6 +1258,9 @@ class Provider extends CommonDBTM
         return array_values(array_unique($normalized));
     }
 
+    /**
+     * Resolve a debug value for a mapped field, joining all role values when needed.
+     */
     private function getDebugFieldValueByJsonPath(array $resourceArray, string $jsonPath, string $fieldType): ?string
     {
         if ($fieldType !== 'roles') {
