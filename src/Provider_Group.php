@@ -54,6 +54,7 @@ class Provider_Group extends CommonDBRelation
 {
     private const ROLES_TABLE = 'glpi_plugin_singlesignon_providers_roles';
     private const DYNAMIC_GROUPS_TABLE = 'glpi_plugin_singlesignon_providers_groups';
+    public static $table = self::ROLES_TABLE;
 
     // From CommonDBRelation
     public static $itemtype_1 = Provider::class;
@@ -64,11 +65,6 @@ class Provider_Group extends CommonDBRelation
 
     private const MAX_GROUPS_PER_SYNC = 200;
     private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
-
-    public static function getTable($classname = null)
-    {
-        return self::ROLES_TABLE;
-    }
 
     public static function getDynamicGroupsTable(): string
     {
@@ -238,6 +234,26 @@ class Provider_Group extends CommonDBRelation
             ]);
         }
 
+        $existingRoleIds = [];
+        foreach ($existingDynamicRows as $row) {
+            $roleId = (int) ($row['plugin_singlesignon_providers_roles_id'] ?? 0);
+            if ($roleId > 0) {
+                $existingRoleIds[] = $roleId;
+            }
+        }
+        $existingRoleIds = array_values(array_unique($existingRoleIds));
+
+        $roleInfoById = [];
+        if ($existingRoleIds !== []) {
+            foreach ($DB->request([
+                'SELECT' => ['id', 'plugin_singlesignon_providers_id', 'is_active'],
+                'FROM'   => self::getTable(),
+                'WHERE'  => ['id' => $existingRoleIds],
+            ]) as $row) {
+                $roleInfoById[(int) $row['id']] = $row;
+            }
+        }
+
         foreach ($existingDynamicRows as $row) {
             $rowId = (int) ($row['id'] ?? 0);
             $roleId = (int) ($row['plugin_singlesignon_providers_roles_id'] ?? 0);
@@ -245,27 +261,20 @@ class Provider_Group extends CommonDBRelation
                 continue;
             }
 
-            $roleRow = false;
-            foreach ($DB->request([
-                'SELECT' => ['plugin_singlesignon_providers_id', 'is_active'],
-                'FROM'   => self::getTable(),
-                'WHERE'  => ['id' => $roleId],
-                'LIMIT'  => 1,
-            ]) as $rowData) {
-                $roleRow = $rowData;
-                break;
-            }
+            $roleRow = $roleInfoById[$roleId] ?? false;
 
             if ($roleRow === false) {
                 $DB->delete($dynamicTable, ['id' => $rowId]);
                 continue;
             }
 
-            if ((int) ($roleRow['plugin_singlesignon_providers_id'] ?? 0) !== $providerId) {
+            if (
+                (int) ($roleRow['plugin_singlesignon_providers_id'] ?? 0) !== $providerId
+                || (int) ($roleRow['is_active'] ?? 0) !== 1
+            ) {
+                $DB->delete($dynamicTable, ['id' => $rowId]);
                 continue;
             }
-
-            $DB->delete($dynamicTable, ['id' => $rowId]);
         }
 
         $managedMap = array_fill_keys(array_map('intval', $managedGroupIds), true);

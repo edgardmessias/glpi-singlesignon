@@ -283,13 +283,17 @@ function plugin_singlesignon_install()
         );
     }
 
-    $providersGroupsNeedsRebuild = !$DB->tableExists($providersGroupsTable)
-        || !$DB->fieldExists($providersGroupsTable, 'users_id')
-        || !$DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_roles_id')
-        || !$DB->fieldExists($providersGroupsTable, 'groups_id')
-        || $DB->fieldExists($providersGroupsTable, 'is_active')
-        || $DB->fieldExists($providersGroupsTable, 'remote_id')
-        || $DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_id');
+    $providersGroupsNeedsRebuild = false;
+    if (!$DB->tableExists($providersGroupsTable)) {
+        $providersGroupsNeedsRebuild = true;
+    } else {
+        $providersGroupsNeedsRebuild = !$DB->fieldExists($providersGroupsTable, 'users_id')
+            || !$DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_roles_id')
+            || !$DB->fieldExists($providersGroupsTable, 'groups_id')
+            || $DB->fieldExists($providersGroupsTable, 'is_active')
+            || $DB->fieldExists($providersGroupsTable, 'remote_id')
+            || $DB->fieldExists($providersGroupsTable, 'plugin_singlesignon_providers_id');
+    }
 
     if ($providersGroupsNeedsRebuild) {
         if ($DB->tableExists($providersGroupsTable)) {
