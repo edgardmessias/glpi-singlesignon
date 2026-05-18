@@ -2011,8 +2011,13 @@ class Provider extends CommonDBTM
 
         $logoutUrl = $this->getLogoutUrl();
         if ($logoutUrl !== '') {
+            $providerId = (int) $this->getID();
             $_SESSION[self::LOGOUT_URL_SESSION_KEY] = $logoutUrl;
-            $_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY] = (int) ($this->fields['id'] ?? 0);
+            if ($providerId > 0) {
+                $_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY] = $providerId;
+            } else {
+                unset($_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY]);
+            }
         } else {
             unset($_SESSION[self::LOGOUT_URL_SESSION_KEY]);
             unset($_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY]);
