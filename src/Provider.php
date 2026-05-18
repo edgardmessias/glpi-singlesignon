@@ -63,6 +63,7 @@ class Provider extends CommonDBTM
     public const LOGIN_REGISTRATION_PREVIEW = 2;
 
     public const PENDING_REGISTRATION_SESSION_KEY = 'glpi_singlesignon_pending_registration';
+
     public const PHOTO_SYNC_DISABLED = 0;
     public const PHOTO_SYNC_IF_EMPTY = 1;
     public const PHOTO_SYNC_ALWAYS = 2;
@@ -307,7 +308,6 @@ class Provider extends CommonDBTM
             } elseif (!filter_var($input['url_resource_owner_details'], FILTER_VALIDATE_URL)) {
                 $error_detected[] = __s('The Resource Owner Details URL is invalid', 'singlesignon');
             }
-
         }
 
         if (count($error_detected)) {
@@ -1178,10 +1178,6 @@ class Provider extends CommonDBTM
             $json = new JsonObject($resourceArray);
             $result = $json->get($jsonPath);
         } catch (Throwable $e) {
-            Toolbox::logInFile(
-                "php-errors",
-                $e->getMessage() . "\n" . $e->getTraceAsString()
-            );
             return [];
         }
 
