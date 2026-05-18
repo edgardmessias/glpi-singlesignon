@@ -303,8 +303,8 @@ function plugin_singlesignon_uninstall()
     Config::deleteConfigurationValues('plugin:singlesignon');
 
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
-    $providersRolesTable = Provider_Role::getTable();
-    $providersGroupsTable = Provider_Group::getTable();
+    $providersRolesTable = 'glpi_plugin_singlesignon_providers_roles';
+    $providersGroupsTable = 'glpi_plugin_singlesignon_providers_groups';
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
