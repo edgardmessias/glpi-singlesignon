@@ -265,7 +265,7 @@ class Provider extends CommonDBTM
             ]) as $row) {
                 $roleId = (int) ($row['id'] ?? 0);
                 if ($roleId > 0) {
-                    Provider_Role::removeDynamicGroupsForRole($roleId);
+                    Provider_Group::removeDynamicGroupsForRole($roleId);
                 }
             }
 

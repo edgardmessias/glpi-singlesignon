@@ -47,8 +47,8 @@ use Session;
  *
  * A companion table `glpi_plugin_singlesignon_providers_groups` tracks the
  * dynamic group memberships that were actually applied at login time; those
- * rows are managed by {@see Provider_Group::syncGroups()} and cleaned up here
- * via {@see self::removeDynamicGroupsForRole()}.
+ * rows are managed by {@see Provider_Group::syncGroups()} and cleaned up via
+ * {@see Provider_Group::removeDynamicGroupsForRole()}.
  */
 class Provider_Role extends CommonDBRelation
 {
@@ -221,7 +221,7 @@ class Provider_Role extends CommonDBRelation
                 // If the mapping is being deactivated, remove dynamic group links now
                 // so users do not retain the group until their next SSO login.
                 if (!$isActive) {
-                    self::removeDynamicGroupsForRole($mappingId);
+                    Provider_Group::removeDynamicGroupsForRole($mappingId);
                 }
                 $payload['id'] = $mappingId;
                 $this->update($payload);
@@ -240,7 +240,7 @@ class Provider_Role extends CommonDBRelation
      */
     public function cleanDBonPurge(): void
     {
-        self::removeDynamicGroupsForRole($this->getID());
+        Provider_Group::removeDynamicGroupsForRole($this->getID());
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -340,20 +340,6 @@ class Provider_Role extends CommonDBRelation
         }
 
         return array_values(array_unique($groupIds));
-    }
-
-    /**
-     * Remove all dynamic-group tracking rows for the given role mapping and, for
-     * each affected user, delete the corresponding Group_User link only when it
-     * is flagged as `is_dynamic`.
-     *
-     * This is called both when a role mapping is purged and when it is deactivated
-     * (is_active set to 0), so that GLPI group memberships are kept in sync
-     * without waiting for the next SSO login.
-     */
-    public static function removeDynamicGroupsForRole(int $roleId): void
-    {
-        Provider_Group::removeDynamicGroupsForRole($roleId);
     }
 
     /**
