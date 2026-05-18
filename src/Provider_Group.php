@@ -70,7 +70,7 @@ class Provider_Group extends CommonDBRelation
         return self::DYNAMIC_GROUPS_TABLE;
     }
 
-    public static function getTypeName($nb = 0)
+    public static function getTypeName($nb = 0): string
     {
         return _n('Role mapping', 'Role mappings', $nb, 'singlesignon');
     }

@@ -142,9 +142,9 @@ function plugin_singlesignon_install()
     if (!$DB->tableExists($providersUsersTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersUsersTable` (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
-            `users_id` INT NOT NULL DEFAULT '0',
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            `users_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
             PRIMARY KEY (`id`),
             UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
@@ -159,12 +159,12 @@ function plugin_singlesignon_install()
     if (!$DB->tableExists($providersFieldsTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersFieldsTable` (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `field_type` VARCHAR(64) COLLATE utf8mb4_unicode_ci NOT NULL,
             `jsonpath` VARCHAR(1024) COLLATE utf8mb4_unicode_ci NOT NULL,
             `is_active` TINYINT(1) NOT NULL DEFAULT '1',
-            `sort_order` INT NOT NULL DEFAULT '0',
+            `sort_order` INT UNSIGNED NOT NULL DEFAULT '0',
             `date_mod` TIMESTAMP NULL DEFAULT NULL,
             `date_creation` TIMESTAMP NULL DEFAULT NULL,
             PRIMARY KEY (`id`),
@@ -256,9 +256,9 @@ function plugin_singlesignon_install()
     if (!$DB->tableExists($providersRolesTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersRolesTable` (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
-            `groups_id` INT NOT NULL DEFAULT '0',
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            `groups_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
             `is_active` TINYINT(1) NOT NULL DEFAULT '1',
             PRIMARY KEY (`id`),
@@ -271,10 +271,10 @@ function plugin_singlesignon_install()
     if (!$DB->tableExists($providersGroupsTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersGroupsTable` (
-            `id` INT NOT NULL AUTO_INCREMENT,
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
             `users_id` INT NOT NULL DEFAULT '0',
-            `plugin_singlesignon_providers_roles_id` INT NOT NULL DEFAULT '0',
-            `groups_id` INT NOT NULL DEFAULT '0',
+            `plugin_singlesignon_providers_roles_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            `groups_id` INT UNSIGNED NOT NULL DEFAULT '0',
             PRIMARY KEY (`id`),
             UNIQUE KEY `unicity_user_role` (`users_id`,`plugin_singlesignon_providers_roles_id`),
             KEY `groups_id` (`groups_id`)
