@@ -71,13 +71,19 @@ class LoginRenderer
     private static function handleFederatedLogout(): void
     {
         $logoutUrl = trim((string) ($_SESSION[Provider::LOGOUT_URL_SESSION_KEY] ?? ''));
-        if ($logoutUrl === '' || !filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
+        $providerId = (int) ($_SESSION[Provider::LOGOUT_PROVIDER_ID_SESSION_KEY] ?? 0);
+        if ($logoutUrl === '' || $providerId <= 0 || !filter_var($logoutUrl, FILTER_VALIDATE_URL)) {
             return;
         }
 
-        $requestPath = (string) ($_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '');
+        $requestPath = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
 
         if ($requestPath === '' || !str_ends_with($requestPath, '/front/logout.php')) {
+            return;
+        }
+
+        $provider = new Provider();
+        if (!$provider->getFromDB($providerId) || $provider->getLogoutUrl() !== $logoutUrl) {
             return;
         }
 

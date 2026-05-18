@@ -64,6 +64,7 @@ class Provider extends CommonDBTM
 
     public const PENDING_REGISTRATION_SESSION_KEY = 'glpi_singlesignon_pending_registration';
     public const LOGOUT_URL_SESSION_KEY = 'glpi_singlesignon_logout_url';
+    public const LOGOUT_PROVIDER_ID_SESSION_KEY = 'glpi_singlesignon_logout_provider_id';
 
     public const PHOTO_SYNC_DISABLED = 0;
     public const PHOTO_SYNC_IF_EMPTY = 1;
@@ -1225,6 +1226,11 @@ class Provider extends CommonDBTM
         return $this->normalizeJsonPathResults($result);
     }
 
+    /**
+     * Resolve only the first scalar value matching a JSONPath expression.
+     *
+     * Use {@see getResourceOwnerValuesByJsonPath()} when all matching values are required.
+     */
     private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
     {
         $values = $this->getResourceOwnerValuesByJsonPath($resourceArray, $jsonPath);
@@ -1256,6 +1262,7 @@ class Provider extends CommonDBTM
         $normalized = [];
         foreach ($result as $value) {
             foreach ($this->normalizeJsonPathResults($value) as $normalizedValue) {
+                // Use the normalized value as the key to preserve order while deduplicating.
                 $normalized[$normalizedValue] = $normalizedValue;
             }
         }
@@ -2005,8 +2012,10 @@ class Provider extends CommonDBTM
         $logoutUrl = $this->getLogoutUrl();
         if ($logoutUrl !== '') {
             $_SESSION[self::LOGOUT_URL_SESSION_KEY] = $logoutUrl;
+            $_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY] = (int) ($this->fields['id'] ?? 0);
         } else {
             unset($_SESSION[self::LOGOUT_URL_SESSION_KEY]);
+            unset($_SESSION[self::LOGOUT_PROVIDER_ID_SESSION_KEY]);
         }
 
         return true;
