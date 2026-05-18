@@ -66,7 +66,7 @@ class LoginRenderer
     }
 
     /**
-     * Intercept GLPI logout requests and redirect to the configured IdP SLO URL.
+     * Intercept GLPI logout requests, clean the GLPI session, and redirect to the configured IdP SLO URL.
      */
     private static function handleFederatedLogout(): void
     {

@@ -950,6 +950,9 @@ class Provider extends CommonDBTM
         return $url;
     }
 
+    /**
+     * Return the configured provider logout URL, or an empty string when none is set.
+     */
     public function getLogoutUrl(): string
     {
         $type = $this->getClientType();
@@ -1252,7 +1255,9 @@ class Provider extends CommonDBTM
 
         $normalized = [];
         foreach ($result as $value) {
-            $normalized = array_merge($normalized, $this->normalizeJsonPathResults($value));
+            foreach ($this->normalizeJsonPathResults($value) as $normalizedValue) {
+                $normalized[] = $normalizedValue;
+            }
         }
 
         return array_values(array_unique($normalized));
