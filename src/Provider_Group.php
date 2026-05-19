@@ -31,6 +31,7 @@ use CommonDBRelation;
 use JsonPath\JsonObject;
 use Throwable;
 use User;
+
 use function Safe\preg_split;
 
 /**
@@ -257,7 +258,7 @@ class Provider_Group extends CommonDBRelation
                 } catch (Throwable) {
                     $result = null;
                 }
-                
+
                 if ($result === null && is_array($idTokenPayload)) {
                     try {
                         $jsonJwt   = new JsonObject($idTokenPayload);

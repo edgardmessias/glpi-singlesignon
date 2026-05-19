@@ -1662,12 +1662,12 @@ class Provider extends CommonDBTM
         $user->update($userUpdate);
     }
 
-    /** 
+    /**
      * Mapped values take priority; if mapping resolves an array from the
      * JSONPath expression, normalizeJsonPathResult() already returns the
      * first non-null scalar — no extra array-unpacking needed here.
      * Fallback to well-known IdP attributes when no mapping is configured.
-     * 
+     *
      * @param array<string, mixed> $overrides   name, firstname, realname, _email, remote_id,
      *                                           __registration_from_preview
      *

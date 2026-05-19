@@ -90,7 +90,7 @@ if ($test_cookie) {
     unset($_COOKIE['glpi_singlesignon_test']);
     $resource_owner = $signon_provider->getResourceOwner();
     $resource_owner_array = is_array($resource_owner) ? $resource_owner : [];
-    
+
     $id_token_payload = $signon_provider->getIdTokenPayload();
 
     $resolved_fields = $signon_provider->getResolvedFieldsForDebug($resource_owner_array);
