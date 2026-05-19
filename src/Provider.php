@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use RuleRight;
 use Throwable;
 use CommonDBTM;
 use JsonPath\JsonObject;
@@ -46,6 +47,7 @@ use Html;
 use GlpiPlugin\Singlesignon\Provider_Group;
 use GlpiPlugin\Singlesignon\Provider_Role;
 
+use function Safe\base64_decode;
 use function Safe\file_get_contents;
 use function Safe\fclose;
 use function Safe\fopen;
@@ -798,7 +800,7 @@ class Provider extends CommonDBTM
     {
         $links = parent::getAdditionalMenuLinks() ?: [];
 
-        if (\RuleRight::canView()) {
+        if (RuleRight::canView()) {
             $label = __('Authorization assignment rules');
             $link = "<i class=\"ti ti-user-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
             $url = Toolbox::getItemTypeSearchURL('RuleRight');
@@ -1085,9 +1087,7 @@ class Provider extends CommonDBTM
                 $parts = explode('.', $data['id_token']);
                 if (count($parts) >= 2) {
                     $payloadStr = base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1]));
-                    if ($payloadStr !== false) {
-                        $this->_id_token_payload = json_decode($payloadStr, true) ?: null;
-                    }
+                    $this->_id_token_payload = json_decode($payloadStr, true) ?: null;
                 }
             }
         } catch (Exception) {
@@ -1676,18 +1676,16 @@ class Provider extends CommonDBTM
         if ($emailRaw !== null && $emailRaw !== '') {
             global $DB;
             $emailExists = false;
-            if ($DB !== null) {
-                $existingEmails = $DB->request([
-                    'FROM'  => 'glpi_useremails',
-                    'WHERE' => [
-                        'users_id' => (int) $user->fields['id'],
-                        'email'    => $emailRaw,
-                    ],
-                    'LIMIT' => 1,
-                ]);
-                if (count($existingEmails) > 0) {
-                    $emailExists = true;
-                }
+            $existingEmails = $DB->request([
+                'FROM'  => 'glpi_useremails',
+                'WHERE' => [
+                    'users_id' => (int) $user->fields['id'],
+                    'email'    => $emailRaw,
+                ],
+                'LIMIT' => 1,
+            ]);
+            if (count($existingEmails) > 0) {
+                $emailExists = true;
             }
             if (!$emailExists) {
                 $userUpdate['_useremails'][-1] = $emailRaw;

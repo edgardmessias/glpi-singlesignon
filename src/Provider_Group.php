@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Group_User;
 use CommonDBRelation;
 use JsonPath\JsonObject;
 use Throwable;
@@ -102,7 +103,7 @@ class Provider_Group extends CommonDBRelation
         $targetGroupIds = array_values(array_unique($targetGroupIds));
         $managedGroupIds = Provider_Role::getConfiguredGlpiGroups($providerId);
 
-        $groupUser = new \Group_User();
+        $groupUser = new Group_User();
         $links = $groupUser->find([
             'users_id'   => $user->getID(),
             'is_dynamic' => 1,

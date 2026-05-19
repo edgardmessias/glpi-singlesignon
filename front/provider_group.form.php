@@ -22,6 +22,7 @@
  * ---------------------------------------------------------------------
  */
 
+use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Role;
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\Http\AccessDeniedHttpException;
@@ -39,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     if ($providerId <= 0) {
         throw new BadRequestHttpException();
     }
-    $providerCheck = new \GlpiPlugin\Singlesignon\Provider();
+    $providerCheck = new Provider();
     if (!$providerCheck->getFromDB($providerId) || !$providerCheck->can($providerId, UPDATE)) {
         throw new AccessDeniedHttpException();
     }

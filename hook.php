@@ -24,8 +24,6 @@
 
 use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Provider;
-use GlpiPlugin\Singlesignon\Provider_Group;
-use GlpiPlugin\Singlesignon\Provider_Role;
 
 function plugin_singlesignon_install()
 {
