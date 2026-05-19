@@ -90,10 +90,14 @@ if ($test_cookie) {
     unset($_COOKIE['glpi_singlesignon_test']);
     $resource_owner = $signon_provider->getResourceOwner();
     $resource_owner_array = is_array($resource_owner) ? $resource_owner : [];
+
+    $id_token_payload = $signon_provider->getIdTokenPayload();
+
     $resolved_fields = $signon_provider->getResolvedFieldsForDebug($resource_owner_array);
     $field_types = Provider_Field::getFieldTypes();
     $active_mappings = Provider_Field::getMappingsForProvider((int) $provider_id, null, true);
     $default_mappings = Provider_Field::getDefaultMappings((string) $signon_provider->fields['type']);
+    $copy_payload_sections = [];
 
     try {
         $resource_owner_pretty = json_encode(
@@ -104,12 +108,26 @@ if ($test_cookie) {
         $resource_owner_pretty = (string) __('Unable to encode resource owner payload.', 'singlesignon');
     }
 
+    if (is_array($id_token_payload)) {
+        try {
+            $id_token_payload_pretty = json_encode(
+                $id_token_payload,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+            );
+        } catch (Throwable) {
+            $id_token_payload_pretty = (string) __('Unable to encode ID token payload.', 'singlesignon');
+        }
+    } else {
+        $id_token_payload_pretty = '';
+    }
+
     $callback_context = [
         'provider_id'   => (int) $provider_id,
         'provider_name' => (string) ($signon_provider->fields['name'] ?? ''),
         'provider_type' => (string) ($signon_provider->fields['type'] ?? ''),
         'query_params'  => $_GET,
     ];
+
     try {
         $callback_context_pretty = json_encode(
             $callback_context,
@@ -119,15 +137,86 @@ if ($test_cookie) {
         $callback_context_pretty = (string) __('Unable to encode callback context.', 'singlesignon');
     }
 
+    $copy_payload_sections[] = sprintf(
+        "%s: %s (%s)",
+        __('Provider', 'singlesignon'),
+        (string) ($signon_provider->fields['name'] ?? ''),
+        (string) ($signon_provider->fields['type'] ?? ''),
+    );
+
+    $resolved_lines = [(string) __('Resolved fields', 'singlesignon')];
+    foreach ($field_types as $field_key => $field_label) {
+        $data = $resolved_fields[$field_key] ?? ['value' => null, 'jsonpath' => null, 'source' => null];
+        $source = match ($data['source'] ?? null) {
+            'provider'       => __('Provider mapping', 'singlesignon'),
+            'provider (jwt)' => __('Provider mapping (JWT)', 'singlesignon'),
+            'default'        => __('Default mapping', 'singlesignon'),
+            'default (jwt)'  => __('Default mapping (JWT)', 'singlesignon'),
+            default          => '-',
+        };
+
+        $resolved_lines[] = sprintf(
+            "- %s [%s]\n  %s: %s\n  %s: %s\n  %s: %s",
+            $field_label,
+            $field_key,
+            __('Value'),
+            ($data['value'] ?? null) !== null && $data['value'] !== '' ? (string) $data['value'] : (string) __('Not resolved', 'singlesignon'),
+            __('JSONPath', 'singlesignon'),
+            (string) ($data['jsonpath'] ?? '-') ?: '-',
+            __('Source'),
+            $source,
+        );
+    }
+    $copy_payload_sections[] = implode("\n", $resolved_lines);
+
+    $active_lines = [(string) __('Active mappings', 'singlesignon')];
+    if ($active_mappings === []) {
+        $active_lines[] = (string) __('No active mappings found.', 'singlesignon');
+    } else {
+        foreach ($active_mappings as $row) {
+            $active_lines[] = sprintf(
+                "- %s | %s | %s: %s",
+                (string) ($row['field_type'] ?? ''),
+                (string) ($row['jsonpath'] ?? ''),
+                __('Order'),
+                (string) ($row['sort_order'] ?? ''),
+            );
+        }
+    }
+    $copy_payload_sections[] = implode("\n", $active_lines);
+
+    $default_lines = [(string) __('Default mappings', 'singlesignon')];
+    if ($default_mappings === []) {
+        $default_lines[] = (string) __('No default mappings found for this provider type.', 'singlesignon');
+    } else {
+        foreach ($default_mappings as $row) {
+            $default_lines[] = sprintf(
+                "- %s | %s | %s: %s",
+                (string) ($row['field_type'] ?? ''),
+                (string) ($row['jsonpath'] ?? ''),
+                __('Order'),
+                (string) ($row['sort_order'] ?? ''),
+            );
+        }
+    }
+    $copy_payload_sections[] = implode("\n", $default_lines);
+
+    $copy_payload_sections[] = (string) __('Resource Owner', 'singlesignon') . "\n" . $resource_owner_pretty;
+    $copy_payload_sections[] = (string) __('ID Token (JWT)', 'singlesignon') . "\n" . $id_token_payload_pretty;
+    $copy_payload_sections[] = (string) __('Callback context', 'singlesignon') . "\n" . $callback_context_pretty;
+    $copy_payload = implode("\n\n", $copy_payload_sections);
+
     Html::nullHeader("Login", ToolboxPlugin::getBaseURL() . '/index.php');
     echo TemplateRenderer::getInstance()->render('@singlesignon/provider/callback_test_result.html.twig', [
         'provider'                => $signon_provider,
         'field_types'             => $field_types,
         'resolved_fields'         => $resolved_fields,
         'resource_owner_pretty'   => $resource_owner_pretty,
+        'id_token_payload_pretty' => $id_token_payload_pretty,
         'callback_context_pretty' => $callback_context_pretty,
         'active_mappings'         => $active_mappings,
         'default_mappings'        => $default_mappings,
+        'copy_payload'            => $copy_payload,
     ]);
     Html::nullFooter();
     return;
@@ -197,6 +286,11 @@ $query_params['noAUTO'] = 1;
 $url_redirect = $CFG_GLPI['root_doc'] . "/front/logout.php?" . http_build_query($query_params);
 $url_redirect = rtrim($url_redirect, '?'); // remove `?` when there is no parameters
 
+$loginError = $signon_provider->getLastLoginError();
+if ($loginError !== '') {
+    $client_ip = ToolboxPlugin::getClientIp();
+    Toolbox::logInFile('access-errors', "$loginError [client: $client_ip]\n", true);
+}
 
 // we have done at least a good login? No, we return.
 echo TemplateRenderer::getInstance()->render('@singlesignon/login/unauthorized_retry.html.twig', [

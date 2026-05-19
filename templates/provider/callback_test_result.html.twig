@@ -21,11 +21,21 @@
  #}
 
 <div class="container-xl mt-4 mb-4">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">{{ __('Single Sign-on test result', 'singlesignon') }}</h3>
-        </div>
-        <div class="card-body">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">{{ __('Single Sign-on test result', 'singlesignon') }}</h3>
+                <div class="card-actions">
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            id="sso-copy-all-tabs"
+                            data-copy-success-label="{{ __('Copied', 'singlesignon') }}"
+                            data-copy-error-label="{{ __('Copy failed', 'singlesignon') }}">
+                        <i class="ti ti-copy"></i>
+                        <span>{{ __('Copy all tabs', 'singlesignon') }}</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
             <div class="text-muted mb-3">
                 <strong>{{ __('Provider', 'singlesignon') }}:</strong>
                 {{ provider.fields.name|default('') }} ({{ provider.fields.type|default('') }})
@@ -40,6 +50,11 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" type="button" data-sso-tab-target="#tab-resource-owner">
                         {{ __('Resource Owner', 'singlesignon') }}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" type="button" data-sso-tab-target="#tab-id-token">
+                        {{ __('ID Token (JWT)', 'singlesignon') }}
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -78,7 +93,16 @@
                                         <td><code>{{ field_key }}</code> - {{ field_label }}</td>
                                         <td>
                                             {% if data.value is not null and data.value != '' %}
-                                                <code>{{ data.value }}</code>
+                                                {% set values = data.values|default([]) %}
+                                                {% if values is iterable and values|length > 0 %}
+                                                    <ul class="list-unstyled d-flex flex-wrap mb-0">
+                                                        {% for item in values %}
+                                                            <li class="me-1 mb-1"><code>{{ item }}</code></li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <code>{{ data.value }}</code>
+                                                {% endif %}
                                             {% else %}
                                                 <span class="text-muted">{{ __('Not resolved', 'singlesignon') }}</span>
                                             {% endif %}
@@ -93,8 +117,12 @@
                                         <td>
                                             {% if data.source == 'provider' %}
                                                 <span class="badge bg-blue-lt">{{ __('Provider mapping', 'singlesignon') }}</span>
+                                            {% elseif data.source == 'provider (jwt)' %}
+                                                <span class="badge bg-blue-lt">{{ __('Provider mapping (JWT)', 'singlesignon') }}</span>
                                             {% elseif data.source == 'default' %}
                                                 <span class="badge bg-green-lt">{{ __('Default mapping', 'singlesignon') }}</span>
+                                            {% elseif data.source == 'default (jwt)' %}
+                                                <span class="badge bg-green-lt">{{ __('Default mapping (JWT)', 'singlesignon') }}</span>
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
@@ -108,6 +136,17 @@
 
                 <div class="tab-pane" id="tab-resource-owner">
                     <pre class="mb-0" style="white-space: pre-wrap;">{{ resource_owner_pretty }}</pre>
+                </div>
+
+                <div class="tab-pane" id="tab-id-token">
+                    {% if id_token_payload_pretty is empty %}
+                        <div class="p-3 text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ __('No ID token received or unable to parse.', 'singlesignon') }}
+                        </div>
+                    {% else %}
+                        <pre class="mb-0" style="white-space: pre-wrap;">{{ id_token_payload_pretty }}</pre>
+                    {% endif %}
                 </div>
 
                 <div class="tab-pane" id="tab-active-mappings">
@@ -172,32 +211,5 @@
     </div>
 </div>
 
-<script type="text/javascript">
-(() => {
-    const tabsRoot = document.getElementById('sso-test-tabs');
-    const contentRoot = document.getElementById('sso-test-tab-content');
-    if (!tabsRoot || !contentRoot) {
-        return;
-    }
-
-    tabsRoot.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-sso-tab-target]');
-        if (!button) {
-            return;
-        }
-        const selector = button.getAttribute('data-sso-tab-target');
-        if (!selector) {
-            return;
-        }
-
-        tabsRoot.querySelectorAll('.nav-link').forEach((item) => item.classList.remove('active'));
-        contentRoot.querySelectorAll('.tab-pane').forEach((pane) => pane.classList.remove('active', 'show'));
-
-        button.classList.add('active');
-        const target = contentRoot.querySelector(selector);
-        if (target) {
-            target.classList.add('active', 'show');
-        }
-    });
-})();
-</script>
+<textarea id="sso-copy-all-source" class="d-none">{{ copy_payload }}</textarea>
+<script type="text/javascript" src="{{ call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPublicAssetUrl'], ['js/callback-test-result.js']) }}"></script>

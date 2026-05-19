@@ -28,6 +28,7 @@ use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Preference;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
+use GlpiPlugin\Singlesignon\Provider_Role;
 
 use function Safe\define;
 
@@ -36,7 +37,7 @@ if (file_exists($plugin_autoload)) {
     require_once $plugin_autoload;
 }
 
-define('PLUGIN_SINGLESIGNON_VERSION', '2.0.2');
+define('PLUGIN_SINGLESIGNON_VERSION', '2.1.0');
 
 // Minimal GLPI version, inclusive
 define('PLUGIN_SINGLESIGNON_MIN_GLPI', '11.0.0');
@@ -82,6 +83,7 @@ function plugin_init_singlesignon()
 
     Plugin::registerClass(Provider::class);
     Plugin::registerClass(Provider_Field::class);
+    Plugin::registerClass(Provider_Role::class);
 
     $PLUGIN_HOOKS[Hooks::CONFIG_PAGE]['singlesignon'] = 'front/provider.php';
     $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = [LoginRenderer::class, 'onPostInit'];
@@ -125,6 +127,16 @@ function plugin_singlesignon_check_prerequisites()
 
     if (version_compare(PHP_VERSION, '8.2', '<')) {
         echo htmlspecialchars(__("This plugin requires PHP >= 8.2", 'singlesignon'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        return false;
+    }
+
+    // Check if Composer's autoload file exists
+    if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
+        echo sprintf(
+            htmlspecialchars(__('The %1$s folder is missing. Please run %2$s inside the plugin directory, or download the official release archive.', 'singlesignon'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            '"vendor/"',
+            '"composer install --no-dev"',
+        );
         return false;
     }
 

@@ -22,10 +22,9 @@
 
 {% set rows = mappings|length > 0 ? mappings : [{
    id: 0,
-   field_type: 'id',
-   jsonpath: '',
-   is_active: 1,
-   sort_order: 10
+   remote_id: '',
+   groups_id: 0,
+   is_active: 1
 }] %}
 
 <form method="post" action="{{ form_action }}">
@@ -34,21 +33,20 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ __('Field mappings', 'singlesignon') }}</h3>
+            <h3 class="card-title">{{ __('Role mappings', 'singlesignon') }}</h3>
         </div>
         <div class="card-body">
             <p class="text-muted">
-                {{ __('Configure JSONPath rules used to extract fields from Resource Owner response.', 'singlesignon') }}
+                {{ __('Map incoming IdP role/group claim values to existing GLPI groups.', 'singlesignon') }}
             </p>
             <table class="table table-striped table-hover align-middle"
-                   id="sso-field-mappings-table"
+                   id="sso-role-mappings-table"
                    data-restore-label="{{ __('Restore') }}">
                 <thead>
                     <tr>
-                        <th>{{ __('Type') }}</th>
-                        <th>{{ __('JSONPath', 'singlesignon') }}</th>
+                        <th>{{ __('Role / Group key', 'singlesignon') }}</th>
+                        <th>{{ __('Group') }}</th>
                         <th class="text-center">{{ __('Active') }}</th>
-                        <th class="text-center">{{ __('Order') }}</th>
                         <th class="text-center">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
@@ -57,36 +55,31 @@
                         {% set is_saved = (map.id|default(0)) > 0 %}
                         <tr data-row data-saved="{{ is_saved ? '1' : '0' }}">
                             <td>
-                                <input type="hidden" name="_field_mappings[{{ loop.index0 }}][id]" value="{{ map.id|default(0) }}"/>
+                                <input type="hidden" name="_role_mappings[{{ loop.index0 }}][id]" value="{{ map.id|default(0) }}"/>
                                 {% if is_saved %}
-                                    <input type="hidden" class="sso-delete-flag" name="_field_mappings[{{ loop.index0 }}][_delete]" value="0"/>
+                                    <input type="hidden" class="sso-delete-flag" name="_role_mappings[{{ loop.index0 }}][_delete]" value="0"/>
                                 {% endif %}
-                                <select class="form-select" name="_field_mappings[{{ loop.index0 }}][field_type]">
-                                    {% for key, label in field_types %}
-                                        <option value="{{ key }}" {% if key == map.field_type %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                            <td>
                                 <input type="text"
                                        class="form-control"
-                                       name="_field_mappings[{{ loop.index0 }}][jsonpath]"
-                                       value="{{ map.jsonpath|default('') }}"
-                                       placeholder="$.id"/>
+                                       name="_role_mappings[{{ loop.index0 }}][remote_id]"
+                                       value="{{ map.remote_id|default('') }}"
+                                       placeholder="admin"/>
+                            </td>
+                            <td>
+                                {{ call('Dropdown::show', ['Group', {
+                                    name: '_role_mappings[' ~ loop.index0 ~ '][groups_id]',
+                                    value: map.groups_id|default(0),
+                                    display: false,
+                                    width: '100%',
+                                    rand: 'sg_' ~ loop.index0
+                                }])|raw }}
                             </td>
                             <td class="text-center">
                                 <input type="checkbox"
                                        class="form-check-input"
-                                       name="_field_mappings[{{ loop.index0 }}][is_active]"
+                                       name="_role_mappings[{{ loop.index0 }}][is_active]"
                                        value="1"
                                        {% if map.is_active|default(1) %}checked{% endif %}/>
-                            </td>
-                            <td class="text-center">
-                                <input type="number"
-                                       class="form-control text-end"
-                                       style="max-width: 100px; margin: 0 auto;"
-                                       name="_field_mappings[{{ loop.index0 }}][sort_order]"
-                                       value="{{ map.sort_order|default(10) }}"/>
                             </td>
                             <td class="text-center">
                                 <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
@@ -97,12 +90,12 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <button type="button" id="sso-add-mapping-row" class="btn btn-outline-secondary">
+            <button type="button" id="sso-add-role-mapping-row" class="btn btn-outline-secondary">
                 <i class="ti ti-plus"></i> {{ __('Add') }}
             </button>
         </div>
         <div class="card-footer text-end">
-            <button type="submit" name="update_mappings" class="btn btn-primary">
+            <button type="submit" name="update_role_mappings" class="btn btn-primary">
                 <i class="ti ti-device-floppy"></i>
                 <span>{{ _x('button', 'Save') }}</span>
             </button>
@@ -112,46 +105,38 @@
 
 <script type="text/javascript">
 (() => {
-    const table = document.getElementById('sso-field-mappings-table');
-    const addBtn = document.getElementById('sso-add-mapping-row');
+    const table = document.getElementById('sso-role-mappings-table');
+    const addBtn = document.getElementById('sso-add-role-mapping-row');
     if (!table || !addBtn) {
         return;
     }
 
-    const types = {{ field_types|json_encode|raw }};
-
-    const buildOptions = () => Object.entries(types)
-        .map(([key, label]) => `<option value="${key}">${label}</option>`)
-        .join('');
+    const providerId = {{ provider_id|json_encode|raw }};
+    const formUrl = {{ form_action|json_encode|raw }};
 
     const nextIndex = () => table.querySelectorAll('tbody tr[data-row]').length;
 
-    addBtn.addEventListener('click', () => {
+    addBtn.addEventListener('click', async () => {
         const idx = nextIndex();
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-row', '');
-        tr.setAttribute('data-saved', '0');
-        tr.innerHTML = `
-            <td>
-                <input type="hidden" name="_field_mappings[${idx}][id]" value="0"/>
-                <select class="form-select" name="_field_mappings[${idx}][field_type]">${buildOptions()}</select>
-            </td>
-            <td>
-                <input type="text" class="form-control" name="_field_mappings[${idx}][jsonpath]" placeholder="$.id"/>
-            </td>
-            <td class="text-center">
-                <input type="checkbox" class="form-check-input" name="_field_mappings[${idx}][is_active]" value="1" checked/>
-            </td>
-            <td class="text-center">
-                <input type="number" class="form-control text-end" style="max-width: 100px; margin: 0 auto;" name="_field_mappings[${idx}][sort_order]" value="${(idx + 1) * 10}"/>
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
-                    <i class="ti ti-trash"></i> {{ __('Remove')|e('js') }}
-                </button>
-            </td>
-        `;
-        table.querySelector('tbody')?.appendChild(tr);
+        try {
+            const url = `${formUrl}?action=new_row&provider_id=${encodeURIComponent(providerId)}&idx=${encodeURIComponent(idx)}`;
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) {
+                return;
+            }
+            const html = await response.text();
+            const tbody = table.querySelector('tbody');
+            if (tbody) {
+                const range = document.createRange();
+                range.selectNodeContents(tbody);
+                const fragment = range.createContextualFragment(html);
+                tbody.appendChild(fragment);
+            }
+        } catch (e) {
+            console.error('Failed to add role mapping row', e);
+        }
     });
 })();
 </script>

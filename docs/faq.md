@@ -149,6 +149,39 @@ Fix certificates or trust store first. Turning off **SSL verify** on the provide
 
 ---
 
+## Logs
+
+When authentication fails, GLPI writes details to its log files. These are the first places to check when diagnosing login issues.
+
+### GLPI log files
+
+| File | Contents |
+|------|----------|
+| `<GLPI_ROOT>/files/_log/access-errors.log` | HTTP-level access errors, denied requests, and SSO callback problems. |
+| `<GLPI_ROOT>/files/_log/php-errors.log` | PHP warnings and exceptions from GLPI and plugins. |
+
+Replace `<GLPI_ROOT>` with the absolute path to your GLPI installation (for example `/var/www/html/glpi`).
+
+### Docker containers
+
+Inside a standard GLPI Docker container the Apache error log is available at:
+
+```
+/var/www/apache2/errors.log
+```
+
+You can tail it live while reproducing a login attempt:
+
+```bash
+docker exec -it <container_name> tail -f /var/www/apache2/errors.log
+```
+
+### What to look for
+
+Search the log for the user's login name, the provider name, or the string `singlesignon`. The plugin writes a human-readable reason to `lastLoginError` before every failed login; that message normally appears in the log.
+
+---
+
 ## Getting help
 
 Open an issue with **GLPI version**, **plugin version**, provider type (**Generic**, **Azure**, …), and **redacted** settings (never paste **Client Secret**).

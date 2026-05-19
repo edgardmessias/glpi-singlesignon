@@ -42,6 +42,8 @@ function plugin_singlesignon_install()
 
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
+    $providersRolesTable = 'glpi_plugin_singlesignon_providers_roles';
+    $providersGroupsTable = 'glpi_plugin_singlesignon_providers_groups';
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
     $migration = new Migration(PLUGIN_SINGLESIGNON_VERSION);
@@ -49,7 +51,7 @@ function plugin_singlesignon_install()
     if (!$DB->tableExists($providersTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersTable` (
-            `id`                         INT NOT NULL AUTO_INCREMENT,
+            `id`                         INT UNSIGNED NOT NULL AUTO_INCREMENT,
             `is_default`                 TINYINT(1) NOT NULL DEFAULT '0',
             `popup`                      TINYINT(1) NOT NULL DEFAULT '0',
             `split_domain`               TINYINT(1) NOT NULL DEFAULT '0',
@@ -63,7 +65,7 @@ function plugin_singlesignon_install()
             `url_authorize`              VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_access_token`           VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_resource_owner_details` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
-            `user_photo_sync_mode`       INT NOT NULL DEFAULT '0',
+            `user_photo_sync_mode`       INT UNSIGNED NOT NULL DEFAULT '0',
             `resource_owner_auth_type`   VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
             `resource_owner_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
             `resource_owner_picture_auth_type` VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
@@ -139,9 +141,9 @@ function plugin_singlesignon_install()
     if (!$DB->tableExists($providersUsersTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersUsersTable` (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
-            `users_id` INT NOT NULL DEFAULT '0',
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            `users_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
             PRIMARY KEY (`id`),
             UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
@@ -156,12 +158,12 @@ function plugin_singlesignon_install()
     if (!$DB->tableExists($providersFieldsTable)) {
         $DB->doQuery(
             "CREATE TABLE `$providersFieldsTable` (
-            `id` INT NOT NULL AUTO_INCREMENT,
-            `plugin_singlesignon_providers_id` INT NOT NULL DEFAULT '0',
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `field_type` VARCHAR(64) COLLATE utf8mb4_unicode_ci NOT NULL,
             `jsonpath` VARCHAR(1024) COLLATE utf8mb4_unicode_ci NOT NULL,
             `is_active` TINYINT(1) NOT NULL DEFAULT '1',
-            `sort_order` INT NOT NULL DEFAULT '0',
+            `sort_order` INT UNSIGNED NOT NULL DEFAULT '0',
             `date_mod` TIMESTAMP NULL DEFAULT NULL,
             `date_creation` TIMESTAMP NULL DEFAULT NULL,
             PRIMARY KEY (`id`),
@@ -221,23 +223,11 @@ function plugin_singlesignon_install()
 
     $migration->addField($providersTable, 'auto_register', 'bool', ['value' => 0]);
     $migration->addField($providersTable, 'registration_preview', 'bool', ['value' => 0]);
-    $migration->addField(
-        $providersTable,
-        'default_entities_id',
-        'integer',
-        [
-            'value' => 0,
-        ],
-    );
-    $migration->addField($providersTable, 'match_entity_by_email_domain', 'bool', ['value' => 0]);
-    $migration->addField(
-        $providersTable,
-        'default_profiles_id',
-        'integer',
-        [
-            'value' => 0,
-        ],
-    );
+    $migration->dropField($providersTable, 'match_entity_by_email_domain');
+    $migration->addField($providersTable, 'default_entities_id', 'integer', ['value' => 0]);
+    $migration->addField($providersTable, 'default_entities_id_is_recursive', 'bool', ['value' => 0]);
+    $migration->addField($providersTable, 'default_profiles_id', 'integer', ['value' => 0]);
+    $migration->addField($providersTable, 'default_profiles_id_is_recursive', 'bool', ['value' => 0]);
 
     $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
     $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
@@ -259,6 +249,43 @@ function plugin_singlesignon_install()
         }
     }
 
+    /**
+     * Version 2.1.0
+     */
+
+    // Stores role-mapping configuration per provider:
+    // provider + remote role/group key -> GLPI group target.
+    if (!$DB->tableExists($providersRolesTable)) {
+        $DB->doQuery(
+            "CREATE TABLE `$providersRolesTable` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            `groups_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+            `is_active` TINYINT(1) NOT NULL DEFAULT '1',
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`),
+            KEY `groups_id` (`groups_id`)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        );
+    }
+
+    // Stores dynamic links created at login time:
+    // user + provider role mapping -> effective GLPI dynamic group assignment.
+    if (!$DB->tableExists($providersGroupsTable)) {
+        $DB->doQuery(
+            "CREATE TABLE `$providersGroupsTable` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `users_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            `plugin_singlesignon_providers_roles_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            `groups_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `unicity_user_role` (`users_id`,`plugin_singlesignon_providers_roles_id`),
+            KEY `groups_id` (`groups_id`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        );
+    }
+
     $migration->executeMigration();
 
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
@@ -274,11 +301,21 @@ function plugin_singlesignon_uninstall()
     Config::deleteConfigurationValues('plugin:singlesignon');
 
     $providersUsersTable = 'glpi_plugin_singlesignon_providers_users';
+    $providersRolesTable = 'glpi_plugin_singlesignon_providers_roles';
+    $providersGroupsTable = 'glpi_plugin_singlesignon_providers_groups';
     $providersTable = 'glpi_plugin_singlesignon_providers';
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
 
     if ($DB->tableExists($providersUsersTable)) {
         $DB->dropTable($providersUsersTable, true);
+    }
+
+    if ($DB->tableExists($providersGroupsTable)) {
+        $DB->dropTable($providersGroupsTable, true);
+    }
+
+    if ($DB->tableExists($providersRolesTable)) {
+        $DB->dropTable($providersRolesTable, true);
     }
 
     if ($DB->tableExists($providersFieldsTable)) {

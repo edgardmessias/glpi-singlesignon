@@ -26,11 +26,12 @@ Each vendor uses different field names. Microsoft Graph, Google, GitHub, and cus
 | Type | Role in GLPI |
 |------|----------------|
 | **ID** | Stable id from the provider (links the same person across logins). Often a numeric id or a `sub` value. |
-| **Username** | Login name when you are **not** using “email as login”. |
+| **Login** | Username when you are **not** using “email as login”. |
 | **Email** | Email address; used heavily to find or create users. |
 | **First name** / **Last name** | Given name and family name in GLPI. |
 | **Full name** | One string; can be split if **Split Name** is enabled on the provider. |
-| **Avatar URL** | Address of the user’s picture; photo sync uses this URL. |
+| **Picture URL** | Address of the user’s picture; photo sync uses this URL. |
+| **Roles (IdP Claim)** | Raw role/group strings from the identity provider; used by the **Role mappings** tab to assign the user to GLPI groups on login. |
 
 ---
 
@@ -71,6 +72,38 @@ If a path points to a list, the plugin uses the first usable value it finds.
 **Prefer one field over another** — Put the preferred path first (lower **sort order**); put fallbacks after.
 
 **Avatar does not download** — Ensure **Avatar URL** is a full `https://…` address the GLPI **server** can reach; adjust **Photo Authorization** if the image URL needs special headers (see [Configuration](configuration.md)).
+
+## Default mappings
+
+When no custom field mappings are saved for a provider, the plugin uses **built-in defaults** based on the provider type.  
+Built-in defaults are tried in the order shown (lowest sort order first).
+
+### Generic / OIDC (type `generic` — fallback for any unknown provider type)
+
+| Field type | JSONPath | Active | Sort |
+|-----------|---------|--------|------|
+| ID | `$.id` | ✓ | 10 |
+| ID | `$.username` | ✓ | 20 |
+| ID | `$.sub` | ✓ | 30 |
+| Email | `$.email` | ✓ | 40 |
+| Email | `$['e-mail']` | ✓ | 50 |
+| Email | `$['email-address']` | ✓ | 60 |
+| Email | `$.mail` | ✓ | 70 |
+| Email | `$.userPrincipalName` | ✓ | 75 |
+| Login | `$.userPrincipalName` | ✓ | 80 |
+| Login | `$.login` | ✓ | 90 |
+| Login | `$.username` | ✓ | 100 |
+| Login | `$.id` | ✓ | 110 |
+| Login | `$.name` | ✓ | 120 |
+| Login | `$.displayName` | ✓ | 130 |
+| First name | `$.givenName` | ✓ | 135 |
+| Last name | `$.surname` | ✓ | 136 |
+| Full name | `$.displayName` | ✓ | 137 |
+| Picture URL | `$.picture` | ✓ | 140 |
+| Roles (IdP Claim) | `$.groups` | ✗ | 150 |
+| Roles (IdP Claim) | `$.roles` | ✗ | 160 |
+
+> **Tip:** Built-in provider defaults (including Azure, Google, GitHub, Facebook, LinkedIn, and Instagram) are stored in `providers.json` in the plugin root. You can override any of them by creating a custom mapping with a lower sort order.
 
 ---
 

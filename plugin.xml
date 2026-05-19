@@ -131,6 +131,10 @@ Latest release package (example): `https://github.com/edgardmessias/glpi-singles
             <compatibility>~11.0</compatibility>
             <download_url>https://github.com/edgardmessias/glpi-singlesignon/releases/download/v2.0.0/singlesignon.tar.bz2</download_url>
         </version>
+        <version>
+            <num>2.1.0</num>
+            <compatibility>~11.0</compatibility>
+        </version>
     </versions>
     <langs>
         <lang>de_DE</lang>
