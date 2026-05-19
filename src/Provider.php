@@ -1486,7 +1486,7 @@ class Provider extends CommonDBTM
         ];
     }
 
-    private function resolveEntitiesIdForNewUser(): int
+    private function resolveEntitiesIdForNewUser(array $resource_array): int
     {
         global $DB;
 
@@ -1728,7 +1728,7 @@ class Provider extends CommonDBTM
         $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
-        $entitiesId = $this->resolveEntitiesIdForNewUser();
+        $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array);
 
         // ── Picture ──────────────────────────────────────────────────────────
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
