@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.0]
+
+### Added
+* **feat(groups):** Added comprehensive IdP Role/Group mapping to dynamically assign users to GLPI groups upon login.
+* **feat(mappings):** Added support for new field mappings: Location, Supervisor, Phone, Phone 2, Cell phone, and Roles (IdP Claim).
+* **feat(login):** Added an auto-redirect feature to bypass the GLPI login form and send users directly to a default provider (can be bypassed with `noAuto=1`).
+* **feat(auth):** The plugin now parses and supports extracting claims directly from the JWT `id_token` payload, in addition to the resource owner response.
+* **feat(config):** Added options to make default Entity and default Profile assignments recursive.
+* **feat(debug):** Significantly enhanced the SSO callback test page. It now displays ID Token (JWT) contents, active/default mappings, and includes a "Copy all tabs" clipboard helper.
+* **feat(logs):** The plugin now writes human-readable login failure reasons directly to GLPI's `<GLPI_ROOT>/files/_log/access-errors.log` (including client IP) to aid in troubleshooting.
+* **feat(system):** Added a pre-requisite check in `setup.php` to ensure Composer dependencies (`vendor/autoload.php`) are installed before initialization.
+
+### Changed
+* **refactor(ui):** Renamed "Username" to "Login" and "Avatar URL" to "Picture URL" in field mapping configurations for better consistency with GLPI terminology.
+* **refactor(ui):** Improved the Field Mappings table UI to use an inline undo/restore workflow for row deletions instead of immediately removing them.
+* **refactor(ui):** Improved CSS grid alignment for checkboxes in the provider personalization preferences.
+* **docs:** Updated FAQ and Field Mappings documentation to cover the new logging system, built-in fallback mappings by provider type, and ID/Role claim structures.
+
+### Fixed
+* **fix(auth):** Refactored the core GLPI login simulation to execute via a temporary local password rather than manipulating superglobals. This critical fix ensures that **GLPI's native Rules Engine** (for rights and profile assignments) is properly triggered during SSO logins.
+* **fix(compat):** Updated avatar download response handling to use `getFileAsResponse()`, ensuring compatibility with GLPI 11.0.
+
+### Removed
+* **remove(config):** Removed the "Match entity by email domain" configuration. (With the rules engine fix above, administrators should now use GLPI's native Authorization Assignment Rules to route users to entities based on email domains).
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
