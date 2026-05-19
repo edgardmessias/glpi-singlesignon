@@ -1488,6 +1488,18 @@ class Provider extends CommonDBTM
 
     private function resolveEntitiesIdForNewUser(): int
     {
+        global $DB;
+
+        if (isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation']) && $resource_array['officeLocation'] !== '') {
+            foreach ($DB->request([
+                'FROM'  => 'glpi_entities',
+                'WHERE' => ['name' => $resource_array['officeLocation']],
+                'LIMIT' => 1,
+            ]) as $entity) {
+                return (int) $entity['id'];
+            }
+        }
+
         $default = (int) ($this->fields['default_entities_id'] ?? 0);
 
         return $default > 0 ? $default : 0;
