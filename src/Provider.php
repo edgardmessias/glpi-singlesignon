@@ -1486,56 +1486,6 @@ class Provider extends CommonDBTM
         ];
     }
 
-    private function resolveRawSsoLoginString(array $resource_array): ?string
-    {
-        $use_email = !empty($this->fields['use_email_for_login']);
-        $emailRaw = $this->resolveFieldValueFromMappings($resource_array, 'email');
-        $usernameRaw = $this->resolveFieldValueFromMappings($resource_array, 'username');
-
-        $preferredRaw = $use_email ? $emailRaw : $usernameRaw;
-        $fallbackRaw = $use_email ? $usernameRaw : $emailRaw;
-
-        if ($preferredRaw !== null && $preferredRaw !== '') {
-            return (string) $preferredRaw;
-        }
-
-        if ($fallbackRaw !== null && $fallbackRaw !== '') {
-            return (string) $fallbackRaw;
-        }
-
-        return null;
-    }
-
-    private function resolveSsoLoginContext(User $user): string
-    {
-        $resource_array = $this->getResourceOwner();
-        if (is_array($resource_array)) {
-            $rawLogin = $this->resolveRawSsoLoginString($resource_array);
-            if ($rawLogin !== null && $rawLogin !== '') {
-                return $rawLogin;
-            }
-        }
-
-        $pendingRegistration = self::getPendingRegistrationSession();
-        if (is_array($pendingRegistration)) {
-            $use_email = !empty($this->fields['use_email_for_login']);
-            $pendingEmail = trim((string) ($pendingRegistration['email'] ?? ''));
-            $pendingLogin = trim((string) ($pendingRegistration['login'] ?? ''));
-            $preferredPending = $use_email ? $pendingEmail : $pendingLogin;
-            $fallbackPending = $use_email ? $pendingLogin : $pendingEmail;
-
-            if ($preferredPending !== '') {
-                return $preferredPending;
-            }
-
-            if ($fallbackPending !== '') {
-                return $fallbackPending;
-            }
-        }
-
-        return (string) ($user->fields['name'] ?? '');
-    }
-
     private function resolveEntitiesIdForNewUser(): int
     {
         $default = (int) ($this->fields['default_entities_id'] ?? 0);
