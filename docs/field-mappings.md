@@ -26,7 +26,7 @@ Each vendor uses different field names. Microsoft Graph, Google, GitHub, and cus
 | Type | Role in GLPI |
 |------|----------------|
 | **ID** | Stable id from the provider (links the same person across logins). Often a numeric id or a `sub` value. |
-| **Login** | Login name when you are **not** using “email as login”. |
+| **Login** | Username when you are **not** using “email as login”. |
 | **Email** | Email address; used heavily to find or create users. |
 | **First name** / **Last name** | Given name and family name in GLPI. |
 | **Full name** | One string; can be split if **Split Name** is enabled on the provider. |
