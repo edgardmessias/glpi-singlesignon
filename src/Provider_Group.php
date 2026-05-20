@@ -29,6 +29,7 @@ namespace GlpiPlugin\Singlesignon;
 use Group_User;
 use CommonDBRelation;
 use JsonPath\JsonObject;
+use Provider;
 use Throwable;
 use User;
 
@@ -70,22 +71,25 @@ class Provider_Group extends CommonDBRelation
      * Groups are always processed via role mapping; there is no
      * automatic group import mode.
      */
-    public static function syncGroups(Provider $provider, User $user): void
+    public static function syncRoleGroupsForUser(Provider $provider, User $user): bool
     {
         global $DB;
 
         if ($user->getID() <= 0) {
-            return;
+            self::logFailure($provider, $user, __FUNCTION__, 'failed because user id is empty before dynamic group synchronization');
+            return false;
         }
 
         $resourceOwner = $provider->getResourceOwner();
         if (!$resourceOwner || !is_array($resourceOwner)) {
-            return;
+            self::logFailure($provider, $user, __FUNCTION__, 'failed because the resource owner payload is empty before dynamic group synchronization');
+            return false;
         }
 
         $providerId = (int) ($provider->fields['id'] ?? 0);
         if ($providerId <= 0) {
-            return;
+            self::logFailure($provider, $user, __FUNCTION__, 'failed because provider id is empty before dynamic group synchronization');
+            return false;
         }
 
         $claims = static::extractUserGroupsFromResource($provider, $resourceOwner);
@@ -125,9 +129,16 @@ class Provider_Group extends CommonDBRelation
                 'groups_id'  => $groupId,
                 'is_dynamic' => 1,
             ]);
-            if (is_numeric($linkId)) {
-                $keepGroupIds[] = $groupId;
+            if (!is_numeric($linkId) || (int) $linkId <= 0) {
+                self::logFailure(
+                    $provider,
+                    $user,
+                    __FUNCTION__,
+                    sprintf('failed to create dynamic Group_User link for groups_id=%d', $groupId)
+                );
+                return false;
             }
+            $keepGroupIds[] = $groupId;
         }
 
         /** @var array<int, array<string, mixed>> $existingDynamicRows */
@@ -152,20 +163,37 @@ class Provider_Group extends CommonDBRelation
             $existingRow = $existingByRole[$roleId] ?? null;
             if ($existingRow !== null) {
                 if ((int) ($existingRow['groups_id'] ?? 0) !== $groupId) {
-                    $DB->update(self::getTable(), [
+                    $updated = $DB->update(self::getTable(), [
                         'groups_id' => $groupId,
                     ], [
                         'id' => (int) $existingRow['id'],
                     ]);
+                    if ($updated === false) {
+                        self::logFailure(
+                            $provider,
+                            $user,
+                            __FUNCTION__,
+                            sprintf('failed to update dynamic provider-group link id=%d to groups_id=%d', (int) $existingRow['id'], $groupId)
+                        );
+                    }
                 }
                 continue;
             }
 
-            $DB->insert(self::getTable(), [
+            $inserted = $DB->insert(self::getTable(), [
                 'users_id'                                 => (int) $user->getID(),
                 'plugin_singlesignon_providers_roles_id'  => (int) $roleId,
                 'groups_id'                                => (int) $groupId,
             ]);
+            if ($inserted === false) {
+                self::logFailure(
+                    $provider,
+                    $user,
+                    __FUNCTION__,
+                    sprintf('failed to insert dynamic provider-group link for role_id=%d groups_id=%d', $roleId, $groupId)
+                );
+                return false;
+            }
         }
 
         $existingRoleIds = [];
@@ -206,7 +234,15 @@ class Provider_Group extends CommonDBRelation
                 continue;
             }
 
-            $DB->delete(self::getTable(), ['id' => $rowId]);
+            $deleted = $DB->delete(self::getTable(), ['id' => $rowId]);
+            if ($deleted === false) {
+                self::logFailure(
+                    $provider,
+                    $user,
+                    __FUNCTION__,
+                    sprintf('failed to delete obsolete dynamic provider-group link id=%d', $rowId)
+                );
+            }
             if ($groupId > 0) {
                 $removedGroupIds[] = $groupId;
             }
@@ -221,8 +257,19 @@ class Provider_Group extends CommonDBRelation
             if ($linkedGroupId <= 0 || !isset($managedMap[$linkedGroupId]) || isset($keepMap[$linkedGroupId])) {
                 continue;
             }
-            $groupUser->delete(['id' => (int) $link['id']], true);
+            $deleted = $groupUser->delete(['id' => (int) $link['id']], true);
+            if ($deleted === false) {
+                self::logFailure(
+                    $provider,
+                    $user,
+                    __FUNCTION__,
+                    sprintf('failed to delete obsolete dynamic Group_User link id=%d groups_id=%d', (int) $link['id'], $linkedGroupId)
+                );
+                return false;
+            }
         }
+
+        return true;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

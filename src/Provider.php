@@ -1511,6 +1511,7 @@ class Provider extends CommonDBTM
 
         $userId = (int) ($user->fields['id'] ?? 0);
         if ($userId <= 0) {
+            $this->logFailure(__FUNCTION__, 'failed because user id is empty before Profile_User assignment', $user);
             return false;
         }
 
@@ -1534,6 +1535,7 @@ class Provider extends CommonDBTM
         }
 
         if ($profileId <= 0) {
+            $this->logFailure(__FUNCTION__, 'failed because no GLPI profile could be resolved for Profile_User assignment', $user);
             return false;
         }
 
@@ -1551,6 +1553,7 @@ class Provider extends CommonDBTM
         }
 
         if ($entityForProfile <= 0) {
+            $this->logFailure(__FUNCTION__, 'failed because no GLPI entity could be resolved for Profile_User assignment', $user);
             return false;
         }
 
@@ -1574,7 +1577,20 @@ class Provider extends CommonDBTM
             'profiles_id'   => $profileId,
         ]);
 
-        return is_numeric($profileLinkId) && (int) $profileLinkId > 0;
+        if (!is_numeric($profileLinkId) || (int) $profileLinkId <= 0) {
+            $this->logFailure(
+                __FUNCTION__,
+                sprintf(
+                    'failed to create Profile_User authorization link for profiles_id=%d entities_id=%d',
+                    $profileId,
+                    $entityForProfile
+                ),
+                $user
+            );
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -1861,17 +1877,20 @@ class Provider extends CommonDBTM
             $user = new User();
             $newId = $user->add($userPost);
             if (!$newId) {
+                $this->logFailure(__FUNCTION__, sprintf('failed to create user from OAuth resource for login="%s"', $login), $user);
                 return false;
             }
 
             if (!$this->ensureProfileForNewUser($user, $entitiesId)) {
+                $this->logFailure(__FUNCTION__, 'failed because profile authorization assignment did not complete', $user);
                 return false;
             }
 
             $this->linkRemoteUserToProvider((int) $user->fields['id'], (string) $remote_id);
 
             return $user;
-        } catch (Exception) {
+        } catch (Exception $ex) {
+            $this->logFailure(__FUNCTION__, 'exception during user creation: ' . $ex->getMessage());
             return false;
         }
     }
@@ -1976,14 +1995,18 @@ class Provider extends CommonDBTM
         unset($_SESSION['glpi_singlesignon_remember']);
 
         try {
-            Provider_Group::syncGroups($this, $user);
-        } catch (Exception) {
+            if (!Provider_Group::syncRoleGroupsForUser($this, $user)) {
+                $this->logFailure(__FUNCTION__, 'role mapping to GLPI group synchronization failed before login', $user);
+            }
+        } catch (Exception $ex) {
+            $this->logFailure(__FUNCTION__, 'exception during role mapping to GLPI group synchronization: ' . $ex->getMessage(), $user);
         }
 
         // Optional photo sync
         try {
             $this->syncOAuthPhoto($user);
-        } catch (Exception) {
+        } catch (Exception $ex) {
+            $this->logFailure(__FUNCTION__, 'exception during OAuth photo synchronization: ' . $ex->getMessage(), $user);
         }
 
         // --- 2. Login ---

@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Toolbox;
 use Throwable;
 use IPAddress;
 use Plugin;
@@ -428,5 +429,32 @@ class ToolboxPlugin
             return $ip->getTextual();
         }
         return '';
+    }
+
+    private function logFailure(string $function, string $message, ?User $user = null): void
+    {
+        $providerName = (string) ($this->fields['name'] ?? '');
+        $providerId = (int) ($this->fields['id'] ?? 0);
+        $userName = '';
+        $userId = 0;
+        if ($user !== null) {
+            $userName = (string) ($user->fields['name'] ?? '');
+            $userId = (int) ($user->fields['id'] ?? 0);
+            if ($userId <= 0 && method_exists($user, 'getID')) {
+                $userId = (int) $user->getID();
+            }
+        }
+        Toolbox::logInFile(
+            'plugin_singlesignon',
+            sprintf(
+                "[%s] provider=\"%s\" provider_id=%d user=\"%s\" user_id=%d %s\n",
+                $function,
+                $providerName,
+                $providerId,
+                $userName,
+                $userId,
+                $message
+            )
+        );
     }
 }

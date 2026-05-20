@@ -47,7 +47,7 @@ use Session;
  *
  * A companion table `glpi_plugin_singlesignon_providers_groups` tracks the
  * dynamic group memberships that were actually applied at login time; those
- * rows are managed by {@see Provider_Group::syncGroups()}, which also cleans
+ * rows are managed by {@see Provider_Group::syncRoleGroupsForUser()}, which also cleans
  * up stale memberships whenever the user logs in.
  */
 class Provider_Role extends CommonDBRelation
