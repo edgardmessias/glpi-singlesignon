@@ -10,7 +10,7 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of$fl
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * You should have received a copy of the GNU General Public License
@@ -1968,8 +1968,10 @@ class Provider extends CommonDBTM
         $tempPassword = bin2hex(random_bytes(64));
         $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
-        // Force local authentication only for LDAP users to avoid a live LDAP query/bind.
-        $forceLocalAuthentication = (($user->fields['authtype'] ?? null) === Auth::LDAP);
+        // Always force local DB authentication so that Auth::login uses only the
+        // temporary password we set above, preventing any external-auth method
+        // (SSO variables, LDAP live bind, etc.) from authenticating a user.
+        $forceLocalAuthentication = true;
 
         try {
             $auth = new Auth();
