@@ -1507,47 +1507,74 @@ class Provider extends CommonDBTM
 
     private function ensureProfileForNewUser(User $user, int $entitiesId): bool
     {
-        if (Profile::getDefault() != 0) {
-            return true;
-        }
-
         global $DB;
 
-        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
-
-        $datasProfiles = [];
-        foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
-            $datasProfiles[] = $data;
-        }
-        $datasEntities = [];
-        foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
-            $datasEntities[] = $data;
-        }
-
-        if ($configuredProfile > 0) {
-            $profileId = $configuredProfile;
-            $entityForProfile = $entitiesId > 0 ? $entitiesId : (int) ($datasEntities[0]['id'] ?? 0);
-        } else {
-            if (count($datasProfiles) === 0 || count($datasEntities) === 0) {
-                return false;
-            }
-            $profileId        = (int) $datasProfiles[0]['id'];
-            $entityForProfile = (int) $datasEntities[0]['id'];
-        }
-
-        if ($profileId <= 0 || $entityForProfile <= 0) {
+        $userId = (int) ($user->fields['id'] ?? 0);
+        if ($userId <= 0) {
             return false;
         }
 
+        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
+        $glpiDefaultProfile = (int) Profile::getDefault();
+        $profileId = 0;
+        if ($configuredProfile > 0) {
+            $profileId = $configuredProfile;
+        } elseif ($glpiDefaultProfile > 0) {
+            $profileId = $glpiDefaultProfile;
+        } else {
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_profiles',
+                'ORDER'  => ['id ASC'],
+                'LIMIT'  => 1,
+            ]) as $profile) {
+                $profileId = (int) ($profile['id'] ?? 0);
+                break;
+            }
+        }
+
+        if ($profileId <= 0) {
+            return false;
+        }
+
+        $entityForProfile = $entitiesId;
+        if ($entityForProfile <= 0) {
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_entities',
+                'ORDER'  => ['id ASC'],
+                'LIMIT'  => 1,
+            ]) as $entity) {
+                $entityForProfile = (int) ($entity['id'] ?? 0);
+                break;
+            }
+        }
+
+        if ($entityForProfile <= 0) {
+            return false;
+        }
+
+        $isRecursive = $configuredProfile > 0
+            ? (int) ($this->fields['default_profiles_id_is_recursive'] ?? 0)
+            : 0;
+
         $pu = new Profile_User();
-        $pu->add([
-            'users_id'     => (int) $user->fields['id'],
-            'entities_id'  => $entityForProfile,
-            'is_recursive' => (int) ($this->fields['default_profiles_id_is_recursive'] ?? 0),
-            'profiles_id'  => $profileId,
+        if ($pu->getFromDBByCrit([
+            'users_id'    => $userId,
+            'entities_id' => $entityForProfile,
+            'profiles_id' => $profileId,
+        ])) {
+            return true;
+        }
+
+        $profileLinkId = $pu->add([
+            'users_id'      => $userId,
+            'entities_id'   => $entityForProfile,
+            'is_recursive'  => $isRecursive,
+            'profiles_id'   => $profileId,
         ]);
 
-        return true;
+        return is_numeric($profileLinkId) && (int) $profileLinkId > 0;
     }
 
     /**
@@ -1964,7 +1991,7 @@ class Provider extends CommonDBTM
         // authentication pipeline, including the rules engine (rights/profile assignments).
         // Simulating SSO/external auth (via $_SERVER or $_SESSION manipulation) does not
         // trigger the rules engine; local DB authentication does.
-        $userId = $user->fields['id'];
+        $userId = (int) $user->fields['id'];
         $tempPassword = bin2hex(random_bytes(64));
         $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
