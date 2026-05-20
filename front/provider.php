@@ -34,6 +34,16 @@ if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Html::helpHeader(__('Single Sign-on', 'singlesignon'), $_SERVER['PHP_SELF']);
 }
 
+if (ucwords((string)ini_get('session.cookie_samesite')) === 'Strict') {
+    echo "<div class='alert alert-important alert-danger m-3 d-flex' role='alert'>";
+    echo "<i class='fa-fw ti ti-alert-triangle mt-1 me-2'></i>";
+    echo "<div>";
+    echo __("The PHP configuration <strong>session.cookie_samesite</strong> is set to <strong>Strict</strong>. SSO login may fail due to CSRF validation. Please edit your php.ini, change it to <strong>Lax</strong>, and restart PHP.", 'singlesignon');
+    echo " <a href='https://github.com/edgardmessias/glpi-singlesignon/tree/main/docs/faq.md' target='_blank' class='text-white text-decoration-underline'>" . __('See documentation', 'singlesignon') . "</a>";
+    echo "</div>";
+    echo "</div>";
+}
+
 
 //checkTypeRight('PluginExampleExample',"r");
 
