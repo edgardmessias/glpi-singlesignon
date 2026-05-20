@@ -1586,15 +1586,21 @@ class Provider extends CommonDBTM
             'entities_id' => $entityForProfile,
             'profiles_id' => $profileId,
         ])) {
+            $this->logFailure(__FUNCTION__, "DEBUG: Profile link already exists for user $userId, entity $entityForProfile, profile $profileId", $user);
             return true;
         }
 
-        $profileLinkId = $pu->add([
+        $input = [
             'users_id'      => $userId,
             'entities_id'   => $entityForProfile,
             'is_recursive'  => $isRecursive,
             'profiles_id'   => $profileId,
-        ]);
+        ];
+        $this->logFailure(__FUNCTION__, "DEBUG: Attempting to add Profile_User with input: " . json_encode($input), $user);
+
+        $profileLinkId = $pu->add($input);
+
+        $this->logFailure(__FUNCTION__, "DEBUG: Profile_User::add() returned: " . var_export($profileLinkId, true), $user);
 
         if (!is_numeric($profileLinkId) || (int) $profileLinkId <= 0) {
             $this->logFailure(
@@ -1608,6 +1614,10 @@ class Provider extends CommonDBTM
             );
             return false;
         }
+
+        global $DB;
+        $check = $DB->request('glpi_profiles_users', ['id' => $profileLinkId])->current();
+        $this->logFailure(__FUNCTION__, "DEBUG: DB check for newly added link ID $profileLinkId: " . var_export($check, true), $user);
 
         return true;
     }
