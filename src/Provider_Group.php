@@ -66,8 +66,8 @@ class Provider_Group extends CommonDBRelation
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Synchronize OAuth groups for the given user using the SSO rules engine.
-     * Groups are always processed via rule-based assignment; there is no
+     * Synchronize OAuth groups for the given user using the SSO role mappings.
+     * Groups are always processed via role mapping; there is no
      * automatic group import mode.
      */
     public static function syncGroups(Provider $provider, User $user): void
