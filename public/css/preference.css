@@ -198,18 +198,16 @@
     min-width: 0; 
 }
 
-@media (prefers-color-scheme: dark) {
-    .singlesignon-preference {
-        --sso-pref-surface-top: rgba(30, 41, 59, 0.95);
-        --sso-pref-surface: rgba(17, 24, 39, 0.86);
-        --sso-pref-button-bg: rgba(30, 41, 59, 0.9);
-        --sso-pref-border: rgba(255, 255, 255, 0.14);
-        --sso-pref-shadow: 0 18px 34px -24px rgba(2, 6, 23, 0.95);
-        --sso-pref-title: #f3f4f6;
-        --sso-pref-text: #e5e7eb;
-        --sso-pref-muted: #cbd5e1;
-        --sso-pref-accent: #60a5fa;
-    }
+:root[data-glpi-theme-dark="1"] .singlesignon-preference {
+    --sso-pref-surface-top: rgba(30, 41, 59, 0.95);
+    --sso-pref-surface: rgba(17, 24, 39, 0.86);
+    --sso-pref-button-bg: rgba(30, 41, 59, 0.9);
+    --sso-pref-border: rgba(255, 255, 255, 0.14);
+    --sso-pref-shadow: 0 18px 34px -24px rgba(2, 6, 23, 0.95);
+    --sso-pref-title: #f3f4f6;
+    --sso-pref-text: #e5e7eb;
+    --sso-pref-muted: #cbd5e1;
+    --sso-pref-accent: #60a5fa;
 }
 
 @media (max-width: 767.98px) {
