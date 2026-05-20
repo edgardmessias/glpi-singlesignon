@@ -32,6 +32,7 @@ use JsonPath\JsonObject;
 use Provider;
 use Throwable;
 use User;
+use GlpiPlugin\Singlesignon\ToolboxPlugin;
 
 use function Safe\preg_split;
 
@@ -302,7 +303,8 @@ class Provider_Group extends CommonDBRelation
                 try {
                     $json   = new JsonObject($resource_array);
                     $result = $json->get($jsonPath);
-                } catch (Throwable) {
+                } catch (Throwable $ex) {
+                    ToolboxPlugin::logFailure(__FUNCTION__, sprintf('exception evaluating JSONPath "%s" against resource owner: %s', $jsonPath, $ex->getMessage()), (string) ($provider->fields['name'] ?? ''), (int) ($provider->fields['id'] ?? 0));
                     $result = null;
                 }
 
@@ -310,7 +312,8 @@ class Provider_Group extends CommonDBRelation
                     try {
                         $jsonJwt   = new JsonObject($idTokenPayload);
                         $result = $jsonJwt->get($jsonPath);
-                    } catch (Throwable) {
+                    } catch (Throwable $ex) {
+                        ToolboxPlugin::logFailure(__FUNCTION__, sprintf('exception evaluating JSONPath "%s" against id_token payload: %s', $jsonPath, $ex->getMessage()), (string) ($provider->fields['name'] ?? ''), (int) ($provider->fields['id'] ?? 0));
                         $result = null;
                     }
                 }

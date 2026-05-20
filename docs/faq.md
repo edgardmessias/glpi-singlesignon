@@ -157,6 +157,7 @@ When authentication fails, GLPI writes details to its log files. These are the f
 
 | File | Contents |
 |------|----------|
+| `<GLPI_ROOT>/files/_log/plugin_singlesignon.log` | SSO-specific failures: access token errors, user lookup failures, group sync problems, and every other `return false` path in the plugin. **Start here** when diagnosing SSO login issues. |
 | `<GLPI_ROOT>/files/_log/access-errors.log` | HTTP-level access errors, denied requests, and SSO callback problems. |
 | `<GLPI_ROOT>/files/_log/php-errors.log` | PHP warnings and exceptions from GLPI and plugins. |
 
@@ -177,6 +178,8 @@ docker exec -it <container_name> tail -f /var/www/apache2/errors.log
 ```
 
 ### What to look for
+
+Check `plugin_singlesignon.log` first: every failure path in the plugin writes a structured entry of the form `[function] provider="…" provider_id=… user="…" user_id=… <reason>`, so you can quickly find which step failed and for which user.
 
 Search the log for the user's login name, the provider name, or the string `singlesignon`. The plugin writes a human-readable reason to `lastLoginError` before every failed login; that message normally appears in the log.
 

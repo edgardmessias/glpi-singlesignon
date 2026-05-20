@@ -1065,6 +1065,7 @@ class Provider extends CommonDBTM
         ]), $msgerr);
 
         if ($msgerr) {
+            $this->logFailure(__FUNCTION__, 'cURL request to access token endpoint failed: ' . $msgerr);
             return false;
         }
 
@@ -1079,6 +1080,7 @@ class Provider extends CommonDBTM
             </script>';
             }
             if (!isset($data['access_token'])) {
+                $this->logFailure(__FUNCTION__, 'identity provider response did not contain an access_token');
                 return false;
             }
             $this->_token = $data['access_token'];
@@ -1117,6 +1119,7 @@ class Provider extends CommonDBTM
 
         $token = $this->getAccessToken();
         if (!$token) {
+            $this->logFailure(__FUNCTION__, 'failed to obtain access token from identity provider');
             return false;
         }
 
@@ -1131,7 +1134,8 @@ class Provider extends CommonDBTM
         try {
             $data = json_decode($content, true);
             $this->_resource_owner = $data;
-        } catch (Exception) {
+        } catch (Exception $ex) {
+            $this->logFailure(__FUNCTION__, 'exception while parsing resource owner response: ' . $ex->getMessage());
             return false;
         }
 
@@ -1726,6 +1730,7 @@ class Provider extends CommonDBTM
             }
             $remote_id = trim((string) ($overrides['remote_id'] ?? ''));
             if ($login === '' || $remote_id === '') {
+                $this->logFailure(__FUNCTION__, 'preview registration failed: login or remote_id is empty in overrides');
                 return false;
             }
             $names = [
@@ -1735,12 +1740,14 @@ class Provider extends CommonDBTM
         } else {
             $resolved = $this->resolveLoginAndEmailFromResource($resource_array);
             if (!$resolved['authorized']) {
+                $this->logFailure(__FUNCTION__, 'user is not authorized by provider domain or email restrictions');
                 return false;
             }
 
             // ── Login ────────────────────────────────────────────────────────────
             $login = $overrides['name'] ?? $resolved['login'];
             if ($login === false || $login === '' || $login === null) {
+                $this->logFailure(__FUNCTION__, 'could not resolve a login name from the identity provider response');
                 return false;
             }
             $login = (string) $login;
@@ -1748,6 +1755,7 @@ class Provider extends CommonDBTM
             // ── E-mail ───────────────────────────────────────────────────────────
             $email = $resolved['email'];
             if (isset($overrides['_email'])) {
+                $this->logFailure(__FUNCTION__, 'could not resolve a remote user ID from the identity provider response');
                 $email = (string) $overrides['_email'];
             }
 
@@ -2056,6 +2064,7 @@ class Provider extends CommonDBTM
         }
 
         if (!$resource_array || !is_array($resource_array)) {
+            $this->logFailure(__FUNCTION__, 'resource owner payload is empty or not an array');
             return false;
         }
 
@@ -2095,6 +2104,7 @@ class Provider extends CommonDBTM
         $emailMapped = $this->resolveFieldValueFromMappings($resource_array, 'email');
         if ($emailMapped !== null && $emailMapped !== '') {
             if (!$this->checkAuthorizedDomain((string) $emailMapped, $authorizedDomains)) {
+                $this->logFailure(__FUNCTION__, sprintf('email domain of "%s" is not in the authorized domains list', $emailMapped));
                 return false;
             }
             $emailFull = (string) $emailMapped;
@@ -2108,6 +2118,7 @@ class Provider extends CommonDBTM
             $usernameVal = $this->resolveFieldValueFromMappings($resource_array, 'username');
             if ($usernameVal !== null && $usernameVal !== '') {
                 if (!$this->checkAuthorizedDomain((string) $usernameVal, $authorizedDomains)) {
+                    $this->logFailure(__FUNCTION__, sprintf('username domain of "%s" is not in the authorized domains list', $usernameVal));
                     return false;
                 }
                 $login = $this->splitIdentifierByDomain((string) $usernameVal, $split);
@@ -2137,6 +2148,7 @@ class Provider extends CommonDBTM
             return $user;
         }
 
+        $this->logFailure(__FUNCTION__, sprintf('no GLPI user matched by remote_id, login name, or email address'));
         return false;
     }
 
@@ -2200,12 +2212,14 @@ class Provider extends CommonDBTM
         $user = new User();
 
         if (!$user->getFromDB($user_id)) {
+            $this->logFailure(__FUNCTION__, sprintf('GLPI user with id=%d not found', $user_id));
             return false;
         }
 
         $resource_array = $this->getResourceOwner();
 
         if (!$resource_array) {
+            $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner from identity provider', $user);
             return false;
         }
 
@@ -2244,12 +2258,14 @@ class Provider extends CommonDBTM
 
         $token = $this->getAccessToken();
         if (!$token) {
+            $this->logFailure(__FUNCTION__, 'failed to obtain access token for photo synchronization', $user);
             return false;
         }
 
         $resourceOwner = $this->getResourceOwner();
 
         if (!$resourceOwner) {
+            $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner for photo synchronization', $user);
             return false;
         }
 
@@ -2517,6 +2533,7 @@ class Provider extends CommonDBTM
         $success = $user->updateInDB(['picture']);
 
         if (!$success) {
+            $this->logFailure(__FUNCTION__, sprintf('failed to update user picture to "%s" in the database', $newPicture), $user);
             User::dropPictureFiles($newPicture);
             return false;
         }
@@ -2545,5 +2562,27 @@ class Provider extends CommonDBTM
         }
 
         return !file_exists(GLPI_PICTURE_DIR . '/' . $picture);
+    }
+
+    /**
+     * Log a plugin failure with this provider's context and an optional user.
+     *
+     * Delegates to {@see ToolboxPlugin::logFailure()} so that all plugin log
+     * entries share a single implementation and the same log file.
+     *
+     * @param string    $function Function name — pass __FUNCTION__.
+     * @param string    $message  Human-readable failure description.
+     * @param User|null $user     GLPI user involved in the operation, if available.
+     */
+    private function logFailure(string $function, string $message, ?User $user = null): void
+    {
+        ToolboxPlugin::logFailure(
+            $function,
+            $message,
+            (string) ($this->fields['name'] ?? ''),
+            (int) ($this->fields['id'] ?? 0),
+            $user !== null ? (string) ($user->fields['name'] ?? '') : '',
+            $user !== null ? (int) ($user->getID() ?: 0) : 0,
+        );
     }
 }
