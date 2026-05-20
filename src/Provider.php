@@ -1519,9 +1519,9 @@ class Provider extends CommonDBTM
             }
         }
 
-        $default = (int) ($this->fields['default_entities_id'] ?? 0);
+        $default = (int) ($this->fields['default_entities_id'] ?? -1);
 
-        return $default > 0 ? $default : 0;
+        return $default >= 0 ? $default : -1;
     }
 
     private function ensureProfileForNewUser(User $user, int $entitiesId): bool
@@ -1566,7 +1566,7 @@ class Provider extends CommonDBTM
                 'ORDER'  => ['id ASC'],
                 'LIMIT'  => 1,
             ]) as $entity) {
-                $entityForProfile = (int) ($entity['id'] ?? 0);
+                $entityForProfile = (int) ($entity['id'] ?? -1);
                 break;
             }
         }
@@ -1871,7 +1871,7 @@ class Provider extends CommonDBTM
             'is_active'        => 1,
         ];
 
-        if ($entitiesId > 0) {
+        if ($entitiesId >= 0) {
             $userPost['entities_id'] = $entitiesId;
         }
         if ($picture !== null && $picture !== '') {
