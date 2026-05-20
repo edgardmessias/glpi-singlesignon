@@ -29,7 +29,7 @@ namespace GlpiPlugin\Singlesignon;
 use Group_User;
 use CommonDBRelation;
 use JsonPath\JsonObject;
-use Provider;
+
 use Throwable;
 use User;
 use GlpiPlugin\Singlesignon\ToolboxPlugin;
@@ -428,4 +428,26 @@ class Provider_Group extends CommonDBRelation
         return array_values(array_unique($groups));
     }
 
+    /**
+     * Log a plugin failure with provider and user context from Provider_Group operations.
+     *
+     * Delegates to {@see ToolboxPlugin::logFailure()} so all plugin log entries
+     * share a single implementation and the same log file.
+     *
+     * @param Provider $provider SSO provider involved in the operation.
+     * @param User     $user     GLPI user involved in the operation.
+     * @param string   $function Function name — pass __FUNCTION__.
+     * @param string   $message  Human-readable failure description.
+     */
+    private static function logFailure(Provider $provider, User $user, string $function, string $message): void
+    {
+        ToolboxPlugin::logFailure(
+            $function,
+            $message,
+            (string) ($provider->fields['name'] ?? ''),
+            (int) ($provider->fields['id'] ?? 0),
+            (string) ($user->fields['name'] ?? ''),
+            (int) ($user->getID() ?: 0),
+        );
+    }
 }
