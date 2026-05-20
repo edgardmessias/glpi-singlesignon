@@ -454,7 +454,7 @@ class ToolboxPlugin
         int $userId = 0
     ): void {
         Toolbox::logInFile(
-            'plugin_singlesignon',
+            'singlesignon-errors',
             sprintf(
                 "[%s] provider=\"%s\" provider_id=%d user=\"%s\" user_id=%d %s\n",
                 $function,
