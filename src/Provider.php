@@ -1968,14 +1968,11 @@ class Provider extends CommonDBTM
         $tempPassword = bin2hex(random_bytes(64));
         $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
 
-        // Force local authentication only for LDAP users to avoid a live LDAP query/bind.
-        $forceLocalAuthentication = (($user->fields['authtype'] ?? null) === Auth::LDAP);
-
         try {
             $auth = new Auth();
             // We intentionally do not call Session::init() directly because it does not execute
             // GLPI's rules engine; Auth::login is required to apply rules on login.
-            $authResult = $auth->login($user->fields['name'], $tempPassword, $forceLocalAuthentication, $remember_me);
+            $authResult = $auth->login($user->fields['name'], $tempPassword, false, $remember_me);
         } finally {
             // Restore the original password hash unconditionally to ensure it is never
             // left in a temporary state even if login throws an exception.
