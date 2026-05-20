@@ -1953,6 +1953,12 @@ class Provider extends CommonDBTM
         } catch (Exception) {
         }
 
+        // Optional photo sync
+        try {
+            $this->syncOAuthPhoto($user);
+        } catch (Exception) {
+        }
+
         // --- 2. Login ---
         // Use a temporary local password so that Auth::login runs the complete GLPI
         // authentication pipeline, including the rules engine (rights/profile assignments).
@@ -1983,14 +1989,9 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        // --- 3. Success: restore session snapshot and optional photo sync ---
+        // --- 3. Success: restore session snapshot ---
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
-        }
-
-        try {
-            $this->syncOAuthPhoto($user);
-        } catch (Exception) {
         }
 
         return true;
