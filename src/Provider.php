@@ -1559,7 +1559,7 @@ class Provider extends CommonDBTM
         }
 
         $entityForProfile = $entitiesId;
-        if ($entityForProfile <= 0) {
+        if ($entityForProfile < 0) {
             foreach ($DB->request([
                 'SELECT' => ['id'],
                 'FROM'   => 'glpi_entities',
@@ -1571,7 +1571,7 @@ class Provider extends CommonDBTM
             }
         }
 
-        if ($entityForProfile <= 0) {
+        if ($entityForProfile < 0) {
             $this->logFailure(__FUNCTION__, 'failed because no GLPI entity could be resolved for Profile_User assignment', $user);
             return false;
         }
@@ -2163,7 +2163,6 @@ class Provider extends CommonDBTM
             return $user;
         }
 
-        $this->logFailure(__FUNCTION__, 'no GLPI user matched by remote_id, login name, or email address');
         return false;
     }
 
