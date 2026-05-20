@@ -2148,7 +2148,7 @@ class Provider extends CommonDBTM
             return $user;
         }
 
-        $this->logFailure(__FUNCTION__, sprintf('no GLPI user matched by remote_id, login name, or email address'));
+        $this->logFailure(__FUNCTION__, 'no GLPI user matched by remote_id, login name, or email address');
         return false;
     }
 
