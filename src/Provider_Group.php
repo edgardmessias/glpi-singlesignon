@@ -29,7 +29,6 @@ namespace GlpiPlugin\Singlesignon;
 use Group_User;
 use CommonDBRelation;
 use JsonPath\JsonObject;
-
 use Throwable;
 use User;
 use GlpiPlugin\Singlesignon\ToolboxPlugin;
@@ -135,7 +134,7 @@ class Provider_Group extends CommonDBRelation
                     $provider,
                     $user,
                     __FUNCTION__,
-                    sprintf('failed to create dynamic Group_User link for groups_id=%d', $groupId)
+                    sprintf('failed to create dynamic Group_User link for groups_id=%d', $groupId),
                 );
                 return false;
             }
@@ -174,7 +173,7 @@ class Provider_Group extends CommonDBRelation
                             $provider,
                             $user,
                             __FUNCTION__,
-                            sprintf('failed to update dynamic provider-group link id=%d to groups_id=%d', (int) $existingRow['id'], $groupId)
+                            sprintf('failed to update dynamic provider-group link id=%d to groups_id=%d', (int) $existingRow['id'], $groupId),
                         );
                     }
                 }
@@ -191,7 +190,7 @@ class Provider_Group extends CommonDBRelation
                     $provider,
                     $user,
                     __FUNCTION__,
-                    sprintf('failed to insert dynamic provider-group link for role_id=%d groups_id=%d', $roleId, $groupId)
+                    sprintf('failed to insert dynamic provider-group link for role_id=%d groups_id=%d', $roleId, $groupId),
                 );
                 return false;
             }
@@ -241,7 +240,7 @@ class Provider_Group extends CommonDBRelation
                     $provider,
                     $user,
                     __FUNCTION__,
-                    sprintf('failed to delete obsolete dynamic provider-group link id=%d', $rowId)
+                    sprintf('failed to delete obsolete dynamic provider-group link id=%d', $rowId),
                 );
             }
             if ($groupId > 0) {
@@ -264,7 +263,7 @@ class Provider_Group extends CommonDBRelation
                     $provider,
                     $user,
                     __FUNCTION__,
-                    sprintf('failed to delete obsolete dynamic Group_User link id=%d groups_id=%d', (int) $link['id'], $linkedGroupId)
+                    sprintf('failed to delete obsolete dynamic Group_User link id=%d groups_id=%d', (int) $link['id'], $linkedGroupId),
                 );
                 return false;
             }

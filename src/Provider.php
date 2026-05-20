@@ -1587,9 +1587,9 @@ class Provider extends CommonDBTM
                 sprintf(
                     'failed to create Profile_User authorization link for profiles_id=%d entities_id=%d',
                     $profileId,
-                    $entityForProfile
+                    $entityForProfile,
                 ),
-                $user
+                $user,
             );
             return false;
         }

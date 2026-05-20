@@ -462,8 +462,8 @@ class ToolboxPlugin
                 $providerId,
                 $userName,
                 $userId,
-                $message
-            )
+                $message,
+            ),
         );
     }
 }
