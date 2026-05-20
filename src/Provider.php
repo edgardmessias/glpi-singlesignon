@@ -785,6 +785,20 @@ class Provider extends CommonDBTM
     } */
     // phpcs:enable
 
+    /**
+     * @return void
+     * @used-by templates/components/search/controls.html.twig
+     */
+    public static function showSearchStatusArea()
+    {
+        if (ucwords((string)ini_get('session.cookie_samesite')) === 'Strict') {
+            TemplateRenderer::getInstance()->display('components/search/status_area.html.twig', [
+                'status_message' => __('SSO login may fail due to CSRF validation.', 'singlesignon'),
+                'extra_message'  => __('The PHP configuration session.cookie_samesite is set to Strict. Please edit your php.ini, change it to Lax, and restart PHP.', 'singlesignon') . " <a href='https://github.com/edgardmessias/glpi-singlesignon/tree/main/docs' target='_blank'>" . __('See documentation', 'singlesignon') . "</a>",
+            ]);
+        }
+    }
+
     public static function getIcon()
     {
         return 'ti ti-lock';
