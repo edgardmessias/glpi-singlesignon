@@ -125,7 +125,7 @@ Tighten **Field mappings** so **ID** and **Email** are unambiguous; prefer stabl
 
 ### "The action you have requested is not allowed"
 
-If your identity provider redirects back successfully but GLPI fails with a CSRF error or rejects the login displaying the error message **"The action you have requested is not allowed."**, your PHP `session.cookie_samesite` setting might be too strict.
+If your identity provider redirects back successfully but GLPI fails with a CSRF error or rejects the login displaying the error message **"The action you have requested is not allowed."**, your PHP `session.cookie_samesite` setting might be too strict. You may also see the message **"User ID: `Anonymous` tried to execute an invalid request"** in GLPI's `access-errors.log` log file.
 
 **Fix:**
 1. Edit your server's `php.ini`.
