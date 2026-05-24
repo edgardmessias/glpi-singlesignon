@@ -139,6 +139,7 @@ if ($test_cookie) {
         'field_types'             => $field_types,
         'resolved_fields'         => $resolved_fields,
         'resource_owner_pretty'   => $resource_owner_pretty,
+        'id_token_payload_pretty' => $id_token_payload_pretty,
         'callback_context_pretty' => $callback_context_pretty,
         'active_mappings'         => $active_mappings,
         'default_mappings'        => $default_mappings,
