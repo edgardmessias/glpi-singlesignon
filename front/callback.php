@@ -94,6 +94,7 @@ if ($test_cookie) {
     $field_types = Provider_Field::getFieldTypes();
     $active_mappings = Provider_Field::getMappingsForProvider((int) $provider_id, null, true);
     $default_mappings = Provider_Field::getDefaultMappings((string) $signon_provider->fields['type']);
+    $copy_payload_sections = [];
 
     try {
         $resource_owner_pretty = json_encode(
