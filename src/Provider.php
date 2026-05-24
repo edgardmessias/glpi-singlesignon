@@ -1529,7 +1529,7 @@ class Provider extends CommonDBTM
      * This creates or updates a permanent static profile (is_dynamic = 0)
      * so it is not deleted by the GLPI rules engine, while allowing the plugin
      * to dynamically update it on every login.
-     */        
+     */
     public function syncUserProfileAuthorization(User $user, array $resource_array): bool
     {
         global $DB;
@@ -1610,7 +1610,7 @@ class Provider extends CommonDBTM
                     'entities_id'  => $entityForProfile,
                     'profiles_id'  => $profileId,
                     'is_recursive' => $isRecursive,
-                    'is_dynamic'   => 0
+                    'is_dynamic'   => 0,
                 ]);
             }
             // If the admin deleted it manually, we DO NOT recreate it.
@@ -1623,7 +1623,7 @@ class Provider extends CommonDBTM
                 'entities_id'  => $entityForProfile,
                 'profiles_id'  => $profileId,
                 'is_recursive' => $isRecursive,
-                'is_dynamic'   => 0
+                'is_dynamic'   => 0,
             ]);
             if (!is_numeric($profileLinkId) || (int) $profileLinkId <= 0) {
                 $this->logFailure(
@@ -1640,7 +1640,7 @@ class Provider extends CommonDBTM
             }
             $link->update([
                 'id'                     => $pu->getID(),
-                'glpi_profiles_users_id' => $profileLinkId
+                'glpi_profiles_users_id' => $profileLinkId,
             ]);
         }
 

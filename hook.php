@@ -297,7 +297,7 @@ function plugin_singlesignon_install()
         [
             'null'      => true,
             'nodefault' => true,
-        ]
+        ],
     );
 
     $migration->executeMigration();
