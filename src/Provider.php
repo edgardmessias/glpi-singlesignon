@@ -1542,12 +1542,15 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        // Find provider link. If it does not exist, create it. 
+        // Find provider link. If it does not exist, create it.
         // This link allows the plugin to track the static profile authorization
         // it manages for the user.
         $link = new Provider_User();
         if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
-            $this->linkRemoteUserToProvider((int) $user->fields['id'], (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''));
+            // This handles existing GLPI users logging in via SSO for the first time.
+            $this->linkRemoteUserToProvider($userId, (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''));
+            // Reload $link so glpi_profiles_users_id is available below.
+            $link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']]);
         }
 
         $mappedProfileId = (int) ($link->fields['glpi_profiles_users_id'] ?? 0);
@@ -1618,49 +1621,47 @@ class Provider extends CommonDBTM
                 ]);
             }
             // If the admin deleted it manually, we DO NOT recreate it.
+        } elseif ($pu->getFromDBByCrit([
+            'users_id'    => $userId,
+            'entities_id' => $entityForProfile,
+            'profiles_id' => $profileId,
+        ])) {
+            // A matching authorization already exists — temporarily make it static and track it.
+            $pu->update([
+                'id'           => $pu->getID(),
+                'is_recursive' => $isRecursive,
+                'is_dynamic'   => 0,
+            ]);
+            $link->update([
+                'id'                     => $link->getID(),
+                'glpi_profiles_users_id' => $pu->getID(),
+            ]);
         } else {
-            if ($pu->getFromDBByCrit([
-                'users_id'    => $userId,
-                'entities_id' => $entityForProfile,
-                'profiles_id' => $profileId,
-            ])) {
-                // A matching authorization already exists — temporarily make it static and track it.
-                $pu->update([
-                    'id'           => $pu->getID(),
-                    'is_recursive' => $isRecursive,
-                    'is_dynamic'   => 0,
-                ]);
-                $link->update([
-                    'id'                     => $link->getID(),
-                    'glpi_profiles_users_id' => $pu->getID(),
-                ]);
-            } else {
-                // No authorization exists yet. Create a static one.
-                $profileLinkId = (int) $pu->add([
-                    'users_id'     => $userId,
-                    'entities_id'  => $entityForProfile,
-                    'profiles_id'  => $profileId,
-                    'is_recursive' => $isRecursive,
-                    'is_dynamic'   => 0,
-                ]);
-                if ($profileLinkId <= 0) {
-                    $this->logFailure(
-                        __FUNCTION__,
-                        sprintf(
-                            'failed to create Profile_User authorization link for users_id=%d profiles_id=%d entities_id=%d',
-                            $userId,
-                            $profileId,
-                            $entityForProfile,
-                        ),
-                        $user,
-                    );
-                    return false;
-                }
-                $link->update([
-                    'id'                     => $link->getID(),
-                    'glpi_profiles_users_id' => $profileLinkId,
-                ]);
+            // No authorization exists yet. Create a static one.
+            $profileLinkId = (int) $pu->add([
+                'users_id'     => $userId,
+                'entities_id'  => $entityForProfile,
+                'profiles_id'  => $profileId,
+                'is_recursive' => $isRecursive,
+                'is_dynamic'   => 0,
+            ]);
+            if ($profileLinkId <= 0) {
+                $this->logFailure(
+                    __FUNCTION__,
+                    sprintf(
+                        'failed to create Profile_User authorization link for users_id=%d profiles_id=%d entities_id=%d',
+                        $userId,
+                        $profileId,
+                        $entityForProfile,
+                    ),
+                    $user,
+                );
+                return false;
             }
+            $link->update([
+                'id'                     => $link->getID(),
+                'glpi_profiles_users_id' => $profileLinkId,
+            ]);
         }
 
         return true;
@@ -2196,8 +2197,6 @@ class Provider extends CommonDBTM
                     return false;
                 }
                 $login = $this->splitIdentifierByDomain((string) $usernameVal, $split);
-            } else {
-                $login = false;
             }
         }
 
