@@ -123,6 +123,21 @@ Official GLPI source install and tooling context: **[GLPI `INSTALL.md`](https://
 
 Tighten **Field mappings** so **ID** and **Email** are unambiguous; prefer stable ids (`sub`, provider id) for **ID**.
 
+### "The action you have requested is not allowed"
+
+If your identity provider redirects back successfully but GLPI fails with a CSRF error or rejects the login displaying the error message **"The action you have requested is not allowed."**, your PHP `session.cookie_samesite` setting might be too strict. You may also see the message **"User ID: `Anonymous` tried to execute an invalid request"** in GLPI's `access-errors.log` log file.
+
+**Fix:**
+1. Edit your server's `php.ini`.
+2. Locate the `session.cookie_samesite` directive.
+3. Change its value to `"Lax"`.
+4. Restart your web server or PHP-FPM service.
+
+**Why does this happen?**  
+When you click to log in via SSO, you temporarily leave GLPI to sign in at Microsoft or Google. When you come back, GLPI relies on a small file in your browser (a **cookie**) to remember that *you* were the one who started the login. 
+
+If your setting is `"Strict"`, your browser refuses to send this cookie back when you return from the outside website. Because GLPI loses track of who you are, it blocks the login to protect your security. Changing it to `"Lax"` allows the browser to safely send the cookie, so GLPI can successfully recognize you.
+
 ---
 
 ## Profile and avatar
