@@ -1625,23 +1625,6 @@ class Provider extends CommonDBTM
                 ]);
             }
             // If the admin deleted it manually, we DO NOT recreate it.
-        } elseif ($pu->getFromDBByCrit([
-            'users_id'    => $userId,
-            'entities_id' => $entityForProfile,
-            'profiles_id' => $profileId,
-        ])) {
-            // A matching authorization already exists — make it static and track it.
-            $pu->update([
-                'id'           => $pu->getID(),
-                'is_recursive' => $isRecursive,
-                'is_dynamic'   => 0,
-            ]);
-            if ($providerProfile !== false) {
-                $providerProfile->update(['id' => $providerProfile->getID(), 'glpi_profiles_users_id' => $pu->getID()]);
-            } else {
-                $providerProfile = new Provider_Profile();
-                $providerProfile->add(['users_id' => $userId, 'glpi_profiles_users_id' => $pu->getID()]);
-            }
         } else {
             // No authorization exists yet. Create a static one.
             $profileLinkId = (int) $pu->add([
