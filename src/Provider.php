@@ -1550,7 +1550,10 @@ class Provider extends CommonDBTM
             // This handles existing GLPI users logging in via SSO for the first time.
             $this->linkRemoteUserToProvider($userId, (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''));
             // Reload $link so glpi_profiles_users_id is available below.
-            $link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']]);
+            if (!$$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
+                $this->logFailure(__FUNCTION__, 'failed to create provider-user link for Profile_User assignment', $user);
+                return false;
+            }
         }
 
         $mappedProfileId = (int) ($link->fields['glpi_profiles_users_id'] ?? 0);
