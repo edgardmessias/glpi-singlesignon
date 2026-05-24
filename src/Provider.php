@@ -1544,7 +1544,8 @@ class Provider extends CommonDBTM
         // Find provider link
         $link = new Provider_User();
         if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
-            return true;
+            $this->logFailure(__FUNCTION__, 'failed to create provider link for users_id=' . $userId, $user);
+            return true; // Could not create link; skip silently.
         }
 
         $mappedProfileId = (int) ($link->fields['glpi_profiles_users_id'] ?? 0);
@@ -2086,7 +2087,7 @@ class Provider extends CommonDBTM
             // During Auth::login(), the GLPI rule engine removes all dynamic authorizations.
             // If the rule engine evaluated and they ended up with no profile, the login would fail.
             $pu = new Profile_User();
-            if ($pu->countElements(['users_id' => $userId]) === 0) {
+            if (countElementsInTable($pu->getTable(), ['users_id' => $userId]) === 0) {
                 $providerName = (string) ($this->fields['name'] ?? '');
                 $userName = (string) ($user->fields['name'] ?? '');
                 $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User has no valid profile authorization. Please review the rule engine: ensure there is a rule assigning an entity and profile to the user.";
