@@ -178,6 +178,24 @@
     justify-content: center;
 }
 
+/* * Form field alignment 
+ * Forces a strict 2-column grid to perfectly align inputs with their Clear checkboxes 
+ */
+[data-testid="form-field-bgcolor"] .field-container,
+[data-testid="form-field-color"] .field-container,
+[data-testid="form-field-picture"] .field-container {
+    display: grid !important;
+    grid-template-columns: 1fr 90px; 
+    align-items: center;
+}
+
+/* Ensure wide inputs (like the color picker) don't break the grid boundary */
+[data-testid="form-field-bgcolor"] .field-container > span:first-child,
+[data-testid="form-field-color"] .field-container > span:first-child,
+[data-testid="form-field-picture"] .field-container > span:first-child {
+    min-width: 0; 
+}
+
 @media (prefers-color-scheme: dark) {
     .singlesignon-preference {
         --sso-pref-surface: rgba(17, 24, 39, 0.86);
