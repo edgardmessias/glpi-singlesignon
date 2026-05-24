@@ -1542,16 +1542,17 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        // Find provider link
+        // Find provider link. If it does not exist, create it. 
+        // This link allows the plugin to track the static profile authorization
+        // it manages for the user.
         $link = new Provider_User();
         if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
-            $this->logFailure(__FUNCTION__, 'failed to create provider link for users_id=' . $userId, $user);
-            return true; // Could not create link; skip silently.
+            $this->linkRemoteUserToProvider((int) $user->fields['id'], (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''));
         }
 
         $mappedProfileId = (int) ($link->fields['glpi_profiles_users_id'] ?? 0);
 
-        // 2. Determine target profile ID
+        // Determine target profile ID
         $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
         $glpiDefaultProfile = (int) Profile::getDefault();
         $profileId = 0;
@@ -1601,11 +1602,13 @@ class Provider extends CommonDBTM
             : 0;
 
         $pu = new Profile_User();
-        // Update or Create static mapped GLPI profile
+        // Update or Create static mapped GLPI profile.
+        // The profile is created as is_dynamic=0 so Auth::login() does not delete it
+        // when running the rules engine.
         if ($mappedProfileId > 0) {
-            // It was mapped. Does it still exist?
+            // A mapped profile ID is stored — does it still exist in glpi_profiles_users?
             if ($pu->getFromDB($mappedProfileId)) {
-                // Yes! Update it.
+                // Yes! Update entity/profile/recursiveness and ensure it is static.
                 $pu->update([
                     'id'           => $mappedProfileId,
                     'entities_id'  => $entityForProfile,
@@ -1621,7 +1624,7 @@ class Provider extends CommonDBTM
                 'entities_id' => $entityForProfile,
                 'profiles_id' => $profileId,
             ])) {
-                // A matching authorization already exists — ensure it is static.
+                // A matching authorization already exists — temporarily make it static and track it.
                 $pu->update([
                     'id'           => $pu->getID(),
                     'is_recursive' => $isRecursive,
@@ -1632,7 +1635,7 @@ class Provider extends CommonDBTM
                     'glpi_profiles_users_id' => $pu->getID(),
                 ]);
             } else {
-                // Never mapped (newly linked user). Create it!
+                // No authorization exists yet. Create a static one.
                 $profileLinkId = (int) $pu->add([
                     'users_id'     => $userId,
                     'entities_id'  => $entityForProfile,
