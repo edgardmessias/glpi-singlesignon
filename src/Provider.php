@@ -1505,7 +1505,7 @@ class Provider extends CommonDBTM
         ];
     }
 
-    private function resolveEntitiesIdForNewUser(array $resource_array): int
+    private function resolveEntitiesIdForUser(array $resource_array): int
     {
         global $DB;
 
@@ -1524,16 +1524,32 @@ class Provider extends CommonDBTM
         return $default >= 0 ? $default : -1;
     }
 
-    private function ensureProfileForNewUser(User $user, int $entitiesId): bool
+    /**
+     * Synchronize the user's mapped static profile authorization.
+     * This creates or updates a permanent static profile (is_dynamic = 0)
+     * so it is not deleted by the GLPI rules engine, while allowing the plugin
+     * to dynamically update it on every login.
+     */        
+    public function syncUserProfileAuthorization(User $user, array $resource_array): bool
     {
         global $DB;
 
+        // Find user ID
         $userId = (int) ($user->fields['id'] ?? 0);
         if ($userId <= 0) {
             $this->logFailure(__FUNCTION__, 'failed because user id is empty before Profile_User assignment', $user);
             return false;
         }
 
+        // Find provider link
+        $link = new Provider_User();
+        if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
+            return true;
+        }
+
+        $mappedProfileId = (int) ($link->fields['glpi_profiles_users_id'] ?? 0);
+
+        // 2. Determine target profile ID
         $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
         $glpiDefaultProfile = (int) Profile::getDefault();
         $profileId = 0;
@@ -1558,7 +1574,9 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        $entityForProfile = $entitiesId;
+        // Determine target entity ID
+        $entityForProfile = $this->resolveEntitiesIdForUser($resource_array);
+
         if ($entityForProfile < 0) {
             foreach ($DB->request([
                 'SELECT' => ['id'],
@@ -1581,32 +1599,48 @@ class Provider extends CommonDBTM
             : 0;
 
         $pu = new Profile_User();
-        if ($pu->getFromDBByCrit([
-            'users_id'    => $userId,
-            'entities_id' => $entityForProfile,
-            'profiles_id' => $profileId,
-        ])) {
-            return true;
-        }
-
-        $profileLinkId = $pu->add([
-            'users_id'      => $userId,
-            'entities_id'   => $entityForProfile,
-            'is_recursive'  => $isRecursive,
-            'profiles_id'   => $profileId,
-        ]);
-
-        if (!is_numeric($profileLinkId) || (int) $profileLinkId <= 0) {
-            $this->logFailure(
-                __FUNCTION__,
-                sprintf(
-                    'failed to create Profile_User authorization link for profiles_id=%d entities_id=%d',
-                    $profileId,
-                    $entityForProfile,
-                ),
-                $user,
-            );
-            return false;
+        // Update or Create static mapped GLPI profile
+        if ($mappedProfileId > 0) {
+            // It was mapped. Does it still exist?
+            if ($pu->getFromDB($mappedProfileId)) {
+                // Yes! Update it.
+                $pu->update([
+                    'id'           => $mappedProfileId,
+                    'entities_id'  => $entityForProfile,
+                    'profiles_id'  => $profileId,
+                    'is_recursive' => $isRecursive,
+                    'is_dynamic'   => 0
+                ]);
+            }
+            // If the admin deleted it manually, we DO NOT recreate it.
+        } else {
+            // Never mapped (newly linked user). Create it!
+            // Assign a static profile to allow Auth::login() to execute rules
+            // without failing immediately due to missing profile.
+            $profileLinkId = $pu->add([
+                'users_id'     => $userId,
+                'entities_id'  => $entityForProfile,
+                'profiles_id'  => $profileId,
+                'is_recursive' => $isRecursive,
+                'is_dynamic'   => 0
+            ]);
+            if (!is_numeric($profileLinkId) || (int) $profileLinkId <= 0) {
+                $this->logFailure(
+                    __FUNCTION__,
+                    sprintf(
+                        'failed to create Profile_User authorization link for users_id=%d profiles_id=%d entities_id=%d',
+                        $userId,
+                        $profileId,
+                        $entityForProfile,
+                    ),
+                    $user,
+                );
+                return false;
+            }
+            $link->update([
+                'id'                     => $pu->getID(),
+                'glpi_profiles_users_id' => $profileLinkId
+            ]);
         }
 
         return true;
@@ -1794,7 +1828,7 @@ class Provider extends CommonDBTM
         $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
-        $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array);
+        $entitiesId = $this->resolveEntitiesIdForUser($resource_array);
 
         // ── Picture ──────────────────────────────────────────────────────────
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
@@ -1901,11 +1935,6 @@ class Provider extends CommonDBTM
             $newId = $user->add($userPost);
             if (!$newId) {
                 $this->logFailure(__FUNCTION__, sprintf('failed to create user from OAuth resource for login="%s"', $login), $user);
-                return false;
-            }
-
-            if (!$this->ensureProfileForNewUser($user, $entitiesId)) {
-                $this->logFailure(__FUNCTION__, 'failed because profile authorization assignment did not complete', $user);
                 return false;
             }
 
@@ -2053,9 +2082,19 @@ class Provider extends CommonDBTM
         }
 
         if (!$authResult) {
-            $providerName = (string) ($this->fields['name'] ?? '');
-            $userName = (string) ($user->fields['name'] ?? '');
-            $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User not authorized to connect in GLPI";
+            // The Auth::login failed. Check if user has ANY valid profile left.
+            // During Auth::login(), the GLPI rule engine removes all dynamic authorizations.
+            // If the rule engine evaluated and they ended up with no profile, the login would fail.
+            $pu = new Profile_User();
+            if ($pu->countElements(['users_id' => $userId]) === 0) {
+                $providerName = (string) ($this->fields['name'] ?? '');
+                $userName = (string) ($user->fields['name'] ?? '');
+                $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User has no valid profile authorization. Please review the rule engine: ensure there is a rule assigning an entity and profile to the user.";
+            } else {
+                $providerName = (string) ($this->fields['name'] ?? '');
+                $userName = (string) ($user->fields['name'] ?? '');
+                $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User not authorized to connect in GLPI";
+            }
             return false;
         }
 
@@ -2180,6 +2219,7 @@ class Provider extends CommonDBTM
         $user = $this->findUser($resource_array);
         if ($user) {
             $this->syncUserFieldsFromResource($user, $resource_array);
+            $this->syncUserProfileAuthorization($user, $resource_array);
             return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
         }
 
@@ -2218,6 +2258,7 @@ class Provider extends CommonDBTM
             return self::LOGIN_FAILURE;
         }
 
+        $this->syncUserProfileAuthorization($user, $resource_array);
         return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
     }
 

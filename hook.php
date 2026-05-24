@@ -145,6 +145,7 @@ function plugin_singlesignon_install()
             `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `users_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+            `glpi_profiles_users_id` INT UNSIGNED DEFAULT NULL,
             PRIMARY KEY (`id`),
             UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
             UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`)
@@ -285,6 +286,19 @@ function plugin_singlesignon_install()
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         );
     }
+
+    // Stores the ID of the static profile authorization (is_dynamic = 0) created by the plugin
+    // so it can be dynamically managed/updated by the plugin on subsequent logins,
+    // protecting it from being deleted by the GLPI rule engine.
+    $migration->addField(
+        $providersUsersTable,
+        'glpi_profiles_users_id',
+        'integer',
+        [
+            'null'      => true,
+            'nodefault' => true,
+        ]
+    );
 
     $migration->executeMigration();
 
