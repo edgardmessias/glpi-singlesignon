@@ -45,6 +45,7 @@ function plugin_singlesignon_install()
     $providersRolesTable = 'glpi_plugin_singlesignon_providers_roles';
     $providersGroupsTable = 'glpi_plugin_singlesignon_providers_groups';
     $providersFieldsTable = 'glpi_plugin_singlesignon_providers_fields';
+    $providersProfilesTable = 'glpi_plugin_singlesignon_providers_profiles';
 
     $migration = new Migration(PLUGIN_SINGLESIGNON_VERSION);
 
@@ -145,7 +146,6 @@ function plugin_singlesignon_install()
             `plugin_singlesignon_providers_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `users_id` INT UNSIGNED NOT NULL DEFAULT '0',
             `remote_id` VARCHAR(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `glpi_profiles_users_id` INT UNSIGNED DEFAULT NULL,
             PRIMARY KEY (`id`),
             UNIQUE KEY `unicity` (`plugin_singlesignon_providers_id`,`users_id`),
             UNIQUE KEY `unicity_remote` (`plugin_singlesignon_providers_id`,`remote_id`)
@@ -287,18 +287,20 @@ function plugin_singlesignon_install()
         );
     }
 
-    // Stores the ID of the static profile authorization (is_dynamic = 0) created by the plugin
-    // so it can be dynamically managed/updated by the plugin on subsequent logins,
-    // protecting it from being deleted by the GLPI rule engine.
-    $migration->addField(
-        $providersUsersTable,
-        'glpi_profiles_users_id',
-        'integer',
-        [
-            'null'      => true,
-            'nodefault' => true,
-        ],
-    );
+    // Tracks the static glpi_profiles_users entry managed by the SSO plugin per user.
+    // Keyed only by users_id because the profile authorization is native to GLPI,
+    // not specific to any provider.
+    if (!$DB->tableExists($providersProfilesTable)) {
+        $DB->doQuery(
+            "CREATE TABLE `$providersProfilesTable` (
+            `id`                     INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `users_id`               INT UNSIGNED NOT NULL DEFAULT '0',
+            `glpi_profiles_users_id` INT UNSIGNED NOT NULL DEFAULT '0',
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `unicity` (`users_id`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        );
+    }
 
     $migration->executeMigration();
 

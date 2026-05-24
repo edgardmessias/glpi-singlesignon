@@ -26,14 +26,37 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-use CommonDBRelation;
+use CommonDBTM;
 
-class Provider_User extends CommonDBRelation
+/**
+ * Tracks the static glpi_profiles_users entry managed by the SSO plugin for
+ * a given GLPI user. Because glpi_profiles_users is a native GLPI table (not
+ * provider-specific), this mapping is keyed only by users_id.
+ *
+ * The referenced profile authorization is always kept as is_dynamic=0 so that
+ * the GLPI rule engine cannot delete it during Auth::login(). Dynamic profiles
+ * assigned by the rule engine coexist separately.
+ */
+class Provider_Profile extends CommonDBTM
 {
-    // From CommonDBRelation
-    public static $itemtype_1 = Provider::class;
-    public static $items_id_1 = 'plugin_singlesignon_providers_id';
+    public static $rightname = 'plugin_singlesignon_provider';
 
-    public static $itemtype_2 = 'User';
-    public static $items_id_2 = 'users_id';
+    public static function getTable($classname = null): string
+    {
+        return 'glpi_plugin_singlesignon_providers_profiles';
+    }
+
+    /**
+     * Returns the managed profile mapping for a given GLPI user, or false if
+     * none exists (e.g. the admin deleted it manually).
+     */
+    public static function getForUser(int $userId): self|false
+    {
+        $obj = new self();
+        if ($obj->getFromDBByCrit(['users_id' => $userId])) {
+            return $obj;
+        }
+
+        return false;
+    }
 }

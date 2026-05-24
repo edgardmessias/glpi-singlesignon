@@ -45,6 +45,7 @@ use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
 use GlpiPlugin\Singlesignon\Provider_Group;
+use GlpiPlugin\Singlesignon\Provider_Profile;
 use GlpiPlugin\Singlesignon\Provider_Role;
 
 use function Safe\base64_decode;
@@ -1543,20 +1544,20 @@ class Provider extends CommonDBTM
         }
 
         // Find provider link. If it does not exist, create it.
-        // This link allows the plugin to track the static profile authorization
-        // it manages for the user.
+        // This handles existing GLPI users logging in via SSO for the first time.
         $link = new Provider_User();
         if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
-            // This handles existing GLPI users logging in via SSO for the first time.
             $this->linkRemoteUserToProvider($userId, (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''));
-            // Reload $link so glpi_profiles_users_id is available below.
-            if (!$$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
+            // Reload $link after creation.
+            if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
                 $this->logFailure(__FUNCTION__, 'failed to create provider-user link for Profile_User assignment', $user);
                 return false;
             }
         }
 
-        $mappedProfileId = (int) ($link->fields['glpi_profiles_users_id'] ?? 0);
+        // Look up the profile mapping tracked by the plugin for this user.
+        $providerProfile = Provider_Profile::getForUser($userId);
+        $mappedProfileId = $providerProfile !== false ? (int) ($providerProfile->fields['glpi_profiles_users_id'] ?? 0) : 0;
 
         // Determine target profile ID
         $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
@@ -1614,7 +1615,7 @@ class Provider extends CommonDBTM
         if ($mappedProfileId > 0) {
             // A mapped profile ID is stored — does it still exist in glpi_profiles_users?
             if ($pu->getFromDB($mappedProfileId)) {
-                // Yes! Update entity/profile/recursiveness and ensure it is static.
+                // Yes! Update entity/profile/recursiveness and keep it static.
                 $pu->update([
                     'id'           => $mappedProfileId,
                     'entities_id'  => $entityForProfile,
@@ -1629,16 +1630,18 @@ class Provider extends CommonDBTM
             'entities_id' => $entityForProfile,
             'profiles_id' => $profileId,
         ])) {
-            // A matching authorization already exists — temporarily make it static and track it.
+            // A matching authorization already exists — make it static and track it.
             $pu->update([
                 'id'           => $pu->getID(),
                 'is_recursive' => $isRecursive,
                 'is_dynamic'   => 0,
             ]);
-            $link->update([
-                'id'                     => $link->getID(),
-                'glpi_profiles_users_id' => $pu->getID(),
-            ]);
+            if ($providerProfile !== false) {
+                $providerProfile->update(['id' => $providerProfile->getID(), 'glpi_profiles_users_id' => $pu->getID()]);
+            } else {
+                $providerProfile = new Provider_Profile();
+                $providerProfile->add(['users_id' => $userId, 'glpi_profiles_users_id' => $pu->getID()]);
+            }
         } else {
             // No authorization exists yet. Create a static one.
             $profileLinkId = (int) $pu->add([
@@ -1661,10 +1664,12 @@ class Provider extends CommonDBTM
                 );
                 return false;
             }
-            $link->update([
-                'id'                     => $link->getID(),
-                'glpi_profiles_users_id' => $profileLinkId,
-            ]);
+            if ($providerProfile !== false) {
+                $providerProfile->update(['id' => $providerProfile->getID(), 'glpi_profiles_users_id' => $profileLinkId]);
+            } else {
+                $providerProfile = new Provider_Profile();
+                $providerProfile->add(['users_id' => $userId, 'glpi_profiles_users_id' => $profileLinkId]);
+            }
         }
 
         return true;
