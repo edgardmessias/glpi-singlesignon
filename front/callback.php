@@ -175,6 +175,12 @@ if ($loginResult === Provider::LOGIN_REGISTRATION_PREVIEW) {
     Html::redirect($url_redirect);
 }
 
+$loginError = $signon_provider->getLastLoginError();
+if ($loginError !== '') {
+    $client_ip = ToolboxPlugin::getClientIp();
+    Toolbox::logInFile('access-errors', "$loginError [client: $client_ip]\n", true);
+}
+
 if ($user_id || $loginResult === Provider::LOGIN_SUCCESS) {
 
     $user_id = $user_id ?: Session::getLoginUserID();
