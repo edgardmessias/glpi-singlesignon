@@ -198,6 +198,7 @@ if ($test_cookie) {
         'callback_context_pretty' => $callback_context_pretty,
         'active_mappings'         => $active_mappings,
         'default_mappings'        => $default_mappings,
+        'copy_payload'           => $copy_payload,
     ]);
     Html::nullFooter();
     return;
