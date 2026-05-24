@@ -1527,7 +1527,8 @@ class Provider extends CommonDBTM
     /**
      * Synchronize the user's mapped static profile authorization.
      * This creates or updates a permanent static profile (is_dynamic = 0)
-     * so it is not deleted by the GLPI rules engine, while allowing the plugin
+     * to allow Auth::login() to execute rules without failing immediately
+     * due to missing profile by the GLPI rules engine, while allowing the plugin
      * to dynamically update it on every login.
      */
     public function syncUserProfileAuthorization(User $user, array $resource_array): bool
@@ -1615,33 +1616,48 @@ class Provider extends CommonDBTM
             }
             // If the admin deleted it manually, we DO NOT recreate it.
         } else {
-            // Never mapped (newly linked user). Create it!
-            // Assign a static profile to allow Auth::login() to execute rules
-            // without failing immediately due to missing profile.
-            $profileLinkId = $pu->add([
-                'users_id'     => $userId,
-                'entities_id'  => $entityForProfile,
-                'profiles_id'  => $profileId,
-                'is_recursive' => $isRecursive,
-                'is_dynamic'   => 0,
-            ]);
-            if (!is_numeric($profileLinkId) || (int) $profileLinkId <= 0) {
-                $this->logFailure(
-                    __FUNCTION__,
-                    sprintf(
-                        'failed to create Profile_User authorization link for users_id=%d profiles_id=%d entities_id=%d',
-                        $userId,
-                        $profileId,
-                        $entityForProfile,
-                    ),
-                    $user,
-                );
-                return false;
+            if ($pu->getFromDBByCrit([
+                'users_id'    => $userId,
+                'entities_id' => $entityForProfile,
+                'profiles_id' => $profileId,
+            ])) {
+                // A matching authorization already exists — ensure it is static.
+                $pu->update([
+                    'id'           => $pu->getID(),
+                    'is_recursive' => $isRecursive,
+                    'is_dynamic'   => 0,
+                ]);
+                $link->update([
+                    'id'                     => $link->getID(),
+                    'glpi_profiles_users_id' => $pu->getID(),
+                ]);
+            } else {
+                // Never mapped (newly linked user). Create it!
+                $profileLinkId = (int) $pu->add([
+                    'users_id'     => $userId,
+                    'entities_id'  => $entityForProfile,
+                    'profiles_id'  => $profileId,
+                    'is_recursive' => $isRecursive,
+                    'is_dynamic'   => 0,
+                ]);
+                if ($profileLinkId <= 0) {
+                    $this->logFailure(
+                        __FUNCTION__,
+                        sprintf(
+                            'failed to create Profile_User authorization link for users_id=%d profiles_id=%d entities_id=%d',
+                            $userId,
+                            $profileId,
+                            $entityForProfile,
+                        ),
+                        $user,
+                    );
+                    return false;
+                }
+                $link->update([
+                    'id'                     => $link->getID(),
+                    'glpi_profiles_users_id' => $profileLinkId,
+                ]);
             }
-            $link->update([
-                'id'                     => $pu->getID(),
-                'glpi_profiles_users_id' => $profileLinkId,
-            ]);
         }
 
         return true;
