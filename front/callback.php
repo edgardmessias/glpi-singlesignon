@@ -105,6 +105,19 @@ if ($test_cookie) {
         $resource_owner_pretty = (string) __('Unable to encode resource owner payload.', 'singlesignon');
     }
 
+    if (is_array($id_token_payload)) {
+        try {
+            $id_token_payload_pretty = json_encode(
+                $id_token_payload,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+            );
+        } catch (Throwable) {
+            $id_token_payload_pretty = (string) __('Unable to encode ID token payload.', 'singlesignon');
+        }
+    } else {
+        $id_token_payload_pretty = '';
+    }
+
     $callback_context = [
         'provider_id'   => (int) $provider_id,
         'provider_name' => (string) ($signon_provider->fields['name'] ?? ''),
