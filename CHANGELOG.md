@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-25
+
+### Bug Fixes
+
+- Check for Composer autoload in setup - ([b686ea3](https://github.com/edgardmessias/glpi-singlesignon/commit/b686ea38d78019c7017e38b99ac4f7894c01c318)) - Eduardo Mozart de Oliveira
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
