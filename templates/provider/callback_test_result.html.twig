@@ -98,8 +98,12 @@
                                         <td>
                                             {% if data.source == 'provider' %}
                                                 <span class="badge bg-blue-lt">{{ __('Provider mapping', 'singlesignon') }}</span>
+                                            {% elseif data.source == 'provider (jwt)' %}
+                                                <span class="badge bg-blue-lt">{{ __('Provider mapping (JWT)', 'singlesignon') }}</span>
                                             {% elseif data.source == 'default' %}
                                                 <span class="badge bg-green-lt">{{ __('Default mapping', 'singlesignon') }}</span>
+                                            {% elseif data.source == 'default (jwt)' %}
+                                                <span class="badge bg-green-lt">{{ __('Default mapping (JWT)', 'singlesignon') }}</span>
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
@@ -113,6 +117,17 @@
 
                 <div class="tab-pane" id="tab-resource-owner">
                     <pre class="mb-0" style="white-space: pre-wrap;">{{ resource_owner_pretty }}</pre>
+                </div>
+
+                <div class="tab-pane" id="tab-id-token">
+                    {% if id_token_payload_pretty is empty %}
+                        <div class="p-3 text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ __('No ID token received or unable to parse.', 'singlesignon') }}
+                        </div>
+                    {% else %}
+                        <pre class="mb-0" style="white-space: pre-wrap;">{{ id_token_payload_pretty }}</pre>
+                    {% endif %}
                 </div>
 
                 <div class="tab-pane" id="tab-active-mappings">
