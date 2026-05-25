@@ -128,7 +128,8 @@
     addBtn.addEventListener('click', () => {
         const idx = nextIndex();
         const tr = document.createElement('tr');
-        tr.setAttribute('data-row', '1');
+        tr.setAttribute('data-row', '');
+        tr.setAttribute('data-saved', '0');
         tr.innerHTML = `
             <td>
                 <input type="hidden" name="_field_mappings[${idx}][id]" value="0"/>
@@ -151,16 +152,7 @@
         `;
         table.querySelector('tbody')?.appendChild(tr);
     });
-
-    table.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-remove-row]');
-        if (!button) {
-            return;
-        }
-        const row = button.closest('tr[data-row]');
-        if (row) {
-            row.remove();
-        }
-    });
 })();
 </script>
+
+<script type="text/javascript" src="{{ call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPublicAssetUrl'], ['js/mapping-row-actions.js']) }}"></script>
