@@ -40,7 +40,9 @@
             <p class="text-muted">
                 {{ __('Configure JSONPath rules used to extract fields from Resource Owner response.', 'singlesignon') }}
             </p>
-            <table class="table table-striped table-hover" id="sso-field-mappings-table">
+            <table class="table table-striped table-hover align-middle"
+                   id="sso-field-mappings-table"
+                   data-restore-label="{{ __('Restore') }}">
                 <thead>
                     <tr>
                         <th>{{ __('Type') }}</th>
@@ -53,9 +55,12 @@
                 <tbody>
                     {% for map in rows %}
                         {% set is_saved = (map.id|default(0)) > 0 %}
-                        <tr data-row>
+                        <tr data-row data-saved="{{ is_saved ? '1' : '0' }}">
                             <td>
                                 <input type="hidden" name="_field_mappings[{{ loop.index0 }}][id]" value="{{ map.id|default(0) }}"/>
+                                {% if is_saved %}
+                                    <input type="hidden" class="sso-delete-flag" name="_field_mappings[{{ loop.index0 }}][_delete]" value="0"/>
+                                {% endif %}
                                 <select class="form-select" name="_field_mappings[{{ loop.index0 }}][field_type]">
                                     {% for key, label in field_types %}
                                         <option value="{{ key }}" {% if key == map.field_type %}selected{% endif %}>{{ label }}</option>
@@ -84,16 +89,9 @@
                                        value="{{ map.sort_order|default(10) }}"/>
                             </td>
                             <td class="text-center">
-                                {% if is_saved %}
-                                    <input type="checkbox"
-                                           class="form-check-input"
-                                           name="_field_mappings[{{ loop.index0 }}][_delete]"
-                                           value="1"/>
-                                {% else %}
-                                    <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
-                                        <i class="ti ti-trash"></i> {{ __('Remove') }}
-                                    </button>
-                                {% endif %}
+                                <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
+                                    <i class="ti ti-trash"></i> {{ __('Remove') }}
+                                </button>
                             </td>
                         </tr>
                     {% endfor %}
