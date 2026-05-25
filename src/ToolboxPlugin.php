@@ -26,7 +26,9 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Toolbox;
 use Throwable;
+use IPAddress;
 use Plugin;
 use Document;
 use Html;
