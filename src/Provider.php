@@ -29,6 +29,7 @@ namespace GlpiPlugin\Singlesignon;
 use Throwable;
 use CommonDBTM;
 use JsonPath\JsonObject;
+use Location;
 use Session;
 use Dropdown;
 use Toolbox;
