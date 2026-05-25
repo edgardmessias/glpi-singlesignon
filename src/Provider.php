@@ -291,6 +291,17 @@ class Provider extends CommonDBTM
             if (isset($input['url_slo']) && !empty($input['url_slo']) && !filter_var($input['url_slo'], FILTER_VALIDATE_URL)) {
                 $error_detected[] = __s('The Single Logout URL is invalid', 'singlesignon');
             }
+        } else {
+            $default_slo = static::getDefault($type, 'url_slo');
+            if (!empty($default_slo)) {
+                if (isset($input['_use_slo']) && $input['_use_slo']) {
+                    $input['url_slo'] = $default_slo;
+                } else {
+                    $input['url_slo'] = '';
+                }
+            } else {
+                $input['url_slo'] = '';
+            }
         }
 
         if (count($error_detected)) {

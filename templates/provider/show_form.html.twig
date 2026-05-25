@@ -23,7 +23,15 @@
 {% import 'components/form/fields_macros.html.twig' as fields %}
 {% import 'components/form/basic_inputs_macros.html.twig' as inputs %}
 
-{% set sso_hidden_class = provider.fields.type != 'generic' ? 'd-none' : '' %}
+{% set slo_supported_types = [] %}
+{% for type, label in call(['GlpiPlugin\\Singlesignon\\Provider', 'getTypes'], []) %}
+  {% if call(['GlpiPlugin\\Singlesignon\\Provider', 'getDefault'], [type, 'url_slo']) is not empty %}
+    {% set slo_supported_types = slo_supported_types|merge([type]) %}
+  {% endif %}
+{% endfor %}
+
+{% set sso_hidden_class = provider.fields.type|default('generic') != 'generic' ? 'd-none' : '' %}
+{% set sso_preset_slo_hidden_class = provider.fields.type|default('generic') in slo_supported_types ? '' : 'd-none' %}
 {% set picture_style = 'max-width: 100px; max-height: 100px; background-image: linear-gradient(45deg, #b0b0b0 25%, transparent 25%), linear-gradient(-45deg, #b0b0b0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #b0b0b0 75%), linear-gradient(-45deg, transparent 75%, #b0b0b0 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;' %}
 
 {% set _tip_extra = call('nl2br', [call('sprintf', [
@@ -41,7 +49,12 @@
 {% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_slo = call('nl2br', [__('URL used by the Identity Provider to receive logout requests (Single Logout, SLO). If provided, users logging out of GLPI will also be logged out from the Identity Provider.', 'singlesignon')]) %}
 
-{% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");' %}
+{% set type_on_change %}
+var _value = this.options[this.selectedIndex].value; 
+$(".sso_url").toggle(_value == "generic");
+var slo_types = {{ slo_supported_types|json_encode|raw }};
+$(".sso_preset_slo").toggle(slo_types.includes(_value));
+{% endset %}
 {% set field_opts = {
     align_label_right: true,
     field_class: 'col-12 col-xxl-6',
@@ -124,6 +137,15 @@
         add_field_class: 'sso_url ' ~ sso_hidden_class,
         helper: _tip_slo
     }|merge(field_opts)) }}
+    {% set _use_slo = provider.fields.url_slo|default('') is not empty ? 1 : 0 %}
+    {{ fields.dropdownYesNo('_use_slo', _use_slo, __('Use SLO', 'singlesignon'), {
+        add_field_class: 'sso_preset_slo ' ~ sso_preset_slo_hidden_class,
+        helper: _tip_slo
+    }|merge(field_opts)) }}
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6'
+    }) }}
+
     {{ fields.nullField({
         field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
     }) }}
