@@ -1046,7 +1046,7 @@ class Provider extends CommonDBTM
                     $this->_id_token_payload = json_decode($payloadStr, true) ?: null;
                 }
             }
-        } catch (Exception) {
+        } catch (Exception $ex) {
             if ($this->debug) {
                 print_r("\ngetAccessToken exception: " . $ex->getMessage() . "\n");
                 print_r($content);
