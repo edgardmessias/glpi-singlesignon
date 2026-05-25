@@ -1832,18 +1832,21 @@ class Provider extends CommonDBTM
         $user = new User();
 
         if (!$user->getFromDB($user_id)) {
+            $this->logFailure(__FUNCTION__, sprintf('GLPI user with id=%d not found', $user_id));
             return false;
         }
 
         $resource_array = $this->getResourceOwner();
 
         if (!$resource_array) {
+            $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner from identity provider', $user);
             return false;
         }
 
         $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
 
         if (!$remote_id) {
+            $this->logFailure(__FUNCTION__, 'could not resolve remote user ID from the identity provider response', $user);
             return false;
         }
 
