@@ -50,9 +50,12 @@ In simple terms:
 
 Preset types hide these in the form but still use the built-in values unless you switch to **Generic**.
 
-### Single Logout URL
+### Use SLO / Single Logout URL
 
-URL used by the Identity Provider to receive logout requests (Single Logout). If provided, users logging out of GLPI will also be logged out from the Identity Provider. You can pass necessary parameters directly in the URL if required by the IdP.
+**Single Logout (SLO)** ensures that when a user logs out of GLPI, they are also signed out of their centralized Identity Provider. Depending on your chosen **SSO Type**, one of two configuration options will appear:
+
+- **Use SLO (for Preset Providers):** If your selected preset (e.g., Azure) natively supports Single Logout, a **Yes/No** dropdown is displayed. Setting this to **Yes** automatically applies the official logout endpoint for that Identity Provider, ensuring accurate routing without manual configuration.
+- **Single Logout URL (for Generic Providers):** If you are using a **Generic** provider, a text field is displayed. You can manually enter the URL used by your Identity Provider to receive logout requests. You can pass necessary parameters directly in the URL if required by the IdP.
 
 ### Resource Owner Authorization
 

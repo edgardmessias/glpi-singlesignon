@@ -48,12 +48,15 @@
 {% set _tip_ssl_verify_host = call('nl2br', [__('Verify that the server certificate matches the hostname (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_slo = call('nl2br', [__('URL used by the Identity Provider to receive logout requests (Single Logout, SLO). If provided, users logging out of GLPI will also be logged out from the Identity Provider.', 'singlesignon')]) %}
+{% set _tip_use_slo = call('nl2br', [__('Enables the usage of the predefined Single Logout URL (SLO) for this Identity Provider.', 'singlesignon')]) %}
 
 {% set type_on_change %}
 var _value = this.options[this.selectedIndex].value; 
-$(".sso_url").toggle(_value == "generic");
+var isGeneric = _value == "generic";
+$(".sso_url").toggleClass("d-none", !isGeneric).toggle(isGeneric);
 var slo_types = {{ slo_supported_types|json_encode|raw }};
-$(".sso_preset_slo").toggle(slo_types.includes(_value));
+var isPresetSlo = slo_types.includes(_value);
+$(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
 {% endset %}
 {% set field_opts = {
     align_label_right: true,
@@ -140,7 +143,7 @@ $(".sso_preset_slo").toggle(slo_types.includes(_value));
     {% set _use_slo = provider.fields.url_slo|default('') is not empty ? 1 : 0 %}
     {{ fields.dropdownYesNo('_use_slo', _use_slo, __('Use SLO', 'singlesignon'), {
         add_field_class: 'sso_preset_slo ' ~ sso_preset_slo_hidden_class,
-        helper: _tip_slo
+        helper: _tip_use_slo
     }|merge(field_opts)) }}
     {{ fields.nullField({
         field_class: 'col-12 col-xxl-6'

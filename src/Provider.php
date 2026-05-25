@@ -294,11 +294,7 @@ class Provider extends CommonDBTM
         } else {
             $default_slo = static::getDefault($type, 'url_slo');
             if (!empty($default_slo)) {
-                if (isset($input['_use_slo']) && $input['_use_slo']) {
-                    $input['url_slo'] = $default_slo;
-                } else {
-                    $input['url_slo'] = '';
-                }
+                $input['url_slo'] = isset($input['_use_slo']) && $input['_use_slo'] ? $default_slo : '';
             } else {
                 $input['url_slo'] = '';
             }
