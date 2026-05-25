@@ -43,6 +43,7 @@ use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
 
+use function Safe\base64_decode;
 use function Safe\file_get_contents;
 use function Safe\fclose;
 use function Safe\fopen;
