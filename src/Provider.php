@@ -1621,7 +1621,7 @@ class Provider extends CommonDBTM
                 return false;
             }
 
-            $this->linkRemoteUserToProvider((int) $user->fields['id'], (string) $remote_id);
+            $this->syncUserProfileAuthorization($user, $resource_array);
 
             return $user;
         } catch (Exception $ex) {
@@ -1946,19 +1946,7 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        $link = new Provider_User();
-
-        // Unlink from another user
-        $link->deleteByCriteria([
-            'plugin_singlesignon_providers_id' => $this->fields['id'],
-            'remote_id' => $remote_id,
-        ]);
-
-        return $link->add([
-            'plugin_singlesignon_providers_id' => $this->fields['id'],
-            'users_id' => $user_id,
-            'remote_id' => $remote_id,
-        ]);
+        $this->linkRemoteUserToProvider((int) $user_id, (string) $remote_id);
     }
 
 
