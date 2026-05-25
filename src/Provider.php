@@ -345,6 +345,9 @@ class Provider extends CommonDBTM
             if (!empty($input['url_access_token'])) {
                 $input['url_access_token'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '$1' . $endpoint . '$2', $input['url_access_token']);
             }
+            if (!empty($input['url_slo'])) {
+                $input['url_slo'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '$1' . $endpoint . '$2', $input['url_slo']);
+            }
         }
 
         $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
