@@ -95,6 +95,7 @@ if ($test_cookie) {
     $field_types = Provider_Field::getFieldTypes();
     $active_mappings = Provider_Field::getMappingsForProvider((int) $provider_id, null, true);
     $default_mappings = Provider_Field::getDefaultMappings((string) $signon_provider->fields['type']);
+    $copy_payload_sections = [];
 
     try {
         $resource_owner_pretty = json_encode(
@@ -133,6 +134,9 @@ if ($test_cookie) {
         $callback_context_pretty = (string) __('Unable to encode callback context.', 'singlesignon');
     }
 
+    $copy_payload_sections[] = (string) __('ID Token (JWT)', 'singlesignon') . "\n" . $id_token_payload_pretty;
+    $copy_payload = implode("\n\n", $copy_payload_sections);
+
     Html::nullHeader("Login", ToolboxPlugin::getBaseURL() . '/index.php');
     echo TemplateRenderer::getInstance()->render('@singlesignon/provider/callback_test_result.html.twig', [
         'provider'                => $signon_provider,
@@ -143,6 +147,7 @@ if ($test_cookie) {
         'callback_context_pretty' => $callback_context_pretty,
         'active_mappings'         => $active_mappings,
         'default_mappings'        => $default_mappings,
+        'copy_payload'           => $copy_payload,
     ]);
     Html::nullFooter();
     return;
