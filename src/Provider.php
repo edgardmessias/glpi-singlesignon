@@ -1352,10 +1352,15 @@ class Provider extends CommonDBTM
     {
         global $DB;
 
-        if (isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation']) && $resource_array['officeLocation'] !== '') {
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        if ($locationName === null && isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation'])) {
+            $locationName = $resource_array['officeLocation'];
+        }
+
+        if ($locationName !== null && $locationName !== '') {
             foreach ($DB->request([
                 'FROM'  => 'glpi_entities',
-                'WHERE' => ['name' => $resource_array['officeLocation']],
+                'WHERE' => ['name' => $locationName],
                 'LIMIT' => 1,
             ]) as $entity) {
                 return (int) $entity['id'];
