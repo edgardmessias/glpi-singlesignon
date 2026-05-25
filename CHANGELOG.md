@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-25
+
+### Features
+
+- **(ui)** Replaced submit input with button containing save icon on preferences page and field mappings tab.
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
