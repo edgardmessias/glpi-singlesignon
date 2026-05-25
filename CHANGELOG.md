@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/compare/v2.0.2...v2.1.0) - Unreleased
+
+### Features
+
+- Sync GLPI user fields from OAuth resource-owner payload on login - ([c829985](https://github.com/edgardmessias/glpi-singlesignon/commit/c829985e62d2a895cc59c666f4128a980010b2ee)) - Eduardo Mozart de Oliveira
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
