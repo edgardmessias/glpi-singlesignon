@@ -1347,7 +1347,7 @@ class Provider extends CommonDBTM
         ];
     }
 
-    private function resolveEntitiesIdForNewUser(array $resource_array, ?string $email): int
+    private function resolveEntitiesIdForUser(array $resource_array): int
     {
         global $DB;
 
