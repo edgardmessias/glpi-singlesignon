@@ -1525,16 +1525,29 @@ class Provider extends CommonDBTM
             'is_active'        => 1,
         ];
 
-        if ($entitiesId > 0) {
+        if ($entitiesId >= 0) {
             $userPost['entities_id'] = $entitiesId;
         }
-
         if ($picture !== null && $picture !== '') {
             $userPost['picture'] = $picture;
         }
-
         if ($email !== null && $email !== '') {
             $userPost['_useremails'][-1] = $email;
+        }
+        if ($phone !== null && $phone !== '') {
+            $userPost['phone'] = $phone;
+        }
+        if ($phone2 !== null && $phone2 !== '') {
+            $userPost['phone2'] = $phone2;
+        }
+        if ($mobile !== null && $mobile !== '') {
+            $userPost['mobile'] = $mobile;
+        }
+        if ($locationsId > 0) {
+            $userPost['locations_id'] = $locationsId;
+        }
+        if ($supervisorId > 0) {
+            $userPost['users_id_supervisor'] = $supervisorId;
         }
 
         try {
