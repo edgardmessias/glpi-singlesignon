@@ -1196,6 +1196,8 @@ class Provider extends CommonDBTM
             $mappings = Provider_Field::getMappingsForProvider($providerId, $fieldType, true);
         }
 
+        $idTokenPayload = $this->getIdTokenPayload();
+
         foreach ($mappings as $mapping) {
             $jsonPath = trim((string) ($mapping['jsonpath'] ?? ''));
             if ($jsonPath === '') {
