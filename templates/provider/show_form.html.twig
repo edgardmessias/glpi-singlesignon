@@ -175,8 +175,8 @@
         <div class="hr-text my-3">{{ __('Personalization') }}</div>
     </div>
 
-    {% set bgcolor_extra = call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
-    {% set color_extra = call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', checked: (provider.fields.color|default('')) == ''}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
+    {% set bgcolor_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', class: 'mt-0', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
+    {% set color_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', class: 'mt-0', checked: (provider.fields.color|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
     {{ fields.colorField('bgcolor', provider.fields.bgcolor|default(''), __('Background color'), {
         add_field_html: bgcolor_extra,
         inline_add_field_html: true
@@ -188,7 +188,7 @@
 
     {% if provider.fields.picture|default('') is not empty %}
         {% set picture_field = call('Html::image', [call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPictureUrl'], [provider.fields.picture]), {style: picture_style, class: 'picture_square'}])|raw %}
-        {% set picture_extra = call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture'}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
+        {% set picture_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture', class: 'mt-0'}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
     {% else %}
         {% set picture_field = inputs.file('picture', null, {onlyimages: true}) %}
         {% set picture_extra = '' %}
