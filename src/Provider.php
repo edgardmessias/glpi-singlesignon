@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use RuleRight;
 use Throwable;
 use CommonDBTM;
 use JsonPath\JsonObject;
