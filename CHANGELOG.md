@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-24
+
+### Features
+
+- Added support for mapping user location, supervisor, phone, phone 2, and cell phone fields - ([acf08ab](https://github.com/edgardmessias/glpi-singlesignon/commit/acf08ab85e12d3f9829e62dc21912dc6816109f7)) - Eduardo Mozart de Oliveira
+
+### Documentation
+
+- Updated field mapping documentation to include location, supervisor, phone, phone 2, and cell phone fields - ([780d1a6](https://github.com/edgardmessias/glpi-singlesignon/commit/780d1a6856abae7d37962be023c26463387edced)) - Eduardo Mozart de Oliveira
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
