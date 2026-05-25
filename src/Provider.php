@@ -1039,8 +1039,14 @@ class Provider extends CommonDBTM
             if (!isset($data['access_token'])) {
                 return false;
             }
-            $this->_token = $data['access_token'];
-        } catch (Exception $ex) {
+            if (isset($data['id_token'])) {
+                $parts = explode('.', $data['id_token']);
+                if (count($parts) >= 2) {
+                    $payloadStr = base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1]));
+                    $this->_id_token_payload = json_decode($payloadStr, true) ?: null;
+                }
+            }
+        } catch (Exception) {
             if ($this->debug) {
                 print_r("\ngetAccessToken exception: " . $ex->getMessage() . "\n");
                 print_r($content);
