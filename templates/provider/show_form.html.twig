@@ -39,7 +39,7 @@
 {% set _tip_custom_headers = call('nl2br', [__('One header per line (format: Header-Name: value). Supported placeholders: <token> and <access_token>. Example: api-key: <token>', 'singlesignon')]) %}
 {% set _tip_ssl_verify_host = call('nl2br', [__('Verify that the server certificate matches the hostname (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
-{% set _tip_slo = call('nl2br', [__('URL used by the Identity Provider to receive logout requests (Single Logout). If provided, users logging out of GLPI will also be logged out from the Identity Provider.', 'singlesignon')]) %}
+{% set _tip_slo = call('nl2br', [__('URL used by the Identity Provider to receive logout requests (Single Logout, SLO). If provided, users logging out of GLPI will also be logged out from the Identity Provider.', 'singlesignon')]) %}
 
 {% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");' %}
 {% set field_opts = {
