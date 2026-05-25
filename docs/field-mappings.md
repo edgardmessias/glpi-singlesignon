@@ -105,6 +105,8 @@ Built-in defaults are tried in the order shown (lowest sort order first).
 | Last name | `$.surname` | ✓ | 136 |
 | Full name | `$.displayName` | ✓ | 137 |
 | Picture URL | `$.picture` | ✓ | 140 |
+| Roles (IdP Claim) | `$.groups` | ✗ | 150 |
+| Roles (IdP Claim) | `$.roles` | ✗ | 160 |
 | Location | `$.officeLocation` | ✓ | 170 |
 | Phone | `$.businessPhones[0]` | ✓ | 180 |
 | Phone 2 | `$.businessPhones[1]` | ✓ | 190 |
