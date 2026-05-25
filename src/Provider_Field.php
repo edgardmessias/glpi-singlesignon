@@ -176,7 +176,17 @@ class Provider_Field extends CommonDBTM
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         if ($item instanceof Provider) {
-            return self::createTabEntry(__('Field mappings', 'singlesignon'), 0, self::class, 'ti ti-list-search');
+            $count = 0;
+            if ($_SESSION['glpishow_count_on_tabs']) {
+                $count = countElementsInTable(
+                    (new self())->getTable(),
+                    [
+                        'plugin_singlesignon_providers_id' => $item->getID(),
+                        'is_active' => 1,
+                    ],
+                );
+            }
+            return self::createTabEntry(__('Field mappings', 'singlesignon'), $count, self::class, 'ti ti-list-search');
         }
 
         return '';
