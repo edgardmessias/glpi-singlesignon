@@ -142,7 +142,7 @@
         'Entity',
         'default_entities_id',
         provider.fields['default_entities_id']|default(0),
-        __('Default entity for new users', 'singlesignon'),
+        __('Default entity', 'singlesignon'),
         field_opts|merge({ display_emptychoice: true })
     ) }}
     {{ fields.dropdownYesNo('default_entities_id_is_recursive', provider.fields.default_entities_id_is_recursive|default(0), __('Recursive (entity)', 'singlesignon'), field_opts) }}
