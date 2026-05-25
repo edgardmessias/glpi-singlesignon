@@ -1019,19 +1019,12 @@ class Provider extends CommonDBTM
         ]), $msgerr);
 
         if ($msgerr) {
-            print_r("\ngetAccessToken error: " . $msgerr . "\n");
+            $this->logFailure(__FUNCTION__, 'cURL request to access token endpoint failed: ' . $msgerr);
             return false;
-        }
-
-        if ($this->debug) {
-            print_r("\ngetAccessToken:\n");
         }
 
         try {
             $data = json_decode($content, true);
-            if ($this->debug) {
-                print_r($data);
-            }
             if (isset($data['error_description'])) {
                 echo '<style>#page .center small { font-weight: normal; }</style>
             <script type="text/javascript">
@@ -1041,6 +1034,7 @@ class Provider extends CommonDBTM
             </script>';
             }
             if (!isset($data['access_token'])) {
+                $this->logFailure(__FUNCTION__, 'identity provider response did not contain an access_token');
                 return false;
             }
             $this->_token = $data['access_token'];
