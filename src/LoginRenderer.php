@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Session;
 use Plugin;
 use Glpi\Application\View\TemplateRenderer;
 use Glpi\Kernel\Kernel;
@@ -65,7 +66,7 @@ class LoginRenderer
             $providerId = (int) $_SESSION['glpi_singlesignon_provider'];
             $provider = new Provider();
             if ($provider->getFromDB($providerId) && !empty($provider->fields['url_slo'])) {
-                \Session::cleanOnLogout();
+                Session::cleanOnLogout();
                 header('Location: ' . $provider->fields['url_slo']);
                 exit; // @phpstan-ignore-line
             }
