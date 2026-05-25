@@ -223,10 +223,6 @@ $("[name=color]").on("change", function () {
         <div class="hr-text my-3">{{ __('Test') }}</div>
     </div>
     {{ fields.htmlField('callback_url', cb_link, __('Callback URL', 'singlesignon'), {full_width: true}|merge(field_opts)) }}
-    {% set slo_path = '/plugins/singlesignon/front/slo.php' %}
-    {% set slo_full = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getBaseURL'], []) ~ slo_path %}
-    {% set slo_link = '<a id="singlesignon_slo_url" href="' ~ slo_full|e('html_attr') ~ '" data-url="' ~ slo_path|e('html_attr') ~ '">' ~ slo_full|e ~ '</a>' %}
-    {{ fields.htmlField('plugin_slo_url', slo_link, __('Plugin SLO Endpoint', 'singlesignon'), {full_width: true}|merge(field_opts)) }}
 {% endif %}
 </div>
 

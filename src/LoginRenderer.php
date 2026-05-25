@@ -65,7 +65,7 @@ class LoginRenderer
                 $provider = new Provider();
                 if ($provider->getFromDB($providerId) && !empty($provider->fields['url_slo'])) {
                     \Session::cleanOnLogout();
-                    \Html::redirect($provider->fields['url_slo']);
+                    header('Location: ' . $provider->fields['url_slo']);
                     exit;
                 }
             }
