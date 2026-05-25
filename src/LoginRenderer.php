@@ -33,6 +33,8 @@ use Toolbox;
 use Twig\Loader\FilesystemLoader;
 use Twig\TwigFunction;
 
+use function Safe\parse_url;
+
 class LoginRenderer
 {
     /**
@@ -59,15 +61,13 @@ class LoginRenderer
         }));
 
         $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-        if ($requestPath !== false && strpos((string) $requestPath, 'front/logout') !== false) {
-            if (isset($_SESSION['glpi_singlesignon_provider'])) {
-                $providerId = (int) $_SESSION['glpi_singlesignon_provider'];
-                $provider = new Provider();
-                if ($provider->getFromDB($providerId) && !empty($provider->fields['url_slo'])) {
-                    \Session::cleanOnLogout();
-                    header('Location: ' . $provider->fields['url_slo']);
-                    exit;
-                }
+        if ($requestPath !== null && str_contains((string) $requestPath, 'front/logout') && isset($_SESSION['glpi_singlesignon_provider'])) {
+            $providerId = (int) $_SESSION['glpi_singlesignon_provider'];
+            $provider = new Provider();
+            if ($provider->getFromDB($providerId) && !empty($provider->fields['url_slo'])) {
+                \Session::cleanOnLogout();
+                header('Location: ' . $provider->fields['url_slo']);
+                exit; // @phpstan-ignore-line
             }
         }
     }

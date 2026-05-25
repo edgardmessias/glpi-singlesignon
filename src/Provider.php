@@ -288,10 +288,8 @@ class Provider extends CommonDBTM
                 $error_detected[] = __s('The Resource Owner Details URL is invalid', 'singlesignon');
             }
 
-            if (isset($input['url_slo']) && !empty($input['url_slo'])) {
-                if (!filter_var($input['url_slo'], FILTER_VALIDATE_URL)) {
-                    $error_detected[] = __s('The Single Logout URL is invalid', 'singlesignon');
-                }
+            if (isset($input['url_slo']) && !empty($input['url_slo']) && !filter_var($input['url_slo'], FILTER_VALIDATE_URL)) {
+                $error_detected[] = __s('The Single Logout URL is invalid', 'singlesignon');
             }
         }
 
