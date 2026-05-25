@@ -99,6 +99,12 @@ class Provider extends CommonDBTM
      *
      * @var null|array
      */
+    protected $_id_token_payload = null;
+
+    /**
+     *
+     * @var null|array
+     */
     protected $_resource_owner = null;
 
     public $debug = false;
