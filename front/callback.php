@@ -185,7 +185,6 @@ if ($test_cookie) {
     $copy_payload_sections[] = implode("\n", $default_lines);
 
     $copy_payload_sections[] = (string) __('Resource Owner', 'singlesignon') . "\n" . $resource_owner_pretty;
-    $copy_payload_sections[] = (string) __('ID Token (JWT)', 'singlesignon') . "\n" . $id_token_payload_pretty;
     $copy_payload_sections[] = (string) __('Callback context', 'singlesignon') . "\n" . $callback_context_pretty;
     $copy_payload = implode("\n\n", $copy_payload_sections);
 
