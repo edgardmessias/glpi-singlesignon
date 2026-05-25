@@ -1039,6 +1039,8 @@ class Provider extends CommonDBTM
             if (!isset($data['access_token'])) {
                 return false;
             }
+            $this->_token = $data['access_token'];
+
             if (isset($data['id_token'])) {
                 $parts = explode('.', $data['id_token']);
                 if (count($parts) >= 2) {
