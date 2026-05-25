@@ -1065,6 +1065,14 @@ class Provider extends CommonDBTM
     }
 
     /**
+     * @return null|array
+     */
+    public function getIdTokenPayload()
+    {
+        return $this->_id_token_payload;
+    }
+
+    /**
      *
      * @return boolean|array
      */
