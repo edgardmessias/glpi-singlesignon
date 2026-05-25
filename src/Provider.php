@@ -1635,6 +1635,7 @@ class Provider extends CommonDBTM
     private function linkRemoteUserToProvider(int $users_id, string $remote_id): void
     {
         $link = new Provider_User();
+        // Unlink from another user
         $link->deleteByCriteria([
             'plugin_singlesignon_providers_id' => $this->fields['id'],
             'remote_id'                         => $remote_id,
