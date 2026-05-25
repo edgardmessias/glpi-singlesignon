@@ -44,6 +44,7 @@ use Glpi\Application\View\TemplateRenderer;
 use Html;
 
 use function Safe\file_get_contents;
+use function Safe\ini_get;
 use function Safe\fclose;
 use function Safe\fopen;
 use function Safe\fwrite;
