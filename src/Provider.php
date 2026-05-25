@@ -1775,8 +1775,12 @@ class Provider extends CommonDBTM
 
     public function login(): int
     {
+        $this->lastLoginError = '';
+        $providerName = (string) ($this->fields['name'] ?? '');
+
         $resource_array = $this->getResourceOwner();
         if (!$resource_array) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not retrieve resource owner from identity provider";
             return self::LOGIN_FAILURE;
         }
 
