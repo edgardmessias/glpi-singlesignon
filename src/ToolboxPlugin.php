@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Toolbox;
 use Throwable;
 use Plugin;
 use Document;
@@ -394,5 +395,37 @@ class ToolboxPlugin
         $filtered = array_filter($candidates, static fn($candidate) => $candidate !== '' && $candidate !== '/');
 
         return array_values(array_unique($filtered));
+    }
+
+    /**
+     * Log a plugin failure to the singlesignon log file.
+     *
+     * @param string $function     Name of the function where the failure occurred (use __FUNCTION__).
+     * @param string $message      Human-readable failure description.
+     * @param string $providerName Name of the SSO provider, if available.
+     * @param int    $providerId   Database ID of the provider, if available.
+     * @param string $userName     Login name of the GLPI user, if available.
+     * @param int    $userId       Database ID of the user, if available.
+     */
+    public static function logFailure(
+        string $function,
+        string $message,
+        string $providerName = '',
+        int $providerId = 0,
+        string $userName = '',
+        int $userId = 0
+    ): void {
+        Toolbox::logInFile(
+            'singlesignon-errors',
+            sprintf(
+                "[%s] provider=\"%s\" provider_id=%d user=\"%s\" user_id=%d %s\n",
+                $function,
+                $providerName,
+                $providerId,
+                $userName,
+                $userId,
+                $message,
+            ),
+        );
     }
 }
