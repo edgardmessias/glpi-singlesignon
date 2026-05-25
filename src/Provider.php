@@ -1382,21 +1382,9 @@ class Provider extends CommonDBTM
             }
         }
 
-        if (!empty($this->fields['match_entity_by_email_domain']) && $email !== null && $email !== '') {
-            $parts = explode('@', $email, 2);
-            if (isset($parts[1])) {
-                $domain = strtolower(trim($parts[1]));
-                foreach ($DB->request(['FROM' => 'glpi_entities']) as $entity) {
-                    if (strcasecmp(strtolower((string) $entity['name']), $domain) === 0) {
-                        return (int) $entity['id'];
-                    }
-                }
-            }
-        }
+        $default = (int) ($this->fields['default_entities_id'] ?? -1);
 
-        $default = (int) ($this->fields['default_entities_id'] ?? 0);
-
-        return $default > 0 ? $default : 0;
+        return $default >= 0 ? $default : -1;
     }
 
     private function ensureProfileForNewUser(User $user, int $entitiesId): bool
