@@ -1424,6 +1424,118 @@ class Provider extends CommonDBTM
     }
 
     /**
+     * Update an existing GLPI user's profile fields from the OAuth resource-owner payload.
+     *
+     * Only non-empty values from the IdP response are written so that existing
+     * GLPI data is preserved when the IdP does not supply a particular field.
+     *
+     * @param array<string, mixed> $resource_array
+     */
+    private function syncUserFieldsFromResource(User $user, array $resource_array): void
+    {
+        $userUpdate = [];
+
+        // ── Name ─────────────────────────────────────────────────────────────
+        $names = $this->resolveRegistrationNames($resource_array);
+        if ($names['firstname'] !== '') {
+            $userUpdate['firstname'] = $names['firstname'];
+        }
+        if ($names['realname'] !== '') {
+            $userUpdate['realname'] = $names['realname'];
+        }
+
+        // ── Phone / mobile ───────────────────────────────────────────────────
+        $phone  = $this->resolveFieldValueFromMappings($resource_array, 'phone');
+        $phone2 = $this->resolveFieldValueFromMappings($resource_array, 'phone2');
+        $mobile = $this->resolveFieldValueFromMappings($resource_array, 'mobile');
+
+        if ($phone === null) {
+            $businessPhones = $resource_array['businessPhones'] ?? null;
+            if (is_array($businessPhones)) {
+                $phone = isset($businessPhones[0]) && trim((string) $businessPhones[0]) !== ''
+                    ? trim((string) $businessPhones[0]) : null;
+            } elseif (is_string($businessPhones) && trim($businessPhones) !== '') {
+                $phone = trim($businessPhones);
+            }
+        }
+        if ($phone2 === null) {
+            $businessPhones = $resource_array['businessPhones'] ?? null;
+            if (is_array($businessPhones) && isset($businessPhones[1]) && trim((string) $businessPhones[1]) !== '') {
+                $phone2 = trim((string) $businessPhones[1]);
+            }
+        }
+        if ($mobile === null) {
+            $mobileRaw = $resource_array['mobilePhone'] ?? null;
+            if (is_string($mobileRaw) && trim($mobileRaw) !== '') {
+                $mobile = trim($mobileRaw);
+            }
+        }
+
+        if ($phone !== null && $phone !== '') {
+            $userUpdate['phone'] = $phone;
+        }
+        if ($phone2 !== null && $phone2 !== '') {
+            $userUpdate['phone2'] = $phone2;
+        }
+        if ($mobile !== null && $mobile !== '') {
+            $userUpdate['mobile'] = $mobile;
+        }
+
+        // ── Location ─────────────────────────────────────────────────────────
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        if ($locationName === null) {
+            $officeLocation = $resource_array['officeLocation'] ?? null;
+            if (is_string($officeLocation) && trim($officeLocation) !== '') {
+                $locationName = trim($officeLocation);
+            }
+        }
+        if ($locationName !== null && $locationName !== '') {
+            $loc = new Location();
+            $existing = $loc->find(['name' => $locationName], '', 1);
+            if ($existing !== []) {
+                $userUpdate['locations_id'] = (int) array_key_first($existing);
+            }
+        }
+
+        // ── Supervisor ───────────────────────────────────────────────────────
+        $supervisorName = $this->resolveFieldValueFromMappings($resource_array, 'supervisor');
+        if ($supervisorName !== null && $supervisorName !== '') {
+            $supUser = new User();
+            if ($supUser->getFromDBbyName($supervisorName)) {
+                $userUpdate['users_id_supervisor'] = (int) $supUser->fields['id'];
+            }
+        }
+
+        // ── E-mail ───────────────────────────────────────────────────────────
+        $emailRaw = $this->resolveFieldValueFromMappings($resource_array, 'email');
+        if ($emailRaw !== null && $emailRaw !== '') {
+            global $DB;
+            $emailExists = false;
+            $existingEmails = $DB->request([
+                'FROM'  => 'glpi_useremails',
+                'WHERE' => [
+                    'users_id' => (int) $user->fields['id'],
+                    'email'    => $emailRaw,
+                ],
+                'LIMIT' => 1,
+            ]);
+            if (count($existingEmails) > 0) {
+                $emailExists = true;
+            }
+            if (!$emailExists) {
+                $userUpdate['_useremails'][-1] = $emailRaw;
+            }
+        }
+
+        if ($userUpdate === []) {
+            return;
+        }
+
+        $userUpdate['id'] = (int) $user->fields['id'];
+        $user->update($userUpdate);
+    }
+
+    /**
      * @param array<string, mixed> $overrides name, firstname, realname, _email, remote_id, __registration_from_preview
      *
      * @return User|false
