@@ -182,32 +182,5 @@
     </div>
 </div>
 
-<script type="text/javascript">
-(() => {
-    const tabsRoot = document.getElementById('sso-test-tabs');
-    const contentRoot = document.getElementById('sso-test-tab-content');
-    if (!tabsRoot || !contentRoot) {
-        return;
-    }
-
-    tabsRoot.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-sso-tab-target]');
-        if (!button) {
-            return;
-        }
-        const selector = button.getAttribute('data-sso-tab-target');
-        if (!selector) {
-            return;
-        }
-
-        tabsRoot.querySelectorAll('.nav-link').forEach((item) => item.classList.remove('active'));
-        contentRoot.querySelectorAll('.tab-pane').forEach((pane) => pane.classList.remove('active', 'show'));
-
-        button.classList.add('active');
-        const target = contentRoot.querySelector(selector);
-        if (target) {
-            target.classList.add('active', 'show');
-        }
-    });
-})();
-</script>
+<textarea id="sso-copy-all-source" class="d-none">{{ copy_payload }}</textarea>
+<script type="text/javascript" src="{{ call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPublicAssetUrl'], ['js/callback-test-result.js']) }}"></script>
