@@ -1111,28 +1111,15 @@ class Provider extends CommonDBTM
     private function getFallbackFieldMappingsByType(string $fieldType): array
     {
         $providerType = $this->getClientType();
-        $providerDefaults = Provider_Field::getDefaultMappings($providerType);
-        $genericDefaults = $providerType === 'generic'
-            ? []
-            : Provider_Field::getDefaultMappings('generic');
-
-        $defaults = [];
-        $seenKeys = [];
-        foreach (array_merge($providerDefaults, $genericDefaults) as $row) {
-            if ($row['field_type'] !== $fieldType || (int) $row['is_active'] !== 1) {
-                continue;
-            }
-
-            $key = $row['field_type'] . '|' . $row['jsonpath'];
-            if (isset($seenKeys[$key])) {
-                continue;
-            }
-
-            $seenKeys[$key] = true;
-            $defaults[] = $row;
+        $defaults = Provider_Field::getDefaultMappings($providerType);
+        if ($defaults === []) {
+            $defaults = Provider_Field::getDefaultMappings('generic');
         }
 
-        return $defaults;
+        return array_values(array_filter(
+            $defaults,
+            static fn(array $row): bool => $row['field_type'] === $fieldType && $row['is_active'] === 1,
+        ));
     }
 
     /**
