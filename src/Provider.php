@@ -1257,13 +1257,26 @@ class Provider extends CommonDBTM
                 continue;
             }
 
-            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
-            if ($value !== null) {
+            $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
+            if ($values !== []) {
                 return [
-                    'value'    => $value,
+                    'value'    => $this->formatDebugFieldValue($values, $fieldType),
+                    'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'provider',
                 ];
+            }
+
+            if (is_array($idTokenPayload)) {
+                $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
+                if ($valuesFromJwt !== []) {
+                    return [
+                        'value'    => $this->formatDebugFieldValue($valuesFromJwt, $fieldType),
+                        'values'   => $valuesFromJwt,
+                        'jsonpath' => $jsonPath,
+                        'source'   => 'provider (jwt)',
+                    ];
+                }
             }
         }
 
@@ -1274,25 +1287,39 @@ class Provider extends CommonDBTM
                 continue;
             }
 
-            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
-            if ($value !== null) {
+            $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
+            if ($values !== []) {
                 return [
-                    'value'    => $value,
+                    'value'    => $this->formatDebugFieldValue($values, $fieldType),
+                    'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'default',
                 ];
+            }
+
+            if (is_array($idTokenPayload)) {
+                $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
+                if ($valuesFromJwt !== []) {
+                    return [
+                        'value'    => $this->formatDebugFieldValue($valuesFromJwt, $fieldType),
+                        'values'   => $valuesFromJwt,
+                        'jsonpath' => $jsonPath,
+                        'source'   => 'default (jwt)',
+                    ];
+                }
             }
         }
 
         return [
             'value'    => null,
+            'values'   => [],
             'jsonpath' => null,
             'source'   => null,
         ];
     }
 
     /**
-     * @return array<string, array{value: ?string, jsonpath: ?string, source: ?string}>
+     * @return array<string, array{value: ?string, values: list<string>, jsonpath: ?string, source: ?string}>
      */
     public function getResolvedFieldsForDebug(array $resourceArray): array
     {
