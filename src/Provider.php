@@ -750,6 +750,20 @@ class Provider extends CommonDBTM
     } */
     // phpcs:enable
 
+    /**
+     * @return void
+     * @used-by templates/components/search/controls.html.twig
+     */
+    public static function showSearchStatusArea()
+    {
+        if (strcasecmp((string) ini_get('session.cookie_samesite'), 'Strict') === 0) {
+            TemplateRenderer::getInstance()->display('components/search/status_area.html.twig', [
+                'status_message' => __('SSO login may fail due to CSRF validation.', 'singlesignon'),
+                'extra_message'  => __('The PHP configuration session.cookie_samesite is set to Strict. Please edit your php.ini, change it to Lax, and restart PHP. See documentation.', 'singlesignon'),
+            ]);
+        }
+    }
+
     public static function getIcon()
     {
         return 'ti ti-lock';
