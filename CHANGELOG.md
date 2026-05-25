@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-25
+
+### Bug Fixes
+
+- Use data-glpi-theme-dark selector for dark mode - ([1948a8b](https://github.com/edgardmessias/glpi-singlesignon/commit/1948a8b404daa3813df6816a39f2b8555bfd2f99)) - eduardomozart
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
