@@ -1903,6 +1903,7 @@ class Provider extends CommonDBTM
 
         $user = $this->findUser($resource_array);
         if ($user) {
+            $this->syncUserFieldsFromResource($user, $resource_array);
             return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
         }
 
