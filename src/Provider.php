@@ -1518,9 +1518,7 @@ class Provider extends CommonDBTM
 
             return $user;
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\ncreateUserFromOAuthResource: " . $ex->getMessage() . "\n");
-            }
+            $this->logFailure(__FUNCTION__, 'exception during user creation: ' . $ex->getMessage());
             return false;
         }
     }
