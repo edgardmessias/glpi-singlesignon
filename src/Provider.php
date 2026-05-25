@@ -1026,12 +1026,8 @@ class Provider extends CommonDBTM
         try {
             $data = json_decode($content, true);
             if (isset($data['error_description'])) {
-                echo '<style>#page .center small { font-weight: normal; }</style>
-            <script type="text/javascript">
-            window.onload = function() {
-               $("#page .center").append("<br><br><small>' . $data['error_description'] . '</small>");
-            };
-            </script>';
+                $this->logFailure(__FUNCTION__, 'identity provider access token request failed: ' . $data['error_description']);
+                return false;
             }
             if (!isset($data['access_token'])) {
                 $this->logFailure(__FUNCTION__, 'identity provider response did not contain an access_token');
@@ -1039,10 +1035,7 @@ class Provider extends CommonDBTM
             }
             $this->_token = $data['access_token'];
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\ngetAccessToken exception: " . $ex->getMessage() . "\n");
-                print_r($content);
-            }
+            $this->logFailure(__FUNCTION__, 'failed to parse identity provider access token response: ' . $ex->getMessage());
             return false;
         }
 
