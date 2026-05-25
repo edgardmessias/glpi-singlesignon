@@ -1430,20 +1430,25 @@ class Provider extends CommonDBTM
         } else {
             $resolved = $this->resolveLoginAndEmailFromResource($resource_array);
             if (!$resolved['authorized']) {
+                $this->logFailure(__FUNCTION__, 'user is not authorized by provider domain or email restrictions');
                 return false;
             }
 
+            // ── Login ────────────────────────────────────────────────────────────
             $login = $overrides['name'] ?? $resolved['login'];
             if ($login === false || $login === '' || $login === null) {
+                $this->logFailure(__FUNCTION__, 'could not resolve a login name from the identity provider response');
                 return false;
             }
             $login = (string) $login;
 
+            // ── E-mail ───────────────────────────────────────────────────────────
             $email = $resolved['email'];
             if (isset($overrides['_email'])) {
                 $email = (string) $overrides['_email'];
             }
 
+            // ── Name ─────────────────────────────────────────────────────────────
             $names = $this->resolveRegistrationNames($resource_array);
             if (isset($overrides['firstname'])) {
                 $names['firstname'] = (string) $overrides['firstname'];
@@ -1452,8 +1457,10 @@ class Provider extends CommonDBTM
                 $names['realname'] = (string) $overrides['realname'];
             }
 
+            // ── Remote ID ────────────────────────────────────────────────────────
             $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
             if ($remote_id === null || $remote_id === '') {
+                $this->logFailure(__FUNCTION__, 'could not resolve a remote ID from the identity provider response');
                 return false;
             }
             $remote_id = (string) $remote_id;
