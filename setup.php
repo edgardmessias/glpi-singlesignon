@@ -86,7 +86,6 @@ function plugin_init_singlesignon()
 
     Plugin::registerClass(Provider::class);
     Plugin::registerClass(Provider_Field::class);
-    Plugin::registerClass(Provider_Profile::class);
     Plugin::registerClass(Provider_Role::class);
     Plugin::registerClass(Provider_Group::class);
     Plugin::registerClass(Provider_User::class);
