@@ -40,7 +40,7 @@
 {% set _tip_custom_headers = call('nl2br', [__('One header per line (format: Header-Name: value). Supported placeholders: <token> and <access_token>. Example: api-key: <token>', 'singlesignon')]) %}
 {% set _tip_ssl_verify_host = call('nl2br', [__('Verify that the server certificate matches the hostname (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
-{% set _tip_azure_endpoint = call('nl2br', [__('Use "common" for any work, school, or personal account while specifying a custom tenant to only users existing in that specific tenant.', 'singlesignon')]) %}
+{% set _tip_azure_endpoint = call('nl2br', [call('sprintf', [__('Use "common" to allow login from any work, school, or personal account. If you specify a custom tenant (Example: %1$s), only users belonging to that specific tenant will be able to log in.', 'singlesignon'), '<code>example.com</code>'])]) %}
 
 {% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic"); $(".sso_azure").toggle(_value == "azure");' %}
 {% set field_opts = {
