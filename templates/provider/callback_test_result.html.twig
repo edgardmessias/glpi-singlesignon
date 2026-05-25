@@ -24,6 +24,16 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">{{ __('Single Sign-on test result', 'singlesignon') }}</h3>
+            <div class="card-actions">
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        id="sso-copy-all-tabs"
+                        data-copy-success-label="{{ __('Copied', 'singlesignon') }}"
+                        data-copy-error-label="{{ __('Copy failed', 'singlesignon') }}">
+                    <i class="ti ti-copy"></i>
+                    <span>{{ __('Copy all tabs', 'singlesignon') }}</span>
+                </button>
+            </div>
         </div>
         <div class="card-body">
             <div class="text-muted mb-3">
