@@ -99,7 +99,18 @@ class Provider extends CommonDBTM
      */
     protected $_resource_owner = null;
 
-    public $debug = false;
+    /**
+     * Human-readable reason for the last LOGIN_FAILURE, populated by login() and performGlpiLogin().
+     * Empty string when no failure has occurred yet.
+     *
+     * @var string
+     */
+    protected string $lastLoginError = '';
+
+    public function getLastLoginError(): string
+    {
+        return $this->lastLoginError;
+    }
 
     public static function canCreate(): bool
     {
