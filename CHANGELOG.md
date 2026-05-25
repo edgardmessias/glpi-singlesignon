@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-25
+
+### Features
+
+- Added a warning in the administration panel when SameSite cookie configuration is set to Strict - ([f027527](https://github.com/edgardmessias/glpi-singlesignon/commit/f0275275c38ad2e0ab0a8472ffca232f44dd41cb)) - Eduardo Mozart de Oliveira
+
+### Documentation
+
+- Added FAQ entry for resolving CSRF "action you have requested is not allowed" errors - ([8caf334](https://github.com/edgardmessias/glpi-singlesignon/commit/8caf334c46ac1862258d35b6172359c33455ad33)) - Eduardo Mozart de Oliveira
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
