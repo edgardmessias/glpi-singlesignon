@@ -1879,6 +1879,7 @@ class Provider extends CommonDBTM
 
         $token = $this->getAccessToken();
         if (!$token) {
+            $this->logFailure(__FUNCTION__, 'failed to obtain access token for photo synchronization', $user);
             return false;
         }
 
@@ -1916,13 +1917,11 @@ class Provider extends CommonDBTM
         }
 
         if (empty($img)) {
+            $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner for photo synchronization', $user);
             return false;
         }
 
         $picture = $this->storeOAuthPhoto($user, $img);
-        if ($this->debug) {
-            print_r($picture ?: false);
-        }
         return $picture;
     }
 
@@ -2155,6 +2154,7 @@ class Provider extends CommonDBTM
         $success = $user->updateInDB(['picture']);
 
         if (!$success) {
+            $this->logFailure(__FUNCTION__, sprintf('failed to update user picture to "%s" in the database', $newPicture), $user);
             User::dropPictureFiles($newPicture);
             return false;
         }
@@ -2183,5 +2183,27 @@ class Provider extends CommonDBTM
         }
 
         return !file_exists(GLPI_PICTURE_DIR . '/' . $picture);
+    }
+
+    /**
+     * Log a plugin failure with this provider's context and an optional user.
+     *
+     * Delegates to {@see ToolboxPlugin::logFailure()} so that all plugin log
+     * entries share a single implementation and the same log file.
+     *
+     * @param string    $function Function name — pass __FUNCTION__.
+     * @param string    $message  Human-readable failure description.
+     * @param User|null $user     GLPI user involved in the operation, if available.
+     */
+    private function logFailure(string $function, string $message, ?User $user = null): void
+    {
+        ToolboxPlugin::logFailure(
+            $function,
+            $message,
+            (string) ($this->fields['name'] ?? ''),
+            (int) ($this->fields['id'] ?? 0),
+            $user !== null ? (string) ($user->fields['name'] ?? '') : '',
+            $user !== null ? (int) ($user->getID() ?: 0) : 0,
+        );
     }
 }
