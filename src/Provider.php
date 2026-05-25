@@ -1592,15 +1592,21 @@ class Provider extends CommonDBTM
     /**
      * Completes GLPI session login for a user already resolved by SSO (OAuth/OpenID).
      *
-     * GLPI's rules engine (rights/profile assignments) is only triggered when login goes through
-     * the standard {@see Auth::login} pipeline with real DB_GLPI authentication. Simulating
-     * external/SSO authentication by manipulating $_SERVER or $_SESSION does not invoke the rules
-     * engine and also causes spurious "Add/Delete link with provider" entries in the user history.
-     * To ensure rules are applied on every SSO login, we temporarily set a random password and
-     * authenticate via the local DB, which runs the full pipeline including rules, then restore
-     * the original password hash.
+     * GLPI's external auth path expects {@see $CFG_GLPI}['ssovariables_id'] and often a matching
+     * entry in {@see $_SERVER} keyed by the SSO variable name. This method temporarily applies the
+     * first row of `glpi_ssovariables` (by id), sets the remote user on that variable name, runs
+     * {@see Auth::login}, then restores config and server superglobals so later requests are not
+     * polluted.
      *
-     * @param User $user User row (must include `name`, `id`, and `password` fields).
+     * Process:
+     * 1. Pre-login: snapshot selected session keys (e.g. redirect URL) so Auth can replace the session.
+     * 2. SSO context: load first `glpi_ssovariables` row; set `ssovariables_id` and `$_SERVER[name]`.
+     * 3. Login: {@see Auth::login} with empty password (external auth).
+     * 4. Post-login (always): clear `glpi_remote_user` fake marker; restore `ssovariables_id` and
+     *    remove the temporary `$_SERVER` entry.
+     * 5. On success only: restore saved session keys, sync OAuth avatar if configured.
+     *
+     * @param User $user User row (must include `name` for login name).
      *
      * @return bool True if {@see Auth::login} succeeded.
      */
@@ -1622,61 +1628,50 @@ class Provider extends CommonDBTM
             && (int) ($CFG_GLPI['login_remember_time'] ?? 0) > 0;
         unset($_SESSION['glpi_singlesignon_remember']);
 
-        try {
-            if (!Provider_Group::syncRoleGroupsForUser($this, $user)) {
-                $this->logFailure(__FUNCTION__, 'role mapping to GLPI group synchronization failed before login', $user);
-            }
-        } catch (Exception $ex) {
-            $this->logFailure(__FUNCTION__, 'exception during role mapping to GLPI group synchronization: ' . $ex->getMessage(), $user);
+        // --- 2. Temporary SSO variable context (restored in step 4) ---
+        $original_ssovariables_id = $CFG_GLPI['ssovariables_id'];
+        $sso_variable_name = '';
+
+        $iterator = $DB->request([
+            'FROM'  => 'glpi_ssovariables',
+            'ORDER' => 'id ASC',
+            'LIMIT' => 1,
+        ]);
+
+        foreach ($iterator as $row) {
+            $CFG_GLPI['ssovariables_id'] = (int) $row['id'];
+            $sso_variable_name = (string) $row['name'];
+            $_SERVER[$sso_variable_name] = $user->fields['name'];
+            break;
         }
 
-        // Optional photo sync
-        try {
-            $this->syncOAuthPhoto($user);
-        } catch (Exception $ex) {
-            $this->logFailure(__FUNCTION__, 'exception during OAuth photo synchronization: ' . $ex->getMessage(), $user);
-        }
+        // --- 3. Login via external auth (password unused) ---
+        $auth = new Auth();
+        $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
 
-        // --- 2. Login ---
-        // Use a temporary local password so that Auth::login runs the complete GLPI
-        // authentication pipeline, including the rules engine (rights/profile assignments).
-        // Simulating SSO/external auth (via $_SERVER or $_SESSION manipulation) does not
-        // trigger the rules engine; local DB authentication does.
-        $userId = (int) $user->fields['id'];
-        $tempPassword = bin2hex(random_bytes(64));
-        $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+        // --- 4. Post-login cleanup (success or failure): undo temporary SSO context ---
+        unset($_SESSION['glpi_remote_user']);
 
-        try {
-            $auth = new Auth();
-            // We intentionally do not call Session::init() directly because it does not execute
-            // GLPI's rules engine; Auth::login is required to apply rules on login.
-            $authResult = $auth->login($user->fields['name'], $tempPassword, false, $remember_me);
-        } finally {
-            // Restore the original password hash unconditionally to ensure it is never
-            // left in a temporary state even if login throws an exception.
-            $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+        $CFG_GLPI['ssovariables_id'] = $original_ssovariables_id;
+        if ($sso_variable_name !== '') {
+            unset($_SERVER[$sso_variable_name]);
         }
 
         if (!$authResult) {
-            // The Auth::login failed. Check if user has ANY valid profile left.
-            // During Auth::login(), the GLPI rule engine removes all dynamic authorizations.
-            // If the rule engine evaluated and they ended up with no profile, the login would fail.
-            $pu = new Profile_User();
-            if (countElementsInTable($pu->getTable(), ['users_id' => $userId]) === 0) {
-                $providerName = (string) ($this->fields['name'] ?? '');
-                $userName = (string) ($user->fields['name'] ?? '');
-                $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User has no valid profile authorization. Please review the rule engine: ensure there is a rule assigning an entity and profile to the user.";
-            } else {
-                $providerName = (string) ($this->fields['name'] ?? '');
-                $userName = (string) ($user->fields['name'] ?? '');
-                $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User not authorized to connect in GLPI";
-            }
             return false;
         }
 
-        // --- 3. Success: restore session snapshot ---
+        // --- 5. Success: restore session snapshot and optional photo sync ---
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
+        }
+
+        try {
+            $this->syncOAuthPhoto($user);
+        } catch (Exception $ex) {
+            if ($this->debug) {
+                print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
+            }
         }
 
         return true;
@@ -2174,27 +2169,5 @@ class Provider extends CommonDBTM
         }
 
         return !file_exists(GLPI_PICTURE_DIR . '/' . $picture);
-    }
-
-    /**
-     * Log a plugin failure with this provider's context and an optional user.
-     *
-     * Delegates to {@see ToolboxPlugin::logFailure()} so that all plugin log
-     * entries share a single implementation and the same log file.
-     *
-     * @param string    $function Function name — pass __FUNCTION__.
-     * @param string    $message  Human-readable failure description.
-     * @param User|null $user     GLPI user involved in the operation, if available.
-     */
-    private function logFailure(string $function, string $message, ?User $user = null): void
-    {
-        ToolboxPlugin::logFailure(
-            $function,
-            $message,
-            (string) ($this->fields['name'] ?? ''),
-            (int) ($this->fields['id'] ?? 0),
-            $user !== null ? (string) ($user->fields['name'] ?? '') : '',
-            $user !== null ? (int) ($user->getID() ?: 0) : 0,
-        );
     }
 }
