@@ -1621,10 +1621,6 @@ class Provider extends CommonDBTM
                 return false;
             }
 
-            if (!$this->ensureProfileForNewUser($user, $entitiesId)) {
-                return false;
-            }
-
             $this->linkRemoteUserToProvider((int) $user->fields['id'], (string) $remote_id);
 
             return $user;
