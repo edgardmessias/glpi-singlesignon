@@ -107,10 +107,6 @@ Built-in defaults are tried in the order shown (lowest sort order first).
 | Picture URL | `$.picture` | ✓ | 140 |
 | Roles (IdP Claim) | `$.groups` | ✗ | 150 |
 | Roles (IdP Claim) | `$.roles` | ✗ | 160 |
-| Location | `$.officeLocation` | ✓ | 170 |
-| Phone | `$.businessPhones[0]` | ✓ | 180 |
-| Phone 2 | `$.businessPhones[1]` | ✓ | 190 |
-| Cell phone | `$.mobilePhone` | ✓ | 200 |
 
 > **Tip:** Built-in provider defaults (including Azure, Google, GitHub, Facebook, LinkedIn, and Instagram) are stored in `providers.json` in the plugin root. You can override any of them by creating a custom mapping with a lower sort order.
 
