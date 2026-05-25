@@ -43,7 +43,6 @@ use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
 use GlpiPlugin\Singlesignon\Provider_Group;
-use GlpiPlugin\Singlesignon\Provider_Profile;
 use GlpiPlugin\Singlesignon\Provider_Role;
 
 use function Safe\file_get_contents;
