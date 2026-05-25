@@ -28,7 +28,6 @@ use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Preference;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
-use GlpiPlugin\Singlesignon\Provider_Profile;
 use GlpiPlugin\Singlesignon\Provider_Role;
 use GlpiPlugin\Singlesignon\Provider_Group;
 use GlpiPlugin\Singlesignon\Provider_User;
