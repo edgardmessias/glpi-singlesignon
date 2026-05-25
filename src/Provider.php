@@ -42,6 +42,7 @@ use Auth;
 use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
+use GlpiPlugin\Singlesignon\Provider_Profile;
 
 use function Safe\file_get_contents;
 use function Safe\fclose;
