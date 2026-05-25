@@ -99,10 +99,9 @@
     {{ fields.urlField('url_resource_owner_details', call([provider, 'getResourceOwnerDetailsUrl'], []), __('Resource Owner Details URL', 'singlesignon'), {
         add_field_class: 'sso_url ' ~ sso_hidden_class
     }|merge(field_opts)) }}
-    {{ fields.urlField('url_slo', provider.fields.url_slo|default(''), __('Single Logout URL', 'singlesignon'), {
-        add_field_class: 'sso_url ' ~ sso_hidden_class,
-        helper: _tip_slo
-    }|merge(field_opts)) }}
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
+    }) }}
 
     {{ fields.dropdownArrayField('resource_owner_auth_type', provider.fields.resource_owner_auth_type|default('bearer'), call(['GlpiPlugin\\Singlesignon\\Provider', 'getAuthorizationTypes'], []), __('Resource Owner Authorization', 'singlesignon'), {
         helper: _tip_resource_owner_auth
@@ -120,6 +119,14 @@
     {{ fields.dropdownYesNo('ssl_verify_peer', provider.fields.ssl_verify_peer|default(1), __('SSL verify peer', 'singlesignon'), {
         helper: _tip_ssl_verify_peer
     }|merge(field_opts)) }}
+
+    {{ fields.urlField('url_slo', provider.fields.url_slo|default(''), __('Single Logout URL', 'singlesignon'), {
+        add_field_class: 'sso_url ' ~ sso_hidden_class,
+        helper: _tip_slo
+    }|merge(field_opts)) }}
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
+    }) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('Login behavior', 'singlesignon') }}</div>
