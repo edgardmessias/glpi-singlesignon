@@ -1065,27 +1065,15 @@ class Provider extends CommonDBTM
             CURLOPT_HTTPHEADER => $headers,
         ]));
 
-        if ($this->debug) {
-            print_r("\ngetResourceOwner:\n");
-        }
-
         try {
             $data = json_decode($content, true);
-            if ($this->debug) {
-                print_r($data);
-            }
             $this->_resource_owner = $data;
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r($content);
-            }
+            $this->logFailure(__FUNCTION__, 'exception while parsing resource owner response: ' . $ex->getMessage());
             return false;
         }
 
         if ($this->getClientType() === "linkedin") {
-            if ($this->debug) {
-                print_r("\nlinkedin:\n");
-            }
             $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
             $content = Toolbox::callCurl($email_url, $this->buildCurlOptions([
                 CURLOPT_HTTPHEADER => $headers,
@@ -1093,12 +1081,9 @@ class Provider extends CommonDBTM
 
             try {
                 $data = json_decode($content, true);
-                if ($this->debug) {
-                    print_r($content);
-                }
-
                 $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
             } catch (Exception $ex) {
+                $this->logFailure(__FUNCTION__, 'exception while parsing LinkedIn email response: ' . $ex->getMessage());
                 return false;
             }
         }
