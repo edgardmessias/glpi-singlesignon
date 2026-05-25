@@ -31,11 +31,11 @@ Each vendor uses different field names. Microsoft Graph, Google, GitHub, and cus
 | **First name** / **Last name** | Given name and family name in GLPI. |
 | **Full name** | One string; can be split if **Split Name** is enabled on the provider. |
 | **Picture URL** | Address of the user’s picture; photo sync uses this URL. |
-| **Location** | Location name in GLPI; the plugin will search for a location with this name and link it to the user. Falls back to `officeLocation`. |
+| **Location** | Location name in GLPI; the plugin will search for a location with this name and link it to the user. |
 | **Supervisor** | Username of the user's supervisor; the plugin will search for a user with this login and set them as the supervisor. |
-| **Phone** | Primary phone number. Falls back to the first value in `businessPhones`. |
-| **Phone 2** | Secondary phone number. Falls back to the second value in `businessPhones`. |
-| **Cell phone** | Mobile/cell phone number. Falls back to `mobilePhone`. |
+| **Phone** | Primary phone number. |
+| **Phone 2** | Secondary phone number. |
+| **Cell phone** | Mobile/cell phone number. |
 | **Roles (IdP Claim)** | Raw role/group strings from the identity provider; used by the **Role mappings** tab to assign the user to GLPI groups on login. |
 
 ---
@@ -105,8 +105,10 @@ Built-in defaults are tried in the order shown (lowest sort order first).
 | Last name | `$.surname` | ✓ | 136 |
 | Full name | `$.displayName` | ✓ | 137 |
 | Picture URL | `$.picture` | ✓ | 140 |
-| Roles (IdP Claim) | `$.groups` | ✗ | 150 |
-| Roles (IdP Claim) | `$.roles` | ✗ | 160 |
+| Location | `$.officeLocation` | ✓ | 170 |
+| Phone | `$.businessPhones[0]` | ✓ | 180 |
+| Phone 2 | `$.businessPhones[1]` | ✓ | 190 |
+| Cell phone | `$.mobilePhone` | ✓ | 200 |
 
 > **Tip:** Built-in provider defaults (including Azure, Google, GitHub, Facebook, LinkedIn, and Instagram) are stored in `providers.json` in the plugin root. You can override any of them by creating a custom mapping with a lower sort order.
 

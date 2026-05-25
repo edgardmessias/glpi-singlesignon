@@ -1492,39 +1492,8 @@ class Provider extends CommonDBTM
         $phone2 = $this->resolveFieldValueFromMappings($resource_array, 'phone2');
         $mobile = $this->resolveFieldValueFromMappings($resource_array, 'mobile');
 
-        if ($phone === null) {
-            // Fallback: businessPhones IdP attribute — take first element only
-            $businessPhones = $resource_array['businessPhones'] ?? null;
-            if (is_array($businessPhones)) {
-                $phone = isset($businessPhones[0]) && trim((string) $businessPhones[0]) !== ''
-                    ? trim((string) $businessPhones[0]) : null;
-            } elseif (is_string($businessPhones) && trim($businessPhones) !== '') {
-                $phone = trim($businessPhones);
-            }
-        }
-        if ($phone2 === null) {
-            // Fallback: second businessPhones element
-            $businessPhones = $resource_array['businessPhones'] ?? null;
-            if (is_array($businessPhones) && isset($businessPhones[1]) && trim((string) $businessPhones[1]) !== '') {
-                $phone2 = trim((string) $businessPhones[1]);
-            }
-        }
-
-        if ($mobile === null) {
-            $mobileRaw = $resource_array['mobilePhone'] ?? null;
-            if (is_string($mobileRaw) && trim($mobileRaw) !== '') {
-                $mobile = trim($mobileRaw);
-            }
-        }
-
         // ── Location ─────────────────────────────────────────────────────────
         $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
-        if ($locationName === null) {
-            $officeLocation = $resource_array['officeLocation'] ?? null;
-            if (is_string($officeLocation) && trim($officeLocation) !== '') {
-                $locationName = trim($officeLocation);
-            }
-        }
         $locationsId = 0;
         if ($locationName !== null && $locationName !== '') {
             $loc = new Location();

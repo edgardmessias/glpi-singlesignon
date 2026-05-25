@@ -77,7 +77,6 @@ class Provider_Field extends CommonDBTM
             'phone'      => __('Phone'),
             'phone2'     => __('Phone 2'),
             'mobile'     => __('Cell phone'),
-            'roles'      => __('Roles (IdP Claim)', 'singlesignon'),
         ];
     }
 
@@ -174,8 +173,10 @@ class Provider_Field extends CommonDBTM
             ['field_type' => 'lastname', 'jsonpath' => '$.surname', 'is_active' => 1, 'sort_order' => 136],
             ['field_type' => 'fullname', 'jsonpath' => '$.displayName', 'is_active' => 1, 'sort_order' => 137],
             ['field_type' => 'avatar_url', 'jsonpath' => '$.picture', 'is_active' => 1, 'sort_order' => 140],
-            ['field_type' => 'roles', 'jsonpath' => '$.roles', 'is_active' => 1, 'sort_order' => 150],
-            ['field_type' => 'roles', 'jsonpath' => '$.groups', 'is_active' => 1, 'sort_order' => 160],
+            ['field_type' => 'location', 'jsonpath' => '$.officeLocation', 'is_active' => 1, 'sort_order' => 170],
+            ['field_type' => 'phone', 'jsonpath' => '$.businessPhones[0]', 'is_active' => 1, 'sort_order' => 180],
+            ['field_type' => 'phone2', 'jsonpath' => '$.businessPhones[1]', 'is_active' => 1, 'sort_order' => 190],
+            ['field_type' => 'mobile', 'jsonpath' => '$.mobilePhone', 'is_active' => 1, 'sort_order' => 200],
         ];
     }
 
