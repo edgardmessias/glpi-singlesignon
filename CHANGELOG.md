@@ -12,10 +12,11 @@ All notable changes to this project will be documented in this file. See [conven
 * **feat(ui):** Introduced an inline undo/restore workflow in JavaScript for role/group/field mapping row actions, allowing administrators to restore a deleted row before saving.
 * **feat(ui):** Added active field and role mappings count badge to provider tab.
 
-
 ### Fixed
 * **fix(auth):** Refactored the core GLPI login simulation to execute via a temporary local password through native `Auth::login` rather than manipulating superglobals. This critical fix ensures that **GLPI's native Rules Engine** (for rights, entity, and profile assignments) is properly triggered during SSO logins.
 * **fix(system):** Cleaned up database columns during installation and updates by converting ID, sort order, and numeric columns to `INT UNSIGNED` for better database integrity and consistency.
+* **fix(mappings)**: Apply deletions before processing field and role mappings.
+
 
 ### Removed
 * **remove(config):** Removed the "Match entity by email domain" configuration. (With the rules engine fix above, administrators should now use GLPI's native Authorization Assignment Rules to route users to entities based on email domains).
