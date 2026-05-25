@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file. See [conven
 * **feat(mappings):** Added support for a new `roles` field mapping type ("Roles (IdP Claim)") with default JSONPaths `$.roles` and `$.groups` to map IdP claims.
 * **feat(config):** Added configuration options to make default Entity (`default_entities_id_is_recursive`) and default Profile (`default_profiles_id_is_recursive`) assignments recursive.
 * **feat(ui):** Introduced an inline undo/restore workflow in JavaScript for role/group/field mapping row actions, allowing administrators to restore a deleted row before saving.
+* **feat(ui):** Added active field and role mappings count badge to provider tab.
+
 
 ### Fixed
 * **fix(auth):** Refactored the core GLPI login simulation to execute via a temporary local password through native `Auth::login` rather than manipulating superglobals. This critical fix ensures that **GLPI's native Rules Engine** (for rights, entity, and profile assignments) is properly triggered during SSO logins.
