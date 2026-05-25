@@ -1789,21 +1789,27 @@ class Provider extends CommonDBTM
             return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
         }
 
+        // ── New-user registration path ──────────────────────────────────────
+
         if (empty($this->fields['auto_register'])) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
             return self::LOGIN_FAILURE;
         }
 
         $gate = $this->resolveLoginAndEmailFromResource($resource_array);
         if (!$gate['authorized']) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User is not authorized by provider domain/email restrictions";
             return self::LOGIN_FAILURE;
         }
 
         if ($gate['login'] === false || (string) $gate['login'] === '') {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not resolve a login name from the identity provider response";
             return self::LOGIN_FAILURE;
         }
 
         $remoteForReg = $this->resolveFieldValueFromMappings($resource_array, 'id');
         if ($remoteForReg === null || $remoteForReg === '') {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not resolve remote user ID from the identity provider response";
             return self::LOGIN_FAILURE;
         }
 
@@ -1814,6 +1820,7 @@ class Provider extends CommonDBTM
 
         $user = $this->createUserFromOAuthResource($resource_array);
         if (!$user || !$user->getID()) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User auto-registration failed";
             return self::LOGIN_FAILURE;
         }
 
