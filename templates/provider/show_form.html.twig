@@ -39,6 +39,7 @@
 {% set _tip_custom_headers = call('nl2br', [__('One header per line (format: Header-Name: value). Supported placeholders: <token> and <access_token>. Example: api-key: <token>', 'singlesignon')]) %}
 {% set _tip_ssl_verify_host = call('nl2br', [__('Verify that the server certificate matches the hostname (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
+{% set _tip_slo = call('nl2br', [__('URL used by the Identity Provider to receive logout requests (Single Logout). If provided, users logging out of GLPI will also be logged out from the Identity Provider.', 'singlesignon')]) %}
 
 {% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");' %}
 {% set field_opts = {
@@ -98,9 +99,10 @@
     {{ fields.urlField('url_resource_owner_details', call([provider, 'getResourceOwnerDetailsUrl'], []), __('Resource Owner Details URL', 'singlesignon'), {
         add_field_class: 'sso_url ' ~ sso_hidden_class
     }|merge(field_opts)) }}
-    {{ fields.nullField({
-        field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
-    }) }}
+    {{ fields.urlField('url_slo', provider.fields.url_slo|default(''), __('Single Logout URL', 'singlesignon'), {
+        add_field_class: 'sso_url ' ~ sso_hidden_class,
+        helper: _tip_slo
+    }|merge(field_opts)) }}
 
     {{ fields.dropdownArrayField('resource_owner_auth_type', provider.fields.resource_owner_auth_type|default('bearer'), call(['GlpiPlugin\\Singlesignon\\Provider', 'getAuthorizationTypes'], []), __('Resource Owner Authorization', 'singlesignon'), {
         helper: _tip_resource_owner_auth
@@ -221,6 +223,10 @@ $("[name=color]").on("change", function () {
         <div class="hr-text my-3">{{ __('Test') }}</div>
     </div>
     {{ fields.htmlField('callback_url', cb_link, __('Callback URL', 'singlesignon'), {full_width: true}|merge(field_opts)) }}
+    {% set slo_path = '/plugins/singlesignon/front/slo.php' %}
+    {% set slo_full = call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getBaseURL'], []) ~ slo_path %}
+    {% set slo_link = '<a id="singlesignon_slo_url" href="' ~ slo_full|e('html_attr') ~ '" data-url="' ~ slo_path|e('html_attr') ~ '">' ~ slo_full|e ~ '</a>' %}
+    {{ fields.htmlField('plugin_slo_url', slo_link, __('Plugin SLO Endpoint', 'singlesignon'), {full_width: true}|merge(field_opts)) }}
 {% endif %}
 </div>
 

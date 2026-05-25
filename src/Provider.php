@@ -287,6 +287,12 @@ class Provider extends CommonDBTM
             } elseif (!filter_var($input['url_resource_owner_details'], FILTER_VALIDATE_URL)) {
                 $error_detected[] = __s('The Resource Owner Details URL is invalid', 'singlesignon');
             }
+
+            if (isset($input['url_slo']) && !empty($input['url_slo'])) {
+                if (!filter_var($input['url_slo'], FILTER_VALIDATE_URL)) {
+                    $error_detected[] = __s('The Single Logout URL is invalid', 'singlesignon');
+                }
+            }
         }
 
         if (count($error_detected)) {
@@ -533,6 +539,14 @@ class Provider extends CommonDBTM
             'field' => 'id',
             'name' => __('ID'),
             'datatype' => 'itemlink',
+        ];
+
+        $tab[] = [
+            'id' => 99,
+            'table' => $this->getTable(),
+            'field' => 'url_slo',
+            'name' => __('Single Logout URL', 'singlesignon'),
+            'datatype' => 'weblink',
         ];
 
         return $tab;
@@ -1674,6 +1688,8 @@ class Provider extends CommonDBTM
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
         }
+
+        $_SESSION['glpi_singlesignon_provider'] = $this->fields['id'];
 
         try {
             $this->syncOAuthPhoto($user);

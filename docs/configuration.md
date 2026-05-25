@@ -50,6 +50,10 @@ In simple terms:
 
 Preset types hide these in the form but still use the built-in values unless you switch to **Generic**.
 
+### Single Logout URL
+
+URL used by the Identity Provider to receive logout requests (Single Logout). If provided, users logging out of GLPI will also be logged out from the Identity Provider. You can pass necessary parameters directly in the URL if required by the IdP.
+
 ### Resource Owner Authorization
 
 How the access token is sent when GLPI requests the user profile. Most providers expect **Bearer**. Use other modes only if the API documentation says so.

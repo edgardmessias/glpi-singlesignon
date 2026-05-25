@@ -57,6 +57,19 @@ class LoginRenderer
             $mode = $_COOKIE['singlesignon_login_mode'] ?? 'oauth';
             return in_array($mode, ['oauth', 'classic'], true) ? $mode : 'oauth';
         }));
+
+        $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        if ($requestPath !== false && strpos((string) $requestPath, 'front/logout') !== false) {
+            if (isset($_SESSION['glpi_singlesignon_provider'])) {
+                $providerId = (int) $_SESSION['glpi_singlesignon_provider'];
+                $provider = new Provider();
+                if ($provider->getFromDB($providerId) && !empty($provider->fields['url_slo'])) {
+                    \Session::cleanOnLogout();
+                    \Html::redirect($provider->fields['url_slo']);
+                    exit;
+                }
+            }
+        }
     }
 
     public static function hasActiveProviders(): bool

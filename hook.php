@@ -63,6 +63,7 @@ function plugin_singlesignon_install()
             `url_authorize`              VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_access_token`           VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_resource_owner_details` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+            `url_slo`                    VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `user_photo_sync_mode`       INT NOT NULL DEFAULT '0',
             `resource_owner_auth_type`   VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
             `resource_owner_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
@@ -258,6 +259,21 @@ function plugin_singlesignon_install()
             $DB->insert('glpi_displaypreferences', $preference);
         }
     }
+
+    /**
+     * Version 2.1.0
+     */
+
+    $migration->addField(
+        $providersTable,
+        'url_slo',
+        'string',
+        [
+            'nodefault' => true,
+            'null'      => true,
+            'after'     => 'url_resource_owner_details',
+        ],
+    );
 
     $migration->executeMigration();
 

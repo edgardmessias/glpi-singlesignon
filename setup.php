@@ -68,6 +68,11 @@ function plugin_singlesignon_boot(): void
         '#^/front/register_preview\\.php$#',
         Firewall::STRATEGY_NO_CHECK,
     );
+    Firewall::addPluginStrategyForLegacyScripts(
+        'singlesignon',
+        '#^/front/slo\\.php$#',
+        Firewall::STRATEGY_NO_CHECK,
+    );
 }
 
 // Init the hooks of the plugins -Needed
