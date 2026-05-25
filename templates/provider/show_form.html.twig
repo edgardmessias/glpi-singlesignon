@@ -42,7 +42,7 @@
 {% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_azure_endpoint = call('nl2br', [call('sprintf', [__('Use "common" to allow login from any work, school, or personal account. If you specify a custom tenant (Example: %1$s), only users belonging to that specific tenant will be able to log in.', 'singlesignon'), '<code>example.com</code>'])]) %}
 
-{% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic"); $(".sso_azure").toggle(_value == "azure");' %}
+{% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggleClass("d-none", _value != "generic").toggle(_value == "generic"); $(".sso_azure").toggleClass("d-none", _value != "azure").toggle(_value == "azure");' %}
 {% set field_opts = {
     align_label_right: true,
     field_class: 'col-12 col-xxl-6',
