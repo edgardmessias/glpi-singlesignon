@@ -82,6 +82,7 @@ function plugin_init_singlesignon()
 
     Plugin::registerClass(Provider::class);
     Plugin::registerClass(Provider_Field::class);
+    Plugin::registerClass(Provider_Profile::class);
 
     $PLUGIN_HOOKS[Hooks::CONFIG_PAGE]['singlesignon'] = 'front/provider.php';
     $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = [LoginRenderer::class, 'onPostInit'];
