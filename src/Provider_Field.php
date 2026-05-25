@@ -66,12 +66,18 @@ class Provider_Field extends CommonDBTM
     {
         return [
             'id'         => __('ID'),
-            'username'   => __('Username'),
+            'username'   => __('Login'),
             'email'      => __('Email'),
             'firstname'  => __('First name'),
             'lastname'   => __('Last name'),
             'fullname'   => __('Full name'),
-            'avatar_url' => __('Avatar URL', 'singlesignon'),
+            'avatar_url' => __('Picture URL', 'singlesignon'),
+            'location'   => __('Location'),
+            'supervisor' => __('Supervisor'),
+            'phone'      => __('Phone'),
+            'phone2'     => __('Phone 2'),
+            'mobile'     => __('Cell phone'),
+            'roles'      => __('Roles (IdP Claim)', 'singlesignon'),
         ];
     }
 
@@ -157,6 +163,7 @@ class Provider_Field extends CommonDBTM
             ['field_type' => 'email', 'jsonpath' => '$[\'e-mail\']', 'is_active' => 1, 'sort_order' => 50],
             ['field_type' => 'email', 'jsonpath' => '$[\'email-address\']', 'is_active' => 1, 'sort_order' => 60],
             ['field_type' => 'email', 'jsonpath' => '$.mail', 'is_active' => 1, 'sort_order' => 70],
+            ['field_type' => 'email', 'jsonpath' => '$.userPrincipalName', 'is_active' => 1, 'sort_order' => 75],
             ['field_type' => 'username', 'jsonpath' => '$.userPrincipalName', 'is_active' => 1, 'sort_order' => 80],
             ['field_type' => 'username', 'jsonpath' => '$.login', 'is_active' => 1, 'sort_order' => 90],
             ['field_type' => 'username', 'jsonpath' => '$.username', 'is_active' => 1, 'sort_order' => 100],
@@ -167,6 +174,8 @@ class Provider_Field extends CommonDBTM
             ['field_type' => 'lastname', 'jsonpath' => '$.surname', 'is_active' => 1, 'sort_order' => 136],
             ['field_type' => 'fullname', 'jsonpath' => '$.displayName', 'is_active' => 1, 'sort_order' => 137],
             ['field_type' => 'avatar_url', 'jsonpath' => '$.picture', 'is_active' => 1, 'sort_order' => 140],
+            ['field_type' => 'roles', 'jsonpath' => '$.roles', 'is_active' => 1, 'sort_order' => 150],
+            ['field_type' => 'roles', 'jsonpath' => '$.groups', 'is_active' => 1, 'sort_order' => 160],
         ];
     }
 
