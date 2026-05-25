@@ -1669,9 +1669,7 @@ class Provider extends CommonDBTM
         try {
             $this->syncOAuthPhoto($user);
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
-            }
+            $this->logFailure(__FUNCTION__, 'exception during OAuth photo synchronization: ' . $ex->getMessage(), $user);
         }
 
         return true;
