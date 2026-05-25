@@ -1469,8 +1469,10 @@ class Provider extends CommonDBTM
         $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
+        // ── Entity ID ────────────────────────────────────────────────────────
         $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
 
+        // ── Picture ──────────────────────────────────────────────────────────
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
         if ($picture === null && isset($resource_array['picture'])) {
             $picture = $resource_array['picture'];
