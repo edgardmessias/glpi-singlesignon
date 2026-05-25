@@ -1256,18 +1256,6 @@ class Provider extends CommonDBTM
                     'source'   => 'provider',
                 ];
             }
-
-            if (is_array($idTokenPayload)) {
-                $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
-                if ($valuesFromJwt !== []) {
-                    return [
-                        'value'    => $this->formatDebugFieldValue($valuesFromJwt, $fieldType),
-                        'values'   => $valuesFromJwt,
-                        'jsonpath' => $jsonPath,
-                        'source'   => 'provider (jwt)',
-                    ];
-                }
-            }
         }
 
         // Fallback defaults are only used when active mappings do not return a value.
@@ -1277,10 +1265,11 @@ class Provider extends CommonDBTM
                 continue;
             }
 
-            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
-            if ($value !== null) {
+            $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
+            if ($values !== []) {
                 return [
-                    'value'    => $value,
+                    'value'    => $this->formatDebugFieldValue($values, $fieldType),
+                    'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'default',
                 ];
@@ -1289,6 +1278,7 @@ class Provider extends CommonDBTM
 
         return [
             'value'    => null,
+            'values'   => [],
             'jsonpath' => null,
             'source'   => null,
         ];
