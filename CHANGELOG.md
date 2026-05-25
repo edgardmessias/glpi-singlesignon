@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/compare/v2.0.2...v2.1.0) - 2026-05-24
+
+### Features
+
+- **(provider)** add roles, location, supervisor, phone, and mobile field mappings to GLPI user syncing
+- **(provider)** introduce default OIDC mapping rules for location, businessPhones, mobilePhone, and roles
+- Support extracting claims from JWT id_token payloads and displaying JWT debug tab
+
+### Bug Fixes
+
+- **(hook)** remove duplicate database table name definitions and ensure `providers_profiles` is dropped on uninstall
+- **(provider)** improve OAuth token error logging, return false on error descriptions, and avoid inline script echoes
+
+### Documentation
+
+- Update `field-mappings.md` to document the new user field types and their default mappings
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
