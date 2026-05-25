@@ -24,6 +24,7 @@
 {% import 'components/form/basic_inputs_macros.html.twig' as inputs %}
 
 {% set sso_hidden_class = provider.fields.type != 'generic' ? 'd-none' : '' %}
+{% set sso_azure_hidden_class = provider.fields.type != 'azure' ? 'd-none' : '' %}
 {% set picture_style = 'max-width: 100px; max-height: 100px; background-image: linear-gradient(45deg, #b0b0b0 25%, transparent 25%), linear-gradient(-45deg, #b0b0b0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #b0b0b0 75%), linear-gradient(-45deg, transparent 75%, #b0b0b0 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;' %}
 
 {% set _tip_extra = call('nl2br', [call('sprintf', [
@@ -39,8 +40,9 @@
 {% set _tip_custom_headers = call('nl2br', [__('One header per line (format: Header-Name: value). Supported placeholders: <token> and <access_token>. Example: api-key: <token>', 'singlesignon')]) %}
 {% set _tip_ssl_verify_host = call('nl2br', [__('Verify that the server certificate matches the hostname (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
+{% set _tip_azure_endpoint = call('nl2br', [__('Use "common" for any work, school, or personal account while specifying a custom tenant to only users existing in that specific tenant.', 'singlesignon')]) %}
 
-{% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");' %}
+{% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic"); $(".sso_azure").toggle(_value == "azure");' %}
 {% set field_opts = {
     align_label_right: true,
     field_class: 'col-12 col-xxl-6',
@@ -79,6 +81,13 @@
 
     {{ fields.textField('client_id', provider.fields.client_id|default(''), __('Client ID', 'singlesignon'), field_opts) }}
     {{ fields.textField('client_secret', provider.fields.client_secret|default(''), __('Client Secret', 'singlesignon'), field_opts) }}
+    {{ fields.textField('azure_endpoint', call([provider, 'getAzureEndpoint'], []), __('Azure Endpoint', 'singlesignon'), {
+        add_field_class: 'sso_azure ' ~ sso_azure_hidden_class,
+        helper: _tip_azure_endpoint
+    }|merge(field_opts)) }}
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6 sso_azure ' ~ sso_azure_hidden_class
+    }) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('OAuth URLs and HTTP', 'singlesignon') }}</div>

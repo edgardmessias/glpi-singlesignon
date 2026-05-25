@@ -336,6 +336,16 @@ class Provider extends CommonDBTM
         $input['resource_owner_custom_headers'] = trim((string) ($input['resource_owner_custom_headers'] ?? ''));
         $input['resource_owner_picture_custom_headers'] = trim((string) ($input['resource_owner_picture_custom_headers'] ?? ''));
 
+        if (($input['type'] ?? '') === 'azure') {
+            $endpoint = !empty($input['azure_endpoint']) ? $input['azure_endpoint'] : 'common';
+            if (!empty($input['url_authorize'])) {
+                $input['url_authorize'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '$1' . $endpoint . '$2', $input['url_authorize']);
+            }
+            if (!empty($input['url_access_token'])) {
+                $input['url_access_token'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '$1' . $endpoint . '$2', $input['url_access_token']);
+            }
+        }
+
         $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
         $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
         $input['default_entities_id'] = (int) ($input['default_entities_id'] ?? 0);
@@ -829,6 +839,15 @@ class Provider extends CommonDBTM
         }
 
         return $value;
+    }
+
+    public function getAzureEndpoint()
+    {
+        $url = $this->getAuthorizeUrl();
+        if (preg_match('/https:\/\/login\.microsoftonline\.com\/([^\/]+)\//i', $url, $matches)) {
+            return $matches[1];
+        }
+        return 'common';
     }
 
     public function getAuthorizeUrl()
