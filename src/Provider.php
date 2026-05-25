@@ -1506,6 +1506,7 @@ class Provider extends CommonDBTM
             $user = new User();
             $newId = $user->add($userPost);
             if (!$newId) {
+                $this->logFailure(__FUNCTION__, sprintf('failed to create user from OAuth resource for login="%s"', $login), $user);
                 return false;
             }
 
