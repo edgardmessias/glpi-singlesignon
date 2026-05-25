@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-24
+
+### Bug Fixes
+
+- Fixed PHP warning when sending picture - ([8626589](https://github.com/edgardmessias/glpi-singlesignon/commit/86265890d559f93bc54f7d3320f79624955d61de)) - eduardomozart
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
