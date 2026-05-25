@@ -51,6 +51,7 @@ use function Safe\json_decode;
 use function Safe\mkdir;
 use function Safe\parse_url;
 use function Safe\preg_match;
+use function Safe\preg_replace;
 use function Safe\preg_split;
 use function Safe\sha1_file;
 
@@ -844,7 +845,7 @@ class Provider extends CommonDBTM
     public function getAzureEndpoint()
     {
         $url = $this->getAuthorizeUrl();
-        if (preg_match('/https:\/\/login\.microsoftonline\.com\/([^\/]+)\//i', $url, $matches)) {
+        if (preg_match('/https:\/\/login\.microsoftonline\.com\/([^\/]+)\//i', $url, $matches) !== 0) {
             return $matches[1];
         }
         return 'common';
