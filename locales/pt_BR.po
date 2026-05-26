@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-06 16:40-0300\n"
+"POT-Creation-Date: 2026-05-26 15:29-0300\n"
 "PO-Revision-Date: 2025-03-31 17:04+0000\n"
 "Last-Translator: Edgard <edgardmessias@gmail.com>, 2026\n"
 "Language-Team: Portuguese (Brazil) (https://app.transifex.com/eduardomozart/"
@@ -24,7 +24,7 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:135
+#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:136
 msgid "Single Sign-on"
 msgstr "Logon Único"
 
@@ -66,7 +66,7 @@ msgstr "Usar Logon Único"
 msgid "Linked accounts"
 msgstr "Contas vinculadas"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:127
+#: \templates\preference\form_content.html.twig \src\Provider.php:128
 msgid "Single Sign-on Provider"
 msgstr "Provedor de Logon Único"
 
@@ -165,7 +165,7 @@ msgstr ""
 "provedor). Você pode especificar parâmetros adicionais com o delimitador "
 "\"&\"."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:483
+#: \templates\provider\show_form.html.twig \src\Provider.php:484
 msgid "Authorize URL"
 msgstr "URL de Autorização"
 
@@ -223,14 +223,43 @@ msgstr ""
 "(recomendado). Desative apenas para testes ou certificados autoassinados."
 
 #: \templates\provider\show_form.html.twig
+msgid ""
+"When enabled, users who visit the login page will be automatically "
+"redirected to this provider's authentication page. To bypass the redirect "
+"and access the standard GLPI login form, add noAUTO=1 to the login URL."
+msgstr ""
+"Quando ativado, os usuários que visitarem a página de login serão "
+"redirecionados automaticamente para a página de autenticação deste provedor. "
+"Para ignorar o redirecionamento e acessar o formulário de login padrão do "
+"GLPI, adicione noAUTO=1 à URL de login."
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"When enabled, the domain part (everything after @) is stripped from the "
+"user's login name. Useful when the IdP returns an email address as the login "
+"and GLPI usernames do not include the domain."
+msgstr ""
+"Quando ativado, a parte do domínio (tudo após @) é removida do nome de "
+"login do usuário. Útil quando o IdP retorna um endereço de e-mail como "
+"login e os nomes de usuário do GLPI não incluem o domínio."
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"When enabled, the full name returned by the IdP is automatically split into "
+"first name and last name fields."
+msgstr ""
+"Quando ativado, o nome completo retornado pelo IdP é automaticamente "
+"dividido nos campos nome e sobrenome."
+
+#: \templates\provider\show_form.html.twig
 msgid "SSO Type"
 msgstr "Tipo SSO"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:451
+#: \templates\provider\show_form.html.twig \src\Provider.php:452
 msgid "Client ID"
 msgstr "ID de Cliente"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:459
+#: \templates\provider\show_form.html.twig \src\Provider.php:460
 msgid "Client Secret"
 msgstr "Segredo do Cliente"
 
@@ -238,19 +267,19 @@ msgstr "Segredo do Cliente"
 msgid "OAuth URLs and HTTP"
 msgstr "URLs OAuth e HTTP"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:467
+#: \templates\provider\show_form.html.twig \src\Provider.php:468
 msgid "Scope"
 msgstr "Escopo"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:475
+#: \templates\provider\show_form.html.twig \src\Provider.php:476
 msgid "Extra Options"
 msgstr "Opções Extras"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:491
+#: \templates\provider\show_form.html.twig \src\Provider.php:492
 msgid "Access Token URL"
 msgstr "URL de Token de Acesso"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:499
+#: \templates\provider\show_form.html.twig \src\Provider.php:500
 msgid "Resource Owner Details URL"
 msgstr "URL de Detalhes do Proprietário do Recurso"
 
@@ -395,96 +424,118 @@ msgstr "Este plugin ainda não foi validado para esta versão do GLPI"
 msgid "This plugin requires PHP >= 8.2"
 msgstr "Este plugin requer PHP >= 8.2"
 
+#: \setup.php:134
+#, php-format
+msgid ""
+"The %1$s folder is missing. Please run %2$s inside the plugin directory, or "
+"download the official release archive."
+msgstr ""
+"A pasta %1$s está ausente. Execute %2$s dentro do diretório do plugin ou "
+"baixe o arquivo da versão oficial."
+
 #: \src\LoginRenderer.php:110 \src\Preference.php:205
 #: \src\ToolboxPlugin.php:273
 #, php-format
 msgid "Login with %s"
 msgstr "Entrar com %s"
 
-#: \src\Provider.php:255
+#: \src\Provider.php:256
 msgid "A Name is required"
 msgstr "O Nome é obrigatório"
 
-#: \src\Provider.php:261
+#: \src\Provider.php:262
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "O \"%s\" é um tipo inválido"
 
-#: \src\Provider.php:265
+#: \src\Provider.php:266
 msgid "A Client ID is required"
 msgstr "O ID de Cliente é obrigatório"
 
-#: \src\Provider.php:269
+#: \src\Provider.php:270
 msgid "A Client Secret is required"
 msgstr "O Segredo do Cliente é obrigatório"
 
-#: \src\Provider.php:274
+#: \src\Provider.php:275
 msgid "An Authorize URL is required"
 msgstr "A URL de Autorização é obrigatória"
 
-#: \src\Provider.php:276
+#: \src\Provider.php:277
 msgid "The Authorize URL is invalid"
 msgstr "A URL de Autorização é inválida"
 
-#: \src\Provider.php:280
+#: \src\Provider.php:281
 msgid "An Access Token URL is required"
 msgstr "A URL de Token de Acesso é obrigatória"
 
-#: \src\Provider.php:282
+#: \src\Provider.php:283
 msgid "The Access Token URL is invalid"
 msgstr "A URL de Token de Acesso é inválida"
 
-#: \src\Provider.php:286
+#: \src\Provider.php:287
 msgid "A Resource Owner Details URL is required"
 msgstr "A URL de Detalhes do Proprietário do Recurso é obrigatória"
 
-#: \src\Provider.php:288
+#: \src\Provider.php:289
 msgid "The Resource Owner Details URL is invalid"
 msgstr "A URL de Detalhes do Proprietário do Recurso é inválida"
 
-#: \src\Provider.php:362
+#: \src\Provider.php:363
 msgid "Only if user has no photo"
 msgstr "Somente se o usuário não tiver foto"
 
-#: \src\Provider.php:363
+#: \src\Provider.php:364
 msgid "Always on login"
 msgstr "Sempre no login"
 
-#: \src\Provider.php:370
+#: \src\Provider.php:371
 msgid "Authorization: Bearer <token>"
 msgstr "Autorização: Bearer <token>"
 
-#: \src\Provider.php:371
+#: \src\Provider.php:372
 msgid "Authorization: <token>"
 msgstr "Autorização: <token>"
 
-#: \src\Provider.php:579
+#: \src\Provider.php:580
 msgid "Generic"
 msgstr "Genérico"
 
-#: \src\Provider.php:580
+#: \src\Provider.php:581
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:581
+#: \src\Provider.php:582
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:582
+#: \src\Provider.php:583
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:583
+#: \src\Provider.php:584
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:584
+#: \src\Provider.php:585
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:585
+#: \src\Provider.php:586
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
+
+#: \src\Provider.php:761
+msgid "SSO login may fail due to CSRF validation."
+msgstr "O login SSO pode falhar devido à validação CSRF."
+
+#: \src\Provider.php:762
+msgid ""
+"The PHP configuration session.cookie_samesite is set to Strict. Please edit "
+"your php.ini, change it to Lax, and restart PHP. See documentation."
+msgstr ""
+"A configuração do PHP session.cookie_samesite está definida como Strict. "
+"Edite seu php.ini, altere para Lax e reinicie o PHP. Consulte a "
+"documentação."
 
 #: \src\Provider_Field.php:42
 msgid "Field mapping"
