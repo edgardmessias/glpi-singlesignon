@@ -3,15 +3,6 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-24
-
-### Features
-
-- Added support for dynamic OAuth field mappings using parsed ID Token (JWT) payload - ([356d7c3](https://github.com/edgardmessias/glpi-singlesignon/commit/356d7c3340043d10f82376f73fe651b93476b300)) - Eduardo Mozart de Oliveira
-- Display the decoded ID Token (JWT) payload in a dedicated tab on the callback test results page - ([93d0879](https://github.com/edgardmessias/glpi-singlesignon/commit/93d087973a6f0bc6d7b36ad764a9fb39da573f9d)) - Eduardo Mozart de Oliveira
-- Added support for multiple resolved values in field mappings (e.g. roles) via JSONPath - ([356d7c3](https://github.com/edgardmessias/glpi-singlesignon/commit/356d7c3340043d10f82376f73fe651b93476b300)) - Eduardo Mozart de Oliveira
-
----
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
