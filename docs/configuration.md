@@ -104,9 +104,9 @@ Creates a GLPI user on first successful SSO when no match exists (subject to GLP
 
 Shows a confirmation step before creating the user.
 
-### Default entity for new users
+### Default entity for users
 
-Which **entity** new users belong to when nothing else assigns one.
+Which **entity** users belong to.
 
 ### Match entity by email domain (entity name = domain)
 
