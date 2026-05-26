@@ -3,13 +3,6 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [Unreleased]
-
-### Features
-
-- **(provider)** add Azure Endpoint field to allow setting a custom tenant instead of 'common' for Azure providers
-
----
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
