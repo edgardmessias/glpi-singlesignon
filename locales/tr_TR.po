@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: singlesignon\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-06 16:40-0300\n"
+"POT-Creation-Date: 2026-05-26 15:29-0300\n"
 "PO-Revision-Date: 2025-02-04 20:49+0000\n"
 "Last-Translator: Sinan Doğan, 2025\n"
 "Language-Team: Turkish (Turkey) (https://app.transifex.com/eduardomozart/"
@@ -23,7 +23,7 @@ msgstr ""
 
 #: \templates\login\buttons.html.twig \front\provider.form.php:109
 #: \front\provider.form.php:111 \front\provider.php:32 \front\provider.php:34
-#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:135
+#: \setup.php:99 \src\Preference.php:116 \src\Provider.php:136
 msgid "Single Sign-on"
 msgstr "Tek Oturum Açma"
 
@@ -33,8 +33,7 @@ msgstr "Oturum seçenekleri"
 
 #: \templates\login\buttons.html.twig
 msgid "Stay signed in on this browser until you sign out."
-msgstr ""
-"Çıkış yapana kadar bu tarayıcıda oturum açık kalsın."
+msgstr "Çıkış yapana kadar bu tarayıcıda oturum açık kalsın."
 
 #: \templates\login\redirect_opener.html.twig
 #: \templates\login\unauthorized_retry.html.twig
@@ -66,7 +65,7 @@ msgstr "Tek Oturum Açmayı kullan"
 msgid "Linked accounts"
 msgstr "Bağlı hesaplar"
 
-#: \templates\preference\form_content.html.twig \src\Provider.php:127
+#: \templates\preference\form_content.html.twig \src\Provider.php:128
 msgid "Single Sign-on Provider"
 msgstr "Single Sign-on Sağlayıcı"
 
@@ -165,7 +164,7 @@ msgstr ""
 "(desteklenen URL ayarları sağlayıcıya göre değişebilir). “&” sınırlayıcısı "
 "ile ek parametreler belirtebilirsiniz."
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:483
+#: \templates\provider\show_form.html.twig \src\Provider.php:484
 msgid "Authorize URL"
 msgstr "Yetkilendirme URL'si"
 
@@ -224,14 +223,44 @@ msgstr ""
 "test veya kendi imzalı sertifikalar için devre dışı bırakın."
 
 #: \templates\provider\show_form.html.twig
+msgid ""
+"When enabled, users who visit the login page will be automatically "
+"redirected to this provider's authentication page. To bypass the redirect "
+"and access the standard GLPI login form, add noAUTO=1 to the login URL."
+msgstr ""
+"Etkinleştirildiğinde, giriş sayfasını ziyaret eden kullanıcılar otomatik "
+"olarak bu sağlayıcının kimlik doğrulama sayfasına yönlendirilir. "
+"Yönlendirmeyi atlamak ve standart GLPI giriş formuna erişmek için giriş "
+"URL'sine noAUTO=1 ekleyin."
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"When enabled, the domain part (everything after @) is stripped from the "
+"user's login name. Useful when the IdP returns an email address as the login "
+"and GLPI usernames do not include the domain."
+msgstr ""
+"Etkinleştirildiğinde, alan adı kısmı (@ işaretinden sonraki her şey) "
+"kullanıcının giriş adından çıkarılır. IdP'nin giriş olarak bir e-posta "
+"adresi döndürmesi ve GLPI kullanıcı adlarının alan adını içermemesi "
+"durumunda kullanışlıdır."
+
+#: \templates\provider\show_form.html.twig
+msgid ""
+"When enabled, the full name returned by the IdP is automatically split into "
+"first name and last name fields."
+msgstr ""
+"Etkinleştirildiğinde, IdP tarafından döndürülen tam ad otomatik olarak ad "
+"ve soyadı alanlarına ayrılır."
+
+#: \templates\provider\show_form.html.twig
 msgid "SSO Type"
 msgstr "SSO Tipi"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:451
+#: \templates\provider\show_form.html.twig \src\Provider.php:452
 msgid "Client ID"
 msgstr "Client ID"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:459
+#: \templates\provider\show_form.html.twig \src\Provider.php:460
 msgid "Client Secret"
 msgstr "Client Secret"
 
@@ -239,19 +268,19 @@ msgstr "Client Secret"
 msgid "OAuth URLs and HTTP"
 msgstr "OAuth URL'leri ve HTTP"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:467
+#: \templates\provider\show_form.html.twig \src\Provider.php:468
 msgid "Scope"
 msgstr "Kapsam"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:475
+#: \templates\provider\show_form.html.twig \src\Provider.php:476
 msgid "Extra Options"
 msgstr "Ekstra Seçenekler"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:491
+#: \templates\provider\show_form.html.twig \src\Provider.php:492
 msgid "Access Token URL"
 msgstr "Erişim Belirteci URL'si"
 
-#: \templates\provider\show_form.html.twig \src\Provider.php:499
+#: \templates\provider\show_form.html.twig \src\Provider.php:500
 msgid "Resource Owner Details URL"
 msgstr "Kaynak Sahibi Ayrıntıları URL"
 
@@ -400,96 +429,118 @@ msgstr "Bu eklenti henüz bu GLPI sürümü için doğrulanmadı"
 msgid "This plugin requires PHP >= 8.2"
 msgstr "Bu eklenti PHP >= 8.2 gerektirir"
 
+#: \setup.php:134
+#, php-format
+msgid ""
+"The %1$s folder is missing. Please run %2$s inside the plugin directory, or "
+"download the official release archive."
+msgstr ""
+"%1$s klasörü eksik. Lütfen eklenti dizini içinde %2$s komutunu çalıştırın "
+"veya resmi sürüm arşivini indirin."
+
 #: \src\LoginRenderer.php:110 \src\Preference.php:205
 #: \src\ToolboxPlugin.php:273
 #, php-format
 msgid "Login with %s"
 msgstr "%s ile giriş yap"
 
-#: \src\Provider.php:255
+#: \src\Provider.php:256
 msgid "A Name is required"
 msgstr "Bir İsim Gerekli"
 
-#: \src\Provider.php:261
+#: \src\Provider.php:262
 #, php-format
 msgid "The \"%s\" is a Invalid type"
 msgstr "\"%s\" Geçersiz bir türdür"
 
-#: \src\Provider.php:265
+#: \src\Provider.php:266
 msgid "A Client ID is required"
 msgstr "Bir ClientID gereklidir."
 
-#: \src\Provider.php:269
+#: \src\Provider.php:270
 msgid "A Client Secret is required"
 msgstr "Bir Client Secret gereklidir."
 
-#: \src\Provider.php:274
+#: \src\Provider.php:275
 msgid "An Authorize URL is required"
 msgstr "Yetkilendirme URL'si gereklidir"
 
-#: \src\Provider.php:276
+#: \src\Provider.php:277
 msgid "The Authorize URL is invalid"
 msgstr "Yetkilendirme URL'si geçersiz"
 
-#: \src\Provider.php:280
+#: \src\Provider.php:281
 msgid "An Access Token URL is required"
 msgstr "Bir Erişim Belirteci URL'si gereklidir"
 
-#: \src\Provider.php:282
+#: \src\Provider.php:283
 msgid "The Access Token URL is invalid"
 msgstr "Erişim Belirteci URL'si geçersiz"
 
-#: \src\Provider.php:286
+#: \src\Provider.php:287
 msgid "A Resource Owner Details URL is required"
 msgstr "Bir Kaynak Sahibi Ayrıntıları URL'si gereklidir"
 
-#: \src\Provider.php:288
+#: \src\Provider.php:289
 msgid "The Resource Owner Details URL is invalid"
 msgstr "Kaynak Sahibi Ayrıntıları URL'si geçersiz"
 
-#: \src\Provider.php:362
+#: \src\Provider.php:363
 msgid "Only if user has no photo"
 msgstr "Yalnizca kullanicinin fotografi yoksa"
 
-#: \src\Provider.php:363
+#: \src\Provider.php:364
 msgid "Always on login"
 msgstr "Giris yaparken her zaman"
 
-#: \src\Provider.php:370
+#: \src\Provider.php:371
 msgid "Authorization: Bearer <token>"
 msgstr "Yetkilendirme: Bearer <token>"
 
-#: \src\Provider.php:371
+#: \src\Provider.php:372
 msgid "Authorization: <token>"
 msgstr "Yetkilendirme: <token>"
 
-#: \src\Provider.php:579
+#: \src\Provider.php:580
 msgid "Generic"
 msgstr "Genel"
 
-#: \src\Provider.php:580
+#: \src\Provider.php:581
 msgid "Azure"
 msgstr "Azure"
 
-#: \src\Provider.php:581
+#: \src\Provider.php:582
 msgid "Facebook"
 msgstr "Facebook"
 
-#: \src\Provider.php:582
+#: \src\Provider.php:583
 msgid "GitHub"
 msgstr "GitHub"
 
-#: \src\Provider.php:583
+#: \src\Provider.php:584
 msgid "Google"
 msgstr "Google"
 
-#: \src\Provider.php:584
+#: \src\Provider.php:585
 msgid "Instagram"
 msgstr "Instagram"
 
-#: \src\Provider.php:585
+#: \src\Provider.php:586
 msgid "LinkdeIn"
 msgstr "LinkdeIn"
+
+#: \src\Provider.php:761
+msgid "SSO login may fail due to CSRF validation."
+msgstr "SSO girişi, CSRF doğrulaması nedeniyle başarısız olabilir."
+
+#: \src\Provider.php:762
+msgid ""
+"The PHP configuration session.cookie_samesite is set to Strict. Please edit "
+"your php.ini, change it to Lax, and restart PHP. See documentation."
+msgstr ""
+"PHP yapılandırması session.cookie_samesite Strict olarak ayarlanmış. "
+"Lütfen php.ini dosyanızı düzenleyin, Lax olarak değiştirin ve PHP'yi "
+"yeniden başlatın. Belgelerine bakın."
 
 #: \src\Provider_Field.php:42
 msgid "Field mapping"
