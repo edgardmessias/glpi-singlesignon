@@ -227,9 +227,7 @@ function plugin_singlesignon_install()
     $migration->addField($providersTable, 'registration_preview', 'bool', ['value' => 0]);
     $migration->addField($providersTable, 'match_entity_by_email_domain', 'integer', ['value' => 0]);
     $migration->addField($providersTable, 'default_entities_id', 'integer', ['value' => 0]);
-    $migration->addField($providersTable, 'default_entities_id_is_recursive', 'bool', ['value' => 0]);
     $migration->addField($providersTable, 'default_profiles_id', 'integer', ['value' => 0]);
-    $migration->addField($providersTable, 'default_profiles_id_is_recursive', 'bool', ['value' => 0]);
 
     $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
     $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
