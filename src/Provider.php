@@ -44,6 +44,7 @@ use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
 
+use function Safe\base64_decode;
 use function Safe\file_get_contents;
 use function Safe\ini_get;
 use function Safe\fclose;
@@ -94,6 +95,12 @@ class Provider extends CommonDBTM
      * @var null|string
      */
     protected $_token = null;
+
+    /**
+     *
+     * @var null|array
+     */
+    protected $_id_token_payload = null;
 
     /**
      *
@@ -1050,12 +1057,28 @@ class Provider extends CommonDBTM
                 return false;
             }
             $this->_token = $data['access_token'];
+
+            if (isset($data['id_token'])) {
+                $parts = explode('.', $data['id_token']);
+                if (count($parts) >= 2) {
+                    $payloadStr = base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1]));
+                    $this->_id_token_payload = json_decode($payloadStr, true) ?: null;
+                }
+            }
         } catch (Exception $ex) {
             $this->logFailure(__FUNCTION__, 'failed to parse identity provider access token response: ' . $ex->getMessage());
             return false;
         }
 
         return $this->_token;
+    }
+
+    /**
+     * @return null|array
+     */
+    public function getIdTokenPayload()
+    {
+        return $this->_id_token_payload;
     }
 
     /**
@@ -1121,40 +1144,80 @@ class Provider extends CommonDBTM
         ));
     }
 
-    private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
+    /**
+     * Resolve all scalar values matching a JSONPath expression.
+     *
+     * @return list<string>
+     */
+    private function getResourceOwnerValuesByJsonPath(array $resourceArray, string $jsonPath): array
     {
         try {
             $json = new JsonObject($resourceArray);
             $result = $json->get($jsonPath);
-        } catch (Throwable) {
-            return null;
+        } catch (Throwable $e) {
+            return [];
         }
 
-        return $this->normalizeJsonPathResult($result);
+        return $this->normalizeJsonPathResults($result);
     }
 
-    private function normalizeJsonPathResult($result): ?string
+    /**
+     * Resolve only the first scalar value matching a JSONPath expression.
+     *
+     * Use {@see getResourceOwnerValuesByJsonPath()} when all matching values are required.
+     */
+    private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
     {
-        if (is_string($result)) {
-            return trim($result) !== '' ? $result : null;
+        $values = $this->getResourceOwnerValuesByJsonPath($resourceArray, $jsonPath);
+
+        return $values[0] ?? null;
+    }
+
+    /**
+     * Recursively normalize a JSONPath result into a flat list of strings.
+     *
+     * @param mixed $result
+     * @return list<string>
+     */
+    private function normalizeJsonPathResults(mixed $result): array
+    {
+        if (is_numeric($result)) {
+            return [(string) $result];
         }
 
-        if (is_numeric($result)) {
-            return (string) $result;
+        if (is_string($result)) {
+            $normalized = trim($result);
+            return $normalized !== '' ? [$normalized] : [];
         }
 
         if (!is_array($result)) {
-            return null;
+            return [];
         }
 
+        $normalized = [];
         foreach ($result as $value) {
-            $normalized = $this->normalizeJsonPathResult($value);
-            if ($normalized !== null) {
-                return $normalized;
+            foreach ($this->normalizeJsonPathResults($value) as $normalizedValue) {
+                // Use the normalized value as the key to preserve order while deduplicating.
+                $normalized[$normalizedValue] = $normalizedValue;
             }
         }
 
-        return null;
+        return array_values($normalized);
+    }
+
+    /**
+     * Resolve debug values for a mapped field.
+     *
+     * @return list<string>
+     */
+    private function getDebugFieldValuesByJsonPath(array $resourceArray, string $jsonPath, string $fieldType): array
+    {
+        if ($fieldType !== 'roles') {
+            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
+            return $value !== null ? [$value] : [];
+        }
+
+        return $this->getResourceOwnerValuesByJsonPath($resourceArray, $jsonPath);
     }
 
     private function resolveFieldValueFromMappings(array $resourceArray, string $fieldType): ?string
@@ -1163,8 +1226,21 @@ class Provider extends CommonDBTM
         return $result['value'];
     }
 
+    private function formatDebugFieldValue(array $values, string $fieldType): ?string
+    {
+        if ($values === []) {
+            return null;
+        }
+
+        // Roles may legitimately contain multiple entries (e.g., groups claim), while other mapped
+        // fields are expected to resolve to a single scalar value for login/profile mapping.
+        // If a non-role JSONPath returns multiple values in edge cases (e.g. broad expressions),
+        // only the first value is used.
+        return $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null);
+    }
+
     /**
-     * @return array{value: ?string, jsonpath: ?string, source: ?string}
+     * @return array{value: ?string, values: list<string>, jsonpath: ?string, source: ?string}
      */
     private function resolveFieldDebugDetailsFromMappings(array $resourceArray, string $fieldType): array
     {
@@ -1174,19 +1250,34 @@ class Provider extends CommonDBTM
             $mappings = Provider_Field::getMappingsForProvider($providerId, $fieldType, true);
         }
 
+        $idTokenPayload = $this->getIdTokenPayload();
+
         foreach ($mappings as $mapping) {
             $jsonPath = trim((string) ($mapping['jsonpath'] ?? ''));
             if ($jsonPath === '') {
                 continue;
             }
 
-            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
-            if ($value !== null) {
+            $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
+            if ($values !== []) {
                 return [
-                    'value'    => $value,
+                    'value'    => $this->formatDebugFieldValue($values, $fieldType),
+                    'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'provider',
                 ];
+            }
+
+            if (is_array($idTokenPayload)) {
+                $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
+                if ($valuesFromJwt !== []) {
+                    return [
+                        'value'    => $this->formatDebugFieldValue($valuesFromJwt, $fieldType),
+                        'values'   => $valuesFromJwt,
+                        'jsonpath' => $jsonPath,
+                        'source'   => 'provider (jwt)',
+                    ];
+                }
             }
         }
 
@@ -1197,25 +1288,39 @@ class Provider extends CommonDBTM
                 continue;
             }
 
-            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
-            if ($value !== null) {
+            $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
+            if ($values !== []) {
                 return [
-                    'value'    => $value,
+                    'value'    => $this->formatDebugFieldValue($values, $fieldType),
+                    'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'default',
                 ];
+            }
+
+            if (is_array($idTokenPayload)) {
+                $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
+                if ($valuesFromJwt !== []) {
+                    return [
+                        'value'    => $this->formatDebugFieldValue($valuesFromJwt, $fieldType),
+                        'values'   => $valuesFromJwt,
+                        'jsonpath' => $jsonPath,
+                        'source'   => 'default (jwt)',
+                    ];
+                }
             }
         }
 
         return [
             'value'    => null,
+            'values'   => [],
             'jsonpath' => null,
             'source'   => null,
         ];
     }
 
     /**
-     * @return array<string, array{value: ?string, jsonpath: ?string, source: ?string}>
+     * @return array<string, array{value: ?string, values: list<string>, jsonpath: ?string, source: ?string}>
      */
     public function getResolvedFieldsForDebug(array $resourceArray): array
     {
