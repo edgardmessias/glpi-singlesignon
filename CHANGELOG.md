@@ -3,13 +3,6 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-24
-
-### Features
-
-- Added detailed callback copy payload sections for mapping resolution and provider configuration debugging - ([8dc1ca9](https://github.com/edgardmessias/glpi-singlesignon/commit/8dc1ca90b23807b16dc0dc06db5d032839e728fe)) - eduardomozart
-
----
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
