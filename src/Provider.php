@@ -29,6 +29,7 @@ namespace GlpiPlugin\Singlesignon;
 use Throwable;
 use CommonDBTM;
 use JsonPath\JsonObject;
+use Location;
 use Session;
 use Dropdown;
 use Toolbox;
@@ -45,6 +46,7 @@ use Html;
 
 use function Safe\base64_decode;
 use function Safe\file_get_contents;
+use function Safe\ini_get;
 use function Safe\fclose;
 use function Safe\fopen;
 use function Safe\fwrite;
@@ -106,7 +108,18 @@ class Provider extends CommonDBTM
      */
     protected $_resource_owner = null;
 
-    public $debug = false;
+    /**
+     * Human-readable reason for the last LOGIN_FAILURE, populated by login() and performGlpiLogin().
+     * Empty string when no failure has occurred yet.
+     *
+     * @var string
+     */
+    protected string $lastLoginError = '';
+
+    public function getLastLoginError(): string
+    {
+        return $this->lastLoginError;
+    }
 
     public static function canCreate(): bool
     {
@@ -756,6 +769,20 @@ class Provider extends CommonDBTM
     } */
     // phpcs:enable
 
+    /**
+     * @return void
+     * @used-by templates/components/search/controls.html.twig
+     */
+    public static function showSearchStatusArea()
+    {
+        if (strcasecmp((string) ini_get('session.cookie_samesite'), 'Strict') === 0) {
+            TemplateRenderer::getInstance()->display('components/search/status_area.html.twig', [
+                'status_message' => __('SSO login may fail due to CSRF validation.', 'singlesignon'),
+                'extra_message'  => __('The PHP configuration session.cookie_samesite is set to Strict. Please edit your php.ini, change it to Lax, and restart PHP. See documentation.', 'singlesignon'),
+            ]);
+        }
+    }
+
     public static function getIcon()
     {
         return 'ti ti-lock';
@@ -1015,28 +1042,18 @@ class Provider extends CommonDBTM
         ]), $msgerr);
 
         if ($msgerr) {
-            print_r("\ngetAccessToken error: " . $msgerr . "\n");
+            $this->logFailure(__FUNCTION__, 'cURL request to access token endpoint failed: ' . $msgerr);
             return false;
-        }
-
-        if ($this->debug) {
-            print_r("\ngetAccessToken:\n");
         }
 
         try {
             $data = json_decode($content, true);
-            if ($this->debug) {
-                print_r($data);
-            }
             if (isset($data['error_description'])) {
-                echo '<style>#page .center small { font-weight: normal; }</style>
-            <script type="text/javascript">
-            window.onload = function() {
-               $("#page .center").append("<br><br><small>' . $data['error_description'] . '</small>");
-            };
-            </script>';
+                $this->logFailure(__FUNCTION__, 'identity provider access token request failed: ' . $data['error_description']);
+                return false;
             }
             if (!isset($data['access_token'])) {
+                $this->logFailure(__FUNCTION__, 'identity provider response did not contain an access_token');
                 return false;
             }
             $this->_token = $data['access_token'];
@@ -1049,10 +1066,7 @@ class Provider extends CommonDBTM
                 }
             }
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\ngetAccessToken exception: " . $ex->getMessage() . "\n");
-                print_r($content);
-            }
+            $this->logFailure(__FUNCTION__, 'failed to parse identity provider access token response: ' . $ex->getMessage());
             return false;
         }
 
@@ -1090,27 +1104,15 @@ class Provider extends CommonDBTM
             CURLOPT_HTTPHEADER => $headers,
         ]));
 
-        if ($this->debug) {
-            print_r("\ngetResourceOwner:\n");
-        }
-
         try {
             $data = json_decode($content, true);
-            if ($this->debug) {
-                print_r($data);
-            }
             $this->_resource_owner = $data;
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r($content);
-            }
+            $this->logFailure(__FUNCTION__, 'exception while parsing resource owner response: ' . $ex->getMessage());
             return false;
         }
 
         if ($this->getClientType() === "linkedin") {
-            if ($this->debug) {
-                print_r("\nlinkedin:\n");
-            }
             $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
             $content = Toolbox::callCurl($email_url, $this->buildCurlOptions([
                 CURLOPT_HTTPHEADER => $headers,
@@ -1118,12 +1120,9 @@ class Provider extends CommonDBTM
 
             try {
                 $data = json_decode($content, true);
-                if ($this->debug) {
-                    print_r($content);
-                }
-
                 $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
             } catch (Exception $ex) {
+                $this->logFailure(__FUNCTION__, 'exception while parsing LinkedIn email response: ' . $ex->getMessage());
                 return false;
             }
         }
@@ -1456,10 +1455,15 @@ class Provider extends CommonDBTM
     {
         global $DB;
 
-        if (isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation']) && $resource_array['officeLocation'] !== '') {
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        if ($locationName === null && isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation'])) {
+            $locationName = $resource_array['officeLocation'];
+        }
+
+        if ($locationName !== null && $locationName !== '') {
             foreach ($DB->request([
                 'FROM'  => 'glpi_entities',
-                'WHERE' => ['name' => $resource_array['officeLocation']],
+                'WHERE' => ['name' => $locationName],
                 'LIMIT' => 1,
             ]) as $entity) {
                 return (int) $entity['id'];
@@ -1552,20 +1556,25 @@ class Provider extends CommonDBTM
         } else {
             $resolved = $this->resolveLoginAndEmailFromResource($resource_array);
             if (!$resolved['authorized']) {
+                $this->logFailure(__FUNCTION__, 'user is not authorized by provider domain or email restrictions');
                 return false;
             }
 
+            // ── Login ────────────────────────────────────────────────────────────
             $login = $overrides['name'] ?? $resolved['login'];
             if ($login === false || $login === '' || $login === null) {
+                $this->logFailure(__FUNCTION__, 'could not resolve a login name from the identity provider response');
                 return false;
             }
             $login = (string) $login;
 
+            // ── E-mail ───────────────────────────────────────────────────────────
             $email = $resolved['email'];
             if (isset($overrides['_email'])) {
                 $email = (string) $overrides['_email'];
             }
 
+            // ── Name ─────────────────────────────────────────────────────────────
             $names = $this->resolveRegistrationNames($resource_array);
             if (isset($overrides['firstname'])) {
                 $names['firstname'] = (string) $overrides['firstname'];
@@ -1574,8 +1583,10 @@ class Provider extends CommonDBTM
                 $names['realname'] = (string) $overrides['realname'];
             }
 
+            // ── Remote ID ────────────────────────────────────────────────────────
             $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
             if ($remote_id === null || $remote_id === '') {
+                $this->logFailure(__FUNCTION__, 'could not resolve a remote ID from the identity provider response');
                 return false;
             }
             $remote_id = (string) $remote_id;
@@ -1584,11 +1595,39 @@ class Provider extends CommonDBTM
         $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
+        // ── Entity ID ────────────────────────────────────────────────────────
         $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
 
+        // ── Picture ──────────────────────────────────────────────────────────
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
         if ($picture === null && isset($resource_array['picture'])) {
             $picture = $resource_array['picture'];
+        }
+
+        // ── Phone / mobile ───────────────────────────────────────────────────
+        $phone  = $this->resolveFieldValueFromMappings($resource_array, 'phone');
+        $phone2 = $this->resolveFieldValueFromMappings($resource_array, 'phone2');
+        $mobile = $this->resolveFieldValueFromMappings($resource_array, 'mobile');
+
+        // ── Location ─────────────────────────────────────────────────────────
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        $locationsId = 0;
+        if ($locationName !== null && $locationName !== '') {
+            $loc = new Location();
+            $existing = $loc->find(['name' => $locationName], '', 1);
+            if ($existing !== []) {
+                $locationsId = (int) array_key_first($existing);
+            }
+        }
+
+        // ── Supervisor ───────────────────────────────────────────────────────
+        $supervisorName = $this->resolveFieldValueFromMappings($resource_array, 'supervisor');
+        $supervisorId = 0;
+        if ($supervisorName !== null && $supervisorName !== '') {
+            $supUser = new User();
+            if ($supUser->getFromDBbyName($supervisorName)) {
+                $supervisorId = (int) $supUser->fields['id'];
+            }
         }
 
         $userPost = [
@@ -1603,22 +1642,36 @@ class Provider extends CommonDBTM
             'is_active'        => 1,
         ];
 
-        if ($entitiesId > 0) {
+        if ($entitiesId >= 0) {
             $userPost['entities_id'] = $entitiesId;
         }
-
         if ($picture !== null && $picture !== '') {
             $userPost['picture'] = $picture;
         }
-
         if ($email !== null && $email !== '') {
             $userPost['_useremails'][-1] = $email;
+        }
+        if ($phone !== null && $phone !== '') {
+            $userPost['phone'] = $phone;
+        }
+        if ($phone2 !== null && $phone2 !== '') {
+            $userPost['phone2'] = $phone2;
+        }
+        if ($mobile !== null && $mobile !== '') {
+            $userPost['mobile'] = $mobile;
+        }
+        if ($locationsId > 0) {
+            $userPost['locations_id'] = $locationsId;
+        }
+        if ($supervisorId > 0) {
+            $userPost['users_id_supervisor'] = $supervisorId;
         }
 
         try {
             $user = new User();
             $newId = $user->add($userPost);
             if (!$newId) {
+                $this->logFailure(__FUNCTION__, sprintf('failed to create user from OAuth resource for login="%s"', $login), $user);
                 return false;
             }
 
@@ -1630,9 +1683,7 @@ class Provider extends CommonDBTM
 
             return $user;
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\ncreateUserFromOAuthResource: " . $ex->getMessage() . "\n");
-            }
+            $this->logFailure(__FUNCTION__, 'exception during user creation: ' . $ex->getMessage());
             return false;
         }
     }
@@ -1783,9 +1834,7 @@ class Provider extends CommonDBTM
         try {
             $this->syncOAuthPhoto($user);
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
-            }
+            $this->logFailure(__FUNCTION__, 'exception during OAuth photo synchronization: ' . $ex->getMessage(), $user);
         }
 
         return true;
@@ -1889,8 +1938,12 @@ class Provider extends CommonDBTM
 
     public function login(): int
     {
+        $this->lastLoginError = '';
+        $providerName = (string) ($this->fields['name'] ?? '');
+
         $resource_array = $this->getResourceOwner();
         if (!$resource_array) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not retrieve resource owner from identity provider";
             return self::LOGIN_FAILURE;
         }
 
@@ -1899,21 +1952,27 @@ class Provider extends CommonDBTM
             return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
         }
 
+        // ── New-user registration path ──────────────────────────────────────
+
         if (empty($this->fields['auto_register'])) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
             return self::LOGIN_FAILURE;
         }
 
         $gate = $this->resolveLoginAndEmailFromResource($resource_array);
         if (!$gate['authorized']) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User is not authorized by provider domain/email restrictions";
             return self::LOGIN_FAILURE;
         }
 
         if ($gate['login'] === false || (string) $gate['login'] === '') {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not resolve a login name from the identity provider response";
             return self::LOGIN_FAILURE;
         }
 
         $remoteForReg = $this->resolveFieldValueFromMappings($resource_array, 'id');
         if ($remoteForReg === null || $remoteForReg === '') {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not resolve remote user ID from the identity provider response";
             return self::LOGIN_FAILURE;
         }
 
@@ -1924,6 +1983,7 @@ class Provider extends CommonDBTM
 
         $user = $this->createUserFromOAuthResource($resource_array);
         if (!$user || !$user->getID()) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User auto-registration failed";
             return self::LOGIN_FAILURE;
         }
 
@@ -1935,18 +1995,21 @@ class Provider extends CommonDBTM
         $user = new User();
 
         if (!$user->getFromDB($user_id)) {
+            $this->logFailure(__FUNCTION__, sprintf('GLPI user with id=%d not found', $user_id));
             return false;
         }
 
         $resource_array = $this->getResourceOwner();
 
         if (!$resource_array) {
+            $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner from identity provider', $user);
             return false;
         }
 
         $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
 
         if (!$remote_id) {
+            $this->logFailure(__FUNCTION__, 'could not resolve remote user ID from the identity provider response', $user);
             return false;
         }
 
@@ -1979,6 +2042,7 @@ class Provider extends CommonDBTM
 
         $token = $this->getAccessToken();
         if (!$token) {
+            $this->logFailure(__FUNCTION__, 'failed to obtain access token for photo synchronization', $user);
             return false;
         }
 
@@ -2016,13 +2080,11 @@ class Provider extends CommonDBTM
         }
 
         if (empty($img)) {
+            $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner for photo synchronization', $user);
             return false;
         }
 
         $picture = $this->storeOAuthPhoto($user, $img);
-        if ($this->debug) {
-            print_r($picture ?: false);
-        }
         return $picture;
     }
 
@@ -2255,6 +2317,7 @@ class Provider extends CommonDBTM
         $success = $user->updateInDB(['picture']);
 
         if (!$success) {
+            $this->logFailure(__FUNCTION__, sprintf('failed to update user picture to "%s" in the database', $newPicture), $user);
             User::dropPictureFiles($newPicture);
             return false;
         }
@@ -2283,5 +2346,27 @@ class Provider extends CommonDBTM
         }
 
         return !file_exists(GLPI_PICTURE_DIR . '/' . $picture);
+    }
+
+    /**
+     * Log a plugin failure with this provider's context and an optional user.
+     *
+     * Delegates to {@see ToolboxPlugin::logFailure()} so that all plugin log
+     * entries share a single implementation and the same log file.
+     *
+     * @param string    $function Function name — pass __FUNCTION__.
+     * @param string    $message  Human-readable failure description.
+     * @param User|null $user     GLPI user involved in the operation, if available.
+     */
+    private function logFailure(string $function, string $message, ?User $user = null): void
+    {
+        ToolboxPlugin::logFailure(
+            $function,
+            $message,
+            (string) ($this->fields['name'] ?? ''),
+            (int) ($this->fields['id'] ?? 0),
+            $user !== null ? (string) ($user->fields['name'] ?? '') : '',
+            $user !== null ? (int) ($user->getID() ?: 0) : 0,
+        );
     }
 }
