@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.0.3](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.3) - 2026-05-26
+
+### Bug Fixes
+
+- **(php)** Resolve PHP warning when sending/serving user profile pictures (#175) - ([b86bf8a](https://github.com/edgardmessias/glpi-singlesignon/commit/b86bf8a56b681d3676daa7f141db3a4a02847730)) - Eduardo Mozart de Oliveira
+- **(ui)** Gracefully check for Composer autoloader during prerequisite validation (#186) - ([d704afe](https://github.com/edgardmessias/glpi-singlesignon/commit/d704afe76d2bfc56b3e146d69376f9f3644a0ea7)) - Eduardo Mozart de Oliveira
+- **(ui)** Align plugin dark mode styling with native GLPI theme selector (#177) - ([2a73a76](https://github.com/edgardmessias/glpi-singlesignon/commit/2a73a761be053ce455f7f695d388d1f49a502c52)) - Eduardo Mozart de Oliveira
+- **(ui)** Modernize save buttons with icons on preferences and field mappings forms (#183) - ([99244be](https://github.com/edgardmessias/glpi-singlesignon/commit/99244be0ac7f693f299a91f956c1f5a4a5582d00)) - Eduardo Mozart de Oliveira
+- **(ui)** Align personalization form fields into a 2-column grid and improve Clear checkbox UX (#179) - ([e5f84c8](https://github.com/edgardmessias/glpi-singlesignon/commit/e5f84c821b72a6bba2e5012ca629e38806aaedc8)) - Eduardo Mozart de Oliveira
+
+### Features
+
+- **(csrf)** Warn against Strict SameSite cookies and document CSRF validation failures (#172) - ([19d5629](https://github.com/edgardmessias/glpi-singlesignon/commit/19d56292bab512fc9db6b03709dc519109f538f5)) - Eduardo Mozart de Oliveira
+- **(ui)** Add contextual helper tooltips for login behavior configurations (#185) - ([d8285ef](https://github.com/edgardmessias/glpi-singlesignon/commit/d8285ef05e909a47083d1775da1af824013dd1e2)) - Eduardo Mozart de Oliveira
+
+### Miscellaneous Chores
+
+- **(locale)** Update locales - ([2681746](https://github.com/edgardmessias/glpi-singlesignon/commit/26817461c2e2b7313181cc168c6359fb98bb1c86)) - Edgard
+- Update Funding - ([04ee142](https://github.com/edgardmessias/glpi-singlesignon/commit/04ee142b8a8658690201c08198648262dbf0fd8b)) - Edgard
+
+### Build
+
+- **(deps-dev)** bump twig/twig from 3.21.1 to 3.26.0 (#168) - ([45b0b5b](https://github.com/edgardmessias/glpi-singlesignon/commit/45b0b5bdae3a643ac042b64ca534772437bc24b9)) - dependabot[bot]
+
+### Ci
+
+- Skip the CHANGELOG update check on pull requests. - ([9d0c2db](https://github.com/edgardmessias/glpi-singlesignon/commit/9d0c2dbe3532e14761a0bb6f6df349674f891c40)) - Edgard
+- Fix workflow version - ([a9e3d6e](https://github.com/edgardmessias/glpi-singlesignon/commit/a9e3d6e9ab0bd1167a599c5bb163cf0702e9ff07)) - Edgard
+
+---
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
