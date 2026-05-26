@@ -3,13 +3,6 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-25
-
-### Bug Fixes
-
-- Fixed redirect for default provider - ([fc4c7d6](https://github.com/edgardmessias/glpi-singlesignon/commit/fc4c7d62d2bff0a2f5927eb09d62e61758e648f1)) - Eduardo Mozart de Oliveira
-
----
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
