@@ -26,7 +26,9 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Toolbox;
 use Throwable;
+use IPAddress;
 use Plugin;
 use Document;
 use Html;
@@ -206,6 +208,7 @@ class ToolboxPlugin
 
             rename($src, $dest);
         } catch (Throwable $e) {
+            static::logFailure(__FUNCTION__, 'failed to create picture directory or move file: ' . $e->getMessage());
             return false;
         }
 
@@ -225,10 +228,12 @@ class ToolboxPlugin
             $fullpath = realpath($fullpath);
             $baseRealPath = realpath($basePath);
         } catch (Throwable $e) {
+            static::logFailure(__FUNCTION__, 'failed to resolve real path for picture deletion: ' . $e->getMessage());
             return false;
         }
 
         if (!static::startsWith($fullpath, $baseRealPath)) {
+            static::logFailure(__FUNCTION__, sprintf('path traversal guard: resolved path "%s" is outside base "%s"', $fullpath, $baseRealPath));
             return false;
         }
 
@@ -236,6 +241,7 @@ class ToolboxPlugin
             unlink($fullpath);
             return true;
         } catch (Throwable $e) {
+            static::logFailure(__FUNCTION__, 'failed to unlink picture file: ' . $e->getMessage());
             return false;
         }
     }
@@ -394,5 +400,62 @@ class ToolboxPlugin
         $filtered = array_filter($candidates, static fn($candidate) => $candidate !== '' && $candidate !== '/');
 
         return array_values(array_unique($filtered));
+    }
+
+    /**
+     * Returns the remote client IP address as a string suitable for log messages.
+     * Uses the same resolution order as GLPI internals: X-Forwarded-For, then
+     * X-Real-IP, then REMOTE_ADDR. The address is validated with GLPI's IPAddress
+     * class; an empty string is returned when no valid address is available.
+     */
+    public static function getClientIp(): string
+    {
+        $raw = '';
+        if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            // Managing IP through a PROXY — take only the first (client) entry.
+            $raw = explode(', ', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+        } elseif (isset($_SERVER['HTTP_X_REAL_IP'])) {
+            $raw = $_SERVER['HTTP_X_REAL_IP'];
+        } elseif (isset($_SERVER['REMOTE_ADDR'])) {
+            $raw = $_SERVER['REMOTE_ADDR'];
+        }
+
+        $ip = new IPAddress($raw);
+        if ($ip->is_valid()) {
+            return $ip->getTextual();
+        }
+        return '';
+    }
+
+    /**
+     * Log a plugin failure to the singlesignon log file.
+     *
+     * @param string $function     Name of the function where the failure occurred (use __FUNCTION__).
+     * @param string $message      Human-readable failure description.
+     * @param string $providerName Name of the SSO provider, if available.
+     * @param int    $providerId   Database ID of the provider, if available.
+     * @param string $userName     Login name of the GLPI user, if available.
+     * @param int    $userId       Database ID of the user, if available.
+     */
+    public static function logFailure(
+        string $function,
+        string $message,
+        string $providerName = '',
+        int $providerId = 0,
+        string $userName = '',
+        int $userId = 0
+    ): void {
+        Toolbox::logInFile(
+            'singlesignon-errors',
+            sprintf(
+                "[%s] provider=\"%s\" provider_id=%d user=\"%s\" user_id=%d %s\n",
+                $function,
+                $providerName,
+                $providerId,
+                $userName,
+                $userId,
+                $message,
+            ),
+        );
     }
 }

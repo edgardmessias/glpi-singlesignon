@@ -156,6 +156,42 @@ Check **Synchronization mode**, the **Avatar URL** mapping, and **Photo** author
 
 ---
 
+## Logs
+
+When authentication fails, GLPI writes details to its log files. These are the first places to check when diagnosing login issues.
+
+### GLPI log files
+
+| File | Contents |
+|------|----------|
+| `<GLPI_ROOT>/files/_log/singlesignon-errors.log` | SSO-specific failures: access token errors, user lookup failures, group sync problems, and every other `return false` path in the plugin. **Start here** when diagnosing SSO login issues. |
+| `<GLPI_ROOT>/files/_log/access-errors.log` | HTTP-level access errors, denied requests, and SSO callback problems. |
+| `<GLPI_ROOT>/files/_log/php-errors.log` | PHP warnings and exceptions from GLPI and plugins. |
+
+Replace `<GLPI_ROOT>` with the absolute path to your GLPI installation (for example `/var/www/html/glpi`).
+
+### Docker containers
+
+Inside a standard GLPI Docker container the Apache error log is available at:
+
+```
+/var/www/apache2/errors.log
+```
+
+You can tail it live while reproducing a login attempt:
+
+```bash
+docker exec -it <container_name> tail -f /var/www/apache2/errors.log
+```
+
+### What to look for
+
+Check `singlesignon-errors.log` first: every failure path in the plugin writes a structured entry of the form `[function] provider="…" provider_id=… user="…" user_id=… <reason>`, so you can quickly find which step failed and for which user.
+
+Search the log for the user's login name, the provider name, or the string `singlesignon`. The plugin writes a human-readable reason to `lastLoginError` before every failed login; that message normally appears in the log.
+
+---
+
 ## TLS
 
 ### Certificate errors when calling the IdP
