@@ -106,15 +106,11 @@ Shows a confirmation step before creating the user.
 
 ### Default entity for users
 
-Which **entity** users belong to.
-
-### Match entity by email domain (entity name = domain)
-
-Tries to place the user in an entity whose **name** equals the domain part of their email.
+Determines which **entity** users belong to. This is evaluated and synchronized on **every login** for all users (both new and existing).
 
 ### Default profile when GLPI has no default
 
-Profile assigned when GLPI would otherwise leave the user without one.
+Configures the GLPI profile assigned to the user. This is evaluated and synchronized on **every login** for all users (both new and existing) to ensure they have valid authorization to access GLPI. You can also specify if this profile should be **Recursive** (applies to sub-entities) using the recursive setting.
 
 ---
 
