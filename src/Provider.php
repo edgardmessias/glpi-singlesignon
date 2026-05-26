@@ -371,9 +371,8 @@ class Provider extends CommonDBTM
         $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
         $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
         $input['default_entities_id'] = (int) ($input['default_entities_id'] ?? 0);
-        $input['default_entities_id_is_recursive'] = empty($input['default_entities_id_is_recursive']) ? 0 : 1;
+        $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
         $input['default_profiles_id'] = (int) ($input['default_profiles_id'] ?? 0);
-        $input['default_profiles_id_is_recursive'] = empty($input['default_profiles_id_is_recursive']) ? 0 : 1;
         if (array_key_exists('ssl_verify_host', $input)) {
             $input['ssl_verify_host'] = empty($input['ssl_verify_host']) ? 0 : 1;
         } else {
