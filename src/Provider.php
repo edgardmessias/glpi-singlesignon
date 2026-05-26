@@ -174,6 +174,7 @@ class Provider extends CommonDBTM
         $this->fields['auto_register'] = 0;
         $this->fields['registration_preview'] = 0;
         $this->fields['default_entities_id'] = 0;
+        $this->fields['match_entity_by_email_domain'] = 0;
         $this->fields['default_profiles_id'] = 0;
         $this->fields['ssl_verify_host'] = 1;
         $this->fields['ssl_verify_peer'] = 1;
