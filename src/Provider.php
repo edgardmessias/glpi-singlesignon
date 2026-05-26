@@ -29,6 +29,7 @@ namespace GlpiPlugin\Singlesignon;
 use Throwable;
 use CommonDBTM;
 use JsonPath\JsonObject;
+use Location;
 use Session;
 use Dropdown;
 use Toolbox;
@@ -1366,10 +1367,15 @@ class Provider extends CommonDBTM
     {
         global $DB;
 
-        if (isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation']) && $resource_array['officeLocation'] !== '') {
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        if ($locationName === null && isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation'])) {
+            $locationName = $resource_array['officeLocation'];
+        }
+
+        if ($locationName !== null && $locationName !== '') {
             foreach ($DB->request([
                 'FROM'  => 'glpi_entities',
-                'WHERE' => ['name' => $resource_array['officeLocation']],
+                'WHERE' => ['name' => $locationName],
                 'LIMIT' => 1,
             ]) as $entity) {
                 return (int) $entity['id'];
@@ -1501,6 +1507,32 @@ class Provider extends CommonDBTM
             $picture = $resource_array['picture'];
         }
 
+        // ── Phone / mobile ───────────────────────────────────────────────────
+        $phone  = $this->resolveFieldValueFromMappings($resource_array, 'phone');
+        $phone2 = $this->resolveFieldValueFromMappings($resource_array, 'phone2');
+        $mobile = $this->resolveFieldValueFromMappings($resource_array, 'mobile');
+
+        // ── Location ─────────────────────────────────────────────────────────
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        $locationsId = 0;
+        if ($locationName !== null && $locationName !== '') {
+            $loc = new Location();
+            $existing = $loc->find(['name' => $locationName], '', 1);
+            if ($existing !== []) {
+                $locationsId = (int) array_key_first($existing);
+            }
+        }
+
+        // ── Supervisor ───────────────────────────────────────────────────────
+        $supervisorName = $this->resolveFieldValueFromMappings($resource_array, 'supervisor');
+        $supervisorId = 0;
+        if ($supervisorName !== null && $supervisorName !== '') {
+            $supUser = new User();
+            if ($supUser->getFromDBbyName($supervisorName)) {
+                $supervisorId = (int) $supUser->fields['id'];
+            }
+        }
+
         $userPost = [
             'name'             => $login,
             'add'              => 1,
@@ -1513,16 +1545,29 @@ class Provider extends CommonDBTM
             'is_active'        => 1,
         ];
 
-        if ($entitiesId > 0) {
+        if ($entitiesId >= 0) {
             $userPost['entities_id'] = $entitiesId;
         }
-
         if ($picture !== null && $picture !== '') {
             $userPost['picture'] = $picture;
         }
-
         if ($email !== null && $email !== '') {
             $userPost['_useremails'][-1] = $email;
+        }
+        if ($phone !== null && $phone !== '') {
+            $userPost['phone'] = $phone;
+        }
+        if ($phone2 !== null && $phone2 !== '') {
+            $userPost['phone2'] = $phone2;
+        }
+        if ($mobile !== null && $mobile !== '') {
+            $userPost['mobile'] = $mobile;
+        }
+        if ($locationsId > 0) {
+            $userPost['locations_id'] = $locationsId;
+        }
+        if ($supervisorId > 0) {
+            $userPost['users_id_supervisor'] = $supervisorId;
         }
 
         try {
