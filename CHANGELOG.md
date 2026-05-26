@@ -3,13 +3,6 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/compare/v2.0.2...v2.1.0) - 2026-05-25
-
-### Features
-
-- Added help tooltips/tips for SSO provider login behavior preferences (`IsDefault`, `SplitDomain`, and `Split Name`) - ([559c834](https://github.com/edgardmessias/glpi-singlesignon/commit/559c8342ca1ee686fd1b3500b291e1b7a3c92642)) - Eduardo Mozart de Oliveira
-
----
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
