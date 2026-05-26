@@ -3,13 +3,6 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
-## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-05-25
-
-### Bug Fixes
-
-- **(ui)** Align preference form fields into 2-column grid - ([f174684](https://github.com/edgardmessias/glpi-singlesignon/commit/f1746845f9e4d9a235e226b91d2e17de60ecd15e)) - eduardomozart
-
----
 ## [2.0.2](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.2) - 2026-04-11
 
 ### Bug Fixes
