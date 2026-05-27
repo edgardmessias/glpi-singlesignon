@@ -248,21 +248,19 @@
     font-weight: 650;
 }
 
-@media (prefers-color-scheme: dark) {
-    .singlesignon-auth-stack,
-    .singlesignon-login {
-        --sso-surface: rgba(17, 24, 39, 0.86);
-        --sso-border: rgba(255, 255, 255, 0.12);
-        --sso-shadow: 0 18px 34px -24px rgba(2, 6, 23, 0.95);
-        --sso-title: #f3f4f6;
-        --sso-text: #e5e7eb;
-        --sso-muted: #cbd5e1;
-        --sso-button-bg: rgba(15, 23, 42, 0.8);
-        --sso-button-border: rgba(255, 255, 255, 0.18);
-        --sso-button-hover: rgba(37, 99, 235, 0.2);
-        --sso-button-focus: rgba(96, 165, 250, 0.42);
-        --sso-accent: #60a5fa;
-    }
+:root[data-glpi-theme-dark="1"] .singlesignon-auth-stack,
+:root[data-glpi-theme-dark="1"] .singlesignon-login {
+    --sso-surface: rgba(17, 24, 39, 0.86);
+    --sso-border: rgba(255, 255, 255, 0.12);
+    --sso-shadow: 0 18px 34px -24px rgba(2, 6, 23, 0.95);
+    --sso-title: #f3f4f6;
+    --sso-text: #e5e7eb;
+    --sso-muted: #cbd5e1;
+    --sso-button-bg: rgba(15, 23, 42, 0.8);
+    --sso-button-border: rgba(255, 255, 255, 0.18);
+    --sso-button-hover: rgba(37, 99, 235, 0.2);
+    --sso-button-focus: rgba(96, 165, 250, 0.42);
+    --sso-accent: #60a5fa;
 }
 
 @media (max-width: 575.98px) {

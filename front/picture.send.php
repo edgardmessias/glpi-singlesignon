@@ -58,4 +58,4 @@ if (!file_exists($path)) {
 $name = pathinfo($path, PATHINFO_BASENAME);
 
 // In GLPI 11, use getFileAsResponse() instead of deprecated sendFile()
-Toolbox::getFileAsResponse($path, $name, null, true)->send();
+return Toolbox::getFileAsResponse($path, $name, null, true);

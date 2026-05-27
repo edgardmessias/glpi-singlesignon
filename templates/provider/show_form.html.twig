@@ -47,6 +47,9 @@
 {% set _tip_custom_headers = call('nl2br', [__('One header per line (format: Header-Name: value). Supported placeholders: <token> and <access_token>. Example: api-key: <token>', 'singlesignon')]) %}
 {% set _tip_ssl_verify_host = call('nl2br', [__('Verify that the server certificate matches the hostname (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
+{% set _tip_is_default = call('nl2br', [__('When enabled, users who visit the login page will be automatically redirected to this provider\'s authentication page. To bypass the redirect and access the standard GLPI login form, add noAUTO=1 to the login URL.', 'singlesignon')]) %}
+{% set _tip_split_domain = call('nl2br', [__('When enabled, the domain part (everything after @) is stripped from the user\'s login name. Useful when the IdP returns an email address as the login and GLPI usernames do not include the domain.', 'singlesignon')]) %}
+{% set _tip_split_name = call('nl2br', [__('When enabled, the full name returned by the IdP is automatically split into first name and last name fields.', 'singlesignon')]) %}
 {% set _tip_slo = call('nl2br', [__('URL used by the Identity Provider to receive logout requests (Single Logout, SLO). If provided, users logging out of GLPI will also be logged out from the Identity Provider.', 'singlesignon')]) %}
 {% set _tip_use_slo = call('nl2br', [__('Enables the usage of the predefined Single Logout URL (SLO) for this Identity Provider.', 'singlesignon')]) %}
 
@@ -157,14 +160,20 @@ $(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
         <div class="hr-text my-3">{{ __('Login behavior', 'singlesignon') }}</div>
     </div>
 
-    {{ fields.dropdownYesNo('is_default', provider.fields.is_default|default(0), __('IsDefault', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownYesNo('is_default', provider.fields.is_default|default(0), __('IsDefault', 'singlesignon'), {
+        helper: _tip_is_default
+    }|merge(field_opts)) }}
     {{ fields.dropdownYesNo('popup', provider.fields.popup|default(0), __('PopupAuth', 'singlesignon'), field_opts) }}
-    {{ fields.dropdownYesNo('split_domain', provider.fields.split_domain|default(0), __('SplitDomain', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownYesNo('split_domain', provider.fields.split_domain|default(0), __('SplitDomain', 'singlesignon'), {
+        helper: _tip_split_domain
+    }|merge(field_opts)) }}
     {{ fields.textField('authorized_domains', provider.fields.authorized_domains|default(''), __('AuthorizedDomains', 'singlesignon'), {
         helper: _tip_domains
     }|merge(field_opts)) }}
     {{ fields.dropdownYesNo('use_email_for_login', provider.fields.use_email_for_login|default(0), __('Use Email as Login', 'singlesignon'), field_opts) }}
-    {{ fields.dropdownYesNo('split_name', provider.fields.split_name|default(0), __('Split Name', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownYesNo('split_name', provider.fields.split_name|default(0), __('Split Name', 'singlesignon'), {
+        helper: _tip_split_name
+    }|merge(field_opts)) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('Registration', 'singlesignon') }}</div>
@@ -209,8 +218,8 @@ $(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
         <div class="hr-text my-3">{{ __('Personalization') }}</div>
     </div>
 
-    {% set bgcolor_extra = call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
-    {% set color_extra = call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', checked: (provider.fields.color|default('')) == ''}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
+    {% set bgcolor_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', class: 'mt-0', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
+    {% set color_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', class: 'mt-0', checked: (provider.fields.color|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
     {{ fields.colorField('bgcolor', provider.fields.bgcolor|default(''), __('Background color'), {
         add_field_html: bgcolor_extra,
         inline_add_field_html: true
@@ -222,7 +231,7 @@ $(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
 
     {% if provider.fields.picture|default('') is not empty %}
         {% set picture_field = call('Html::image', [call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPictureUrl'], [provider.fields.picture]), {style: picture_style, class: 'picture_square'}])|raw %}
-        {% set picture_extra = call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture'}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
+        {% set picture_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture', class: 'mt-0'}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
     {% else %}
         {% set picture_field = inputs.file('picture', null, {onlyimages: true}) %}
         {% set picture_extra = '' %}
