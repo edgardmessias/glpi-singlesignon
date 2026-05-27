@@ -13,7 +13,11 @@
             {"field_type": "username", "jsonpath": "$.displayName", "is_active": 1, "sort_order": 60},
             {"field_type": "firstname", "jsonpath": "$.givenName", "is_active": 1, "sort_order": 70},
             {"field_type": "lastname", "jsonpath": "$.surname", "is_active": 1, "sort_order": 80},
-            {"field_type": "fullname", "jsonpath": "$.displayName", "is_active": 1, "sort_order": 90}
+            {"field_type": "fullname", "jsonpath": "$.displayName", "is_active": 1, "sort_order": 90},
+            {"field_type": "location", "jsonpath": "$.officeLocation", "is_active": 1, "sort_order": 100},
+            {"field_type": "phone", "jsonpath": "$.businessPhones[0]", "is_active": 1, "sort_order": 110},
+            {"field_type": "phone2", "jsonpath": "$.businessPhones[1]", "is_active": 1, "sort_order": 120},
+            {"field_type": "mobile", "jsonpath": "$.mobilePhone", "is_active": 1, "sort_order": 130}
         ]
     },
     "facebook": {
