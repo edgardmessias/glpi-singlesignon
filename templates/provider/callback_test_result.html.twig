@@ -53,6 +53,11 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" type="button" data-sso-tab-target="#tab-id-token">
+                        {{ __('ID Token (JWT)', 'singlesignon') }}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" type="button" data-sso-tab-target="#tab-active-mappings">
                         {{ __('Active mappings', 'singlesignon') }}
                     </button>
@@ -88,7 +93,16 @@
                                         <td><code>{{ field_key }}</code> - {{ field_label }}</td>
                                         <td>
                                             {% if data.value is not null and data.value != '' %}
-                                                <code>{{ data.value }}</code>
+                                                {% set values = data.values|default([]) %}
+                                                {% if values is iterable and values|length > 0 %}
+                                                    <ul class="list-unstyled d-flex flex-wrap mb-0">
+                                                        {% for item in values %}
+                                                            <li class="me-1 mb-1"><code>{{ item }}</code></li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <code>{{ data.value }}</code>
+                                                {% endif %}
                                             {% else %}
                                                 <span class="text-muted">{{ __('Not resolved', 'singlesignon') }}</span>
                                             {% endif %}
@@ -103,8 +117,12 @@
                                         <td>
                                             {% if data.source == 'provider' %}
                                                 <span class="badge bg-blue-lt">{{ __('Provider mapping', 'singlesignon') }}</span>
+                                            {% elseif data.source == 'provider (jwt)' %}
+                                                <span class="badge bg-blue-lt">{{ __('Provider mapping (JWT)', 'singlesignon') }}</span>
                                             {% elseif data.source == 'default' %}
                                                 <span class="badge bg-green-lt">{{ __('Default mapping', 'singlesignon') }}</span>
+                                            {% elseif data.source == 'default (jwt)' %}
+                                                <span class="badge bg-green-lt">{{ __('Default mapping (JWT)', 'singlesignon') }}</span>
                                             {% else %}
                                                 <span class="text-muted">-</span>
                                             {% endif %}
@@ -118,6 +136,17 @@
 
                 <div class="tab-pane" id="tab-resource-owner">
                     <pre class="mb-0" style="white-space: pre-wrap;">{{ resource_owner_pretty }}</pre>
+                </div>
+
+                <div class="tab-pane" id="tab-id-token">
+                    {% if id_token_payload_pretty is empty %}
+                        <div class="p-3 text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ __('No ID token received or unable to parse.', 'singlesignon') }}
+                        </div>
+                    {% else %}
+                        <pre class="mb-0" style="white-space: pre-wrap;">{{ id_token_payload_pretty }}</pre>
+                    {% endif %}
                 </div>
 
                 <div class="tab-pane" id="tab-active-mappings">

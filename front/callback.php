@@ -90,6 +90,7 @@ if ($test_cookie) {
     unset($_COOKIE['glpi_singlesignon_test']);
     $resource_owner = $signon_provider->getResourceOwner();
     $resource_owner_array = is_array($resource_owner) ? $resource_owner : [];
+    $id_token_payload = $signon_provider->getIdTokenPayload();
     $resolved_fields = $signon_provider->getResolvedFieldsForDebug($resource_owner_array);
     $field_types = Provider_Field::getFieldTypes();
     $active_mappings = Provider_Field::getMappingsForProvider((int) $provider_id, null, true);
@@ -103,6 +104,19 @@ if ($test_cookie) {
         );
     } catch (Throwable) {
         $resource_owner_pretty = (string) __('Unable to encode resource owner payload.', 'singlesignon');
+    }
+
+    if (is_array($id_token_payload)) {
+        try {
+            $id_token_payload_pretty = json_encode(
+                $id_token_payload,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+            );
+        } catch (Throwable) {
+            $id_token_payload_pretty = (string) __('Unable to encode ID token payload.', 'singlesignon');
+        }
+    } else {
+        $id_token_payload_pretty = '';
     }
 
     $callback_context = [
@@ -185,6 +199,7 @@ if ($test_cookie) {
     $copy_payload_sections[] = implode("\n", $default_lines);
 
     $copy_payload_sections[] = (string) __('Resource Owner', 'singlesignon') . "\n" . $resource_owner_pretty;
+    $copy_payload_sections[] = (string) __('ID Token (JWT)', 'singlesignon') . "\n" . $id_token_payload_pretty;
     $copy_payload_sections[] = (string) __('Callback context', 'singlesignon') . "\n" . $callback_context_pretty;
     $copy_payload = implode("\n\n", $copy_payload_sections);
 
@@ -194,6 +209,7 @@ if ($test_cookie) {
         'field_types'             => $field_types,
         'resolved_fields'         => $resolved_fields,
         'resource_owner_pretty'   => $resource_owner_pretty,
+        'id_token_payload_pretty' => $id_token_payload_pretty,
         'callback_context_pretty' => $callback_context_pretty,
         'active_mappings'         => $active_mappings,
         'default_mappings'        => $default_mappings,
@@ -243,6 +259,12 @@ if ($loginResult === Provider::LOGIN_REGISTRATION_PREVIEW) {
     $url_redirect = $CFG_GLPI['root_doc'] . '/plugins/singlesignon/front/register_preview.php?' . http_build_query($query_params);
     $url_redirect = rtrim($url_redirect, '?'); // remove `?` when there is no parameters
     Html::redirect($url_redirect);
+}
+
+$loginError = $signon_provider->getLastLoginError();
+if ($loginError !== '') {
+    $client_ip = ToolboxPlugin::getClientIp();
+    Toolbox::logInFile('access-errors', "$loginError [client: $client_ip]\n", true);
 }
 
 if ($user_id || $loginResult === Provider::LOGIN_SUCCESS) {

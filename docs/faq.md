@@ -123,6 +123,21 @@ Official GLPI source install and tooling context: **[GLPI `INSTALL.md`](https://
 
 Tighten **Field mappings** so **ID** and **Email** are unambiguous; prefer stable ids (`sub`, provider id) for **ID**.
 
+### "The action you have requested is not allowed"
+
+If your identity provider redirects back successfully but GLPI fails with a CSRF error or rejects the login displaying the error message **"The action you have requested is not allowed."**, your PHP `session.cookie_samesite` setting might be too strict. You may also see the message **"User ID: `Anonymous` tried to execute an invalid request"** in GLPI's `access-errors.log` log file.
+
+**Fix:**
+1. Edit your server's `php.ini`.
+2. Locate the `session.cookie_samesite` directive.
+3. Change its value to `"Lax"`.
+4. Restart your web server or PHP-FPM service.
+
+**Why does this happen?**  
+When you click to log in via SSO, you temporarily leave GLPI to sign in at Microsoft or Google. When you come back, GLPI relies on a small file in your browser (a **cookie**) to remember that *you* were the one who started the login. 
+
+If your setting is `"Strict"`, your browser refuses to send this cookie back when you return from the outside website. Because GLPI loses track of who you are, it blocks the login to protect your security. Changing it to `"Lax"` allows the browser to safely send the cookie, so GLPI can successfully recognize you.
+
 ---
 
 ## Profile and avatar
@@ -138,6 +153,42 @@ Add explicit mappings; use bracket syntax for odd keys — see [Field mappings](
 ### Picture never updates
 
 Check **Synchronization mode**, the **Avatar URL** mapping, and **Photo** authorization settings in [Configuration](configuration.md).
+
+---
+
+## Logs
+
+When authentication fails, GLPI writes details to its log files. These are the first places to check when diagnosing login issues.
+
+### GLPI log files
+
+| File | Contents |
+|------|----------|
+| `<GLPI_ROOT>/files/_log/singlesignon-errors.log` | SSO-specific failures: access token errors, user lookup failures, group sync problems, and every other `return false` path in the plugin. **Start here** when diagnosing SSO login issues. |
+| `<GLPI_ROOT>/files/_log/access-errors.log` | HTTP-level access errors, denied requests, and SSO callback problems. |
+| `<GLPI_ROOT>/files/_log/php-errors.log` | PHP warnings and exceptions from GLPI and plugins. |
+
+Replace `<GLPI_ROOT>` with the absolute path to your GLPI installation (for example `/var/www/html/glpi`).
+
+### Docker containers
+
+Inside a standard GLPI Docker container the Apache error log is available at:
+
+```
+/var/www/apache2/errors.log
+```
+
+You can tail it live while reproducing a login attempt:
+
+```bash
+docker exec -it <container_name> tail -f /var/www/apache2/errors.log
+```
+
+### What to look for
+
+Check `singlesignon-errors.log` first: every failure path in the plugin writes a structured entry of the form `[function] provider="…" provider_id=… user="…" user_id=… <reason>`, so you can quickly find which step failed and for which user.
+
+Search the log for the user's login name, the provider name, or the string `singlesignon`. The plugin writes a human-readable reason to `lastLoginError` before every failed login; that message normally appears in the log.
 
 ---
 
