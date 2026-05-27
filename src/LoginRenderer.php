@@ -60,7 +60,7 @@ class LoginRenderer
             $mode = $_COOKIE['singlesignon_login_mode'] ?? 'oauth';
             return in_array($mode, ['oauth', 'classic'], true) ? $mode : 'oauth';
         }));
-      
+
         $env->addFunction(new TwigFunction('plugin_singlesignon_get_default_provider_url', fn($redirect = '') => self::getDefaultProviderUrl($redirect)));
 
         $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
