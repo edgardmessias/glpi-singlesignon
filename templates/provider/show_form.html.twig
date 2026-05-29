@@ -197,12 +197,11 @@
         inline_add_field_html: true
     }|merge(field_opts)) }}
 
-    {% set picture_rand = random() %}
     {% if provider.fields.picture|default('') is not empty %}
-        {% set picture_field = call('Html::image', [call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPictureUrl'], [provider.fields.picture]), {style: picture_style, class: 'picture_square', id: 'picture_' ~ picture_rand}])|raw %}
+        {% set picture_field = call('Html::image', [call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPictureUrl'], [provider.fields.picture]), {style: picture_style, class: 'picture_square'}])|raw %}
         {% set picture_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture', class: 'mt-0'}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
     {% else %}
-        {% set picture_field = inputs.file('picture', null, {onlyimages: true, id: 'picture_' ~ picture_rand}) %}
+        {% set picture_field = inputs.file('picture', null, {onlyimages: true}) %}
         {% set picture_extra = '' %}
     {% endif %}
     {{ fields.htmlField('picture', picture_field, __('Picture'), {
@@ -210,8 +209,7 @@
         label_class: field_opts.label_class,
         input_class: field_opts.input_class,
         add_field_html: picture_extra,
-        inline_add_field_html: true,
-        rand: picture_rand
+        inline_add_field_html: true
     }) }}
     {{ fields.nullField({
         field_class: 'col-12 col-xxl-6'
@@ -233,7 +231,7 @@ $("[name=color]").on("change", function () {
     <div class="col-12 mt-2">
         <div class="hr-text my-3">{{ __('Test') }}</div>
     </div>
-    {{ fields.htmlField('callback_url', cb_link, __('Callback URL', 'singlesignon'), {full_width: true, id: 'singlesignon_callbackurl'}|merge(field_opts)) }}
+    {{ fields.htmlField('callback_url', cb_link, __('Callback URL', 'singlesignon'), {full_width: true}|merge(field_opts)) }}
 {% endif %}
 </div>
 
