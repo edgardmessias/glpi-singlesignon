@@ -18,7 +18,7 @@ concurrency:
 jobs:
   generate-ci-matrix:
     name: "Generate CI matrix"
-    uses: "glpi-project/plugin-ci-workflows/.github/workflows/generate-ci-matrix.yml@v1"
+    uses: "glpi-project/plugin-ci-workflows/.github/workflows/generate-ci-matrix.yml@v1.21.0"
     with:
       glpi-version: "11.0.x"
   ci:
@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate-ci-matrix.outputs.matrix) }}
-    uses: "glpi-project/plugin-ci-workflows/.github/workflows/continuous-integration.yml@v1"
+    uses: "glpi-project/plugin-ci-workflows/.github/workflows/continuous-integration.yml@v1.21.0"
     with:
       plugin-key: "singlesignon"
       glpi-version: "${{ matrix.glpi-version }}"
