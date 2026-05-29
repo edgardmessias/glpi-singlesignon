@@ -1801,37 +1801,51 @@ class Provider extends CommonDBTM
             $this->logFailure(__FUNCTION__, 'exception during role mapping to GLPI group synchronization: ' . $ex->getMessage(), $user);
         }
 
-        // Optional photo sync
-        try {
-            $this->syncOAuthPhoto($user);
-        } catch (Exception $ex) {
-            $this->logFailure(__FUNCTION__, 'exception during OAuth photo synchronization: ' . $ex->getMessage(), $user);
+        // --- 2. Temporary SSO variable context ---
+        // Trick the glpi to use as external auth.
+        $original_ssovariables_id = $CFG_GLPI['ssovariables_id'];
+        $sso_variable_name = '';
+
+        $iterator = $DB->request([
+            'FROM'  => 'glpi_ssovariables',
+            'ORDER' => 'id ASC',
+            'LIMIT' => 1,
+        ]);
+
+        foreach ($iterator as $row) {
+            $CFG_GLPI['ssovariables_id'] = (int) $row['id'];
+            $sso_variable_name = (string) $row['name'];
+            $_SERVER[$sso_variable_name] = $user->fields['name'];
+            break;
         }
 
-        // --- 2. Login ---
-        // Use a temporary local password so that Auth::login runs the complete GLPI
-        // authentication pipeline, including the rules engine (rights/profile assignments).
-        // Simulating SSO/external auth (via $_SERVER or $_SESSION manipulation) does not
-        // trigger the rules engine; local DB authentication does.
-        $userId = (int) $user->fields['id'];
-        $tempPassword = bin2hex(random_bytes(64));
-        $DB->update('glpi_users', ['password' => Auth::getPasswordHash($tempPassword)], ['id' => $userId]);
+        // Force to run RuleRightCollection::processAllRules in User::getFromSSO by setting a dummy SSO field
+        $CFG_GLPI['singlesignon_ssofield'] = 'singlesignon_ssofield_dummy';
+        if (isset($user->input['_singlesignon_email'])) {
+            $CFG_GLPI['email1_ssofield'] = 'singlesignon_ssofield_email1';
+            $_SERVER['singlesignon_ssofield_email1'] = $user->input['_singlesignon_email'];
+        }
+        $defaultEmail = $user->getDefaultEmail();
+        if ($defaultEmail) {
+            $CFG_GLPI['email2_ssofield'] = 'singlesignon_ssofield_email2';
+            $_SERVER['singlesignon_ssofield_email2'] = $defaultEmail;
+        }
 
-        try {
-            $auth = new Auth();
-            // We intentionally do not call Session::init() directly because it does not execute
-            // GLPI's rules engine; Auth::login is required to apply rules on login.
-            $authResult = $auth->login($user->fields['name'], $tempPassword, false, $remember_me);
-        } finally {
-            // Restore the original password hash unconditionally to ensure it is never
-            // left in a temporary state even if login throws an exception.
-            $DB->update('glpi_users', ['password' => $user->fields['password']], ['id' => $userId]);
+        // --- 3. Login via external auth (password unused) ---
+        // Force Enable Rule synchappens in Auth::login when using EXTERNAL auth.
+        $auth = new Auth();
+        $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
+
+        // --- 4. Post-login cleanup (success or failure): undo temporary SSO context ---
+        unset($_SESSION['glpi_remote_user']);
+
+        $CFG_GLPI['ssovariables_id'] = $original_ssovariables_id;
+        if ($sso_variable_name !== '') {
+            unset($_SERVER[$sso_variable_name]);
         }
 
         if (!$authResult) {
-            // The Auth::login failed. Check if user has ANY valid profile left.
-            // During Auth::login(), the GLPI rule engine removes all dynamic authorizations.
-            // If the rule engine evaluated and they ended up with no profile, the login would fail.
+            $userId = (int) $user->fields['id'];
             $pu = new Profile_User();
             if (countElementsInTable($pu->getTable(), ['users_id' => $userId]) === 0) {
                 $providerName = (string) ($this->fields['name'] ?? '');
@@ -1845,7 +1859,7 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        // --- 3. Success: restore session snapshot ---
+        // --- 5. Success: restore session snapshot ---
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
         }
@@ -1883,6 +1897,7 @@ class Provider extends CommonDBTM
         }
 
         $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
+        $emailMapped = $this->resolveFieldValueFromMappings($resource_array, 'email');
 
         if ($remote_id !== null && $remote_id !== '') {
             $link = new Provider_User();
@@ -1893,6 +1908,10 @@ class Provider extends CommonDBTM
             if (!empty($links) && $first = reset($links)) {
                 $id = $first['users_id'];
             }
+        }
+
+        if ($emailMapped !== null && $emailMapped !== '') {
+            $user->input['_singlesignon_email'] = $emailMapped; // Used in performGlpiLogin to set temporary SSO variable for email-based rules.
         }
 
         if (is_numeric($id) && $user->getFromDB((int) $id)) {
@@ -1907,7 +1926,6 @@ class Provider extends CommonDBTM
         }
 
         $emailFull = null;
-        $emailMapped = $this->resolveFieldValueFromMappings($resource_array, 'email');
         if ($emailMapped !== null && $emailMapped !== '') {
             if (!$this->checkAuthorizedDomain((string) $emailMapped, $authorizedDomains)) {
                 return false;
