@@ -47,14 +47,6 @@ Contributing, releases, and translations: **[CONTRIBUTING.md](https://github.com
 4. **Setup → Single Sign-On**: add a provider and register the **Callback URL** with your identity provider.
 
 Latest release package (example): `https://github.com/edgardmessias/glpi-singlesignon/releases/latest/download/singlesignon.tar.bz2`
-
-### IdP documentation (examples)
-
-- [Microsoft Entra / Azure AD](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app)
-- [Google OAuth](https://developers.google.com/identity/protocols/oauth2)
-- [GitHub OAuth apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app)
-- [Facebook Login](https://developers.facebook.com/docs/facebook-login)
-- [LinkedIn OAuth 2.0](https://learn.microsoft.com/en-us/linkedin/shared/authentication/authentication)
 ]]></en>
         </long>
     </description>
