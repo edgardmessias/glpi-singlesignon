@@ -56,7 +56,10 @@
 
     {% if canedit %}
         <div class="singlesignon-preference-actions">
-            <input type="submit" name="update" class="btn btn-primary" value="{{ call('_sx', ['button', 'Save'])|e('html_attr') }}">
+            <button type="submit" name="update" class="btn btn-primary" value="1">
+                <i class="ti ti-device-floppy"></i>
+                <span>{{ call('_sx', ['button', 'Save']) }}</span>
+            </button>
         </div>
     {% endif %}
 </div>

@@ -21,7 +21,9 @@
  */
 
 .singlesignon-preference {
+    --sso-pref-surface-top: rgba(255, 255, 255, 0.95);
     --sso-pref-surface: rgba(255, 255, 255, 0.88);
+    --sso-pref-button-bg: rgba(255, 255, 255, 0.9);
     --sso-pref-border: rgba(17, 24, 39, 0.08);
     --sso-pref-shadow: 0 14px 30px -22px rgba(15, 23, 42, 0.65);
     --sso-pref-title: #1f2937;
@@ -41,7 +43,7 @@
     border: 1px solid var(--sso-pref-border);
     border-radius: 14px;
     padding: 1rem;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, var(--sso-pref-surface) 100%);
+    background: linear-gradient(180deg, var(--sso-pref-surface-top) 0%, var(--sso-pref-surface) 100%);
     box-shadow: var(--sso-pref-shadow);
 }
 
@@ -110,7 +112,7 @@
     padding: 0.72rem 0.9rem;
     border: 1px solid color-mix(in srgb, var(--sso-pref-accent) 24%, var(--sso-pref-border));
     border-radius: 12px;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: var(--sso-pref-button-bg);
     color: var(--sso-pref-text);
     font-weight: 600;
     text-decoration: none;
@@ -178,16 +180,34 @@
     justify-content: center;
 }
 
-@media (prefers-color-scheme: dark) {
-    .singlesignon-preference {
-        --sso-pref-surface: rgba(17, 24, 39, 0.86);
-        --sso-pref-border: rgba(255, 255, 255, 0.14);
-        --sso-pref-shadow: 0 18px 34px -24px rgba(2, 6, 23, 0.95);
-        --sso-pref-title: #f3f4f6;
-        --sso-pref-text: #e5e7eb;
-        --sso-pref-muted: #cbd5e1;
-        --sso-pref-accent: #60a5fa;
-    }
+/* * Form field alignment 
+ * Forces a strict 2-column grid to perfectly align inputs with their Clear checkboxes 
+ */
+[data-testid="form-field-bgcolor"] .field-container,
+[data-testid="form-field-color"] .field-container,
+[data-testid="form-field-picture"] .field-container {
+    display: grid !important;
+    grid-template-columns: 1fr 90px; 
+    align-items: center;
+}
+
+/* Ensure wide inputs (like the color picker) don't break the grid boundary */
+[data-testid="form-field-bgcolor"] .field-container > span:first-child,
+[data-testid="form-field-color"] .field-container > span:first-child,
+[data-testid="form-field-picture"] .field-container > span:first-child {
+    min-width: 0; 
+}
+
+:root[data-glpi-theme-dark="1"] .singlesignon-preference {
+    --sso-pref-surface-top: rgba(30, 41, 59, 0.95);
+    --sso-pref-surface: rgba(17, 24, 39, 0.86);
+    --sso-pref-button-bg: rgba(30, 41, 59, 0.9);
+    --sso-pref-border: rgba(255, 255, 255, 0.14);
+    --sso-pref-shadow: 0 18px 34px -24px rgba(2, 6, 23, 0.95);
+    --sso-pref-title: #f3f4f6;
+    --sso-pref-text: #e5e7eb;
+    --sso-pref-muted: #cbd5e1;
+    --sso-pref-accent: #60a5fa;
 }
 
 @media (max-width: 767.98px) {
