@@ -108,10 +108,6 @@ Shows a confirmation step before creating the user.
 
 Which **entity** new users belong to when nothing else assigns one.
 
-### Match entity by email domain (entity name = domain)
-
-Tries to place the user in an entity whose **name** equals the domain part of their email.
-
 ### Default profile when GLPI has no default
 
 Profile assigned when GLPI would otherwise leave the user without one.
