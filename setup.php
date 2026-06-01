@@ -28,7 +28,10 @@ use GlpiPlugin\Singlesignon\LoginRenderer;
 use GlpiPlugin\Singlesignon\Preference;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
+use GlpiPlugin\Singlesignon\Provider_Group;
 use GlpiPlugin\Singlesignon\Provider_Profile;
+use GlpiPlugin\Singlesignon\Provider_Role;
+use GlpiPlugin\Singlesignon\Provider_User;
 
 use function Safe\define;
 
@@ -83,7 +86,10 @@ function plugin_init_singlesignon()
 
     Plugin::registerClass(Provider::class);
     Plugin::registerClass(Provider_Field::class);
+    Plugin::registerClass(Provider_Group::class);
     Plugin::registerClass(Provider_Profile::class);
+    Plugin::registerClass(Provider_Role::class);
+    Plugin::registerClass(Provider_User::class);
 
     $PLUGIN_HOOKS[Hooks::CONFIG_PAGE]['singlesignon'] = 'front/provider.php';
     $PLUGIN_HOOKS[Hooks::POST_INIT]['singlesignon'] = [LoginRenderer::class, 'onPostInit'];
