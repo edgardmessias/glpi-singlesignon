@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use RuleRight;
 use Throwable;
 use CommonDBTM;
 use JsonPath\JsonObject;
@@ -804,6 +805,27 @@ class Provider extends CommonDBTM
     public static function getIcon()
     {
         return 'ti ti-lock';
+    }
+
+    /**
+     * NOTE: changes to this menu are stored in the PHP session, so they only
+     * take effect after the session is refreshed.  If the new menu entry does
+     * not appear, log out and log back in, or disable/re-enable the plugin
+     * through the GLPI Plugins page to force a session reset.
+     */
+    public static function getAdditionalMenuLinks()
+    {
+        $links = parent::getAdditionalMenuLinks() ?: [];
+
+        if (RuleRight::canView()) {
+            $label = __('Authorization assignment rules');
+            $link = "<i class=\"ti ti-user-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
+            $url = Toolbox::getItemTypeSearchURL('RuleRight');
+
+            $links[$link] = $url;
+        }
+
+        return $links;
     }
 
     public static function getDefault($type, $key, $default = null)
