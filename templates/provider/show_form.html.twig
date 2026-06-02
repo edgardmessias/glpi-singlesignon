@@ -153,10 +153,13 @@
         'Entity',
         'default_entities_id',
         provider.fields['default_entities_id']|default(0),
-        __('Default entity for new users', 'singlesignon'),
+        __('Default entity for users', 'singlesignon'),
         field_opts|merge({ display_emptychoice: true })
     ) }}
-    {{ fields.dropdownYesNo('match_entity_by_email_domain', provider.fields.match_entity_by_email_domain|default(0), __('Match entity by email domain (entity name = domain)', 'singlesignon'), field_opts) }}
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
+    }) }}
+
     {{ fields.dropdownField(
         'Profile',
         'default_profiles_id',
@@ -164,6 +167,7 @@
         __('Default profile when GLPI has no default', 'singlesignon'),
         field_opts|merge({ display_emptychoice: true })
     ) }}
+    {{ fields.dropdownYesNo('default_profiles_id_is_recursive', provider.fields.default_profiles_id_is_recursive|default(0), __('Recursive', 'singlesignon'), field_opts) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>

@@ -104,13 +104,13 @@ Creates a GLPI user on first successful SSO when no match exists (subject to GLP
 
 Shows a confirmation step before creating the user.
 
-### Default entity for new users
+### Default entity for users
 
-Which **entity** new users belong to when nothing else assigns one.
+Determines which **entity** users belong to. This is evaluated and synchronized on **every login** for all users (both new and existing).
 
 ### Default profile when GLPI has no default
 
-Profile assigned when GLPI would otherwise leave the user without one.
+Configures the GLPI profile assigned to the user. This is evaluated and synchronized on **every login** for all users (both new and existing) to ensure they have valid authorization to access GLPI. You can also specify if this profile should be **Recursive** (applies to sub-entities) using the recursive setting.
 
 ---
 

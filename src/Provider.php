@@ -45,6 +45,7 @@ use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
 use GlpiPlugin\Singlesignon\Provider_Group;
+use GlpiPlugin\Singlesignon\Provider_Profile;
 use GlpiPlugin\Singlesignon\Provider_Role;
 
 use function Safe\base64_decode;
@@ -181,8 +182,8 @@ class Provider extends CommonDBTM
         $this->fields['auto_register'] = 0;
         $this->fields['registration_preview'] = 0;
         $this->fields['default_entities_id'] = 0;
-        $this->fields['match_entity_by_email_domain'] = 0;
         $this->fields['default_profiles_id'] = 0;
+        $this->fields['default_profiles_id_is_recursive'] = 0;
         $this->fields['ssl_verify_host'] = 1;
         $this->fields['ssl_verify_peer'] = 1;
     }
@@ -378,8 +379,8 @@ class Provider extends CommonDBTM
         $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
         $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
         $input['default_entities_id'] = (int) ($input['default_entities_id'] ?? 0);
-        $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
         $input['default_profiles_id'] = (int) ($input['default_profiles_id'] ?? 0);
+        $input['default_profiles_id_is_recursive'] = empty($input['default_profiles_id_is_recursive']) ? 0 : 1;
         if (array_key_exists('ssl_verify_host', $input)) {
             $input['ssl_verify_host'] = empty($input['ssl_verify_host']) ? 0 : 1;
         } else {
@@ -1491,7 +1492,7 @@ class Provider extends CommonDBTM
         ];
     }
 
-    private function resolveEntitiesIdForNewUser(array $resource_array, ?string $email): int
+    private function resolveEntitiesIdForUser(array $resource_array): int
     {
         global $DB;
 
@@ -1515,47 +1516,151 @@ class Provider extends CommonDBTM
         return $default >= 0 ? $default : -1;
     }
 
-    private function ensureProfileForNewUser(User $user, int $entitiesId): bool
+    /**
+     * Synchronize the user's mapped static profile authorization.
+     * This creates or updates a permanent static profile (is_dynamic = 0)
+     * to allow Auth::login() to execute rules without failing immediately
+     * due to missing profile by the GLPI rules engine, while allowing the plugin
+     * to dynamically update it on every login.
+     */
+    public function syncUserProfileAuthorization(User $user, array $resource_array): bool
     {
-        if (Profile::getDefault() != 0) {
-            return true;
-        }
-
         global $DB;
 
-        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
-
-        $datasProfiles = [];
-        foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
-            $datasProfiles[] = $data;
-        }
-        $datasEntities = [];
-        foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
-            $datasEntities[] = $data;
-        }
-
-        if ($configuredProfile > 0) {
-            $profileId = $configuredProfile;
-            $entityForProfile = $entitiesId > 0 ? $entitiesId : (int) ($datasEntities[0]['id'] ?? 0);
-        } else {
-            if (count($datasProfiles) === 0 || count($datasEntities) === 0) {
-                return false;
-            }
-            $profileId = (int) $datasProfiles[0]['id'];
-            $entityForProfile = (int) $datasEntities[0]['id'];
-        }
-
-        if ($profileId <= 0 || $entityForProfile <= 0) {
+        // Find user ID
+        $userId = (int) ($user->fields['id'] ?? 0);
+        if ($userId <= 0) {
+            $this->logFailure(__FUNCTION__, 'failed because user id is empty before Profile_User assignment', $user);
             return false;
         }
 
+        // Find provider link. If it does not exist, create it.
+        // This handles existing GLPI users logging in via SSO for the first time.
+        $link = new Provider_User();
+        if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
+            $this->linkRemoteUserToProvider($userId, (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''));
+            // Reload $link after creation.
+            if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
+                $this->logFailure(__FUNCTION__, 'failed to create provider-user link for Profile_User assignment', $user);
+                return false;
+            }
+        }
+
+        // Look up the profile mapping tracked by the plugin for this user.
+        $providerProfile = Provider_Profile::getForUser($userId);
+        $mappedProfileId = $providerProfile !== false ? (int) ($providerProfile->fields['glpi_profiles_users_id'] ?? 0) : 0;
+
+        // Determine target profile ID
+        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
+        $glpiDefaultProfile = (int) Profile::getDefault();
+        $profileId = 0;
+        if ($configuredProfile > 0) {
+            $profileId = $configuredProfile;
+        } elseif ($glpiDefaultProfile > 0) {
+            $profileId = $glpiDefaultProfile;
+        } else {
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_profiles',
+                'ORDER'  => ['id ASC'],
+                'LIMIT'  => 1,
+            ]) as $profile) {
+                $profileId = (int) ($profile['id'] ?? 0);
+                break;
+            }
+        }
+
+        if ($profileId <= 0) {
+            $this->logFailure(__FUNCTION__, 'failed because no GLPI profile could be resolved for Profile_User assignment', $user);
+            return false;
+        }
+
+        // Determine target entity ID
+        $entityForProfile = $this->resolveEntitiesIdForUser($resource_array);
+
+        if ($entityForProfile < 0) {
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_entities',
+                'ORDER'  => ['id ASC'],
+                'LIMIT'  => 1,
+            ]) as $entity) {
+                $entityForProfile = (int) ($entity['id'] ?? -1);
+                break;
+            }
+        }
+
+        if ($entityForProfile < 0) {
+            $this->logFailure(__FUNCTION__, 'failed because no GLPI entity could be resolved for Profile_User assignment', $user);
+            return false;
+        }
+
+        $isRecursive = $configuredProfile > 0
+            ? (int) ($this->fields['default_profiles_id_is_recursive'] ?? 0)
+            : 0;
+
         $pu = new Profile_User();
-        $pu->add([
-            'users_id'      => (int) $user->fields['id'],
-            'entities_id'   => $entityForProfile,
-            'is_recursive'  => 0,
-            'profiles_id'   => $profileId,
-        ]);
+        // Update or Create static mapped GLPI profile.
+        // The profile is created as is_dynamic=0 so Auth::login() does not delete it
+        // when running the rules engine.
+        if ($mappedProfileId > 0) {
+            // A mapped profile ID is stored — does it still exist in glpi_profiles_users?
+            if ($pu->getFromDB($mappedProfileId)) {
+                // Yes! Update entity/profile/recursiveness directly via DB to bypass
+                // Profile_User (CommonDBRelation) prepareInputForUpdate restrictions.
+                $DB->update('glpi_profiles_users', [
+                    'entities_id'  => $entityForProfile,
+                    'profiles_id'  => $profileId,
+                    'is_recursive' => $isRecursive,
+                    'is_dynamic'   => 0,
+                ], ['id' => $mappedProfileId]);
+            }
+            // If the admin deleted it manually, we DO NOT recreate it.
+        } elseif ($pu->getFromDBByCrit([
+            'users_id'    => $userId,
+            'entities_id' => $entityForProfile,
+            'profiles_id' => $profileId,
+        ])) {
+            // A matching authorization already exists — make it static and track it.
+            $DB->update('glpi_profiles_users', [
+                'is_recursive' => $isRecursive,
+                'is_dynamic'   => 0,
+            ], ['id' => $pu->getID()]);
+            if ($providerProfile !== false) {
+                $providerProfile->update(['id' => $providerProfile->getID(), 'glpi_profiles_users_id' => $pu->getID()]);
+            } else {
+                $providerProfile = new Provider_Profile();
+                $providerProfile->add(['users_id' => $userId, 'glpi_profiles_users_id' => $pu->getID()]);
+            }
+        } else {
+            // No authorization exists yet. Create a static one.
+            $profileLinkId = (int) $pu->add([
+                'users_id'     => $userId,
+                'entities_id'  => $entityForProfile,
+                'profiles_id'  => $profileId,
+                'is_recursive' => $isRecursive,
+                'is_dynamic'   => 0,
+            ]);
+            if ($profileLinkId <= 0) {
+                $this->logFailure(
+                    __FUNCTION__,
+                    sprintf(
+                        'failed to create Profile_User authorization link for users_id=%d profiles_id=%d entities_id=%d',
+                        $userId,
+                        $profileId,
+                        $entityForProfile,
+                    ),
+                    $user,
+                );
+                return false;
+            }
+            if ($providerProfile !== false) {
+                $providerProfile->update(['id' => $providerProfile->getID(), 'glpi_profiles_users_id' => $profileLinkId]);
+            } else {
+                $providerProfile = new Provider_Profile();
+                $providerProfile->add(['users_id' => $userId, 'glpi_profiles_users_id' => $profileLinkId]);
+            }
+        }
 
         return true;
     }
@@ -1624,7 +1729,7 @@ class Provider extends CommonDBTM
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
         // ── Entity ID ────────────────────────────────────────────────────────
-        $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
+        $entitiesId = $this->resolveEntitiesIdForUser($resource_array);
 
         // ── Picture ──────────────────────────────────────────────────────────
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
@@ -1703,11 +1808,7 @@ class Provider extends CommonDBTM
                 return false;
             }
 
-            if (!$this->ensureProfileForNewUser($user, $entitiesId)) {
-                return false;
-            }
-
-            $this->linkRemoteUserToProvider((int) $user->fields['id'], (string) $remote_id);
+            $this->syncUserProfileAuthorization($user, $resource_array);
 
             return $user;
         } catch (Exception $ex) {
@@ -1719,6 +1820,7 @@ class Provider extends CommonDBTM
     private function linkRemoteUserToProvider(int $users_id, string $remote_id): void
     {
         $link = new Provider_User();
+        // Unlink from another user
         $link->deleteByCriteria([
             'plugin_singlesignon_providers_id' => $this->fields['id'],
             'remote_id'                         => $remote_id,
@@ -2008,6 +2110,7 @@ class Provider extends CommonDBTM
 
         $user = $this->findUser($resource_array);
         if ($user) {
+            $this->syncUserProfileAuthorization($user, $resource_array);
             return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
         }
 
@@ -2072,19 +2175,7 @@ class Provider extends CommonDBTM
             return false;
         }
 
-        $link = new Provider_User();
-
-        // Unlink from another user
-        $link->deleteByCriteria([
-            'plugin_singlesignon_providers_id' => $this->fields['id'],
-            'remote_id' => $remote_id,
-        ]);
-
-        return $link->add([
-            'plugin_singlesignon_providers_id' => $this->fields['id'],
-            'users_id' => $user_id,
-            'remote_id' => $remote_id,
-        ]);
+        $this->linkRemoteUserToProvider((int) $user_id, (string) $remote_id);
     }
 
 
