@@ -48,6 +48,10 @@
 {% set type_on_change %}
     var _value = this.options[this.selectedIndex].value;
     
+    // Handle Generic SSO URL
+    var isGeneric = _value === "generic";
+    $(".sso_url").toggleClass("d-none", !isGeneric).toggle(isGeneric);
+
     // Handle Azure 
     var isAzure = _value === "azure";
     $(".sso_azure").toggleClass("d-none", !isAzure).toggle(isAzure);
