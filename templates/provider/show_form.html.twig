@@ -54,12 +54,16 @@
 {% set _tip_use_slo = call('nl2br', [__('Enables the usage of the predefined Single Logout URL (SLO) for this Identity Provider.', 'singlesignon')]) %}
 
 {% set type_on_change %}
-var _value = this.options[this.selectedIndex].value; 
-var isGeneric = _value == "generic";
-$(".sso_url").toggleClass("d-none", !isGeneric).toggle(isGeneric);
-var slo_types = {{ slo_supported_types|json_encode|raw }};
-var isPresetSlo = slo_types.includes(_value);
-$(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
+    var _value = this.options[this.selectedIndex].value; 
+    
+    // Handle Generic SSO URL
+    var isGeneric = _value === "generic";
+    $(".sso_url").toggleClass("d-none", !isGeneric).toggle(isGeneric);
+    
+    // Handle Preset SLO
+    var slo_types = {{ slo_supported_types|json_encode|raw }};
+    var isPresetSlo = slo_types.includes(_value);
+    $(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
 {% endset %}
 {% set field_opts = {
     align_label_right: true,
