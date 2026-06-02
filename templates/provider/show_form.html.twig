@@ -45,7 +45,22 @@
 {% set _tip_split_name = call('nl2br', [__('When enabled, the full name returned by the IdP is automatically split into first name and last name fields.', 'singlesignon')]) %}
 {% set _tip_azure_endpoint = call('nl2br', [call('sprintf', [__('Use %1$s to allow login from any work, school, or personal account. If you specify a custom tenant (Example: %2$s), only users belonging to that specific tenant will be able to log in.', 'singlesignon'), '<code>common</code>', '<code>example.com</code>'])]) %}
 
-{% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggleClass("d-none", _value != "generic").toggle(_value == "generic"); $(".sso_azure").toggleClass("d-none", _value != "azure").toggle(_value == "azure");' %}
+{% set type_on_change %}
+    var _value = this.options[this.selectedIndex].value; 
+    
+    // Handle Generic SSO URL
+    var isGeneric = _value === "generic";
+    $(".sso_url").toggleClass("d-none", !isGeneric).toggle(isGeneric);
+    
+    // Handle Azure 
+    var isAzure = _value === "azure";
+    $(".sso_azure").toggleClass("d-none", !isAzure).toggle(isAzure);
+    
+    // Handle Preset SLO
+    var slo_types = {{ slo_supported_types|json_encode|raw }};
+    var isPresetSlo = slo_types.includes(_value);
+    $(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
+{% endset %}
 {% set field_opts = {
     align_label_right: true,
     field_class: 'col-12 col-xxl-6',
@@ -71,15 +86,17 @@
         enable_fileupload: false
     }|merge(field_opts)) }}
 
+    {% set type_rand = random() %}
     {% set type_field %}
         {{ call(['GlpiPlugin\\Singlesignon\\Provider', 'dropdownType'], ['type', {
             value: provider.fields.type|default('generic'),
             on_change: type_on_change,
             width: '100%',
-            display: false
+            display: false,
+            rand: type_rand
         }])|raw }}
     {% endset %}
-    {{ fields.htmlField('type', type_field, __('SSO Type', 'singlesignon'), field_opts) }}
+    {{ fields.htmlField('type', type_field, __('SSO Type', 'singlesignon'), field_opts|merge({id: 'dropdown_type' ~ type_rand})) }}
     {{ fields.dropdownYesNo('is_active', provider.fields.is_active|default(0), __('Active'), field_opts) }}
 
     {{ fields.textField('client_id', provider.fields.client_id|default(''), __('Client ID', 'singlesignon'), field_opts) }}
