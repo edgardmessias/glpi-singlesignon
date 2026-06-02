@@ -26,12 +26,15 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Session;
 use Plugin;
 use Glpi\Application\View\TemplateRenderer;
 use Glpi\Kernel\Kernel;
 use Toolbox;
 use Twig\Loader\FilesystemLoader;
 use Twig\TwigFunction;
+
+use function Safe\parse_url;
 
 class LoginRenderer
 {
@@ -59,6 +62,17 @@ class LoginRenderer
         }));
 
         $env->addFunction(new TwigFunction('plugin_singlesignon_get_default_provider_url', fn($redirect = '') => self::getDefaultProviderUrl($redirect)));
+
+        $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        if ($requestPath !== null && str_contains((string) $requestPath, 'front/logout') && isset($_SESSION['glpi_singlesignon_provider'])) {
+            $providerId = (int) $_SESSION['glpi_singlesignon_provider'];
+            $provider = new Provider();
+            if ($provider->getFromDB($providerId) && !empty($provider->fields['url_slo'])) {
+                Session::cleanOnLogout();
+                header('Location: ' . $provider->fields['url_slo']);
+                exit; // @phpstan-ignore-line
+            }
+        }
     }
 
     public static function hasActiveProviders(): bool
