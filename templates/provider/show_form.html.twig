@@ -46,20 +46,11 @@
 {% set _tip_azure_endpoint = call('nl2br', [call('sprintf', [__('Use %1$s to allow login from any work, school, or personal account. If you specify a custom tenant (Example: %2$s), only users belonging to that specific tenant will be able to log in.', 'singlesignon'), '<code>common</code>', '<code>example.com</code>'])]) %}
 
 {% set type_on_change %}
-    var _value = this.options[this.selectedIndex].value; 
-    
-    // Handle Generic SSO URL
-    var isGeneric = _value === "generic";
-    $(".sso_url").toggleClass("d-none", !isGeneric).toggle(isGeneric);
+    var _value = this.options[this.selectedIndex].value;
     
     // Handle Azure 
     var isAzure = _value === "azure";
     $(".sso_azure").toggleClass("d-none", !isAzure).toggle(isAzure);
-    
-    // Handle Preset SLO
-    var slo_types = {{ slo_supported_types|json_encode|raw }};
-    var isPresetSlo = slo_types.includes(_value);
-    $(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
 {% endset %}
 {% set field_opts = {
     align_label_right: true,
