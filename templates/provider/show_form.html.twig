@@ -31,6 +31,7 @@
 {% endfor %}
 
 {% set sso_hidden_class = provider.fields.type|default('generic') != 'generic' ? 'd-none' : '' %}
+{% set sso_azure_hidden_class = provider.fields.type != 'azure' ? 'd-none' : '' %}
 {% set sso_preset_slo_hidden_class = provider.fields.type|default('generic') in slo_supported_types ? '' : 'd-none' %}
 {% set picture_style = 'max-width: 100px; max-height: 100px; background-image: linear-gradient(45deg, #b0b0b0 25%, transparent 25%), linear-gradient(-45deg, #b0b0b0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #b0b0b0 75%), linear-gradient(-45deg, transparent 75%, #b0b0b0 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;' %}
 
@@ -50,6 +51,7 @@
 {% set _tip_is_default = call('nl2br', [__('When enabled, users who visit the login page will be automatically redirected to this provider\'s authentication page. To bypass the redirect and access the standard GLPI login form, add noAUTO=1 to the login URL.', 'singlesignon')]) %}
 {% set _tip_split_domain = call('nl2br', [__('When enabled, the domain part (everything after @) is stripped from the user\'s login name. Useful when the IdP returns an email address as the login and GLPI usernames do not include the domain.', 'singlesignon')]) %}
 {% set _tip_split_name = call('nl2br', [__('When enabled, the full name returned by the IdP is automatically split into first name and last name fields.', 'singlesignon')]) %}
+{% set _tip_azure_endpoint = call('nl2br', [call('sprintf', [__('Use %1$s to allow login from any work, school, or personal account. If you specify a custom tenant (Example: %2$s), only users belonging to that specific tenant will be able to log in.', 'singlesignon'), '<code>common</code>', '<code>example.com</code>'])]) %}
 {% set _tip_slo = call('nl2br', [__('URL used by the Identity Provider to receive logout requests (Single Logout, SLO). If provided, users logging out of GLPI will also be logged out from the Identity Provider.', 'singlesignon')]) %}
 {% set _tip_use_slo = call('nl2br', [__('Enables the usage of the predefined Single Logout URL (SLO) for this Identity Provider.', 'singlesignon')]) %}
 
@@ -59,6 +61,10 @@
     // Handle Generic SSO URL
     var isGeneric = _value === "generic";
     $(".sso_url").toggleClass("d-none", !isGeneric).toggle(isGeneric);
+
+    // Handle Azure 
+    var isAzure = _value === "azure";
+    $(".sso_azure").toggleClass("d-none", !isAzure).toggle(isAzure);
     
     // Handle Preset SLO
     var slo_types = {{ slo_supported_types|json_encode|raw }};
@@ -105,6 +111,13 @@
 
     {{ fields.textField('client_id', provider.fields.client_id|default(''), __('Client ID', 'singlesignon'), field_opts) }}
     {{ fields.textField('client_secret', provider.fields.client_secret|default(''), __('Client Secret', 'singlesignon'), field_opts) }}
+    {{ fields.textField('azure_endpoint', call([provider, 'getAzureEndpoint'], []), __('Azure Endpoint', 'singlesignon'), {
+        add_field_class: 'sso_azure ' ~ sso_azure_hidden_class,
+        helper: _tip_azure_endpoint
+    }|merge(field_opts)) }}
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6 sso_azure ' ~ sso_azure_hidden_class
+    }) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('OAuth URLs and HTTP', 'singlesignon') }}</div>
