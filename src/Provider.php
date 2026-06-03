@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use RuleRight;
 use Throwable;
 use CommonDBTM;
 use JsonPath\JsonObject;
@@ -43,8 +44,13 @@ use Auth;
 use DBmysql;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
+use GlpiPlugin\Singlesignon\Provider_Group;
+use GlpiPlugin\Singlesignon\Provider_Profile;
+use GlpiPlugin\Singlesignon\Provider_Role;
 
+use function Safe\base64_decode;
 use function Safe\file_get_contents;
+use function Safe\ini_get;
 use function Safe\fclose;
 use function Safe\fopen;
 use function Safe\fwrite;
@@ -98,9 +104,26 @@ class Provider extends CommonDBTM
      *
      * @var null|array
      */
+    protected $_id_token_payload = null;
+
+    /**
+     *
+     * @var null|array
+     */
     protected $_resource_owner = null;
 
-    public $debug = false;
+    /**
+     * Human-readable reason for the last LOGIN_FAILURE, populated by login() and performGlpiLogin().
+     * Empty string when no failure has occurred yet.
+     *
+     * @var string
+     */
+    protected string $lastLoginError = '';
+
+    public function getLastLoginError(): string
+    {
+        return $this->lastLoginError;
+    }
 
     public static function canCreate(): bool
     {
@@ -143,6 +166,7 @@ class Provider extends CommonDBTM
         $this->addDefaultFormTab($ong);
         $this->addStandardTab(self::class, $ong, $options);
         $this->addStandardTab(Provider_Field::class, $ong, $options);
+        $this->addStandardTab(Provider_Role::class, $ong, $options);
         $this->addStandardTab('Log', $ong, $options);
 
         return $ong;
@@ -158,8 +182,8 @@ class Provider extends CommonDBTM
         $this->fields['auto_register'] = 0;
         $this->fields['registration_preview'] = 0;
         $this->fields['default_entities_id'] = 0;
-        $this->fields['match_entity_by_email_domain'] = 0;
         $this->fields['default_profiles_id'] = 0;
+        $this->fields['default_profiles_id_is_recursive'] = 0;
         $this->fields['ssl_verify_host'] = 1;
         $this->fields['ssl_verify_peer'] = 1;
     }
@@ -226,11 +250,26 @@ class Provider extends CommonDBTM
 
     public function cleanDBonPurge()
     {
+        global $DB;
+
+        Toolbox::deletePicture($this->fields['picture']);
+
+        $providerId = $this->getID();
+        if ($providerId > 0) {
+            $rolesTable = Provider_Role::getTable();
+
+            // Delete all role mappings for this provider.
+            $DB->delete($rolesTable, ['plugin_singlesignon_providers_id' => $providerId]);
+        }
+
         Toolbox::deletePicture($this->fields['picture']);
         $this->deleteChildrenAndRelationsFromDb(
             [
                 'PluginSinglesignonProvider_User',
                 'PluginSinglesignonProvider_Field',
+                'PluginSinglesignonProvider_Role',
+                'PluginSinglesignonProvider_Group',
+                'PluginSinglesignonProvider_Profile',
             ],
         );
     }
@@ -288,6 +327,17 @@ class Provider extends CommonDBTM
             } elseif (!filter_var($input['url_resource_owner_details'], FILTER_VALIDATE_URL)) {
                 $error_detected[] = __s('The Resource Owner Details URL is invalid', 'singlesignon');
             }
+
+            if (isset($input['url_slo']) && !empty($input['url_slo']) && !filter_var($input['url_slo'], FILTER_VALIDATE_URL)) {
+                $error_detected[] = __s('The Single Logout URL is invalid', 'singlesignon');
+            }
+        } else {
+            $default_slo = static::getDefault($type, 'url_slo');
+            if (!empty($default_slo)) {
+                $input['url_slo'] = isset($input['_use_slo']) && $input['_use_slo'] ? $default_slo : '';
+            } else {
+                $input['url_slo'] = '';
+            }
         }
 
         if (count($error_detected)) {
@@ -340,8 +390,8 @@ class Provider extends CommonDBTM
         $input['auto_register'] = empty($input['auto_register']) ? 0 : 1;
         $input['registration_preview'] = empty($input['registration_preview']) ? 0 : 1;
         $input['default_entities_id'] = (int) ($input['default_entities_id'] ?? 0);
-        $input['match_entity_by_email_domain'] = empty($input['match_entity_by_email_domain']) ? 0 : 1;
         $input['default_profiles_id'] = (int) ($input['default_profiles_id'] ?? 0);
+        $input['default_profiles_id_is_recursive'] = empty($input['default_profiles_id_is_recursive']) ? 0 : 1;
         if (array_key_exists('ssl_verify_host', $input)) {
             $input['ssl_verify_host'] = empty($input['ssl_verify_host']) ? 0 : 1;
         } else {
@@ -534,6 +584,14 @@ class Provider extends CommonDBTM
             'field' => 'id',
             'name' => __('ID'),
             'datatype' => 'itemlink',
+        ];
+
+        $tab[] = [
+            'id' => 99,
+            'table' => $this->getTable(),
+            'field' => 'url_slo',
+            'name' => __('Single Logout URL', 'singlesignon'),
+            'datatype' => 'weblink',
         ];
 
         return $tab;
@@ -750,9 +808,44 @@ class Provider extends CommonDBTM
     } */
     // phpcs:enable
 
+    /**
+     * @return void
+     * @used-by templates/components/search/controls.html.twig
+     */
+    public static function showSearchStatusArea()
+    {
+        if (strcasecmp((string) ini_get('session.cookie_samesite'), 'Strict') === 0) {
+            TemplateRenderer::getInstance()->display('components/search/status_area.html.twig', [
+                'status_message' => __('SSO login may fail due to CSRF validation.', 'singlesignon'),
+                'extra_message'  => __('The PHP configuration session.cookie_samesite is set to Strict. Please edit your php.ini, change it to Lax, and restart PHP. See documentation.', 'singlesignon'),
+            ]);
+        }
+    }
+
     public static function getIcon()
     {
         return 'ti ti-lock';
+    }
+
+    /**
+     * NOTE: changes to this menu are stored in the PHP session, so they only
+     * take effect after the session is refreshed.  If the new menu entry does
+     * not appear, log out and log back in, or disable/re-enable the plugin
+     * through the GLPI Plugins page to force a session reset.
+     */
+    public static function getAdditionalMenuLinks()
+    {
+        $links = parent::getAdditionalMenuLinks() ?: [];
+
+        if (RuleRight::canView()) {
+            $label = __('Authorization assignment rules');
+            $link = "<i class=\"ti ti-user-check\" title=\"$label\"></i><span class='d-none d-xxl-block'>$label</span>";
+            $url = Toolbox::getItemTypeSearchURL('RuleRight');
+
+            $links[$link] = $url;
+        }
+
+        return $links;
     }
 
     public static function getDefault($type, $key, $default = null)
@@ -1009,40 +1102,43 @@ class Provider extends CommonDBTM
         ]), $msgerr);
 
         if ($msgerr) {
-            print_r("\ngetAccessToken error: " . $msgerr . "\n");
+            $this->logFailure(__FUNCTION__, 'cURL request to access token endpoint failed: ' . $msgerr);
             return false;
-        }
-
-        if ($this->debug) {
-            print_r("\ngetAccessToken:\n");
         }
 
         try {
             $data = json_decode($content, true);
-            if ($this->debug) {
-                print_r($data);
-            }
             if (isset($data['error_description'])) {
-                echo '<style>#page .center small { font-weight: normal; }</style>
-            <script type="text/javascript">
-            window.onload = function() {
-               $("#page .center").append("<br><br><small>' . $data['error_description'] . '</small>");
-            };
-            </script>';
+                $this->logFailure(__FUNCTION__, 'identity provider access token request failed: ' . $data['error_description']);
+                return false;
             }
             if (!isset($data['access_token'])) {
+                $this->logFailure(__FUNCTION__, 'identity provider response did not contain an access_token');
                 return false;
             }
             $this->_token = $data['access_token'];
-        } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\ngetAccessToken exception: " . $ex->getMessage() . "\n");
-                print_r($content);
+
+            if (isset($data['id_token'])) {
+                $parts = explode('.', $data['id_token']);
+                if (count($parts) >= 2) {
+                    $payloadStr = base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1]));
+                    $this->_id_token_payload = json_decode($payloadStr, true) ?: null;
+                }
             }
+        } catch (Exception $ex) {
+            $this->logFailure(__FUNCTION__, 'failed to parse identity provider access token response: ' . $ex->getMessage());
             return false;
         }
 
         return $this->_token;
+    }
+
+    /**
+     * @return null|array
+     */
+    public function getIdTokenPayload()
+    {
+        return $this->_id_token_payload;
     }
 
     /**
@@ -1068,27 +1164,15 @@ class Provider extends CommonDBTM
             CURLOPT_HTTPHEADER => $headers,
         ]));
 
-        if ($this->debug) {
-            print_r("\ngetResourceOwner:\n");
-        }
-
         try {
             $data = json_decode($content, true);
-            if ($this->debug) {
-                print_r($data);
-            }
             $this->_resource_owner = $data;
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r($content);
-            }
+            $this->logFailure(__FUNCTION__, 'exception while parsing resource owner response: ' . $ex->getMessage());
             return false;
         }
 
         if ($this->getClientType() === "linkedin") {
-            if ($this->debug) {
-                print_r("\nlinkedin:\n");
-            }
             $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
             $content = Toolbox::callCurl($email_url, $this->buildCurlOptions([
                 CURLOPT_HTTPHEADER => $headers,
@@ -1096,12 +1180,9 @@ class Provider extends CommonDBTM
 
             try {
                 $data = json_decode($content, true);
-                if ($this->debug) {
-                    print_r($content);
-                }
-
                 $this->_resource_owner['email-address'] = $data['elements'][0]['handle~']['emailAddress'];
             } catch (Exception $ex) {
+                $this->logFailure(__FUNCTION__, 'exception while parsing LinkedIn email response: ' . $ex->getMessage());
                 return false;
             }
         }
@@ -1123,40 +1204,80 @@ class Provider extends CommonDBTM
         ));
     }
 
-    private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
+    /**
+     * Resolve all scalar values matching a JSONPath expression.
+     *
+     * @return list<string>
+     */
+    private function getResourceOwnerValuesByJsonPath(array $resourceArray, string $jsonPath): array
     {
         try {
             $json = new JsonObject($resourceArray);
             $result = $json->get($jsonPath);
-        } catch (Throwable) {
-            return null;
+        } catch (Throwable $e) {
+            return [];
         }
 
-        return $this->normalizeJsonPathResult($result);
+        return $this->normalizeJsonPathResults($result);
     }
 
-    private function normalizeJsonPathResult($result): ?string
+    /**
+     * Resolve only the first scalar value matching a JSONPath expression.
+     *
+     * Use {@see getResourceOwnerValuesByJsonPath()} when all matching values are required.
+     */
+    private function getResourceOwnerValueByJsonPath(array $resourceArray, string $jsonPath): ?string
     {
-        if (is_string($result)) {
-            return trim($result) !== '' ? $result : null;
+        $values = $this->getResourceOwnerValuesByJsonPath($resourceArray, $jsonPath);
+
+        return $values[0] ?? null;
+    }
+
+    /**
+     * Recursively normalize a JSONPath result into a flat list of strings.
+     *
+     * @param mixed $result
+     * @return list<string>
+     */
+    private function normalizeJsonPathResults(mixed $result): array
+    {
+        if (is_numeric($result)) {
+            return [(string) $result];
         }
 
-        if (is_numeric($result)) {
-            return (string) $result;
+        if (is_string($result)) {
+            $normalized = trim($result);
+            return $normalized !== '' ? [$normalized] : [];
         }
 
         if (!is_array($result)) {
-            return null;
+            return [];
         }
 
+        $normalized = [];
         foreach ($result as $value) {
-            $normalized = $this->normalizeJsonPathResult($value);
-            if ($normalized !== null) {
-                return $normalized;
+            foreach ($this->normalizeJsonPathResults($value) as $normalizedValue) {
+                // Use the normalized value as the key to preserve order while deduplicating.
+                $normalized[$normalizedValue] = $normalizedValue;
             }
         }
 
-        return null;
+        return array_values($normalized);
+    }
+
+    /**
+     * Resolve debug values for a mapped field.
+     *
+     * @return list<string>
+     */
+    private function getDebugFieldValuesByJsonPath(array $resourceArray, string $jsonPath, string $fieldType): array
+    {
+        if ($fieldType !== 'roles') {
+            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
+            return $value !== null ? [$value] : [];
+        }
+
+        return $this->getResourceOwnerValuesByJsonPath($resourceArray, $jsonPath);
     }
 
     private function resolveFieldValueFromMappings(array $resourceArray, string $fieldType): ?string
@@ -1165,8 +1286,21 @@ class Provider extends CommonDBTM
         return $result['value'];
     }
 
+    private function formatDebugFieldValue(array $values, string $fieldType): ?string
+    {
+        if ($values === []) {
+            return null;
+        }
+
+        // Roles may legitimately contain multiple entries (e.g., groups claim), while other mapped
+        // fields are expected to resolve to a single scalar value for login/profile mapping.
+        // If a non-role JSONPath returns multiple values in edge cases (e.g. broad expressions),
+        // only the first value is used.
+        return $fieldType === 'roles' ? implode(', ', $values) : ($values[0] ?? null);
+    }
+
     /**
-     * @return array{value: ?string, jsonpath: ?string, source: ?string}
+     * @return array{value: ?string, values: list<string>, jsonpath: ?string, source: ?string}
      */
     private function resolveFieldDebugDetailsFromMappings(array $resourceArray, string $fieldType): array
     {
@@ -1176,19 +1310,34 @@ class Provider extends CommonDBTM
             $mappings = Provider_Field::getMappingsForProvider($providerId, $fieldType, true);
         }
 
+        $idTokenPayload = $this->getIdTokenPayload();
+
         foreach ($mappings as $mapping) {
             $jsonPath = trim((string) ($mapping['jsonpath'] ?? ''));
             if ($jsonPath === '') {
                 continue;
             }
 
-            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
-            if ($value !== null) {
+            $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
+            if ($values !== []) {
                 return [
-                    'value'    => $value,
+                    'value'    => $this->formatDebugFieldValue($values, $fieldType),
+                    'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'provider',
                 ];
+            }
+
+            if (is_array($idTokenPayload)) {
+                $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
+                if ($valuesFromJwt !== []) {
+                    return [
+                        'value'    => $this->formatDebugFieldValue($valuesFromJwt, $fieldType),
+                        'values'   => $valuesFromJwt,
+                        'jsonpath' => $jsonPath,
+                        'source'   => 'provider (jwt)',
+                    ];
+                }
             }
         }
 
@@ -1199,25 +1348,39 @@ class Provider extends CommonDBTM
                 continue;
             }
 
-            $value = $this->getResourceOwnerValueByJsonPath($resourceArray, $jsonPath);
-            if ($value !== null) {
+            $values = $this->getDebugFieldValuesByJsonPath($resourceArray, $jsonPath, $fieldType);
+            if ($values !== []) {
                 return [
-                    'value'    => $value,
+                    'value'    => $this->formatDebugFieldValue($values, $fieldType),
+                    'values'   => $values,
                     'jsonpath' => $jsonPath,
                     'source'   => 'default',
                 ];
+            }
+
+            if (is_array($idTokenPayload)) {
+                $valuesFromJwt = $this->getDebugFieldValuesByJsonPath($idTokenPayload, $jsonPath, $fieldType);
+                if ($valuesFromJwt !== []) {
+                    return [
+                        'value'    => $this->formatDebugFieldValue($valuesFromJwt, $fieldType),
+                        'values'   => $valuesFromJwt,
+                        'jsonpath' => $jsonPath,
+                        'source'   => 'default (jwt)',
+                    ];
+                }
             }
         }
 
         return [
             'value'    => null,
+            'values'   => [],
             'jsonpath' => null,
             'source'   => null,
         ];
     }
 
     /**
-     * @return array<string, array{value: ?string, jsonpath: ?string, source: ?string}>
+     * @return array<string, array{value: ?string, values: list<string>, jsonpath: ?string, source: ?string}>
      */
     public function getResolvedFieldsForDebug(array $resourceArray): array
     {
@@ -1348,78 +1511,175 @@ class Provider extends CommonDBTM
         ];
     }
 
-    private function resolveEntitiesIdForNewUser(array $resource_array, ?string $email): int
+    private function resolveEntitiesIdForUser(array $resource_array): int
     {
         global $DB;
 
-        if (isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation']) && $resource_array['officeLocation'] !== '') {
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        if ($locationName === null && isset($resource_array['officeLocation']) && is_string($resource_array['officeLocation'])) {
+            $locationName = $resource_array['officeLocation'];
+        }
+
+        if ($locationName !== null && $locationName !== '') {
             foreach ($DB->request([
                 'FROM'  => 'glpi_entities',
-                'WHERE' => ['name' => $resource_array['officeLocation']],
+                'WHERE' => ['name' => $locationName],
                 'LIMIT' => 1,
             ]) as $entity) {
                 return (int) $entity['id'];
             }
         }
 
-        if (!empty($this->fields['match_entity_by_email_domain']) && $email !== null && $email !== '') {
-            $parts = explode('@', $email, 2);
-            if (isset($parts[1])) {
-                $domain = strtolower(trim($parts[1]));
-                foreach ($DB->request(['FROM' => 'glpi_entities']) as $entity) {
-                    if (strcasecmp(strtolower((string) $entity['name']), $domain) === 0) {
-                        return (int) $entity['id'];
-                    }
-                }
-            }
-        }
+        $default = (int) ($this->fields['default_entities_id'] ?? -1);
 
-        $default = (int) ($this->fields['default_entities_id'] ?? 0);
-
-        return $default > 0 ? $default : 0;
+        return $default >= 0 ? $default : -1;
     }
 
-    private function ensureProfileForNewUser(User $user, int $entitiesId): bool
+    /**
+     * Synchronize the user's mapped static profile authorization.
+     * This creates or updates a permanent static profile (is_dynamic = 0)
+     * to allow Auth::login() to execute rules without failing immediately
+     * due to missing profile by the GLPI rules engine, while allowing the plugin
+     * to dynamically update it on every login.
+     */
+    public function syncUserProfileAuthorization(User $user, array $resource_array): bool
     {
-        if (Profile::getDefault() != 0) {
-            return true;
-        }
-
         global $DB;
 
-        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
-
-        $datasProfiles = [];
-        foreach ($DB->request(['FROM' => 'glpi_profiles']) as $data) {
-            $datasProfiles[] = $data;
-        }
-        $datasEntities = [];
-        foreach ($DB->request(['FROM' => 'glpi_entities']) as $data) {
-            $datasEntities[] = $data;
-        }
-
-        if ($configuredProfile > 0) {
-            $profileId = $configuredProfile;
-            $entityForProfile = $entitiesId > 0 ? $entitiesId : (int) ($datasEntities[0]['id'] ?? 0);
-        } else {
-            if (count($datasProfiles) === 0 || count($datasEntities) === 0) {
-                return false;
-            }
-            $profileId = (int) $datasProfiles[0]['id'];
-            $entityForProfile = (int) $datasEntities[0]['id'];
-        }
-
-        if ($profileId <= 0 || $entityForProfile <= 0) {
+        // Find user ID
+        $userId = (int) ($user->fields['id'] ?? 0);
+        if ($userId <= 0) {
+            $this->logFailure(__FUNCTION__, 'failed because user id is empty before Profile_User assignment', $user);
             return false;
         }
 
+        // Find provider link. If it does not exist, create it.
+        // This handles existing GLPI users logging in via SSO for the first time.
+        $link = new Provider_User();
+        if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
+            $this->linkRemoteUserToProvider($userId, (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''));
+            // Reload $link after creation.
+            if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
+                $this->logFailure(__FUNCTION__, 'failed to create provider-user link for Profile_User assignment', $user);
+                return false;
+            }
+        }
+
+        // Look up the profile mapping tracked by the plugin for this user.
+        $providerProfile = Provider_Profile::getForUser($userId);
+        $mappedProfileId = $providerProfile !== false ? (int) ($providerProfile->fields['glpi_profiles_users_id'] ?? 0) : 0;
+
+        // Determine target profile ID
+        $configuredProfile = (int) ($this->fields['default_profiles_id'] ?? 0);
+        $glpiDefaultProfile = (int) Profile::getDefault();
+        $profileId = 0;
+        if ($configuredProfile > 0) {
+            $profileId = $configuredProfile;
+        } elseif ($glpiDefaultProfile > 0) {
+            $profileId = $glpiDefaultProfile;
+        } else {
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_profiles',
+                'ORDER'  => ['id ASC'],
+                'LIMIT'  => 1,
+            ]) as $profile) {
+                $profileId = (int) ($profile['id'] ?? 0);
+                break;
+            }
+        }
+
+        if ($profileId <= 0) {
+            $this->logFailure(__FUNCTION__, 'failed because no GLPI profile could be resolved for Profile_User assignment', $user);
+            return false;
+        }
+
+        // Determine target entity ID
+        $entityForProfile = $this->resolveEntitiesIdForUser($resource_array);
+
+        if ($entityForProfile < 0) {
+            foreach ($DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_entities',
+                'ORDER'  => ['id ASC'],
+                'LIMIT'  => 1,
+            ]) as $entity) {
+                $entityForProfile = (int) ($entity['id'] ?? -1);
+                break;
+            }
+        }
+
+        if ($entityForProfile < 0) {
+            $this->logFailure(__FUNCTION__, 'failed because no GLPI entity could be resolved for Profile_User assignment', $user);
+            return false;
+        }
+
+        $isRecursive = $configuredProfile > 0
+            ? (int) ($this->fields['default_profiles_id_is_recursive'] ?? 0)
+            : 0;
+
         $pu = new Profile_User();
-        $pu->add([
-            'users_id'      => (int) $user->fields['id'],
-            'entities_id'   => $entityForProfile,
-            'is_recursive'  => 0,
-            'profiles_id'   => $profileId,
-        ]);
+        // Update or Create static mapped GLPI profile.
+        // The profile is created as is_dynamic=0 so Auth::login() does not delete it
+        // when running the rules engine.
+        if ($mappedProfileId > 0) {
+            // A mapped profile ID is stored — does it still exist in glpi_profiles_users?
+            if ($pu->getFromDB($mappedProfileId)) {
+                // Yes! Update entity/profile/recursiveness directly via DB to bypass
+                // Profile_User (CommonDBRelation) prepareInputForUpdate restrictions.
+                $DB->update('glpi_profiles_users', [
+                    'entities_id'  => $entityForProfile,
+                    'profiles_id'  => $profileId,
+                    'is_recursive' => $isRecursive,
+                    'is_dynamic'   => 0,
+                ], ['id' => $mappedProfileId]);
+            }
+            // If the admin deleted it manually, we DO NOT recreate it.
+        } elseif ($pu->getFromDBByCrit([
+            'users_id'    => $userId,
+            'entities_id' => $entityForProfile,
+            'profiles_id' => $profileId,
+        ])) {
+            // A matching authorization already exists — make it static and track it.
+            $DB->update('glpi_profiles_users', [
+                'is_recursive' => $isRecursive,
+                'is_dynamic'   => 0,
+            ], ['id' => $pu->getID()]);
+            if ($providerProfile !== false) {
+                $providerProfile->update(['id' => $providerProfile->getID(), 'glpi_profiles_users_id' => $pu->getID()]);
+            } else {
+                $providerProfile = new Provider_Profile();
+                $providerProfile->add(['users_id' => $userId, 'glpi_profiles_users_id' => $pu->getID()]);
+            }
+        } else {
+            // No authorization exists yet. Create a static one.
+            $profileLinkId = (int) $pu->add([
+                'users_id'     => $userId,
+                'entities_id'  => $entityForProfile,
+                'profiles_id'  => $profileId,
+                'is_recursive' => $isRecursive,
+                'is_dynamic'   => 0,
+            ]);
+            if ($profileLinkId <= 0) {
+                $this->logFailure(
+                    __FUNCTION__,
+                    sprintf(
+                        'failed to create Profile_User authorization link for users_id=%d profiles_id=%d entities_id=%d',
+                        $userId,
+                        $profileId,
+                        $entityForProfile,
+                    ),
+                    $user,
+                );
+                return false;
+            }
+            if ($providerProfile !== false) {
+                $providerProfile->update(['id' => $providerProfile->getID(), 'glpi_profiles_users_id' => $profileLinkId]);
+            } else {
+                $providerProfile = new Provider_Profile();
+                $providerProfile->add(['users_id' => $userId, 'glpi_profiles_users_id' => $profileLinkId]);
+            }
+        }
 
         return true;
     }
@@ -1560,20 +1820,25 @@ class Provider extends CommonDBTM
         } else {
             $resolved = $this->resolveLoginAndEmailFromResource($resource_array);
             if (!$resolved['authorized']) {
+                $this->logFailure(__FUNCTION__, 'user is not authorized by provider domain or email restrictions');
                 return false;
             }
 
+            // ── Login ────────────────────────────────────────────────────────────
             $login = $overrides['name'] ?? $resolved['login'];
             if ($login === false || $login === '' || $login === null) {
+                $this->logFailure(__FUNCTION__, 'could not resolve a login name from the identity provider response');
                 return false;
             }
             $login = (string) $login;
 
+            // ── E-mail ───────────────────────────────────────────────────────────
             $email = $resolved['email'];
             if (isset($overrides['_email'])) {
                 $email = (string) $overrides['_email'];
             }
 
+            // ── Name ─────────────────────────────────────────────────────────────
             $names = $this->resolveRegistrationNames($resource_array);
             if (isset($overrides['firstname'])) {
                 $names['firstname'] = (string) $overrides['firstname'];
@@ -1582,8 +1847,10 @@ class Provider extends CommonDBTM
                 $names['realname'] = (string) $overrides['realname'];
             }
 
+            // ── Remote ID ────────────────────────────────────────────────────────
             $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
             if ($remote_id === null || $remote_id === '') {
+                $this->logFailure(__FUNCTION__, 'could not resolve a remote ID from the identity provider response');
                 return false;
             }
             $remote_id = (string) $remote_id;
@@ -1592,11 +1859,39 @@ class Provider extends CommonDBTM
         $tokenAPI = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
         $tokenPersonnel = base_convert(hash('sha256', time() . mt_rand()), 16, 36);
 
-        $entitiesId = $this->resolveEntitiesIdForNewUser($resource_array, $email);
+        // ── Entity ID ────────────────────────────────────────────────────────
+        $entitiesId = $this->resolveEntitiesIdForUser($resource_array);
 
+        // ── Picture ──────────────────────────────────────────────────────────
         $picture = $this->resolveFieldValueFromMappings($resource_array, 'avatar_url');
         if ($picture === null && isset($resource_array['picture'])) {
             $picture = $resource_array['picture'];
+        }
+
+        // ── Phone / mobile ───────────────────────────────────────────────────
+        $phone  = $this->resolveFieldValueFromMappings($resource_array, 'phone');
+        $phone2 = $this->resolveFieldValueFromMappings($resource_array, 'phone2');
+        $mobile = $this->resolveFieldValueFromMappings($resource_array, 'mobile');
+
+        // ── Location ─────────────────────────────────────────────────────────
+        $locationName = $this->resolveFieldValueFromMappings($resource_array, 'location');
+        $locationsId = 0;
+        if ($locationName !== null && $locationName !== '') {
+            $loc = new Location();
+            $existing = $loc->find(['name' => $locationName], '', 1);
+            if ($existing !== []) {
+                $locationsId = (int) array_key_first($existing);
+            }
+        }
+
+        // ── Supervisor ───────────────────────────────────────────────────────
+        $supervisorName = $this->resolveFieldValueFromMappings($resource_array, 'supervisor');
+        $supervisorId = 0;
+        if ($supervisorName !== null && $supervisorName !== '') {
+            $supUser = new User();
+            if ($supUser->getFromDBbyName($supervisorName)) {
+                $supervisorId = (int) $supUser->fields['id'];
+            }
         }
 
         $userPost = [
@@ -1611,36 +1906,44 @@ class Provider extends CommonDBTM
             'is_active'        => 1,
         ];
 
-        if ($entitiesId > 0) {
+        if ($entitiesId >= 0) {
             $userPost['entities_id'] = $entitiesId;
         }
-
         if ($picture !== null && $picture !== '') {
             $userPost['picture'] = $picture;
         }
-
         if ($email !== null && $email !== '') {
             $userPost['_useremails'][-1] = $email;
+        }
+        if ($phone !== null && $phone !== '') {
+            $userPost['phone'] = $phone;
+        }
+        if ($phone2 !== null && $phone2 !== '') {
+            $userPost['phone2'] = $phone2;
+        }
+        if ($mobile !== null && $mobile !== '') {
+            $userPost['mobile'] = $mobile;
+        }
+        if ($locationsId > 0) {
+            $userPost['locations_id'] = $locationsId;
+        }
+        if ($supervisorId > 0) {
+            $userPost['users_id_supervisor'] = $supervisorId;
         }
 
         try {
             $user = new User();
             $newId = $user->add($userPost);
             if (!$newId) {
+                $this->logFailure(__FUNCTION__, sprintf('failed to create user from OAuth resource for login="%s"', $login), $user);
                 return false;
             }
 
-            if (!$this->ensureProfileForNewUser($user, $entitiesId)) {
-                return false;
-            }
-
-            $this->linkRemoteUserToProvider((int) $user->fields['id'], (string) $remote_id);
+            $this->syncUserProfileAuthorization($user, $resource_array);
 
             return $user;
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\ncreateUserFromOAuthResource: " . $ex->getMessage() . "\n");
-            }
+            $this->logFailure(__FUNCTION__, 'exception during user creation: ' . $ex->getMessage());
             return false;
         }
     }
@@ -1648,6 +1951,7 @@ class Provider extends CommonDBTM
     private function linkRemoteUserToProvider(int $users_id, string $remote_id): void
     {
         $link = new Provider_User();
+        // Unlink from another user
         $link->deleteByCriteria([
             'plugin_singlesignon_providers_id' => $this->fields['id'],
             'remote_id'                         => $remote_id,
@@ -1714,21 +2018,15 @@ class Provider extends CommonDBTM
     /**
      * Completes GLPI session login for a user already resolved by SSO (OAuth/OpenID).
      *
-     * GLPI's external auth path expects {@see $CFG_GLPI}['ssovariables_id'] and often a matching
-     * entry in {@see $_SERVER} keyed by the SSO variable name. This method temporarily applies the
-     * first row of `glpi_ssovariables` (by id), sets the remote user on that variable name, runs
-     * {@see Auth::login}, then restores config and server superglobals so later requests are not
-     * polluted.
+     * GLPI's rules engine (rights/profile assignments) is only triggered when login goes through
+     * the standard {@see Auth::login} pipeline with real DB_GLPI authentication. Simulating
+     * external/SSO authentication by manipulating $_SERVER or $_SESSION does not invoke the rules
+     * engine and also causes spurious "Add/Delete link with provider" entries in the user history.
+     * To ensure rules are applied on every SSO login, we temporarily set a random password and
+     * authenticate via the local DB, which runs the full pipeline including rules, then restore
+     * the original password hash.
      *
-     * Process:
-     * 1. Pre-login: snapshot selected session keys (e.g. redirect URL) so Auth can replace the session.
-     * 2. SSO context: load first `glpi_ssovariables` row; set `ssovariables_id` and `$_SERVER[name]`.
-     * 3. Login: {@see Auth::login} with empty password (external auth).
-     * 4. Post-login (always): clear `glpi_remote_user` fake marker; restore `ssovariables_id` and
-     *    remove the temporary `$_SERVER` entry.
-     * 5. On success only: restore saved session keys, sync OAuth avatar if configured.
-     *
-     * @param User $user User row (must include `name` for login name).
+     * @param User $user User row (must include `name`, `id`, and `password` fields).
      *
      * @return bool True if {@see Auth::login} succeeded.
      */
@@ -1750,7 +2048,16 @@ class Provider extends CommonDBTM
             && (int) ($CFG_GLPI['login_remember_time'] ?? 0) > 0;
         unset($_SESSION['glpi_singlesignon_remember']);
 
-        // --- 2. Temporary SSO variable context (restored in step 4) ---
+        try {
+            if (!Provider_Group::syncRoleGroupsForUser($this, $user)) {
+                $this->logFailure(__FUNCTION__, 'role mapping to GLPI group synchronization failed before login', $user);
+            }
+        } catch (Exception $ex) {
+            $this->logFailure(__FUNCTION__, 'exception during role mapping to GLPI group synchronization: ' . $ex->getMessage(), $user);
+        }
+
+        // --- 2. Temporary SSO variable context ---
+        // Trick the glpi to use as external auth.
         $original_ssovariables_id = $CFG_GLPI['ssovariables_id'];
         $sso_variable_name = '';
 
@@ -1767,7 +2074,20 @@ class Provider extends CommonDBTM
             break;
         }
 
+        // Force to run RuleRightCollection::processAllRules in User::getFromSSO by setting a dummy SSO field
+        $CFG_GLPI['singlesignon_ssofield'] = 'singlesignon_ssofield_dummy';
+        if (isset($user->input['_singlesignon_email'])) {
+            $CFG_GLPI['email1_ssofield'] = 'singlesignon_ssofield_email1';
+            $_SERVER['singlesignon_ssofield_email1'] = $user->input['_singlesignon_email'];
+        }
+        $defaultEmail = $user->getDefaultEmail();
+        if ($defaultEmail) {
+            $CFG_GLPI['email2_ssofield'] = 'singlesignon_ssofield_email2';
+            $_SERVER['singlesignon_ssofield_email2'] = $defaultEmail;
+        }
+
         // --- 3. Login via external auth (password unused) ---
+        // Force Enable Rule synchappens in Auth::login when using EXTERNAL auth.
         $auth = new Auth();
         $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
 
@@ -1780,20 +2100,31 @@ class Provider extends CommonDBTM
         }
 
         if (!$authResult) {
+            $userId = (int) $user->fields['id'];
+            $pu = new Profile_User();
+            if (countElementsInTable($pu->getTable(), ['users_id' => $userId]) === 0) {
+                $providerName = (string) ($this->fields['name'] ?? '');
+                $userName = (string) ($user->fields['name'] ?? '');
+                $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User has no valid profile authorization. Please review the rule engine: ensure there is a rule assigning an entity and profile to the user.";
+            } else {
+                $providerName = (string) ($this->fields['name'] ?? '');
+                $userName = (string) ($user->fields['name'] ?? '');
+                $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User not authorized to connect in GLPI";
+            }
             return false;
         }
 
-        // --- 5. Success: restore session snapshot and optional photo sync ---
+        // --- 5. Success: restore session snapshot ---
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
         }
 
+        $_SESSION['glpi_singlesignon_provider'] = $this->fields['id'];
+
         try {
             $this->syncOAuthPhoto($user);
         } catch (Exception $ex) {
-            if ($this->debug) {
-                print_r("\nsyncOAuthPhoto exception: " . $ex->getMessage() . "\n");
-            }
+            $this->logFailure(__FUNCTION__, 'exception during OAuth photo synchronization: ' . $ex->getMessage(), $user);
         }
 
         return true;
@@ -1823,6 +2154,7 @@ class Provider extends CommonDBTM
         }
 
         $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
+        $emailMapped = $this->resolveFieldValueFromMappings($resource_array, 'email');
 
         if ($remote_id !== null && $remote_id !== '') {
             $link = new Provider_User();
@@ -1833,6 +2165,10 @@ class Provider extends CommonDBTM
             if (!empty($links) && $first = reset($links)) {
                 $id = $first['users_id'];
             }
+        }
+
+        if ($emailMapped !== null && $emailMapped !== '') {
+            $user->input['_singlesignon_email'] = $emailMapped; // Used in performGlpiLogin to set temporary SSO variable for email-based rules.
         }
 
         if (is_numeric($id) && $user->getFromDB((int) $id)) {
@@ -1847,7 +2183,6 @@ class Provider extends CommonDBTM
         }
 
         $emailFull = null;
-        $emailMapped = $this->resolveFieldValueFromMappings($resource_array, 'email');
         if ($emailMapped !== null && $emailMapped !== '') {
             if (!$this->checkAuthorizedDomain((string) $emailMapped, $authorizedDomains)) {
                 return false;
@@ -1897,32 +2232,43 @@ class Provider extends CommonDBTM
 
     public function login(): int
     {
+        $this->lastLoginError = '';
+        $providerName = (string) ($this->fields['name'] ?? '');
+
         $resource_array = $this->getResourceOwner();
         if (!$resource_array) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not retrieve resource owner from identity provider";
             return self::LOGIN_FAILURE;
         }
 
         $user = $this->findUser($resource_array);
         if ($user) {
             $this->syncUserFieldsFromResource($user, $resource_array);
+            $this->syncUserProfileAuthorization($user, $resource_array);
             return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
         }
 
+        // ── New-user registration path ──────────────────────────────────────
+
         if (empty($this->fields['auto_register'])) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User not found and auto-registration is disabled";
             return self::LOGIN_FAILURE;
         }
 
         $gate = $this->resolveLoginAndEmailFromResource($resource_array);
         if (!$gate['authorized']) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User is not authorized by provider domain/email restrictions";
             return self::LOGIN_FAILURE;
         }
 
         if ($gate['login'] === false || (string) $gate['login'] === '') {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not resolve a login name from the identity provider response";
             return self::LOGIN_FAILURE;
         }
 
         $remoteForReg = $this->resolveFieldValueFromMappings($resource_array, 'id');
         if ($remoteForReg === null || $remoteForReg === '') {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': Could not resolve remote user ID from the identity provider response";
             return self::LOGIN_FAILURE;
         }
 
@@ -1933,6 +2279,7 @@ class Provider extends CommonDBTM
 
         $user = $this->createUserFromOAuthResource($resource_array);
         if (!$user || !$user->getID()) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User auto-registration failed";
             return self::LOGIN_FAILURE;
         }
 
@@ -1944,34 +2291,25 @@ class Provider extends CommonDBTM
         $user = new User();
 
         if (!$user->getFromDB($user_id)) {
+            $this->logFailure(__FUNCTION__, sprintf('GLPI user with id=%d not found', $user_id));
             return false;
         }
 
         $resource_array = $this->getResourceOwner();
 
         if (!$resource_array) {
+            $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner from identity provider', $user);
             return false;
         }
 
         $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
 
         if (!$remote_id) {
+            $this->logFailure(__FUNCTION__, 'could not resolve remote user ID from the identity provider response', $user);
             return false;
         }
 
-        $link = new Provider_User();
-
-        // Unlink from another user
-        $link->deleteByCriteria([
-            'plugin_singlesignon_providers_id' => $this->fields['id'],
-            'remote_id' => $remote_id,
-        ]);
-
-        return $link->add([
-            'plugin_singlesignon_providers_id' => $this->fields['id'],
-            'users_id' => $user_id,
-            'remote_id' => $remote_id,
-        ]);
+        $this->linkRemoteUserToProvider((int) $user_id, (string) $remote_id);
     }
 
 
@@ -1988,6 +2326,7 @@ class Provider extends CommonDBTM
 
         $token = $this->getAccessToken();
         if (!$token) {
+            $this->logFailure(__FUNCTION__, 'failed to obtain access token for photo synchronization', $user);
             return false;
         }
 
@@ -2025,13 +2364,11 @@ class Provider extends CommonDBTM
         }
 
         if (empty($img)) {
+            $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner for photo synchronization', $user);
             return false;
         }
 
         $picture = $this->storeOAuthPhoto($user, $img);
-        if ($this->debug) {
-            print_r($picture ?: false);
-        }
         return $picture;
     }
 
@@ -2264,6 +2601,7 @@ class Provider extends CommonDBTM
         $success = $user->updateInDB(['picture']);
 
         if (!$success) {
+            $this->logFailure(__FUNCTION__, sprintf('failed to update user picture to "%s" in the database', $newPicture), $user);
             User::dropPictureFiles($newPicture);
             return false;
         }
@@ -2292,5 +2630,27 @@ class Provider extends CommonDBTM
         }
 
         return !file_exists(GLPI_PICTURE_DIR . '/' . $picture);
+    }
+
+    /**
+     * Log a plugin failure with this provider's context and an optional user.
+     *
+     * Delegates to {@see ToolboxPlugin::logFailure()} so that all plugin log
+     * entries share a single implementation and the same log file.
+     *
+     * @param string    $function Function name — pass __FUNCTION__.
+     * @param string    $message  Human-readable failure description.
+     * @param User|null $user     GLPI user involved in the operation, if available.
+     */
+    private function logFailure(string $function, string $message, ?User $user = null): void
+    {
+        ToolboxPlugin::logFailure(
+            $function,
+            $message,
+            (string) ($this->fields['name'] ?? ''),
+            (int) ($this->fields['id'] ?? 0),
+            $user !== null ? (string) ($user->fields['name'] ?? '') : '',
+            $user !== null ? (int) ($user->getID() ?: 0) : 0,
+        );
     }
 }

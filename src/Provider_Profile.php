@@ -22,21 +22,41 @@
  * ---------------------------------------------------------------------
  */
 
-use GlpiPlugin\Singlesignon\Provider;
+declare(strict_types=1);
 
-include(__DIR__ . '/../../../inc/includes.php');
+namespace GlpiPlugin\Singlesignon;
 
-Session::checkRight("config", UPDATE);
+use CommonDBTM;
 
-if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
-    Html::header(__('Single Sign-on', 'singlesignon'), $_SERVER['PHP_SELF'], "config", Provider::class, "provider");
-} else {
-    Html::helpHeader(__('Single Sign-on', 'singlesignon'), $_SERVER['PHP_SELF']);
+/**
+ * Tracks the static glpi_profiles_users entry managed by the SSO plugin for
+ * a given GLPI user. Because glpi_profiles_users is a native GLPI table (not
+ * provider-specific), this mapping is keyed only by users_id.
+ *
+ * The referenced profile authorization is always kept as is_dynamic=0 so that
+ * the GLPI rule engine cannot delete it during Auth::login(). Dynamic profiles
+ * assigned by the rule engine coexist separately.
+ */
+class Provider_Profile extends CommonDBTM
+{
+    public static $rightname = 'plugin_singlesignon_provider';
+
+    public static function getTable($classname = null): string
+    {
+        return 'glpi_plugin_singlesignon_providers_profiles';
+    }
+
+    /**
+     * Returns the managed profile mapping for a given GLPI user, or false if
+     * none exists (e.g. the admin deleted it manually).
+     */
+    public static function getForUser(int $userId): self|false
+    {
+        $obj = new self();
+        if ($obj->getFromDBByCrit(['users_id' => $userId])) {
+            return $obj;
+        }
+
+        return false;
+    }
 }
-
-
-//checkTypeRight('PluginExampleExample',"r");
-
-Search::show(Provider::class);
-
-Html::footer();

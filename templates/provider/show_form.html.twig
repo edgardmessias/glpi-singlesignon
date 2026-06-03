@@ -23,7 +23,15 @@
 {% import 'components/form/fields_macros.html.twig' as fields %}
 {% import 'components/form/basic_inputs_macros.html.twig' as inputs %}
 
-{% set sso_hidden_class = provider.fields.type != 'generic' ? 'd-none' : '' %}
+{% set slo_supported_types = [] %}
+{% for type, label in call(['GlpiPlugin\\Singlesignon\\Provider', 'getTypes'], []) %}
+  {% if call(['GlpiPlugin\\Singlesignon\\Provider', 'getDefault'], [type, 'url_slo']) is not empty %}
+    {% set slo_supported_types = slo_supported_types|merge([type]) %}
+  {% endif %}
+{% endfor %}
+
+{% set sso_hidden_class = provider.fields.type|default('generic') != 'generic' ? 'd-none' : '' %}
+{% set sso_preset_slo_hidden_class = provider.fields.type|default('generic') in slo_supported_types ? '' : 'd-none' %}
 {% set picture_style = 'max-width: 100px; max-height: 100px; background-image: linear-gradient(45deg, #b0b0b0 25%, transparent 25%), linear-gradient(-45deg, #b0b0b0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #b0b0b0 75%), linear-gradient(-45deg, transparent 75%, #b0b0b0 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;' %}
 
 {% set _tip_extra = call('nl2br', [call('sprintf', [
@@ -39,8 +47,24 @@
 {% set _tip_custom_headers = call('nl2br', [__('One header per line (format: Header-Name: value). Supported placeholders: <token> and <access_token>. Example: api-key: <token>', 'singlesignon')]) %}
 {% set _tip_ssl_verify_host = call('nl2br', [__('Verify that the server certificate matches the hostname (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
 {% set _tip_ssl_verify_peer = call('nl2br', [__('Verify the server certificate against trusted CAs (recommended). Disable only for testing or self-signed certificates.', 'singlesignon')]) %}
+{% set _tip_is_default = call('nl2br', [__('When enabled, users who visit the login page will be automatically redirected to this provider\'s authentication page. To bypass the redirect and access the standard GLPI login form, add noAUTO=1 to the login URL.', 'singlesignon')]) %}
+{% set _tip_split_domain = call('nl2br', [__('When enabled, the domain part (everything after @) is stripped from the user\'s login name. Useful when the IdP returns an email address as the login and GLPI usernames do not include the domain.', 'singlesignon')]) %}
+{% set _tip_split_name = call('nl2br', [__('When enabled, the full name returned by the IdP is automatically split into first name and last name fields.', 'singlesignon')]) %}
+{% set _tip_slo = call('nl2br', [__('URL used by the Identity Provider to receive logout requests (Single Logout, SLO). If provided, users logging out of GLPI will also be logged out from the Identity Provider.', 'singlesignon')]) %}
+{% set _tip_use_slo = call('nl2br', [__('Enables the usage of the predefined Single Logout URL (SLO) for this Identity Provider.', 'singlesignon')]) %}
 
-{% set type_on_change = 'var _value = this.options[this.selectedIndex].value; $(".sso_url").toggle(_value == "generic");' %}
+{% set type_on_change %}
+    var _value = this.options[this.selectedIndex].value; 
+    
+    // Handle Generic SSO URL
+    var isGeneric = _value === "generic";
+    $(".sso_url").toggleClass("d-none", !isGeneric).toggle(isGeneric);
+    
+    // Handle Preset SLO
+    var slo_types = {{ slo_supported_types|json_encode|raw }};
+    var isPresetSlo = slo_types.includes(_value);
+    $(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
+{% endset %}
 {% set field_opts = {
     align_label_right: true,
     field_class: 'col-12 col-xxl-6',
@@ -66,15 +90,17 @@
         enable_fileupload: false
     }|merge(field_opts)) }}
 
+    {% set type_rand = random() %}
     {% set type_field %}
         {{ call(['GlpiPlugin\\Singlesignon\\Provider', 'dropdownType'], ['type', {
             value: provider.fields.type|default('generic'),
             on_change: type_on_change,
             width: '100%',
-            display: false
+            display: false,
+            rand: type_rand
         }])|raw }}
     {% endset %}
-    {{ fields.htmlField('type', type_field, __('SSO Type', 'singlesignon'), field_opts) }}
+    {{ fields.htmlField('type', type_field, __('SSO Type', 'singlesignon'), field_opts|merge({id: 'dropdown_type' ~ type_rand})) }}
     {{ fields.dropdownYesNo('is_active', provider.fields.is_active|default(0), __('Active'), field_opts) }}
 
     {{ fields.textField('client_id', provider.fields.client_id|default(''), __('Client ID', 'singlesignon'), field_opts) }}
@@ -119,18 +145,41 @@
         helper: _tip_ssl_verify_peer
     }|merge(field_opts)) }}
 
+    {{ fields.urlField('url_slo', provider.fields.url_slo|default(''), __('Single Logout URL', 'singlesignon'), {
+        add_field_class: 'sso_url ' ~ sso_hidden_class,
+        helper: _tip_slo
+    }|merge(field_opts)) }}
+    {% set _use_slo = provider.fields.url_slo|default('') is not empty ? 1 : 0 %}
+    {{ fields.dropdownYesNo('_use_slo', _use_slo, __('Use SLO', 'singlesignon'), {
+        add_field_class: 'sso_preset_slo ' ~ sso_preset_slo_hidden_class,
+        helper: _tip_use_slo
+    }|merge(field_opts)) }}
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6'
+    }) }}
+
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
+    }) }}
+
     <div class="col-12">
         <div class="hr-text my-3">{{ __('Login behavior', 'singlesignon') }}</div>
     </div>
 
-    {{ fields.dropdownYesNo('is_default', provider.fields.is_default|default(0), __('IsDefault', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownYesNo('is_default', provider.fields.is_default|default(0), __('IsDefault', 'singlesignon'), {
+        helper: _tip_is_default
+    }|merge(field_opts)) }}
     {{ fields.dropdownYesNo('popup', provider.fields.popup|default(0), __('PopupAuth', 'singlesignon'), field_opts) }}
-    {{ fields.dropdownYesNo('split_domain', provider.fields.split_domain|default(0), __('SplitDomain', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownYesNo('split_domain', provider.fields.split_domain|default(0), __('SplitDomain', 'singlesignon'), {
+        helper: _tip_split_domain
+    }|merge(field_opts)) }}
     {{ fields.textField('authorized_domains', provider.fields.authorized_domains|default(''), __('AuthorizedDomains', 'singlesignon'), {
         helper: _tip_domains
     }|merge(field_opts)) }}
     {{ fields.dropdownYesNo('use_email_for_login', provider.fields.use_email_for_login|default(0), __('Use Email as Login', 'singlesignon'), field_opts) }}
-    {{ fields.dropdownYesNo('split_name', provider.fields.split_name|default(0), __('Split Name', 'singlesignon'), field_opts) }}
+    {{ fields.dropdownYesNo('split_name', provider.fields.split_name|default(0), __('Split Name', 'singlesignon'), {
+        helper: _tip_split_name
+    }|merge(field_opts)) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('Registration', 'singlesignon') }}</div>
@@ -142,10 +191,13 @@
         'Entity',
         'default_entities_id',
         provider.fields['default_entities_id']|default(0),
-        __('Default entity for new users', 'singlesignon'),
+        __('Default entity for users', 'singlesignon'),
         field_opts|merge({ display_emptychoice: true })
     ) }}
-    {{ fields.dropdownYesNo('match_entity_by_email_domain', provider.fields.match_entity_by_email_domain|default(0), __('Match entity by email domain (entity name = domain)', 'singlesignon'), field_opts) }}
+    {{ fields.nullField({
+        field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
+    }) }}
+
     {{ fields.dropdownField(
         'Profile',
         'default_profiles_id',
@@ -153,6 +205,7 @@
         __('Default profile when GLPI has no default', 'singlesignon'),
         field_opts|merge({ display_emptychoice: true })
     ) }}
+    {{ fields.dropdownYesNo('default_profiles_id_is_recursive', provider.fields.default_profiles_id_is_recursive|default(0), __('Recursive', 'singlesignon'), field_opts) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>
@@ -175,8 +228,8 @@
         <div class="hr-text my-3">{{ __('Personalization') }}</div>
     </div>
 
-    {% set bgcolor_extra = call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
-    {% set color_extra = call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', checked: (provider.fields.color|default('')) == ''}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
+    {% set bgcolor_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_bgcolor', class: 'mt-0', checked: (provider.fields.bgcolor|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
+    {% set color_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_color', class: 'mt-0', checked: (provider.fields.color|default('')) == ''}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
     {{ fields.colorField('bgcolor', provider.fields.bgcolor|default(''), __('Background color'), {
         add_field_html: bgcolor_extra,
         inline_add_field_html: true
@@ -188,7 +241,7 @@
 
     {% if provider.fields.picture|default('') is not empty %}
         {% set picture_field = call('Html::image', [call(['GlpiPlugin\\Singlesignon\\ToolboxPlugin', 'getPictureUrl'], [provider.fields.picture]), {style: picture_style, class: 'picture_square'}])|raw %}
-        {% set picture_extra = call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture'}])|raw ~ '&nbsp;' ~ __('Clear')|e %}
+        {% set picture_extra = '<label class="mb-0 d-flex justify-content-end align-items-center" style="cursor: pointer;">' ~ call('Html::getCheckbox', [{title: __('Clear'), name: '_blank_picture', class: 'mt-0'}])|raw ~ '<span class="ms-1">' ~ __('Clear')|e ~ '</span></label>' %}
     {% else %}
         {% set picture_field = inputs.file('picture', null, {onlyimages: true}) %}
         {% set picture_extra = '' %}

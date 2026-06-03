@@ -66,12 +66,18 @@ class Provider_Field extends CommonDBTM
     {
         return [
             'id'         => __('ID'),
-            'username'   => __('Username'),
+            'username'   => __('Login'),
             'email'      => __('Email'),
             'firstname'  => __('First name'),
             'lastname'   => __('Last name'),
             'fullname'   => __('Full name'),
-            'avatar_url' => __('Avatar URL', 'singlesignon'),
+            'avatar_url' => __('Picture URL', 'singlesignon'),
+            'location'   => __('Location'),
+            'supervisor' => __('Supervisor'),
+            'phone'      => __('Phone'),
+            'phone2'     => __('Phone 2'),
+            'mobile'     => __('Cell phone'),
+            'roles'      => __('Roles (IdP Claim)', 'singlesignon'),
         ];
     }
 
@@ -157,6 +163,7 @@ class Provider_Field extends CommonDBTM
             ['field_type' => 'email', 'jsonpath' => '$[\'e-mail\']', 'is_active' => 1, 'sort_order' => 50],
             ['field_type' => 'email', 'jsonpath' => '$[\'email-address\']', 'is_active' => 1, 'sort_order' => 60],
             ['field_type' => 'email', 'jsonpath' => '$.mail', 'is_active' => 1, 'sort_order' => 70],
+            ['field_type' => 'email', 'jsonpath' => '$.userPrincipalName', 'is_active' => 1, 'sort_order' => 75],
             ['field_type' => 'username', 'jsonpath' => '$.userPrincipalName', 'is_active' => 1, 'sort_order' => 80],
             ['field_type' => 'username', 'jsonpath' => '$.login', 'is_active' => 1, 'sort_order' => 90],
             ['field_type' => 'username', 'jsonpath' => '$.username', 'is_active' => 1, 'sort_order' => 100],
@@ -167,13 +174,25 @@ class Provider_Field extends CommonDBTM
             ['field_type' => 'lastname', 'jsonpath' => '$.surname', 'is_active' => 1, 'sort_order' => 136],
             ['field_type' => 'fullname', 'jsonpath' => '$.displayName', 'is_active' => 1, 'sort_order' => 137],
             ['field_type' => 'avatar_url', 'jsonpath' => '$.picture', 'is_active' => 1, 'sort_order' => 140],
+            ['field_type' => 'roles', 'jsonpath' => '$.roles', 'is_active' => 1, 'sort_order' => 150],
+            ['field_type' => 'roles', 'jsonpath' => '$.groups', 'is_active' => 1, 'sort_order' => 160],
         ];
     }
 
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         if ($item instanceof Provider) {
-            return self::createTabEntry(__('Field mappings', 'singlesignon'), 0, self::class, 'ti ti-list-search');
+            $count = 0;
+            if ($_SESSION['glpishow_count_on_tabs']) {
+                $count = countElementsInTable(
+                    (new self())->getTable(),
+                    [
+                        'plugin_singlesignon_providers_id' => $item->getID(),
+                        'is_active' => 1,
+                    ],
+                );
+            }
+            return self::createTabEntry(__('Field mappings', 'singlesignon'), $count, self::class, 'ti ti-list-search');
         }
 
         return '';
@@ -237,6 +256,8 @@ class Provider_Field extends CommonDBTM
             $rows = [];
         }
 
+        // First pass: apply deletions so update/insert runs against the final row set
+        // selected in the same submit (avoids stale-row side effects in one request).
         foreach ($rows as $row) {
             if (!is_array($row)) {
                 continue;
@@ -244,35 +265,51 @@ class Provider_Field extends CommonDBTM
 
             $mappingId = (int) ($row['id'] ?? 0);
             $delete = (int) ($row['_delete'] ?? 0) === 1;
-            $fieldType = (string) ($row['field_type'] ?? '');
-            $jsonpath = trim((string) ($row['jsonpath'] ?? ''));
-            $sortOrder = (int) ($row['sort_order'] ?? 0);
-            $isActive = (int) (($row['is_active'] ?? 0) ? 1 : 0);
 
             if ($mappingId > 0 && $delete) {
                 $this->deleteByCriteria([
                     'id' => $mappingId,
                     'plugin_singlesignon_providers_id' => $providerId,
                 ]);
-            } elseif (!in_array($fieldType, $types, true) || $jsonpath === '') {
-                continue;
-            } else {
-                $payload = [
-                    'plugin_singlesignon_providers_id' => $providerId,
-                    'field_type'                       => $fieldType,
-                    'jsonpath'                         => $jsonpath,
-                    'is_active'                        => $isActive,
-                    'sort_order'                       => $sortOrder,
-                ];
-
-                if ($mappingId > 0) {
-                    $payload['id'] = $mappingId;
-                    $this->update($payload);
-                    continue;
-                }
-
-                $this->add($payload);
             }
+        }
+
+        // Second pass: process remaining valid rows (not deleted) as update/insert.
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $mappingId = (int) ($row['id'] ?? 0);
+            $delete = (int) ($row['_delete'] ?? 0) === 1;
+            if ($delete) {
+                continue;
+            }
+
+            $fieldType = (string) ($row['field_type'] ?? '');
+            $jsonpath = trim((string) ($row['jsonpath'] ?? ''));
+            $sortOrder = (int) ($row['sort_order'] ?? 0);
+            $isActive = (int) (($row['is_active'] ?? 0) ? 1 : 0);
+
+            if (!in_array($fieldType, $types, true) || $jsonpath === '') {
+                continue;
+            }
+
+            $payload = [
+                'plugin_singlesignon_providers_id' => $providerId,
+                'field_type'                       => $fieldType,
+                'jsonpath'                         => $jsonpath,
+                'is_active'                        => $isActive,
+                'sort_order'                       => $sortOrder,
+            ];
+
+            if ($mappingId > 0) {
+                $payload['id'] = $mappingId;
+                $this->update($payload);
+                continue;
+            }
+
+            $this->add($payload);
         }
 
         Session::addMessageAfterRedirect(__s('Field mappings updated.', 'singlesignon'));

@@ -50,6 +50,13 @@ In simple terms:
 
 Preset types hide these in the form but still use the built-in values unless you switch to **Generic**.
 
+### Use SLO / Single Logout URL
+
+**Single Logout (SLO)** ensures that when a user logs out of GLPI, they are also signed out of their centralized Identity Provider. Depending on your chosen **SSO Type**, one of two configuration options will appear:
+
+- **Use SLO (for Preset Providers):** If your selected preset (e.g., Azure) natively supports Single Logout, a **Yes/No** dropdown is displayed. Setting this to **Yes** automatically applies the official logout endpoint for that Identity Provider, ensuring accurate routing without manual configuration.
+- **Single Logout URL (for Generic Providers):** If you are using a **Generic** provider, a text field is displayed. You can manually enter the URL used by your Identity Provider to receive logout requests. You can pass necessary parameters directly in the URL if required by the IdP.
+
 ### Resource Owner Authorization
 
 How the access token is sent when GLPI requests the user profile. Most providers expect **Bearer**. Use other modes only if the API documentation says so.
@@ -104,17 +111,13 @@ Creates a GLPI user on first successful SSO when no match exists (subject to GLP
 
 Shows a confirmation step before creating the user.
 
-### Default entity for new users
+### Default entity for users
 
-Which **entity** new users belong to when nothing else assigns one.
-
-### Match entity by email domain (entity name = domain)
-
-Tries to place the user in an entity whose **name** equals the domain part of their email.
+Determines which **entity** users belong to. This is evaluated and synchronized on **every login** for all users (both new and existing).
 
 ### Default profile when GLPI has no default
 
-Profile assigned when GLPI would otherwise leave the user without one.
+Configures the GLPI profile assigned to the user. This is evaluated and synchronized on **every login** for all users (both new and existing) to ensure they have valid authorization to access GLPI. You can also specify if this profile should be **Recursive** (applies to sub-entities) using the recursive setting.
 
 ---
 
