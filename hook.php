@@ -67,6 +67,7 @@ function plugin_singlesignon_install()
             `url_authorize`              VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_access_token`           VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `url_resource_owner_details` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
+            `url_slo`                    VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
             `user_photo_sync_mode`       INT UNSIGNED NOT NULL DEFAULT '0',
             `resource_owner_auth_type`   VARCHAR(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'bearer',
             `resource_owner_custom_headers` TEXT COLLATE utf8mb4_unicode_ci NULL,
@@ -225,9 +226,10 @@ function plugin_singlesignon_install()
 
     $migration->addField($providersTable, 'auto_register', 'bool', ['value' => 0]);
     $migration->addField($providersTable, 'registration_preview', 'bool', ['value' => 0]);
-    $migration->addField($providersTable, 'match_entity_by_email_domain', 'integer', ['value' => 0]);
     $migration->addField($providersTable, 'default_entities_id', 'integer', ['value' => 0]);
+    $migration->dropField($providersTable, 'match_entity_by_email_domain');
     $migration->addField($providersTable, 'default_profiles_id', 'integer', ['value' => 0]);
+    $migration->addField($providersTable, 'default_profiles_id_is_recursive', 'bool', ['value' => 0]);
 
     $migration->addField($providersTable, 'ssl_verify_host', 'bool', ['value' => 1]);
     $migration->addField($providersTable, 'ssl_verify_peer', 'bool', ['value' => 1]);
@@ -252,6 +254,17 @@ function plugin_singlesignon_install()
     /**
      * Version 2.1.0
      */
+
+    $migration->addField(
+        $providersTable,
+        'url_slo',
+        'string',
+        [
+            'nodefault' => true,
+            'null'      => true,
+            'after'     => 'url_resource_owner_details',
+        ],
+    );
 
     // Stores role-mapping configuration per provider:
     // provider + remote role/group key -> GLPI group target.

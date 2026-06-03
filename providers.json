@@ -3,6 +3,7 @@
         "url_authorize": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
         "url_access_token": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
         "url_resource_owner_details": "https://graph.microsoft.com/v1.0/me",
+        "url_slo": "https://login.microsoftonline.com/common/oauth2/v2.0/logout",
         "scope": "User.Read",
         "field_mappings": [
             {"field_type": "id", "jsonpath": "$.id", "is_active": 1, "sort_order": 10},
