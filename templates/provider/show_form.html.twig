@@ -110,7 +110,10 @@
     {{ fields.sliderField('is_active', provider.fields.is_active|default(0), __('Active'), field_opts) }}
 
     {{ fields.textField('client_id', provider.fields.client_id|default(''), __('Client ID', 'singlesignon'), field_opts) }}
-    {{ fields.textField('client_secret', provider.fields.client_secret|default(''), __('Client Secret', 'singlesignon'), field_opts) }}
+    {{ fields.passwordField('client_secret', provider.fields.client_secret|default(''), __('Client Secret', 'singlesignon'), {
+        is_disclosable: true,
+        is_copyable: false
+    }|merge(field_opts)) }}
     {{ fields.textField('azure_endpoint', call([provider, 'getAzureEndpoint'], []), __('Azure Endpoint', 'singlesignon'), {
         add_field_class: 'sso_azure ' ~ sso_azure_hidden_class,
         helper: _tip_azure_endpoint
