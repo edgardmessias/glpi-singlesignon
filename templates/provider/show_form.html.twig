@@ -107,7 +107,7 @@
         }])|raw }}
     {% endset %}
     {{ fields.htmlField('type', type_field, __('SSO Type', 'singlesignon'), field_opts|merge({id: 'dropdown_type' ~ type_rand})) }}
-    {{ fields.dropdownYesNo('is_active', provider.fields.is_active|default(0), __('Active'), field_opts) }}
+    {{ fields.sliderField('is_active', provider.fields.is_active|default(0), __('Active'), field_opts) }}
 
     {{ fields.textField('client_id', provider.fields.client_id|default(''), __('Client ID', 'singlesignon'), field_opts) }}
     {{ fields.textField('client_secret', provider.fields.client_secret|default(''), __('Client Secret', 'singlesignon'), field_opts) }}
@@ -151,10 +151,10 @@
         helper: _tip_custom_headers
     }|merge(field_opts)) }}
 
-    {{ fields.dropdownYesNo('ssl_verify_host', provider.fields.ssl_verify_host|default(1), __('SSL verify host', 'singlesignon'), {
+    {{ fields.sliderField('ssl_verify_host', provider.fields.ssl_verify_host|default(1), __('SSL verify host', 'singlesignon'), {
         helper: _tip_ssl_verify_host
     }|merge(field_opts)) }}
-    {{ fields.dropdownYesNo('ssl_verify_peer', provider.fields.ssl_verify_peer|default(1), __('SSL verify peer', 'singlesignon'), {
+    {{ fields.sliderField('ssl_verify_peer', provider.fields.ssl_verify_peer|default(1), __('SSL verify peer', 'singlesignon'), {
         helper: _tip_ssl_verify_peer
     }|merge(field_opts)) }}
 
@@ -163,7 +163,7 @@
         helper: _tip_slo
     }|merge(field_opts)) }}
     {% set _use_slo = provider.fields.url_slo|default('') is not empty ? 1 : 0 %}
-    {{ fields.dropdownYesNo('_use_slo', _use_slo, __('Use SLO', 'singlesignon'), {
+    {{ fields.sliderField('_use_slo', _use_slo, __('Use SLO', 'singlesignon'), {
         add_field_class: 'sso_preset_slo ' ~ sso_preset_slo_hidden_class,
         helper: _tip_use_slo
     }|merge(field_opts)) }}
@@ -179,18 +179,18 @@
         <div class="hr-text my-3">{{ __('Login behavior', 'singlesignon') }}</div>
     </div>
 
-    {{ fields.dropdownYesNo('is_default', provider.fields.is_default|default(0), __('IsDefault', 'singlesignon'), {
+    {{ fields.sliderField('is_default', provider.fields.is_default|default(0), __('IsDefault', 'singlesignon'), {
         helper: _tip_is_default
     }|merge(field_opts)) }}
-    {{ fields.dropdownYesNo('popup', provider.fields.popup|default(0), __('PopupAuth', 'singlesignon'), field_opts) }}
-    {{ fields.dropdownYesNo('split_domain', provider.fields.split_domain|default(0), __('SplitDomain', 'singlesignon'), {
+    {{ fields.sliderField('popup', provider.fields.popup|default(0), __('PopupAuth', 'singlesignon'), field_opts) }}
+    {{ fields.sliderField('split_domain', provider.fields.split_domain|default(0), __('SplitDomain', 'singlesignon'), {
         helper: _tip_split_domain
     }|merge(field_opts)) }}
     {{ fields.textField('authorized_domains', provider.fields.authorized_domains|default(''), __('AuthorizedDomains', 'singlesignon'), {
         helper: _tip_domains
     }|merge(field_opts)) }}
-    {{ fields.dropdownYesNo('use_email_for_login', provider.fields.use_email_for_login|default(0), __('Use Email as Login', 'singlesignon'), field_opts) }}
-    {{ fields.dropdownYesNo('split_name', provider.fields.split_name|default(0), __('Split Name', 'singlesignon'), {
+    {{ fields.sliderField('use_email_for_login', provider.fields.use_email_for_login|default(0), __('Use Email as Login', 'singlesignon'), field_opts) }}
+    {{ fields.sliderField('split_name', provider.fields.split_name|default(0), __('Split Name', 'singlesignon'), {
         helper: _tip_split_name
     }|merge(field_opts)) }}
 
@@ -198,8 +198,8 @@
         <div class="hr-text my-3">{{ __('Registration', 'singlesignon') }}</div>
     </div>
 
-    {{ fields.dropdownYesNo('auto_register', provider.fields.auto_register|default(0), __('Allow automatic registration', 'singlesignon'), field_opts) }}
-    {{ fields.dropdownYesNo('registration_preview', provider.fields.registration_preview|default(0), __('Confirm registration before creating account', 'singlesignon'), field_opts) }}
+    {{ fields.sliderField('auto_register', provider.fields.auto_register|default(0), __('Allow automatic registration', 'singlesignon'), field_opts) }}
+    {{ fields.sliderField('registration_preview', provider.fields.registration_preview|default(0), __('Confirm registration before creating account', 'singlesignon'), field_opts) }}
     {{ fields.dropdownField(
         'Entity',
         'default_entities_id',
@@ -208,7 +208,7 @@
         field_opts|merge({ display_emptychoice: true })
     ) }}
     {{ fields.nullField({
-        field_class: 'col-12 col-xxl-6 sso_url ' ~ sso_hidden_class
+        field_class: 'col-12 col-xxl-6'
     }) }}
 
     {{ fields.dropdownField(
@@ -218,7 +218,7 @@
         __('Default profile when GLPI has no default', 'singlesignon'),
         field_opts|merge({ display_emptychoice: true })
     ) }}
-    {{ fields.dropdownYesNo('default_profiles_id_is_recursive', provider.fields.default_profiles_id_is_recursive|default(0), __('Recursive', 'singlesignon'), field_opts) }}
+    {{ fields.sliderField('default_profiles_id_is_recursive', provider.fields.default_profiles_id_is_recursive|default(0), __('Recursive', 'singlesignon'), field_opts) }}
 
     <div class="col-12">
         <div class="hr-text my-3">{{ __('User photo synchronization', 'singlesignon') }}</div>
