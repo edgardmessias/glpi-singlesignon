@@ -51,6 +51,7 @@
         "url_authorize": "https://accounts.google.com/o/oauth2/v2/auth",
         "url_access_token": "https://www.googleapis.com/oauth2/v4/token",
         "url_resource_owner_details": "https://openidconnect.googleapis.com/v1/userinfo",
+        "url_slo": "https://www.google.com/accounts/Logout",
         "scope": "openid email profile",
         "field_mappings": [
             {"field_type": "id", "jsonpath": "$.sub", "is_active": 1, "sort_order": 10},
