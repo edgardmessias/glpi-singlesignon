@@ -38,12 +38,19 @@ use function Safe\parse_url;
 
 class LoginRenderer
 {
+    private static bool $isPostInitDone = false;
+
     /**
      * {@see Hooks::POST_INIT}: prepend login template override and register Twig globals after all
      * plugins have registered {@see Hooks::DISPLAY_LOGIN}.
      */
     public static function onPostInit(): void
     {
+        if (self::$isPostInitDone) {
+            return;
+        }
+        self::$isPostInitDone = true;
+
         $env = TemplateRenderer::getInstance()->getEnvironment();
 
         $dir = Plugin::getPhpDir('singlesignon') . '/templates/override';
