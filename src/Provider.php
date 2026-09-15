@@ -1775,7 +1775,7 @@ class Provider extends CommonDBTM
         }
         if ($locationName !== null && $locationName !== '') {
             $loc = new Location();
-            $existing = $loc->find(['name' => $locationName], '', 1);
+            $existing = $loc->find(['name' => $locationName], [], 1);
             if ($existing !== []) {
                 $userUpdate['locations_id'] = (int) array_key_first($existing);
             }
@@ -1901,7 +1901,7 @@ class Provider extends CommonDBTM
         $locationsId = 0;
         if ($locationName !== null && $locationName !== '') {
             $loc = new Location();
-            $existing = $loc->find(['name' => $locationName], '', 1);
+            $existing = $loc->find(['name' => $locationName], [], 1);
             if ($existing !== []) {
                 $locationsId = (int) array_key_first($existing);
             }
