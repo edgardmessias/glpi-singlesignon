@@ -123,20 +123,19 @@ Official GLPI source install and tooling context: **[GLPI `INSTALL.md`](https://
 
 Tighten **Field mappings** so **ID** and **Email** are unambiguous; prefer stable ids (`sub`, provider id) for **ID**.
 
-### "The action you have requested is not allowed"
+### "The single sign-on request has expired or was started in another browser session"
 
-If your identity provider redirects back successfully but GLPI fails with a CSRF error or rejects the login displaying the error message **"The action you have requested is not allowed."**, your PHP `session.cookie_samesite` setting might be too strict. You may also see the message **"User ID: `Anonymous` tried to execute an invalid request"** in GLPI's `access-errors.log` log file.
+When you click to log in via SSO, the plugin creates a one-time **state** value, remembers it in your browser (PHP session and a short-lived `glpi_singlesignon_state` cookie), and sends it to the identity provider. When the provider sends you back, the plugin checks that the state matches what your browser remembered. This prevents another person from completing a login in your browser with their own account.
 
-**Fix:**
-1. Edit your server's `php.ini`.
-2. Locate the `session.cookie_samesite` directive.
-3. Change its value to `"Lax"`.
-4. Restart your web server or PHP-FPM service.
+The check fails, and you see this message, when your browser comes back without that memory. The exact reason is written to `files/_log/singlesignon-errors.log`, together with the host you came back to and GLPI's `url_base`. Common causes:
 
-**Why does this happen?**  
-When you click to log in via SSO, you temporarily leave GLPI to sign in at Microsoft or Google. When you come back, GLPI relies on a small file in your browser (a **cookie**) to remember that *you* were the one who started the login. 
+- **The login started on a different address than the one configured in GLPI.** The provider always returns to **Setup > General > URL of the application** (`url_base`). If users open GLPI through another host name, IP, port or `http://` instead of `https://`, their browser keeps the cookies for that other address. Make every address redirect to the configured one.
+- **`session.cookie_samesite` is `Strict`.** The browser then refuses to send cookies when you come back from the provider. Set it to `"Lax"` in `php.ini` and restart the web server or PHP-FPM.
+- **The login took longer than 10 minutes,** or the same callback URL was opened twice (each state can be used only once). Just log in again.
 
-If your setting is `"Strict"`, your browser refuses to send this cookie back when you return from the outside website. Because GLPI loses track of who you are, it blocks the login to protect your security. Changing it to `"Lax"` allows the browser to safely send the cookie, so GLPI can successfully recognize you.
+### "The identity provider returned an error"
+
+The provider refused the request and sent an error code back (for example `access_denied` or `invalid_client`), shown in the message and logged in `singlesignon-errors.log`. Check the provider configuration (client id, secret, redirect URI, user assignment) with the provider's documentation for that code.
 
 ---
 
