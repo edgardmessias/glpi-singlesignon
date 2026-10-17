@@ -100,6 +100,12 @@ final class OAuthState
         $cookie_result  = self::consumeFromCookie($state, $provider_id);
 
         if ($session_result === null || $cookie_result === null) {
+            // The cookie path records its own nonce. A session-only success still has to,
+            // so a copied cookie cannot be replayed after the login.
+            if ($session_result === null && $cookie_result !== null && $state !== '') {
+                self::markConsumed($state, time() + self::STATE_TTL);
+            }
+
             return null;
         }
 
