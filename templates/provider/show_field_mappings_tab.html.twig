@@ -40,7 +40,7 @@
             <p class="text-muted">
                 {{ __('Configure JSONPath rules used to extract fields from Resource Owner response.', 'singlesignon') }}
             </p>
-            <table class="table table-striped table-hover align-middle"
+            <table class="table table-hover align-middle"
                    id="sso-field-mappings-table"
                    data-restore-label="{{ __('Restore') }}">
                 <thead>
@@ -53,53 +53,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for map in rows %}
-                        {% set is_saved = (map.id|default(0)) > 0 %}
-                        <tr data-row data-saved="{{ is_saved ? '1' : '0' }}">
-                            <td>
-                                <input type="hidden" name="_field_mappings[{{ loop.index0 }}][id]" value="{{ map.id|default(0) }}"/>
-                                {% if is_saved %}
-                                    <input type="hidden" class="sso-delete-flag" name="_field_mappings[{{ loop.index0 }}][_delete]" value="0"/>
-                                {% endif %}
-                                <select class="form-select" name="_field_mappings[{{ loop.index0 }}][field_type]">
-                                    {% for key, label in field_types %}
-                                        <option value="{{ key }}" {% if key == map.field_type %}selected{% endif %}>{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                            <td>
-                                <input type="text"
-                                       class="form-control"
-                                       name="_field_mappings[{{ loop.index0 }}][jsonpath]"
-                                       value="{{ map.jsonpath|default('') }}"
-                                       placeholder="$.id"/>
-                            </td>
-                            <td class="text-center">
-                                <input type="checkbox"
-                                       class="form-check-input"
-                                       name="_field_mappings[{{ loop.index0 }}][is_active]"
-                                       value="1"
-                                       {% if map.is_active|default(1) %}checked{% endif %}/>
-                            </td>
-                            <td class="text-center">
-                                <input type="number"
-                                       class="form-control text-end"
-                                       style="max-width: 100px; margin: 0 auto;"
-                                       name="_field_mappings[{{ loop.index0 }}][sort_order]"
-                                       value="{{ map.sort_order|default(10) }}"/>
-                            </td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
-                                    <i class="ti ti-trash"></i> {{ __('Remove') }}
-                                </button>
-                            </td>
-                        </tr>
-                    {% endfor %}
                 </tbody>
             </table>
-            <button type="button" id="sso-add-mapping-row" class="btn btn-outline-secondary">
-                <i class="ti ti-plus"></i> {{ __('Add') }}
-            </button>
+            <div class="mt-3">
+                <span class="d-flex gap-2">
+                    <button type="button" id="sso-add-mapping-row" class="btn btn-outline-secondary">
+                        <i class="ti ti-plus"></i> <span>{{ __('Add') }}</span>
+                    </button>
+                    <button type="button" id="sso-reset-mappings-btn" class="btn btn-ghost-danger" data-bs-toggle="modal" data-bs-target="#reset_mappings_modal" {% if provider.fields.type == 'generic' %}style="display: none;"{% endif %}>
+                        <span>{{ __('Reset to defaults') }}</span>
+                    </button>
+                </span>
+            </div>
         </div>
         <div class="card-footer text-end">
             <button type="submit" name="update_mappings" class="btn btn-primary">
@@ -110,49 +75,152 @@
     </div>
 </form>
 
+{% include 'components/danger_modal.html.twig' with {
+   'modal_id': 'reset_mappings_modal',
+   'title': __('Are you sure?'),
+   'content': __('Are you sure you want to reset field mappings to the defaults?', 'singlesignon'),
+   'confirm_btn': '<button type="button" id="confirm_reset_mappings_btn" class="btn btn-danger w-100" data-bs-dismiss="modal">' ~ _x('button', 'Confirm') ~ '</button>'
+} %}
+
 <script type="text/javascript">
 (() => {
     const table = document.getElementById('sso-field-mappings-table');
     const addBtn = document.getElementById('sso-add-mapping-row');
-    if (!table || !addBtn) {
+    const resetBtn = document.getElementById('sso-reset-mappings-btn');
+    const confirmResetBtn = document.getElementById('confirm_reset_mappings_btn');
+    const tbody = table ? table.querySelector('tbody') : null;
+    if (!table || !addBtn || !tbody) {
         return;
     }
 
     const types = {{ field_types|json_encode|raw }};
+    const allDefaults = {{ all_defaults|json_encode|raw }};
+    const initialMappings = {{ mappings|json_encode|raw }};
+    const removeLabel = {{ __('Remove')|e('js')|json_encode|raw }};
+    const initialType = {{ provider.fields.type|json_encode|raw }};
 
-    const buildOptions = () => Object.entries(types)
-        .map(([key, label]) => `<option value="${key}">${label}</option>`)
+    const buildOptions = (selectedKey = '') => Object.entries(types)
+        .map(([key, label]) => `<option value="${key}" ${key === selectedKey ? 'selected' : ''}>${label}</option>`)
         .join('');
 
-    const nextIndex = () => table.querySelectorAll('tbody tr[data-row]').length;
+    const nextIndex = () => table.querySelectorAll('tbody tr:not([data-readonly="1"])').length;
 
-    addBtn.addEventListener('click', () => {
+
+
+    const addCustomRow = (map = null, isSaved = false) => {
         const idx = nextIndex();
         const tr = document.createElement('tr');
         tr.setAttribute('data-row', '');
-        tr.setAttribute('data-saved', '0');
+        tr.setAttribute('data-saved', isSaved ? '1' : '0');
+        
+        const mapId = map ? (map.id || 0) : 0;
+        const fieldType = map ? map.field_type : 'id';
+        const jsonPath = map ? (map.jsonpath || '') : '';
+        const isActive = map ? (map.is_active == 1) : true;
+        const sortOrder = map ? (map.sort_order || ((idx + 1) * 10)) : ((idx + 1) * 10);
+        
+        let idInputs = `<input type="hidden" name="_field_mappings[${idx}][id]" value="${mapId}"/>`;
+        if (isSaved) {
+            idInputs += `<input type="hidden" class="sso-delete-flag" name="_field_mappings[${idx}][_delete]" value="0"/>`;
+        }
+
         tr.innerHTML = `
             <td>
-                <input type="hidden" name="_field_mappings[${idx}][id]" value="0"/>
-                <select class="form-select" name="_field_mappings[${idx}][field_type]">${buildOptions()}</select>
+                ${idInputs}
+                <select class="form-select" name="_field_mappings[${idx}][field_type]">${buildOptions(fieldType)}</select>
             </td>
             <td>
-                <input type="text" class="form-control" name="_field_mappings[${idx}][jsonpath]" placeholder="$.id"/>
+                <input type="text" class="form-control" name="_field_mappings[${idx}][jsonpath]" value="${jsonPath}" placeholder="$.id"/>
             </td>
             <td class="text-center">
-                <input type="checkbox" class="form-check-input" name="_field_mappings[${idx}][is_active]" value="1" checked/>
+                <input type="checkbox" class="form-check-input" name="_field_mappings[${idx}][is_active]" value="1" ${isActive ? 'checked' : ''}/>
             </td>
             <td class="text-center">
-                <input type="number" class="form-control text-end" style="max-width: 100px; margin: 0 auto;" name="_field_mappings[${idx}][sort_order]" value="${(idx + 1) * 10}"/>
+                <input type="number" class="form-control text-end" style="max-width: 100px; margin: 0 auto;" name="_field_mappings[${idx}][sort_order]" value="${sortOrder}"/>
             </td>
             <td class="text-center">
                 <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
-                    <i class="ti ti-trash"></i> {{ __('Remove')|e('js') }}
+                    <i class="ti ti-trash"></i> ${removeLabel}
                 </button>
             </td>
         `;
-        table.querySelector('tbody')?.appendChild(tr);
+        tbody.appendChild(tr);
+        return tr;
+    };
+
+    const loadDefaults = (type) => {
+        // Remove existing read-only rows
+        tbody.querySelectorAll('tr[data-readonly="1"]').forEach(tr => tr.remove());
+        
+        const defaults = allDefaults[type] || [];
+        defaults.forEach(map => {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-readonly', '1');
+            tr.classList.add('bg-light', 'text-muted');
+            tr.innerHTML = `
+                <td>
+                    <select class="form-select" disabled>${buildOptions(map.field_type)}</select>
+                </td>
+                <td>
+                    <input type="text" class="form-control" value="${map.jsonpath || ''}" disabled/>
+                </td>
+                <td class="text-center">
+                    <input type="checkbox" class="form-check-input" value="1" disabled ${map.is_active ? 'checked' : ''} style="background-color: var(--tblr-secondary); border-color: var(--tblr-secondary);"/>
+                </td>
+                <td class="text-center">
+                    <input type="number" class="form-control text-end" style="max-width: 100px; margin: 0 auto;" value="${map.sort_order || 10}" disabled/>
+                </td>
+                <td class="text-center">
+                    <span class="badge" style="background-color: var(--glpi-badge-bg);" title="{{ __('Read-only fallback', 'singlesignon') }}"><i class="ti ti-lock"></i></span>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+
+    const init = () => {
+        tbody.innerHTML = '';
+        if (initialMappings && initialMappings.length > 0) {
+            initialMappings.forEach(map => {
+                addCustomRow(map, true);
+            });
+        }
+        loadDefaults(initialType);
+    };
+
+    addBtn.addEventListener('click', () => {
+        addCustomRow(null, false);
     });
+
+    if (confirmResetBtn) {
+        confirmResetBtn.addEventListener('click', () => {
+            // Remove all custom overrides
+            const customRows = tbody.querySelectorAll('tr:not([data-readonly="1"])');
+            customRows.forEach(tr => {
+                if (tr.getAttribute('data-saved') === '1') {
+                    const deleteFlag = tr.querySelector('.sso-delete-flag');
+                    if (deleteFlag) deleteFlag.value = '1';
+                    tr.style.display = 'none';
+                } else {
+                    tr.remove();
+                }
+            });
+        });
+    }
+
+    $(document).on('change', 'select[name="type"]', function() {
+        const newType = $(this).val();
+        if (newType === 'generic') {
+            if (resetBtn) resetBtn.style.display = 'none';
+        } else {
+            if (resetBtn) resetBtn.style.display = '';
+        }
+        loadDefaults(newType);
+    });
+
+    // Run init
+    init();
+
 })();
 </script>
 
