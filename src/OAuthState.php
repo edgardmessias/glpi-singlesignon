@@ -27,7 +27,6 @@ declare(strict_types=1);
 namespace GlpiPlugin\Singlesignon;
 
 use GLPIKey;
-use Psr\SimpleCache\CacheInterface;
 use Throwable;
 
 /**
@@ -185,13 +184,9 @@ final class OAuthState
     {
         global $GLPI_CACHE;
 
-        if (!$GLPI_CACHE instanceof CacheInterface) {
-            // No cache available: the signature, the expiry and the cookie deletion still apply.
-            return true;
-        }
-
         $key = self::CACHE_KEY_PREFIX . $nonce;
         try {
+            // A missing cache throws here. The signature, the expiry and the cookie deletion still apply.
             if ($GLPI_CACHE->has($key)) {
                 return false;
             }
