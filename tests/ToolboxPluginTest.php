@@ -49,4 +49,35 @@ class ToolboxPluginTest extends PluginTestCase
         $this->assertIsString($msgerr);
         $this->assertNotSame('', $msgerr);
     }
+
+    public function testProviderTestSurvivesCookieDroppedOnReturn(): void
+    {
+        $session = [];
+
+        ToolboxPlugin::rememberOAuthProviderTest([], ['glpi_singlesignon_test' => '1'], $session);
+
+        $this->assertTrue($session['glpi_singlesignon_test']);
+        $this->assertTrue(ToolboxPlugin::consumeOAuthProviderTest([], $session));
+        $this->assertArrayNotHasKey('glpi_singlesignon_test', $session);
+    }
+
+    public function testReturnWithAuthorizationCodeDoesNotClearRememberedTest(): void
+    {
+        $session = ['glpi_singlesignon_test' => true];
+
+        ToolboxPlugin::rememberOAuthProviderTest(['code' => 'auth-code'], [], $session);
+
+        $this->assertTrue($session['glpi_singlesignon_test']);
+        $this->assertTrue(ToolboxPlugin::consumeOAuthProviderTest([], $session));
+    }
+
+    public function testRegularLoginClearsStaleProviderTest(): void
+    {
+        $session = ['glpi_singlesignon_test' => true];
+
+        ToolboxPlugin::rememberOAuthProviderTest([], [], $session);
+
+        $this->assertArrayNotHasKey('glpi_singlesignon_test', $session);
+        $this->assertFalse(ToolboxPlugin::consumeOAuthProviderTest([], $session));
+    }
 }

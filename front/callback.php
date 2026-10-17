@@ -62,15 +62,8 @@ if (!$signon_provider->fields['is_active']) {
     throw $exception;
 }
 
-// If this is the start of the flow (no code) and the test cookie is present, save the test flag to the session
-// so it survives cross-site redirects where the cookie might be dropped.
-if (!isset($_GET['code'])) {
-    if (isset($_COOKIE['glpi_singlesignon_test']) && $_COOKIE['glpi_singlesignon_test'] === '1') {
-        $_SESSION['glpi_singlesignon_test'] = true;
-    } else {
-        unset($_SESSION['glpi_singlesignon_test']);
-    }
-}
+// The test cookie can be dropped on the cross-site return. Keep the flag in the session.
+ToolboxPlugin::rememberOAuthProviderTest($_GET, $_COOKIE, $_SESSION);
 
 /**
  * Handles the OAuth authorization callback from the identity provider.
@@ -87,15 +80,9 @@ $signon_provider->checkAuthorization();
  * so they can inspect the SSO flow and returned data without performing an actual login.
  * The flag is deleted after use to avoid repeated debug output.
  */
-$test_cookie = false;
-if (isset($_COOKIE['glpi_singlesignon_test']) && $_COOKIE['glpi_singlesignon_test'] === '1') {
-    $test_cookie = true;
-} elseif (isset($_SESSION['glpi_singlesignon_test']) && $_SESSION['glpi_singlesignon_test'] === true) {
-    $test_cookie = true;
-}
+$test_cookie = ToolboxPlugin::consumeOAuthProviderTest($_COOKIE, $_SESSION);
 
 if ($test_cookie) {
-    unset($_SESSION['glpi_singlesignon_test']);
     setcookie('glpi_singlesignon_test', '', [
         'expires' => time() - 3600,
         'path' => '/',

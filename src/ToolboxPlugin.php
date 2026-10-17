@@ -68,6 +68,54 @@ class ToolboxPlugin
         return $url;
     }
 
+    /**
+     * Copy the provider-test cookie into the session before the authorize redirect.
+     *
+     * The test button sets a SameSite=Lax cookie. That cookie is visible on the
+     * first same-site callback, but browsers can drop it on the cross-site return
+     * from the identity provider. The GLPI session already survives that return.
+     *
+     * A later callback without the cookie clears a stale flag so a real login is
+     * not shown as a test.
+     *
+     * @param array<string, mixed> $query
+     * @param array<string, mixed> $cookie
+     * @param array<string, mixed> $session
+     */
+    public static function rememberOAuthProviderTest(array $query, array $cookie, array &$session): void
+    {
+        if (isset($query['code'])) {
+            return;
+        }
+
+        if (isset($cookie['glpi_singlesignon_test']) && $cookie['glpi_singlesignon_test'] === '1') {
+            $session['glpi_singlesignon_test'] = true;
+            return;
+        }
+
+        unset($session['glpi_singlesignon_test']);
+    }
+
+    /**
+     * Whether this callback must show the test result instead of linking the logged-in user.
+     *
+     * The session flag is removed so the next login is not treated as a test.
+     *
+     * @param array<string, mixed> $cookie
+     * @param array<string, mixed> $session
+     */
+    public static function consumeOAuthProviderTest(array $cookie, array &$session): bool
+    {
+        $isTest = (isset($cookie['glpi_singlesignon_test']) && $cookie['glpi_singlesignon_test'] === '1')
+            || (isset($session['glpi_singlesignon_test']) && $session['glpi_singlesignon_test'] === true);
+
+        if ($isTest) {
+            unset($session['glpi_singlesignon_test']);
+        }
+
+        return $isTest;
+    }
+
     public static function isDefault($row, $query = [])
     {
         return $row['is_default'] == 1;
