@@ -53,6 +53,7 @@
         "platform": {
             "php": "8.2.99"
         },
+        "prepend-autoloader": false,
         "sort-packages": true
     }
 }

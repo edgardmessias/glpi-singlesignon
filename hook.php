@@ -326,7 +326,8 @@ function plugin_singlesignon_uninstall()
 {
     global $DB;
 
-    Config::deleteConfigurationValues('plugin:singlesignon');
+    $config = Config::getConfigurationValues('plugin:singlesignon');
+    Config::deleteConfigurationValues('plugin:singlesignon', array_keys($config));
 
     foreach (plugin_singlesignon_get_tables() as $table) {
         if ($DB->tableExists($table)) {
