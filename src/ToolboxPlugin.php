@@ -34,6 +34,8 @@ use Document;
 use Html;
 
 use function Safe\base64_decode;
+use function Safe\curl_exec;
+use function Safe\curl_init;
 use function Safe\mkdir;
 use function Safe\preg_match;
 use function Safe\realpath;
@@ -64,6 +66,54 @@ class ToolboxPlugin
         }
 
         return $url;
+    }
+
+    /**
+     * Copy the provider-test cookie into the session before the authorize redirect.
+     *
+     * The test button sets a SameSite=Lax cookie. That cookie is visible on the
+     * first same-site callback, but browsers can drop it on the cross-site return
+     * from the identity provider. The GLPI session already survives that return.
+     *
+     * A later callback without the cookie clears a stale flag so a real login is
+     * not shown as a test.
+     *
+     * @param array<string, mixed> $query
+     * @param array<string, mixed> $cookie
+     * @param array<string, mixed> $session
+     */
+    public static function rememberOAuthProviderTest(array $query, array $cookie, array &$session): void
+    {
+        if (isset($query['code'])) {
+            return;
+        }
+
+        if (isset($cookie['glpi_singlesignon_test']) && $cookie['glpi_singlesignon_test'] === '1') {
+            $session['glpi_singlesignon_test'] = true;
+            return;
+        }
+
+        unset($session['glpi_singlesignon_test']);
+    }
+
+    /**
+     * Whether this callback must show the test result instead of linking the logged-in user.
+     *
+     * The session flag is removed so the next login is not treated as a test.
+     *
+     * @param array<string, mixed> $cookie
+     * @param array<string, mixed> $session
+     */
+    public static function consumeOAuthProviderTest(array $cookie, array &$session): bool
+    {
+        $isTest = (isset($cookie['glpi_singlesignon_test']) && $cookie['glpi_singlesignon_test'] === '1')
+            || (isset($session['glpi_singlesignon_test']) && $session['glpi_singlesignon_test'] === true);
+
+        if ($isTest) {
+            unset($session['glpi_singlesignon_test']);
+        }
+
+        return $isTest;
     }
 
     public static function isDefault($row, $query = [])
@@ -425,6 +475,49 @@ class ToolboxPlugin
             return $ip->getTextual();
         }
         return '';
+    }
+
+    /**
+     * HTTP request used by the OAuth calls.
+     * GLPI 12 removed Toolbox::callCurl(); this keeps the same CURLOPT_* options on 11 and 12.
+     *
+     * @param array<int, mixed> $options
+     */
+    public static function requestHttp(string $url, array $options, ?string &$msgerr = null): string
+    {
+        global $CFG_GLPI;
+
+        $msgerr = null;
+        try {
+            $handle = curl_init($url);
+        } catch (Throwable $ex) {
+            $msgerr = $ex->getMessage();
+            return '';
+        }
+
+        $curlOptions = [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+        ] + $options;
+
+        if (!empty($CFG_GLPI['proxy_name'])) {
+            $curlOptions[CURLOPT_PROXY] = $CFG_GLPI['proxy_name'];
+            $curlOptions[CURLOPT_PROXYPORT] = (int) ($CFG_GLPI['proxy_port'] ?? 0);
+            $curlOptions[CURLOPT_PROXYTYPE] = CURLPROXY_HTTP;
+        }
+
+        curl_setopt_array($handle, $curlOptions);
+        try {
+            $content = curl_exec($handle);
+        } catch (Throwable $ex) {
+            $msgerr = $ex->getMessage();
+            curl_close($handle);
+            return '';
+        }
+        curl_close($handle);
+
+        return is_string($content) ? $content : '';
     }
 
     /**

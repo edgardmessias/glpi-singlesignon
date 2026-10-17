@@ -27,7 +27,6 @@ declare(strict_types=1);
 namespace GlpiPlugin\Singlesignon;
 
 use Group_User;
-use CommonDBRelation;
 use JsonPath\JsonObject;
 use Throwable;
 use User;
@@ -48,19 +47,14 @@ use function Safe\preg_split;
  * `glpi_plugin_singlesignon_providers_groups` so that stale memberships can be
  * revoked on the user's next SSO login.
  */
-class Provider_Group extends CommonDBRelation
+require_once __DIR__ . '/glpi_property_compat.php';
+
+class Provider_Group extends ProviderGroupBase
 {
     private const MAX_GROUPS_PER_SYNC = 200;
     private const MAX_GROUP_CLAIM_STRING_LENGTH = 8192;
 
     public static $table = 'glpi_plugin_singlesignon_providers_groups';
-
-    // From CommonDBRelation
-    public static $itemtype_1 = Provider_Role::class;
-    public static $items_id_1 = 'plugin_singlesignon_providers_roles_id';
-
-    public static $itemtype_2 = 'User';
-    public static $items_id_2 = 'users_id';
 
     // ─────────────────────────────────────────────────────────────────────────
     // Public entry points

@@ -27,11 +27,9 @@ use GlpiPlugin\Singlesignon\Provider;
 
 include(__DIR__ . '/../../../inc/includes.php');
 
-Session::checkRight("config", UPDATE);
+Session::checkRight(Provider::$rightname, UPDATE);
 
-if (!isset($_GET["id"])) {
-    $_GET["id"] = "";
-}
+$_GET["id"] ??= "";
 
 $provider = new Provider();
 

@@ -26,7 +26,7 @@ use GlpiPlugin\Singlesignon\Provider;
 
 include(__DIR__ . '/../../../inc/includes.php');
 
-Session::checkRight("config", UPDATE);
+Session::checkRight(Provider::$rightname, UPDATE);
 
 if ($_SESSION["glpiactiveprofile"]["interface"] == "central") {
     Html::header(__('Single Sign-on', 'singlesignon'), $_SERVER['PHP_SELF'], "config", Provider::class, "provider");

@@ -28,7 +28,6 @@ namespace GlpiPlugin\Singlesignon;
 
 use RuleRight;
 use Throwable;
-use CommonDBTM;
 use JsonPath\JsonObject;
 use Location;
 use Session;
@@ -63,7 +62,9 @@ use function Safe\preg_replace;
 use function Safe\preg_split;
 use function Safe\sha1_file;
 
-class Provider extends CommonDBTM
+require_once __DIR__ . '/glpi_property_compat.php';
+
+class Provider extends ProviderBase
 {
     public const LOGIN_FAILURE = 0;
     public const LOGIN_SUCCESS = 1;
@@ -78,10 +79,6 @@ class Provider extends CommonDBTM
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
     public const AUTH_HEADER_DISABLED = 'disabled';
-
-    // From CommonDBTM
-    public $dohistory = true;
-    public static $rightname = 'config';
 
     private $toSessionSave = ['glpi_singlesignon_redirect'];
 
@@ -942,8 +939,8 @@ class Provider extends CommonDBTM
 
     public function getAzureEndpoint()
     {
-        $url = $this->getAuthorizeUrl();
-        if (preg_match('/https:\/\/login\.microsoftonline\.com\/([^\/]+)\//i', $url, $matches) !== 0) {
+        $url = (string) $this->getAuthorizeUrl();
+        if ($url !== '' && preg_match('/https:\/\/login\.microsoftonline\.com\/([^\/]+)\//i', $url, $matches) !== 0) {
             return $matches[1];
         }
         return 'common';
@@ -1132,7 +1129,7 @@ class Provider extends CommonDBTM
         $url = $this->getAccessTokenUrl();
 
         $msgerr = null;
-        $content = Toolbox::callCurl($url, $this->buildCurlOptions([
+        $content = $this->requestHttp($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => [
                 "Accept: application/json",
             ],
@@ -1199,7 +1196,7 @@ class Provider extends CommonDBTM
 
         $headers = $this->buildResourceOwnerHeaders($token);
 
-        $content = Toolbox::callCurl($url, $this->buildCurlOptions([
+        $content = $this->requestHttp($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => $headers,
         ]));
 
@@ -1213,7 +1210,7 @@ class Provider extends CommonDBTM
 
         if ($this->getClientType() === "linkedin") {
             $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
-            $content = Toolbox::callCurl($email_url, $this->buildCurlOptions([
+            $content = $this->requestHttp($email_url, $this->buildCurlOptions([
                 CURLOPT_HTTPHEADER => $headers,
             ]));
 
@@ -1791,7 +1788,7 @@ class Provider extends CommonDBTM
         }
         if ($locationName !== null && $locationName !== '') {
             $loc = new Location();
-            $existing = $loc->find(['name' => $locationName], '', 1);
+            $existing = $loc->find(['name' => $locationName], [], 1);
             if ($existing !== []) {
                 $userUpdate['locations_id'] = (int) array_key_first($existing);
             }
@@ -1917,7 +1914,7 @@ class Provider extends CommonDBTM
         $locationsId = 0;
         if ($locationName !== null && $locationName !== '') {
             $loc = new Location();
-            $existing = $loc->find(['name' => $locationName], '', 1);
+            $existing = $loc->find(['name' => $locationName], [], 1);
             if ($existing !== []) {
                 $locationsId = (int) array_key_first($existing);
             }
@@ -2176,9 +2173,7 @@ class Provider extends CommonDBTM
      */
     public function findUser(?array $resource_array = null)
     {
-        if ($resource_array === null) {
-            $resource_array = $this->getResourceOwner();
-        }
+        $resource_array ??= $this->getResourceOwner();
 
         if (!$resource_array || !is_array($resource_array)) {
             return false;
@@ -2504,6 +2499,16 @@ class Provider extends CommonDBTM
     }
 
     /**
+     * HTTP call used by the OAuth flow. Tests override this; production delegates to ToolboxPlugin.
+     *
+     * @param array<int, mixed> $options
+     */
+    protected function requestHttp(string $url, array $options, ?string &$msgerr = null): string
+    {
+        return ToolboxPlugin::requestHttp($url, $options, $msgerr);
+    }
+
+    /**
      * Merge CURLOPT_* options with TLS settings from this provider.
      * Uses array_replace (not array_merge) so numeric CURLOPT keys are preserved.
      *
@@ -2516,12 +2521,8 @@ class Provider extends CommonDBTM
         $verifyHost = !isset($this->fields['ssl_verify_host']) || (int) $this->fields['ssl_verify_host'] !== 0;
         $verifyPeer = !isset($this->fields['ssl_verify_peer']) || (int) $this->fields['ssl_verify_peer'] !== 0;
 
-        if (!isset($options[CURLOPT_SSL_VERIFYHOST])) {
-            $options[CURLOPT_SSL_VERIFYHOST] = $verifyHost ? 2 : 0;
-        }
-        if (!isset($options[CURLOPT_SSL_VERIFYPEER])) {
-            $options[CURLOPT_SSL_VERIFYPEER] = $verifyPeer;
-        }
+        $options[CURLOPT_SSL_VERIFYHOST] ??= $verifyHost ? 2 : 0;
+        $options[CURLOPT_SSL_VERIFYPEER] ??= $verifyPeer;
         return $options;
     }
 
@@ -2534,11 +2535,11 @@ class Provider extends CommonDBTM
      */
     private function fetchOAuthPhotoContent(string $url, array $headers): ?string
     {
-        $img = Toolbox::callCurl($url, $this->buildCurlOptions([
+        $img = $this->requestHttp($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => $headers,
         ]));
 
-        if (!is_string($img) || $img === '') {
+        if ($img === '') {
             return null;
         }
 

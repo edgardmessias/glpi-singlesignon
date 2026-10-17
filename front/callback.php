@@ -62,6 +62,9 @@ if (!$signon_provider->fields['is_active']) {
     throw $exception;
 }
 
+// The test cookie can be dropped on the cross-site return. Keep the flag in the session.
+ToolboxPlugin::rememberOAuthProviderTest($_GET, $_COOKIE, $_SESSION);
+
 /**
  * Handles the OAuth authorization callback from the identity provider.
  * This function validates the CSRF (state) token, extracts the authorization code,
@@ -72,12 +75,12 @@ if (!$signon_provider->fields['is_active']) {
 $signon_provider->checkAuthorization();
 
 /**
- * The "glpi_singlesignon_test" cookie is used to signal that this callback request is a test for the Single Sign-On (SSO) integration.
+ * The "glpi_singlesignon_test" flag is used to signal that this callback request is a test for the Single Sign-On (SSO) integration.
  * When set (by the test button in the provider configuration UI), this triggers debug output for developers or administrators
  * so they can inspect the SSO flow and returned data without performing an actual login.
- * The cookie is deleted after use to avoid repeated debug output.
+ * The flag is deleted after use to avoid repeated debug output.
  */
-$test_cookie = isset($_COOKIE['glpi_singlesignon_test']) && $_COOKIE['glpi_singlesignon_test'] === '1';
+$test_cookie = ToolboxPlugin::consumeOAuthProviderTest($_COOKIE, $_SESSION);
 
 if ($test_cookie) {
     setcookie('glpi_singlesignon_test', '', [

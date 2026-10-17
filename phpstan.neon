@@ -5,6 +5,11 @@ includes:
 
 parameters:
     level: 5
+    excludePaths:
+        # Both GLPI 11 and 12 class bodies live in this file. PHPStan checks
+        # every branch against the scanned core, so one branch always disagrees
+        # with the parent property types.
+        - src/glpi_property_compat.php
     paths:
         - front
         - src
@@ -13,7 +18,15 @@ parameters:
     scanDirectories:
         - ../../src
     bootstrapFiles:
+        - phpstan-bootstrap.php
         - ../../stubs/glpi_constants.php
         - ../../vendor/autoload.php
         - setup.php
     treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # Session::getNewCSRFToken() and Session::checkCSRF() are real on GLPI 11
+        # and deprecated no-ops on GLPI 12. The ignore only matches the 12 scan.
+        -
+            message: '#Call to deprecated method (getNewCSRFToken|checkCSRF)\(\) of class Session#'
+            path: src/Provider.php
+            reportUnmatched: false

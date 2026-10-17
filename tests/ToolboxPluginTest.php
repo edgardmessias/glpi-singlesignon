@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * ---------------------------------------------------------------------
+ * SingleSignOn is a plugin which allows to use SSO for auth
+ * ---------------------------------------------------------------------
+ * Copyright (C) 2026 Edgard
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * ---------------------------------------------------------------------
+ * @copyright Copyright © 2021 - 2026 Edgard
+ * @license   http://www.gnu.org/licenses/gpl.txt GPLv3+
+ * @link      https://github.com/edgardmessias/glpi-singlesignon/
+ * ---------------------------------------------------------------------
+ */
+
+declare(strict_types=1);
+
+namespace GlpiPlugin\Singlesignon\Tests;
+
+use GlpiPlugin\Singlesignon\ToolboxPlugin;
+
+class ToolboxPluginTest extends PluginTestCase
+{
+    public function testCallbackUrlContainsProviderPath(): void
+    {
+        $url = ToolboxPlugin::getCallbackUrl(7);
+
+        $this->assertStringContainsString(
+            '/plugins/singlesignon/front/callback.php/provider/7',
+            $url,
+        );
+    }
+
+    public function testRequestHttpReportsConnectionFailure(): void
+    {
+        $msgerr = null;
+        $content = ToolboxPlugin::requestHttp('http://127.0.0.1:1/', [], $msgerr);
+
+        $this->assertSame('', $content);
+        $this->assertIsString($msgerr);
+        $this->assertNotSame('', $msgerr);
+    }
+
+    public function testProviderTestSurvivesCookieDroppedOnReturn(): void
+    {
+        $session = [];
+
+        ToolboxPlugin::rememberOAuthProviderTest([], ['glpi_singlesignon_test' => '1'], $session);
+
+        $this->assertTrue($session['glpi_singlesignon_test']);
+        $this->assertTrue(ToolboxPlugin::consumeOAuthProviderTest([], $session));
+        $this->assertArrayNotHasKey('glpi_singlesignon_test', $session);
+    }
+
+    public function testReturnWithAuthorizationCodeDoesNotClearRememberedTest(): void
+    {
+        $session = ['glpi_singlesignon_test' => true];
+
+        ToolboxPlugin::rememberOAuthProviderTest(['code' => 'auth-code'], [], $session);
+
+        $this->assertTrue($session['glpi_singlesignon_test']);
+        $this->assertTrue(ToolboxPlugin::consumeOAuthProviderTest([], $session));
+    }
+
+    public function testRegularLoginClearsStaleProviderTest(): void
+    {
+        $session = ['glpi_singlesignon_test' => true];
+
+        ToolboxPlugin::rememberOAuthProviderTest([], [], $session);
+
+        $this->assertArrayNotHasKey('glpi_singlesignon_test', $session);
+        $this->assertFalse(ToolboxPlugin::consumeOAuthProviderTest([], $session));
+    }
+}
