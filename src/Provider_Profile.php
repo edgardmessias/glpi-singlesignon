@@ -26,8 +26,6 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-use CommonDBTM;
-
 /**
  * Tracks the static glpi_profiles_users entry managed by the SSO plugin for
  * a given GLPI user. Because glpi_profiles_users is a native GLPI table (not
@@ -41,7 +39,6 @@ require_once __DIR__ . '/glpi_property_compat.php';
 
 class Provider_Profile extends ProviderProfileBase
 {
-
     public static function getTable($classname = null): string
     {
         return 'glpi_plugin_singlesignon_providers_profiles';

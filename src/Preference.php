@@ -26,7 +26,6 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-use CommonDBTM;
 use CommonGLPI;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
@@ -39,7 +38,6 @@ require_once __DIR__ . '/glpi_property_compat.php';
 
 class Preference extends PreferenceBase
 {
-
     // Provider data
     public $user_id = null;
     public $providers = [];

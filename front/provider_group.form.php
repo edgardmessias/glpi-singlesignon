@@ -29,7 +29,7 @@ use Glpi\Exception\Http\AccessDeniedHttpException;
 
 include(__DIR__ . '/../../../inc/includes.php');
 
-Session::checkRight('config', UPDATE);
+Session::checkRight(Provider::$rightname, UPDATE);
 
 // Render a new empty table row with a GLPI Group dropdown (called via AJAX when clicking Add).
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'new_row') {

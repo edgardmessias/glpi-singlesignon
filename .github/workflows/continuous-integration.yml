@@ -16,21 +16,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  generate-ci-matrix:
-    name: "Generate CI matrix"
-    uses: "glpi-project/plugin-ci-workflows/.github/workflows/generate-ci-matrix.yml@v1.21.0"
-    with:
-      glpi-version: "11.0.x"
   ci:
     name: "GLPI ${{ matrix.glpi-version }} - php:${{ matrix.php-version }} - ${{ matrix.db-image }}"
-    needs: "generate-ci-matrix"
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.generate-ci-matrix.outputs.matrix) }}
-    uses: "glpi-project/plugin-ci-workflows/.github/workflows/continuous-integration.yml@v1.21.0"
+      matrix:
+        include:
+          - glpi-version: "11.0.x"
+            php-version: "8.2"
+            db-image: "mariadb:10.6"
+          - glpi-version: "12.0.x"
+            php-version: "8.3"
+            db-image: "mysql:8.0"
+    uses: "glpi-project/plugin-ci-workflows/.github/workflows/continuous-integration.yml@v1.30.3"
     with:
       plugin-key: "singlesignon"
       glpi-version: "${{ matrix.glpi-version }}"
       php-version: "${{ matrix.php-version }}"
       db-image: "${{ matrix.db-image }}"
       skip-changelog-check: true
+      run-e2e-tests: false

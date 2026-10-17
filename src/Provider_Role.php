@@ -26,7 +26,6 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-use CommonDBRelation;
 use CommonGLPI;
 use Glpi\Application\View\TemplateRenderer;
 use Html;

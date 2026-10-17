@@ -26,7 +26,6 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-use CommonDBTM;
 use CommonGLPI;
 use Glpi\Application\View\TemplateRenderer;
 use Html;
@@ -37,7 +36,6 @@ require_once __DIR__ . '/glpi_property_compat.php';
 
 class Provider_Field extends ProviderFieldBase
 {
-
     public static function getTypeName($nb = 0)
     {
         return _n('Field mapping', 'Field mappings', $nb, 'singlesignon');

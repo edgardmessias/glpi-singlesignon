@@ -26,10 +26,6 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
-use CommonDBRelation;
-
 require_once __DIR__ . '/glpi_property_compat.php';
 
-class Provider_User extends ProviderUserBase
-{
-}
+class Provider_User extends ProviderUserBase {}

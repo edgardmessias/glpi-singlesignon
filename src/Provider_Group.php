@@ -27,7 +27,6 @@ declare(strict_types=1);
 namespace GlpiPlugin\Singlesignon;
 
 use Group_User;
-use CommonDBRelation;
 use JsonPath\JsonObject;
 use Throwable;
 use User;

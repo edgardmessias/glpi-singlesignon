@@ -34,6 +34,8 @@ use Document;
 use Html;
 
 use function Safe\base64_decode;
+use function Safe\curl_exec;
+use function Safe\curl_init;
 use function Safe\mkdir;
 use function Safe\preg_match;
 use function Safe\realpath;
@@ -425,6 +427,49 @@ class ToolboxPlugin
             return $ip->getTextual();
         }
         return '';
+    }
+
+    /**
+     * HTTP request used by the OAuth calls.
+     * GLPI 12 removed Toolbox::callCurl(); this keeps the same CURLOPT_* options on 11 and 12.
+     *
+     * @param array<int, mixed> $options
+     */
+    public static function requestHttp(string $url, array $options, ?string &$msgerr = null): string
+    {
+        global $CFG_GLPI;
+
+        $msgerr = null;
+        try {
+            $handle = curl_init($url);
+        } catch (Throwable $ex) {
+            $msgerr = $ex->getMessage();
+            return '';
+        }
+
+        $curlOptions = [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 5,
+        ] + $options;
+
+        if (!empty($CFG_GLPI['proxy_name'])) {
+            $curlOptions[CURLOPT_PROXY] = $CFG_GLPI['proxy_name'];
+            $curlOptions[CURLOPT_PROXYPORT] = (int) ($CFG_GLPI['proxy_port'] ?? 0);
+            $curlOptions[CURLOPT_PROXYTYPE] = CURLPROXY_HTTP;
+        }
+
+        curl_setopt_array($handle, $curlOptions);
+        try {
+            $content = curl_exec($handle);
+        } catch (Throwable $ex) {
+            $msgerr = $ex->getMessage();
+            curl_close($handle);
+            return '';
+        }
+        curl_close($handle);
+
+        return is_string($content) ? $content : '';
     }
 
     /**

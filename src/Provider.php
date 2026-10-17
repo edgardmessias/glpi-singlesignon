@@ -28,7 +28,6 @@ namespace GlpiPlugin\Singlesignon;
 
 use RuleRight;
 use Throwable;
-use CommonDBTM;
 use JsonPath\JsonObject;
 use Location;
 use Session;
@@ -1028,7 +1027,8 @@ class Provider extends ProviderBase
         // If there is no 'code' in the request, this is the initial (request) step: generate the CSRF token and save the redirect in the session.
         // When 'code' is present, this is the response step returned by the provider after authentication.
         if (!isset($_GET['code'])) {
-            // Generate CSRF token for OAuth state to validate the response step
+            // Generate CSRF token for OAuth state to validate the response step.
+            // GLPI 12 keeps the method as a deprecated no-op.
             $state = Session::getNewCSRFToken();
 
             if (isset($_REQUEST['redirect'])) {
@@ -1074,7 +1074,8 @@ class Provider extends ProviderBase
         $code = $_GET['code'] ?? '';
         $state = $_GET['state'] ?? '';
 
-        // Validate state against stored CSRF token
+        // Validate state against stored CSRF token.
+        // GLPI 12 keeps the method as a deprecated no-op.
         Session::checkCSRF([
             '_glpi_csrf_token' => $state,
         ]);
@@ -1114,7 +1115,7 @@ class Provider extends ProviderBase
         $url = $this->getAccessTokenUrl();
 
         $msgerr = null;
-        $content = Toolbox::callCurl($url, $this->buildCurlOptions([
+        $content = ToolboxPlugin::requestHttp($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => [
                 "Accept: application/json",
             ],
@@ -1181,7 +1182,7 @@ class Provider extends ProviderBase
 
         $headers = $this->buildResourceOwnerHeaders($token);
 
-        $content = Toolbox::callCurl($url, $this->buildCurlOptions([
+        $content = ToolboxPlugin::requestHttp($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => $headers,
         ]));
 
@@ -1195,7 +1196,7 @@ class Provider extends ProviderBase
 
         if ($this->getClientType() === "linkedin") {
             $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
-            $content = Toolbox::callCurl($email_url, $this->buildCurlOptions([
+            $content = ToolboxPlugin::requestHttp($email_url, $this->buildCurlOptions([
                 CURLOPT_HTTPHEADER => $headers,
             ]));
 
@@ -2158,9 +2159,7 @@ class Provider extends ProviderBase
      */
     public function findUser(?array $resource_array = null)
     {
-        if ($resource_array === null) {
-            $resource_array = $this->getResourceOwner();
-        }
+        $resource_array ??= $this->getResourceOwner();
 
         if (!$resource_array || !is_array($resource_array)) {
             return false;
@@ -2498,12 +2497,8 @@ class Provider extends ProviderBase
         $verifyHost = !isset($this->fields['ssl_verify_host']) || (int) $this->fields['ssl_verify_host'] !== 0;
         $verifyPeer = !isset($this->fields['ssl_verify_peer']) || (int) $this->fields['ssl_verify_peer'] !== 0;
 
-        if (!isset($options[CURLOPT_SSL_VERIFYHOST])) {
-            $options[CURLOPT_SSL_VERIFYHOST] = $verifyHost ? 2 : 0;
-        }
-        if (!isset($options[CURLOPT_SSL_VERIFYPEER])) {
-            $options[CURLOPT_SSL_VERIFYPEER] = $verifyPeer;
-        }
+        $options[CURLOPT_SSL_VERIFYHOST] ??= $verifyHost ? 2 : 0;
+        $options[CURLOPT_SSL_VERIFYPEER] ??= $verifyPeer;
         return $options;
     }
 
@@ -2516,11 +2511,11 @@ class Provider extends ProviderBase
      */
     private function fetchOAuthPhotoContent(string $url, array $headers): ?string
     {
-        $img = Toolbox::callCurl($url, $this->buildCurlOptions([
+        $img = ToolboxPlugin::requestHttp($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => $headers,
         ]));
 
-        if (!is_string($img) || $img === '') {
+        if ($img === '') {
             return null;
         }
 

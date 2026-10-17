@@ -26,7 +26,7 @@ use GlpiPlugin\Singlesignon\Provider_Field;
 
 include(__DIR__ . '/../../../inc/includes.php');
 
-Session::checkRight('config', UPDATE);
+Session::checkRight(Provider_Field::$rightname, UPDATE);
 
 $mapping = new Provider_Field();
 if (isset($_POST['update_mappings'])) {
