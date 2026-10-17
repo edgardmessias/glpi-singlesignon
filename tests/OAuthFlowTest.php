@@ -29,7 +29,9 @@ namespace GlpiPlugin\Singlesignon\Tests;
 use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\RedirectException;
 use GlpiPlugin\Singlesignon\Provider;
+use GlpiPlugin\Singlesignon\Provider_Field;
 use GlpiPlugin\Singlesignon\Provider_User;
+use Location;
 use User;
 
 class OAuthFlowTest extends PluginTestCase
@@ -272,6 +274,72 @@ class OAuthFlowTest extends PluginTestCase
         if ($picture !== '') {
             User::dropPictureFiles($picture);
         }
+    }
+
+    public function testCreateUserAssignsMatchingLocation(): void
+    {
+        $locationName = 'PHPUnit Site ' . uniqid();
+        $location = new Location();
+        $locationId = $location->add(['name' => $locationName]);
+        $this->assertGreaterThan(0, (int) $locationId);
+
+        $provider = $this->createProvider();
+        $mapping = new Provider_Field();
+        $mappingId = $mapping->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'field_type' => 'location',
+            'jsonpath' => '$.location',
+            'is_active' => 1,
+            'sort_order' => 10,
+        ]);
+        $this->assertGreaterThan(0, (int) $mappingId);
+
+        $login = 'sso_loc_' . uniqid();
+        $user = $provider->createUserFromOAuthResource([
+            'id' => 'remote-' . $login,
+            'username' => $login,
+            'location' => $locationName,
+        ]);
+
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertSame((int) $locationId, (int) $user->fields['locations_id']);
+    }
+
+    public function testCreateUserSkipsEmptyLocation(): void
+    {
+        $provider = $this->createProvider();
+        $login = 'sso_noloc_' . uniqid();
+        $user = $provider->createUserFromOAuthResource([
+            'id' => 'remote-' . $login,
+            'username' => $login,
+        ]);
+
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertSame(0, (int) ($user->fields['locations_id'] ?? 0));
+    }
+
+    public function testLoginSyncAssignsOfficeLocation(): void
+    {
+        $locationName = 'PHPUnit Office ' . uniqid();
+        $location = new Location();
+        $locationId = $location->add(['name' => $locationName]);
+        $this->assertGreaterThan(0, (int) $locationId);
+
+        $provider = $this->providerWithCode();
+        $provider->responses = [
+            ['body' => (string) json_encode(['access_token' => 'token-1'])],
+            ['body' => (string) json_encode([
+                'id' => 'office-remote',
+                'username' => 'glpi',
+                'officeLocation' => $locationName,
+            ])],
+        ];
+
+        $this->assertSame(Provider::LOGIN_SUCCESS, $provider->login());
+
+        $user = new User();
+        $this->assertTrue($user->getFromDBbyName('glpi'));
+        $this->assertSame((int) $locationId, (int) $user->fields['locations_id']);
     }
 
     /**
