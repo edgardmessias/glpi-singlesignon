@@ -37,9 +37,10 @@ use CommonDBTM;
  * the GLPI rule engine cannot delete it during Auth::login(). Dynamic profiles
  * assigned by the rule engine coexist separately.
  */
-class Provider_Profile extends CommonDBTM
+require_once __DIR__ . '/glpi_property_compat.php';
+
+class Provider_Profile extends ProviderProfileBase
 {
-    public static $rightname = 'plugin_singlesignon_provider';
 
     public static function getTable($classname = null): string
     {

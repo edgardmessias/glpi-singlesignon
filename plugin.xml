@@ -36,7 +36,7 @@ Contributing, releases, and translations: **[CONTRIBUTING.md](https://github.com
 
 ### Requirements
 
-- **GLPI** 11.0.x (see plugin `setup.php` for exact min/max).
+- **GLPI** 11.0.x and 12.0.x (see plugin `setup.php` for exact min/max).
 - **PHP** 8.2 or newer (checked when installing the plugin).
 
 ### Installation

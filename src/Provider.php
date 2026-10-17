@@ -62,7 +62,9 @@ use function Safe\preg_replace;
 use function Safe\preg_split;
 use function Safe\sha1_file;
 
-class Provider extends CommonDBTM
+require_once __DIR__ . '/glpi_property_compat.php';
+
+class Provider extends ProviderBase
 {
     public const LOGIN_FAILURE = 0;
     public const LOGIN_SUCCESS = 1;
@@ -77,10 +79,6 @@ class Provider extends CommonDBTM
     public const AUTH_HEADER_BEARER = 'bearer';
     public const AUTH_HEADER_TOKEN = 'token';
     public const AUTH_HEADER_DISABLED = 'disabled';
-
-    // From CommonDBTM
-    public $dohistory = true;
-    public static $rightname = 'config';
 
     private $toSessionSave = ['glpi_singlesignon_redirect'];
 
@@ -941,8 +939,8 @@ class Provider extends CommonDBTM
 
     public function getAzureEndpoint()
     {
-        $url = $this->getAuthorizeUrl();
-        if (preg_match('/https:\/\/login\.microsoftonline\.com\/([^\/]+)\//i', $url, $matches) !== 0) {
+        $url = (string) $this->getAuthorizeUrl();
+        if ($url !== '' && preg_match('/https:\/\/login\.microsoftonline\.com\/([^\/]+)\//i', $url, $matches) !== 0) {
             return $matches[1];
         }
         return 'common';

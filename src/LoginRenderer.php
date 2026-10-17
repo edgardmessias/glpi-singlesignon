@@ -86,7 +86,7 @@ class LoginRenderer
     {
         $provider = new Provider();
 
-        return count($provider->find(['`is_active` = 1'])) > 0;
+        return count($provider->find(['is_active' => 1])) > 0;
     }
 
     public static function getDefaultProviderUrl($redirect = ''): ?string
@@ -94,7 +94,7 @@ class LoginRenderer
         global $CFG_GLPI;
 
         $provider = new Provider();
-        $providers = $provider->find(['`is_active` = 1', '`is_default` = 1'], 'name ASC');
+        $providers = $provider->find(['is_active' => 1, 'is_default' => 1], 'name ASC');
 
         if (empty($providers)) {
             return null;
@@ -132,7 +132,7 @@ class LoginRenderer
         global $CFG_GLPI;
 
         $provider = new Provider();
-        $condition = ['`is_active` = 1'];
+        $condition = ['is_active' => 1];
         $providers = $provider->find($condition, 'is_default DESC, name ASC');
 
         if (empty($providers)) {

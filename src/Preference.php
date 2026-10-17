@@ -35,10 +35,10 @@ use Session;
 use Toolbox;
 use User;
 
-class Preference extends CommonDBTM
+require_once __DIR__ . '/glpi_property_compat.php';
+
+class Preference extends PreferenceBase
 {
-    protected static $notable = true;
-    public static $rightname = '';
 
     // Provider data
     public $user_id = null;
@@ -56,11 +56,7 @@ class Preference extends CommonDBTM
     {
         $signon_provider = new Provider();
 
-        $condition = '`is_active` = 1';
-        if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-            $condition = [$condition];
-        }
-        $providers = $signon_provider->find($condition, 'is_default DESC, name ASC');
+        $providers = $signon_provider->find(['is_active' => 1], 'is_default DESC, name ASC');
         $this->providers = array_values($providers);
         usort($this->providers, static function (array $a, array $b): int {
             $a_default = (int) ($a['is_default'] ?? 0);
@@ -75,11 +71,7 @@ class Preference extends CommonDBTM
 
         $provider_user = new Provider_User();
 
-        $condition = "`users_id` = {$this->user_id}";
-        if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-            $condition = [$condition];
-        }
-        $this->providers_users = $provider_user->find($condition);
+        $this->providers_users = $provider_user->find(['users_id' => $this->user_id]);
     }
 
     public function update(array $input, $history = true, $options = [])
@@ -94,12 +86,11 @@ class Preference extends CommonDBTM
         }
 
         $provider_user = new Provider_User();
-        $condition = "`users_id` = {$this->user_id} AND `id` IN (" . implode(',', $ids) . ")";
-        if (version_compare(GLPI_VERSION, '9.4', '>=')) {
-            $condition = [$condition];
-        }
-
-        $providers_users = $provider_user->find($condition);
+        $ids = array_map('intval', $ids);
+        $providers_users = $provider_user->find([
+            'users_id' => $this->user_id,
+            'id' => $ids,
+        ]);
 
         foreach ($providers_users as $pu) {
             $provider_user->delete($pu);

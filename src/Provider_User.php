@@ -28,12 +28,8 @@ namespace GlpiPlugin\Singlesignon;
 
 use CommonDBRelation;
 
-class Provider_User extends CommonDBRelation
-{
-    // From CommonDBRelation
-    public static $itemtype_1   = Provider::class;
-    public static $items_id_1   = 'plugin_singlesignon_providers_id';
+require_once __DIR__ . '/glpi_property_compat.php';
 
-    public static $itemtype_2 = 'User';
-    public static $items_id_2 = 'users_id';
+class Provider_User extends ProviderUserBase
+{
 }

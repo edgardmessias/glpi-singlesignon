@@ -50,20 +50,15 @@ use Session;
  * rows are managed by {@see Provider_Group::syncRoleGroupsForUser()}, which also cleans
  * up stale memberships whenever the user logs in.
  */
-class Provider_Role extends CommonDBRelation
+require_once __DIR__ . '/glpi_property_compat.php';
+
+class Provider_Role extends ProviderRoleBase
 {
     /**
      * Stores the role-mapping configuration:
      * provider + remote role/group key → GLPI group target.
      */
     public static $table = 'glpi_plugin_singlesignon_providers_roles';
-
-    // From CommonDBRelation
-    public static $itemtype_1 = Provider::class;
-    public static $items_id_1 = 'plugin_singlesignon_providers_id';
-
-    public static $itemtype_2 = 'Group';
-    public static $items_id_2 = 'groups_id';
 
     public static function getDynamicGroupsTable(): string
     {

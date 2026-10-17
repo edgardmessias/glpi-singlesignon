@@ -33,9 +33,10 @@ use Html;
 use Plugin;
 use Session;
 
-class Provider_Field extends CommonDBTM
+require_once __DIR__ . '/glpi_property_compat.php';
+
+class Provider_Field extends ProviderFieldBase
 {
-    public static $rightname = 'config';
 
     public static function getTypeName($nb = 0)
     {
