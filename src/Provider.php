@@ -34,6 +34,7 @@ use Session;
 use Dropdown;
 use Toolbox;
 use Plugin;
+use Glpi\Exception\Http\AccessDeniedHttpException;
 use Glpi\Exception\Http\BadRequestHttpException;
 use Exception;
 use User;
@@ -1006,7 +1007,7 @@ class Provider extends ProviderBase
 
     /**
      * Handles the OAuth authorization callback from the identity provider.
-     * This function validates the CSRF (state) token, extracts the authorization code,
+     * This function validates the OAuth state (see OAuthState), extracts the authorization code,
      * and may perform a redirect depending on the authentication step.
      * If the authorization code is not present in the request, it may redirect the browser
      * to the provider's authorization page.
@@ -1017,19 +1018,24 @@ class Provider extends ProviderBase
     {
         // If an OAuth error is present, show the error for processing
         if (isset($_GET['error'])) {
-            // The error comes from OAuth, so display it for processing
-            $error_description = $_GET['error_description'] ?? __("The action you have requested is not allowed.");
+            // The error comes from the identity provider. Show its code even when there is no
+            // description, so it cannot be mistaken for a state validation failure.
+            $error = is_string($_GET['error']) ? $_GET['error'] : '';
+            $error_description = is_string($_GET['error_description'] ?? null) ? $_GET['error_description'] : '';
+            $this->logFailure(__FUNCTION__, sprintf('identity provider returned error "%s": %s', $error, $error_description));
             $exception = new BadRequestHttpException();
-            $exception->setMessageToDisplay(__($error_description));
+            $exception->setMessageToDisplay(sprintf(
+                __('The identity provider returned an error: %s', 'singlesignon'),
+                $error_description !== '' ? "$error ($error_description)" : $error,
+            ));
             throw $exception;
         }
 
-        // If there is no 'code' in the request, this is the initial (request) step: generate the CSRF token and save the redirect in the session.
+        // If there is no 'code' in the request, this is the initial (request) step: issue the OAuth state and save the redirect in the session.
         // When 'code' is present, this is the response step returned by the provider after authentication.
         if (!isset($_GET['code'])) {
-            // Generate CSRF token for OAuth state to validate the response step.
-            // GLPI 12 keeps the method as a deprecated no-op.
-            $state = Session::getNewCSRFToken();
+            // Issue the OAuth state used to validate the response step
+            $state = OAuthState::issue((int) $this->fields['id']);
 
             if (isset($_REQUEST['redirect'])) {
                 $_SESSION['glpi_singlesignon_redirect'] = $_REQUEST['redirect'];
@@ -1071,14 +1077,22 @@ class Provider extends ProviderBase
         }
 
         // Extract state parameter
-        $code = $_GET['code'] ?? '';
-        $state = $_GET['state'] ?? '';
+        $code = is_string($_GET['code']) ? $_GET['code'] : '';
+        $state = is_string($_GET['state'] ?? null) ? $_GET['state'] : '';
 
-        // Validate state against stored CSRF token.
-        // GLPI 12 keeps the method as a deprecated no-op.
-        Session::checkCSRF([
-            '_glpi_csrf_token' => $state,
-        ]);
+        // Validate (and consume) the state issued in the request step
+        $state_error = OAuthState::consume($state, (int) $this->fields['id']);
+        if ($state_error !== null) {
+            $this->logFailure(__FUNCTION__, sprintf(
+                'OAuth state rejected (%s); request host="%s", url_base="%s"',
+                $state_error,
+                (string) ($_SERVER['HTTP_HOST'] ?? ''),
+                ToolboxPlugin::getBaseURL(),
+            ));
+            $exception = new AccessDeniedHttpException();
+            $exception->setMessageToDisplay(__('The single sign-on request has expired or was started in another browser session. Please try to log in again.', 'singlesignon'));
+            throw $exception;
+        }
 
         $this->_code = $code;
 
