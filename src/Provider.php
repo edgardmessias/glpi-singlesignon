@@ -1115,7 +1115,7 @@ class Provider extends ProviderBase
         $url = $this->getAccessTokenUrl();
 
         $msgerr = null;
-        $content = ToolboxPlugin::requestHttp($url, $this->buildCurlOptions([
+        $content = $this->requestHttp($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => [
                 "Accept: application/json",
             ],
@@ -1182,7 +1182,7 @@ class Provider extends ProviderBase
 
         $headers = $this->buildResourceOwnerHeaders($token);
 
-        $content = ToolboxPlugin::requestHttp($url, $this->buildCurlOptions([
+        $content = $this->requestHttp($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => $headers,
         ]));
 
@@ -1196,7 +1196,7 @@ class Provider extends ProviderBase
 
         if ($this->getClientType() === "linkedin") {
             $email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
-            $content = ToolboxPlugin::requestHttp($email_url, $this->buildCurlOptions([
+            $content = $this->requestHttp($email_url, $this->buildCurlOptions([
                 CURLOPT_HTTPHEADER => $headers,
             ]));
 
@@ -2485,6 +2485,16 @@ class Provider extends ProviderBase
     }
 
     /**
+     * HTTP call used by the OAuth flow. Tests override this; production delegates to ToolboxPlugin.
+     *
+     * @param array<int, mixed> $options
+     */
+    protected function requestHttp(string $url, array $options, ?string &$msgerr = null): string
+    {
+        return ToolboxPlugin::requestHttp($url, $options, $msgerr);
+    }
+
+    /**
      * Merge CURLOPT_* options with TLS settings from this provider.
      * Uses array_replace (not array_merge) so numeric CURLOPT keys are preserved.
      *
@@ -2511,7 +2521,7 @@ class Provider extends ProviderBase
      */
     private function fetchOAuthPhotoContent(string $url, array $headers): ?string
     {
-        $img = ToolboxPlugin::requestHttp($url, $this->buildCurlOptions([
+        $img = $this->requestHttp($url, $this->buildCurlOptions([
             CURLOPT_HTTPHEADER => $headers,
         ]));
 

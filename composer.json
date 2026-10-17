@@ -43,6 +43,7 @@
         "php-cs-fixer": "../../vendor/bin/php-cs-fixer check --config=.php-cs-fixer.php -v",
         "phpstan": "../../vendor/bin/phpstan analyse --memory-limit=2G",
         "psalm": "../../vendor/bin/psalm",
+        "test": "../../vendor/bin/phpunit",
         "rector:fix": "../../vendor/bin/rector process",
         "rector": "../../vendor/bin/rector process --dry-run",
         "update-changelog": "vendor/bin/robo changelog",
