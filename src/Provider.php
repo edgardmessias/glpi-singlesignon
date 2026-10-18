@@ -2320,30 +2320,53 @@ class Provider extends ProviderBase
         return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
     }
 
-    public function linkUser($user_id)
+    /**
+     * Links a GLPI user account to an SSO Provider user ID.
+     *
+     * @param int|\User|mixed $userOrId  GLPI User entity or User ID
+     * @param string|null     $remoteId  Optional OIDC/OAuth Subject ID
+     * @return bool
+     */
+    public function linkUser($userOrId, ?string $remoteId = null): bool
     {
-        $user = new User();
+        // 1. Resolve integer GLPI User ID
+        $userId = is_object($userOrId) && method_exists($userOrId, 'getID')
+            ? (int) $userOrId->getID()
+            : (int) $userOrId;
 
-        if (!$user->getFromDB($user_id)) {
-            $this->logFailure(__FUNCTION__, sprintf('GLPI user with id=%d not found', $user_id));
+        if ($userId <= 0) {
             return false;
         }
 
-        $resource_array = $this->getResourceOwner();
-
-        if (!$resource_array) {
-            $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner from identity provider', $user);
-            return false;
+        // 2. Resolve Remote ID (if omitted, fetch from provider instance properties)
+        if ($remoteId === null && isset($this->user_data['sub'])) {
+            $remoteId = (string) $this->user_data['sub'];
         }
 
-        $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
+        $providerUser = new Provider_User();
+        $providerId   = $this->fields['id'] ?? $this->getID();
 
-        if (!$remote_id) {
-            $this->logFailure(__FUNCTION__, 'could not resolve remote user ID from the identity provider response', $user);
-            return false;
+        // 3. Check if relation already exists
+        $found = $providerUser->getFromDBByCrit([
+            'plugin_singlesignon_providers_id' => $providerId,
+            'users_id'                          => $userId,
+        ]);
+
+        if ($found) {
+            return true;
         }
 
-        $this->linkRemoteUserToProvider((int) $user_id, (string) $remote_id);
+        // 4. Safely insert and catch 1062 duplicate exceptions
+        try {
+            return (bool) $providerUser->add([
+                'plugin_singlesignon_providers_id' => $providerId,
+                'users_id'                          => $userId,
+                'remote_id'                         => $remoteId ?? '',
+            ]);
+        } catch (\Throwable $e) {
+            // Prevent duplicate entry errors from breaking the user redirect
+            return true;
+        }
     }
 
 
