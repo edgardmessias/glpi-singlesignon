@@ -389,13 +389,13 @@ class Provider extends ProviderBase
         if (($input['type'] ?? '') === 'azure') {
             $endpoint = !empty($input['azure_endpoint']) ? $input['azure_endpoint'] : 'common';
             if (!empty($input['url_authorize'])) {
-                $input['url_authorize'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '$1' . $endpoint . '$2', $input['url_authorize']);
+                $input['url_authorize'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '${1}' . $endpoint . '${2}', $input['url_authorize']);
             }
             if (!empty($input['url_access_token'])) {
-                $input['url_access_token'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '$1' . $endpoint . '$2', $input['url_access_token']);
+                $input['url_access_token'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '${1}' . $endpoint . '${2}', $input['url_access_token']);
             }
             if (!empty($input['url_slo'])) {
-                $input['url_slo'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '$1' . $endpoint . '$2', $input['url_slo']);
+                $input['url_slo'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '${1}' . $endpoint . '${2}', $input['url_slo']);
             }
         }
 
