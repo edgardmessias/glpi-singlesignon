@@ -1428,6 +1428,83 @@ class Provider extends ProviderBase
         return $resolved;
     }
 
+    /**
+     * Groups of the remote user, read from `groups_claim` (dot notation, e.g. "realm_access.roles")
+     * or, when empty, from groups, roles, group, role, realm_access.roles and resource_access.*.roles.
+     *
+     * @return string[]
+     */
+    public function extractUserGroups(array $resourceArray): array
+    {
+        $toList = static function ($value): array {
+            if (is_array($value)) {
+                return array_filter($value, static fn($v): bool => is_string($v) || is_numeric($v));
+            }
+            if (is_string($value) || is_numeric($value)) {
+                return preg_split('/[,\s]+/', (string) $value);
+            }
+
+            return [];
+        };
+
+        $groups = [];
+        $claim = trim((string) ($this->fields['groups_claim'] ?? ''));
+        if ($claim !== '') {
+            $value = $resourceArray;
+            foreach (explode('.', $claim) as $key) {
+                if (!is_array($value) || !array_key_exists($key, $value)) {
+                    $value = null;
+                    break;
+                }
+                $value = $value[$key];
+            }
+            $groups = $toList($value);
+        } else {
+            foreach (['groups', 'roles', 'group', 'role'] as $field) {
+                if (isset($resourceArray[$field])) {
+                    $groups = array_merge($groups, $toList($resourceArray[$field]));
+                }
+            }
+            if (isset($resourceArray['realm_access']['roles'])) {
+                $groups = array_merge($groups, $toList($resourceArray['realm_access']['roles']));
+            }
+            if (isset($resourceArray['resource_access']) && is_array($resourceArray['resource_access'])) {
+                foreach ($resourceArray['resource_access'] as $client) {
+                    if (is_array($client) && isset($client['roles'])) {
+                        $groups = array_merge($groups, $toList($client['roles']));
+                    }
+                }
+            }
+        }
+
+        $groups = array_map(static fn($g): string => trim((string) $g), $groups);
+
+        return array_values(array_unique(array_filter($groups, static fn(string $g): bool => $g !== '')));
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getAllowedGroups(): array
+    {
+        $allowed = array_map('trim', explode(',', (string) ($this->fields['allowed_groups'] ?? '')));
+
+        return array_values(array_filter($allowed, static fn(string $g): bool => $g !== ''));
+    }
+
+    /**
+     * True when `allowed_groups` is empty or the user belongs to at least one of them.
+     */
+    public function checkAllowedGroups(array $resourceArray): bool
+    {
+        $allowed = $this->getAllowedGroups();
+        if ($allowed === []) {
+            return true;
+        }
+
+        return array_intersect($this->extractUserGroups($resourceArray), $allowed) !== [];
+    }
+
     private function checkAuthorizedDomain(string $value, array $authorizedDomains): bool
     {
         if ($authorizedDomains === []) {
@@ -2272,6 +2349,11 @@ class Provider extends ProviderBase
         $resource_array = $this->getResourceOwner();
         if (!$resource_array) {
             $this->lastLoginError = "SSO login failed via provider '$providerName': Could not retrieve resource owner from identity provider";
+            return self::LOGIN_FAILURE;
+        }
+
+        if (!$this->checkAllowedGroups($resource_array)) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User is not in any allowed group";
             return self::LOGIN_FAILURE;
         }
 

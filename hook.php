@@ -105,6 +105,24 @@ function plugin_singlesignon_install()
         ],
     );
     $migration->addField($providersTable, 'use_email_for_login', 'bool');
+    $migration->addField(
+        $providersTable,
+        'allowed_groups',
+        'text',
+        [
+            'nodefault' => true,
+            'null'      => true,
+        ],
+    );
+    $migration->addField(
+        $providersTable,
+        'groups_claim',
+        'string',
+        [
+            'nodefault' => true,
+            'null'      => true,
+        ],
+    );
     $migration->addField($providersTable, 'split_name', 'bool');
 
     /**
