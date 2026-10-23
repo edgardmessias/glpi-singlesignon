@@ -272,8 +272,8 @@ class Provider_Group extends ProviderGroupBase
 
     /**
      * Extract the list of group-name strings from the OAuth resource-owner
-     * payload.  Checks the provider's 'roles' field mappings first, then
-     * falls back to well-known role/group claim keys.
+     * payload.  Merges the groups of all the provider's 'roles' field mappings,
+     * or falls back to well-known role/group claim keys when none of them matches.
      *
      * @param array<string, mixed> $resource_array
      * @return string[]
@@ -284,7 +284,7 @@ class Provider_Group extends ProviderGroupBase
         $providerId = (int) ($provider->fields['id'] ?? 0);
         $idTokenPayload = $provider->getIdTokenPayload();
 
-        // Check for 'roles' type field mappings configured by the admin.
+        // Merge the groups of all 'roles' type field mappings configured by the admin.
         if ($providerId > 0) {
             $groupMappings = Provider_Field::getMappingsForProvider($providerId, 'roles', true);
             foreach ($groupMappings as $mapping) {
@@ -292,29 +292,17 @@ class Provider_Group extends ProviderGroupBase
                 if ($jsonPath === '') {
                     continue;
                 }
-                $result = null;
-                try {
-                    $json   = new JsonObject($resource_array);
-                    $result = $json->get($jsonPath);
-                } catch (Throwable $ex) {
-                    ToolboxPlugin::logFailure(__FUNCTION__, sprintf('exception evaluating JSONPath "%s" against resource owner: %s', $jsonPath, $ex->getMessage()), (string) ($provider->fields['name'] ?? ''), (int) ($provider->fields['id'] ?? 0));
-                    $result = null;
+
+                $extracted = self::evaluateGroupMapping($provider, $resource_array, $jsonPath, 'resource owner');
+                if ($extracted === [] && is_array($idTokenPayload)) {
+                    $extracted = self::evaluateGroupMapping($provider, $idTokenPayload, $jsonPath, 'id_token payload');
                 }
 
-                if ($result === null && is_array($idTokenPayload)) {
-                    try {
-                        $jsonJwt   = new JsonObject($idTokenPayload);
-                        $result = $jsonJwt->get($jsonPath);
-                    } catch (Throwable $ex) {
-                        ToolboxPlugin::logFailure(__FUNCTION__, sprintf('exception evaluating JSONPath "%s" against id_token payload: %s', $jsonPath, $ex->getMessage()), (string) ($provider->fields['name'] ?? ''), (int) ($provider->fields['id'] ?? 0));
-                        $result = null;
-                    }
-                }
+                $groups = array_merge($groups, $extracted);
+            }
 
-                $extracted = self::normalizeGroupClaimValue($result);
-                if ($extracted !== []) {
-                    return array_slice($extracted, 0, self::MAX_GROUPS_PER_SYNC);
-                }
+            if ($groups !== []) {
+                return array_slice(array_values(array_unique($groups)), 0, self::MAX_GROUPS_PER_SYNC);
             }
         }
 
@@ -360,6 +348,39 @@ class Provider_Group extends ProviderGroupBase
         }
 
         return array_slice(array_values(array_unique($groups)), 0, self::MAX_GROUPS_PER_SYNC);
+    }
+
+    /**
+     * Evaluate a 'roles' JSONPath mapping and normalise its matches into group names.
+     * Each match is normalised on its own: JsonObject::get() wraps matches in a list.
+     *
+     * @param array<string, mixed> $payload
+     * @return string[]
+     */
+    private static function evaluateGroupMapping(Provider $provider, array $payload, string $jsonPath, string $source): array
+    {
+        try {
+            $matches = (new JsonObject($payload))->get($jsonPath);
+        } catch (Throwable $ex) {
+            ToolboxPlugin::logFailure(__FUNCTION__, sprintf('exception evaluating JSONPath "%s" against %s: %s', $jsonPath, $source, $ex->getMessage()), (string) ($provider->fields['name'] ?? ''), (int) ($provider->fields['id'] ?? 0));
+            return [];
+        }
+
+        if (!is_array($matches)) {
+            return [];
+        }
+
+        $groups = [];
+        foreach ($matches as $match) {
+            if (is_array($match) && !array_is_list($match)) {
+                // A single group object (e.g. Microsoft Graph memberOf entry).
+                $match = [$match];
+            }
+
+            $groups = array_merge($groups, self::normalizeGroupClaimValue($match));
+        }
+
+        return array_values(array_unique($groups));
     }
 
     /**

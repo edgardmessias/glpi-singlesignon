@@ -1428,6 +1428,39 @@ class Provider extends ProviderBase
         return $resolved;
     }
 
+    /**
+     * Groups of the remote user, resolved from the "roles" field mappings.
+     *
+     * @return string[]
+     */
+    public function getUserGroups(array $resourceArray): array
+    {
+        return Provider_Group::extractUserGroupsFromResource($this, $resourceArray);
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getAllowedGroups(): array
+    {
+        $allowed = array_map('trim', explode(',', (string) ($this->fields['allowed_groups'] ?? '')));
+
+        return array_values(array_filter($allowed, static fn(string $g): bool => $g !== ''));
+    }
+
+    /**
+     * True when `allowed_groups` is empty or the user belongs to at least one of them.
+     */
+    public function checkAllowedGroups(array $resourceArray): bool
+    {
+        $allowed = $this->getAllowedGroups();
+        if ($allowed === []) {
+            return true;
+        }
+
+        return array_intersect($this->getUserGroups($resourceArray), $allowed) !== [];
+    }
+
     private function checkAuthorizedDomain(string $value, array $authorizedDomains): bool
     {
         if ($authorizedDomains === []) {
@@ -2272,6 +2305,11 @@ class Provider extends ProviderBase
         $resource_array = $this->getResourceOwner();
         if (!$resource_array) {
             $this->lastLoginError = "SSO login failed via provider '$providerName': Could not retrieve resource owner from identity provider";
+            return self::LOGIN_FAILURE;
+        }
+
+        if (!$this->checkAllowedGroups($resource_array)) {
+            $this->lastLoginError = "SSO login failed via provider '$providerName': User is not in any allowed group";
             return self::LOGIN_FAILURE;
         }
 
