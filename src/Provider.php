@@ -1431,11 +1431,11 @@ class Provider extends ProviderBase
     /**
      * Groups of the remote user, resolved from the "roles" field mappings.
      *
-     * @return list<string>
+     * @return string[]
      */
     public function getUserGroups(array $resourceArray): array
     {
-        return $this->resolveFieldDebugDetailsFromMappings($resourceArray, 'roles')['values'];
+        return Provider_Group::extractUserGroupsFromResource($this, $resourceArray);
     }
 
     /**

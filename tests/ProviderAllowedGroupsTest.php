@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon\Tests;
 
+use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
 
 class ProviderAllowedGroupsTest extends PluginTestCase
@@ -39,17 +40,29 @@ class ProviderAllowedGroupsTest extends PluginTestCase
         'resource_access' => ['glpi' => ['roles' => ['editor']]],
     ];
 
-    private function addRolesMapping(int $providerId, string $jsonPath): void
+    /**
+     * Provider whose 'roles' field mappings are exactly $jsonPaths (the generic defaults are removed).
+     */
+    private function providerWithRolesMappings(string $allowedGroups, string ...$jsonPaths): Provider
     {
+        $provider = $this->createProvider(['allowed_groups' => $allowedGroups]);
         $mapping = new Provider_Field();
-        $mappingId = $mapping->add([
-            'plugin_singlesignon_providers_id' => $providerId,
+        $mapping->deleteByCriteria([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
             'field_type' => 'roles',
-            'jsonpath' => $jsonPath,
-            'is_active' => 1,
-            'sort_order' => 10,
         ]);
-        $this->assertGreaterThan(0, (int) $mappingId);
+        foreach ($jsonPaths as $index => $jsonPath) {
+            $mappingId = $mapping->add([
+                'plugin_singlesignon_providers_id' => $provider->getID(),
+                'field_type' => 'roles',
+                'jsonpath' => $jsonPath,
+                'is_active' => 1,
+                'sort_order' => ($index + 1) * 10,
+            ]);
+            $this->assertGreaterThan(0, (int) $mappingId);
+        }
+
+        return $provider;
     }
 
     public function testEmptyAllowedGroupsAllowsEveryone(): void
@@ -61,11 +74,19 @@ class ProviderAllowedGroupsTest extends PluginTestCase
         $this->assertTrue($provider->checkAllowedGroups(['sub' => 'remote-id']));
     }
 
-    public function testDefaultRolesMappings(): void
+    public function testDefaultRolesMappingsAreMerged(): void
     {
-        $provider = $this->createProvider(['allowed_groups' => 'admin, /staff']);
+        $provider = $this->createProvider(['allowed_groups' => 'admin']);
 
-        $this->assertSame(['/staff'], $provider->getUserGroups(self::KEYCLOAK_RESOURCE));
+        $this->assertSame(['admin', '/staff'], $provider->getUserGroups(['roles' => ['admin'], 'groups' => ['/staff']]));
+        $this->assertTrue($provider->checkAllowedGroups(['roles' => ['admin'], 'groups' => ['/staff']]));
+    }
+
+    public function testWithoutRolesMappingsFallsBackToWellKnownClaims(): void
+    {
+        $provider = $this->providerWithRolesMappings('editor');
+
+        $this->assertSame(['/staff', 'offline_access', 'viewer', 'editor'], $provider->getUserGroups(self::KEYCLOAK_RESOURCE));
         $this->assertTrue($provider->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
     }
 
@@ -77,10 +98,9 @@ class ProviderAllowedGroupsTest extends PluginTestCase
         $this->assertFalse($provider->checkAllowedGroups(['sub' => 'remote-id']));
     }
 
-    public function testRolesFieldMappingTakesPrecedence(): void
+    public function testRolesMappingReturningAList(): void
     {
-        $provider = $this->createProvider(['allowed_groups' => 'viewer']);
-        $this->addRolesMapping((int) $provider->getID(), '$.realm_access.roles');
+        $provider = $this->providerWithRolesMappings('viewer', '$.realm_access.roles');
 
         $this->assertSame(['offline_access', 'viewer'], $provider->getUserGroups(self::KEYCLOAK_RESOURCE));
         $this->assertTrue($provider->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
@@ -89,12 +109,38 @@ class ProviderAllowedGroupsTest extends PluginTestCase
         $this->assertFalse($provider->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
     }
 
-    public function testRolesFieldMappingWithWildcard(): void
+    public function testRolesMappingsAreMerged(): void
     {
-        $provider = $this->createProvider(['allowed_groups' => 'editor']);
-        $this->addRolesMapping((int) $provider->getID(), '$.resource_access.*.roles');
+        $provider = $this->providerWithRolesMappings('editor', '$.realm_access.roles', '$.resource_access.*.roles', '$.missing');
 
-        $this->assertSame(['editor'], $provider->getUserGroups(self::KEYCLOAK_RESOURCE));
+        $this->assertSame(['offline_access', 'viewer', 'editor'], $provider->getUserGroups(self::KEYCLOAK_RESOURCE));
         $this->assertTrue($provider->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
+    }
+
+    public function testRecursiveRolesMapping(): void
+    {
+        $provider = $this->providerWithRolesMappings('editor', '$..roles');
+
+        $this->assertSame(['offline_access', 'viewer', 'editor'], $provider->getUserGroups(self::KEYCLOAK_RESOURCE));
+    }
+
+    public function testStringClaimIsSplitOnCommasAndSpaces(): void
+    {
+        $provider = $this->providerWithRolesMappings('staff', '$.grp');
+
+        $this->assertSame(['admin', 'staff'], $provider->getUserGroups(['grp' => 'admin, staff']));
+        $this->assertSame(['admin', 'staff'], $provider->getUserGroups(['grp' => 'admin staff']));
+        $this->assertSame(['IT Staff'], $provider->getUserGroups(['grp' => ['IT Staff']]));
+        $this->assertTrue($provider->checkAllowedGroups(['grp' => 'admin,staff']));
+    }
+
+    public function testGroupObjects(): void
+    {
+        $provider = $this->providerWithRolesMappings('Sales', '$.memberOf');
+
+        $this->assertSame(
+            ['Sales', 'IT Staff'],
+            $provider->getUserGroups(['memberOf' => [['id' => 'g1', 'displayName' => 'Sales'], ['id' => 'g2', 'displayName' => 'IT Staff']]]),
+        );
     }
 }
