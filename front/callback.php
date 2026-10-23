@@ -217,7 +217,7 @@ if ($test_cookie) {
         'active_mappings'         => $active_mappings,
         'default_mappings'        => $default_mappings,
         'copy_payload'           => $copy_payload,
-        'user_groups'             => $signon_provider->extractUserGroups($resource_owner_array),
+        'user_groups'             => $signon_provider->getUserGroups($resource_owner_array),
         'groups_authorized'       => $signon_provider->checkAllowedGroups($resource_owner_array),
     ]);
     Html::nullFooter();

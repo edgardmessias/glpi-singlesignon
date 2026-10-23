@@ -41,8 +41,7 @@
    '<code>prompt=login</code>',
    '<code>prompt=select_account</code>'
 ])]) %}
-{% set _tip_allowed_groups = call('nl2br', [__('Restrict login to users in at least one of these groups (separated by commas, e.g. admin,staff). Leave empty to allow all users.', 'singlesignon')]) %}
-{% set _tip_groups_claim = call('nl2br', [__('Claim holding the user groups, dot notation for nested fields (e.g. realm_access.roles). Leave empty to use groups, roles, realm_access.roles and resource_access.*.roles.', 'singlesignon')]) %}
+{% set _tip_allowed_groups = call('nl2br', [__('Restrict login to users in at least one of these groups (separated by commas, e.g. admin,staff). User groups are read from the "Roles (IdP Claim)" field mappings. Leave empty to allow all users.', 'singlesignon')]) %}
 {% set _tip_domains = call('nl2br', [__('Provide a list of domains allowed to log in through this provider (separated by commas, no spaces) (optional).', 'singlesignon')]) %}
 {% set _tip_photo_sync = call('nl2br', [__('Choose when user avatars should be synchronized during login.', 'singlesignon')]) %}
 {% set _tip_resource_owner_auth = call('nl2br', [__('Controls how Authorization header is built for Resource Owner Details requests.', 'singlesignon')]) %}
@@ -196,9 +195,6 @@
     }|merge(field_opts)) }}
     {{ fields.textField('allowed_groups', provider.fields.allowed_groups|default(''), __('Allowed groups', 'singlesignon'), {
         helper: _tip_allowed_groups
-    }|merge(field_opts)) }}
-    {{ fields.textField('groups_claim', provider.fields.groups_claim|default(''), __('Groups claim', 'singlesignon'), {
-        helper: _tip_groups_claim
     }|merge(field_opts)) }}
     {{ fields.sliderField('use_email_for_login', provider.fields.use_email_for_login|default(0), __('Use Email as Login', 'singlesignon'), field_opts) }}
     {{ fields.sliderField('split_name', provider.fields.split_name|default(0), __('Split Name', 'singlesignon'), {

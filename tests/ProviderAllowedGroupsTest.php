@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon\Tests;
 
-use GlpiPlugin\Singlesignon\Provider;
+use GlpiPlugin\Singlesignon\Provider_Field;
 
 class ProviderAllowedGroupsTest extends PluginTestCase
 {
@@ -39,55 +39,62 @@ class ProviderAllowedGroupsTest extends PluginTestCase
         'resource_access' => ['glpi' => ['roles' => ['editor']]],
     ];
 
-    private function provider(string $allowedGroups, string $groupsClaim = ''): Provider
+    private function addRolesMapping(int $providerId, string $jsonPath): void
     {
-        $provider = new Provider();
-        $provider->fields['allowed_groups'] = $allowedGroups;
-        $provider->fields['groups_claim'] = $groupsClaim;
-
-        return $provider;
+        $mapping = new Provider_Field();
+        $mappingId = $mapping->add([
+            'plugin_singlesignon_providers_id' => $providerId,
+            'field_type' => 'roles',
+            'jsonpath' => $jsonPath,
+            'is_active' => 1,
+            'sort_order' => 10,
+        ]);
+        $this->assertGreaterThan(0, (int) $mappingId);
     }
 
     public function testEmptyAllowedGroupsAllowsEveryone(): void
     {
-        $this->assertTrue($this->provider('')->checkAllowedGroups(['sub' => 'remote-id']));
-        $this->assertTrue($this->provider(' , ')->checkAllowedGroups(['sub' => 'remote-id']));
+        $provider = $this->createProvider(['allowed_groups' => '']);
+        $this->assertTrue($provider->checkAllowedGroups(['sub' => 'remote-id']));
+
+        $provider->fields['allowed_groups'] = ' , ';
+        $this->assertTrue($provider->checkAllowedGroups(['sub' => 'remote-id']));
     }
 
-    public function testDefaultClaims(): void
+    public function testDefaultRolesMappings(): void
     {
-        $this->assertSame(
-            ['/staff', 'offline_access', 'viewer', 'editor'],
-            $this->provider('')->extractUserGroups(self::KEYCLOAK_RESOURCE),
-        );
-    }
+        $provider = $this->createProvider(['allowed_groups' => 'admin, /staff']);
 
-    public function testAllowedWhenInAnyGroup(): void
-    {
-        $this->assertTrue($this->provider('admin, editor')->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
+        $this->assertSame(['/staff'], $provider->getUserGroups(self::KEYCLOAK_RESOURCE));
+        $this->assertTrue($provider->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
     }
 
     public function testDeniedWhenInNoGroup(): void
     {
-        $this->assertFalse($this->provider('admin')->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
-        $this->assertFalse($this->provider('admin')->checkAllowedGroups(['sub' => 'remote-id']));
+        $provider = $this->createProvider(['allowed_groups' => 'admin']);
+
+        $this->assertFalse($provider->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
+        $this->assertFalse($provider->checkAllowedGroups(['sub' => 'remote-id']));
     }
 
-    public function testCustomClaimIsTheOnlySource(): void
+    public function testRolesFieldMappingTakesPrecedence(): void
     {
-        $provider = $this->provider('editor', 'realm_access.roles');
+        $provider = $this->createProvider(['allowed_groups' => 'viewer']);
+        $this->addRolesMapping((int) $provider->getID(), '$.realm_access.roles');
 
-        $this->assertSame(['offline_access', 'viewer'], $provider->extractUserGroups(self::KEYCLOAK_RESOURCE));
+        $this->assertSame(['offline_access', 'viewer'], $provider->getUserGroups(self::KEYCLOAK_RESOURCE));
+        $this->assertTrue($provider->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
+
+        $provider->fields['allowed_groups'] = '/staff';
         $this->assertFalse($provider->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
     }
 
-    public function testCustomClaimAsString(): void
+    public function testRolesFieldMappingWithWildcard(): void
     {
-        $this->assertSame(['admin', 'staff'], $this->provider('', 'grp')->extractUserGroups(['grp' => 'admin, staff']));
-    }
+        $provider = $this->createProvider(['allowed_groups' => 'editor']);
+        $this->addRolesMapping((int) $provider->getID(), '$.resource_access.*.roles');
 
-    public function testMissingCustomClaim(): void
-    {
-        $this->assertSame([], $this->provider('', 'missing.path')->extractUserGroups(self::KEYCLOAK_RESOURCE));
+        $this->assertSame(['editor'], $provider->getUserGroups(self::KEYCLOAK_RESOURCE));
+        $this->assertTrue($provider->checkAllowedGroups(self::KEYCLOAK_RESOURCE));
     }
 }

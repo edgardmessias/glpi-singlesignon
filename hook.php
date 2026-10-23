@@ -114,15 +114,6 @@ function plugin_singlesignon_install()
             'null'      => true,
         ],
     );
-    $migration->addField(
-        $providersTable,
-        'groups_claim',
-        'string',
-        [
-            'nodefault' => true,
-            'null'      => true,
-        ],
-    );
     $migration->addField($providersTable, 'split_name', 'bool');
 
     /**
