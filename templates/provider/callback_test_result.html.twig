@@ -132,6 +132,13 @@
                             </tbody>
                         </table>
                     </div>
+                    <p class="mb-0">
+                        <strong>{{ __('Groups', 'singlesignon') }}:</strong>
+                        {{ user_groups is empty ? '-' : user_groups|join(', ') }}
+                        <span class="badge {{ groups_authorized ? 'bg-success' : 'bg-danger' }} ms-2">
+                            {{ groups_authorized ? __('Allowed by allowed groups', 'singlesignon') : __('Denied by allowed groups', 'singlesignon') }}
+                        </span>
+                    </p>
                 </div>
 
                 <div class="tab-pane" id="tab-resource-owner">
