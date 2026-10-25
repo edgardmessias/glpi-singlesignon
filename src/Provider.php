@@ -1058,7 +1058,6 @@ class Provider extends ProviderBase
                 'scope' => $this->getScope(),
                 'state' => $state,
                 'response_type' => 'code',
-                'approval_prompt' => 'auto',
                 'redirect_uri' => $callback_url,
             ];
             $extra_options = $this->getExtraOptions();
