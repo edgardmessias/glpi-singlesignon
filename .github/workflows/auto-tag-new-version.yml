@@ -7,6 +7,7 @@ on:
       - "**/bugfixes"
     paths:
       - "setup.php"
+  workflow_dispatch:
 
 jobs:
   auto-tag-new-version:
@@ -21,20 +22,33 @@ jobs:
           persist-credentials: false
       - name: "Extract version"
         run: |
-          sudo apt-get update
-          sudo apt-get install --assume-yes --no-install-recommends --quiet pcregrep
-          VERSION=$(pcregrep -o1 "define\s*\(\s*['\"]PLUGIN_[A-Z]+_VERSION['\"]\s*,\s*['\"]([^'\"]+)['\"]\s*\)" setup.php)
-          echo "VERSION=v${VERSION}" >> $GITHUB_ENV
+          VERSION="$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          text = Path("setup.php").read_text(encoding="utf-8")
+          match = re.search(
+              r"define\s*\(\s*['\"]PLUGIN_[A-Z]+_VERSION['\"]\s*,\s*['\"]([^'\"]+)['\"]\s*\)",
+              text,
+          )
+          if match is None:
+              raise SystemExit("Could not extract PLUGIN_*_VERSION from setup.php")
+          print(match.group(1))
+          PY
+          )"
+          echo "VERSION=v${VERSION}" >> "${GITHUB_ENV}"
       - name: "Check if tag exists"
         run: |
           CREATE_TAG=no
-          if [[ ! -z "${{ env.VERSION }}" && -z "$(git tag -l ${{ env.VERSION }})" ]]; then
+          if [[ -n "${{ env.VERSION }}" && -z "$(git tag -l "${{ env.VERSION }}")" ]]; then
             CREATE_TAG=yes
           fi
-          echo "CREATE_TAG=${CREATE_TAG}" >> $GITHUB_ENV
+          echo "CREATE_TAG=${CREATE_TAG}" >> "${GITHUB_ENV}"
       - name: "Create tag"
         if: ${{ env.CREATE_TAG == 'yes' }}
         uses: "actions/github-script@v8"
+        env:
+          TAG_NAME: ${{ env.VERSION }}
         with:
           # A PAT is required.
           # From https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow:
@@ -46,14 +60,12 @@ jobs:
           github-token: "${{ secrets.PERSONAL_TOKEN }}"
           script: |
             try {
-              github.rest.git.createRef(
-                {
-                  ref: 'refs/tags/${{ env.VERSION }}',
-                  sha: context.sha,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                }
-              );
+              await github.rest.git.createRef({
+                ref: `refs/tags/${process.env.TAG_NAME}`,
+                sha: context.sha,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
             } catch (error) {
               core.setFailed(error.message);
             }
