@@ -219,33 +219,7 @@ class Provider extends ProviderBase
         return $this->prepareInput($input);
     }
 
-    public function post_addItem()
-    {
-        if (($this->fields['type'] ?? '') !== 'generic') {
-            return;
-        }
 
-        $providerId = (int) ($this->fields['id'] ?? 0);
-        if ($providerId <= 0) {
-            return;
-        }
-
-        $existing = Provider_Field::getMappingsForProvider($providerId);
-        if ($existing !== []) {
-            return;
-        }
-
-        $mapping = new Provider_Field();
-        foreach (Provider_Field::getDefaultMappings('generic') as $default) {
-            $mapping->add([
-                'plugin_singlesignon_providers_id' => $providerId,
-                'field_type'                       => $default['field_type'],
-                'jsonpath'                         => $default['jsonpath'],
-                'is_active'                        => (int) $default['is_active'],
-                'sort_order'                       => (int) $default['sort_order'],
-            ]);
-        }
-    }
 
     public function cleanDBonPurge()
     {
