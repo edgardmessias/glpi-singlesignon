@@ -20,14 +20,6 @@
  # ---------------------------------------------------------------------
  #}
 
-{% set rows = mappings|length > 0 ? mappings : [{
-   id: 0,
-   field_type: 'id',
-   jsonpath: '',
-   is_active: 1,
-   sort_order: 10
-}] %}
-
 <form method="post" action="{{ form_action }}">
     <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="plugin_singlesignon_providers_id" value="{{ provider_id }}"/>
@@ -60,7 +52,7 @@
                     <button type="button" id="sso-add-mapping-row" class="btn btn-outline-secondary">
                         <i class="ti ti-plus"></i> <span>{{ __('Add') }}</span>
                     </button>
-                    <button type="button" id="sso-reset-mappings-btn" class="btn btn-ghost-danger" data-bs-toggle="modal" data-bs-target="#reset_mappings_modal" {% if provider.fields.type == 'generic' %}style="display: none;"{% endif %}>
+                    <button type="button" id="sso-reset-mappings-btn" class="btn btn-ghost-danger" data-bs-toggle="modal" data-bs-target="#reset_mappings_modal">
                         <span>{{ __('Reset to defaults') }}</span>
                     </button>
                 </span>
@@ -86,7 +78,6 @@
 (() => {
     const table = document.getElementById('sso-field-mappings-table');
     const addBtn = document.getElementById('sso-add-mapping-row');
-    const resetBtn = document.getElementById('sso-reset-mappings-btn');
     const confirmResetBtn = document.getElementById('confirm_reset_mappings_btn');
     const tbody = table ? table.querySelector('tbody') : null;
     if (!table || !addBtn || !tbody) {
@@ -96,90 +87,190 @@
     const types = {{ field_types|json_encode|raw }};
     const allDefaults = {{ all_defaults|json_encode|raw }};
     const initialMappings = {{ mappings|json_encode|raw }};
-    const removeLabel = {{ __('Remove')|e('js')|json_encode|raw }};
+    const removeLabel = {{ __('Remove')|json_encode|raw }};
+    const readOnlyLabel = {{ __('Read-only fallback', 'singlesignon')|json_encode|raw }};
     const initialType = {{ provider.fields.type|json_encode|raw }};
 
-    const buildOptions = (selectedKey = '') => Object.entries(types)
-        .map(([key, label]) => `<option value="${key}" ${key === selectedKey ? 'selected' : ''}>${label}</option>`)
-        .join('');
+    let nextRowIndex = 0;
 
-    const nextIndex = () => table.querySelectorAll('tbody tr:not([data-readonly="1"])').length;
+    const buildSelect = (selectedKey = '', name = null, disabled = false) => {
+        const select = document.createElement('select');
+        select.className = 'form-select';
+        if (name) {
+            select.name = name;
+        }
+        select.disabled = disabled;
 
+        Object.entries(types).forEach(([key, label]) => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = label;
+            if (key === selectedKey) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
 
+        return select;
+    };
 
     const addCustomRow = (map = null, isSaved = false) => {
-        const idx = nextIndex();
+        const idx = nextRowIndex++;
         const tr = document.createElement('tr');
         tr.setAttribute('data-row', '');
         tr.setAttribute('data-saved', isSaved ? '1' : '0');
-        
+
         const mapId = map ? (map.id || 0) : 0;
-        const fieldType = map ? map.field_type : 'id';
+        const fieldType = map ? (map.field_type || 'id') : 'id';
         const jsonPath = map ? (map.jsonpath || '') : '';
         const isActive = map ? (map.is_active == 1) : true;
-        const sortOrder = map ? (map.sort_order || ((idx + 1) * 10)) : ((idx + 1) * 10);
-        
-        let idInputs = `<input type="hidden" name="_field_mappings[${idx}][id]" value="${mapId}"/>`;
+        const customCount = tbody.querySelectorAll('tr:not([data-readonly="1"])').length;
+        const defaultOrder = (customCount + 1) * 10;
+        const sortOrder = map && map.sort_order !== undefined && map.sort_order !== null && map.sort_order !== ''
+            ? map.sort_order
+            : defaultOrder;
+
+        const typeTd = document.createElement('td');
+        const idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = `_field_mappings[${idx}][id]`;
+        idInput.value = String(mapId);
+        typeTd.appendChild(idInput);
+
         if (isSaved) {
-            idInputs += `<input type="hidden" class="sso-delete-flag" name="_field_mappings[${idx}][_delete]" value="0"/>`;
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.className = 'sso-delete-flag';
+            deleteInput.name = `_field_mappings[${idx}][_delete]`;
+            deleteInput.value = '0';
+            typeTd.appendChild(deleteInput);
         }
 
-        tr.innerHTML = `
-            <td>
-                ${idInputs}
-                <select class="form-select" name="_field_mappings[${idx}][field_type]">${buildOptions(fieldType)}</select>
-            </td>
-            <td>
-                <input type="text" class="form-control" name="_field_mappings[${idx}][jsonpath]" value="${jsonPath}" placeholder="$.id"/>
-            </td>
-            <td class="text-center">
-                <input type="checkbox" class="form-check-input" name="_field_mappings[${idx}][is_active]" value="1" ${isActive ? 'checked' : ''}/>
-            </td>
-            <td class="text-center">
-                <input type="number" class="form-control text-end" style="max-width: 100px; margin: 0 auto;" name="_field_mappings[${idx}][sort_order]" value="${sortOrder}"/>
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-outline-danger btn-sm" data-remove-row>
-                    <i class="ti ti-trash"></i> ${removeLabel}
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+        typeTd.appendChild(buildSelect(fieldType, `_field_mappings[${idx}][field_type]`, false));
+        tr.appendChild(typeTd);
+
+        const pathTd = document.createElement('td');
+        const pathInput = document.createElement('input');
+        pathInput.type = 'text';
+        pathInput.className = 'form-control';
+        pathInput.name = `_field_mappings[${idx}][jsonpath]`;
+        pathInput.value = jsonPath;
+        pathInput.placeholder = '$.id';
+        pathTd.appendChild(pathInput);
+        tr.appendChild(pathTd);
+
+        const activeTd = document.createElement('td');
+        activeTd.className = 'text-center';
+        const activeInput = document.createElement('input');
+        activeInput.type = 'checkbox';
+        activeInput.className = 'form-check-input';
+        activeInput.name = `_field_mappings[${idx}][is_active]`;
+        activeInput.value = '1';
+        activeInput.checked = isActive;
+        activeTd.appendChild(activeInput);
+        tr.appendChild(activeTd);
+
+        const orderTd = document.createElement('td');
+        orderTd.className = 'text-center';
+        const orderInput = document.createElement('input');
+        orderInput.type = 'number';
+        orderInput.className = 'form-control text-end';
+        orderInput.style.maxWidth = '100px';
+        orderInput.style.margin = '0 auto';
+        orderInput.name = `_field_mappings[${idx}][sort_order]`;
+        orderInput.value = String(sortOrder);
+        orderTd.appendChild(orderInput);
+        tr.appendChild(orderTd);
+
+        const actionTd = document.createElement('td');
+        actionTd.className = 'text-center';
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-outline-danger btn-sm';
+        removeBtn.setAttribute('data-remove-row', '');
+        const trashIcon = document.createElement('i');
+        trashIcon.className = 'ti ti-trash';
+        removeBtn.appendChild(trashIcon);
+        removeBtn.appendChild(document.createTextNode(' ' + removeLabel));
+        actionTd.appendChild(removeBtn);
+        tr.appendChild(actionTd);
+
+        const firstReadonly = tbody.querySelector('tr[data-readonly="1"]');
+        if (firstReadonly) {
+            tbody.insertBefore(tr, firstReadonly);
+        } else {
+            tbody.appendChild(tr);
+        }
         return tr;
     };
 
     const loadDefaults = (type) => {
         // Remove existing read-only rows
         tbody.querySelectorAll('tr[data-readonly="1"]').forEach(tr => tr.remove());
-        
+
         const defaults = allDefaults[type] || [];
         defaults.forEach(map => {
             const tr = document.createElement('tr');
             tr.setAttribute('data-readonly', '1');
             tr.classList.add('bg-light', 'text-muted');
-            tr.innerHTML = `
-                <td>
-                    <select class="form-select" disabled>${buildOptions(map.field_type)}</select>
-                </td>
-                <td>
-                    <input type="text" class="form-control" value="${map.jsonpath || ''}" disabled/>
-                </td>
-                <td class="text-center">
-                    <input type="checkbox" class="form-check-input" value="1" disabled ${map.is_active ? 'checked' : ''} style="background-color: var(--tblr-secondary); border-color: var(--tblr-secondary);"/>
-                </td>
-                <td class="text-center">
-                    <input type="number" class="form-control text-end" style="max-width: 100px; margin: 0 auto;" value="${map.sort_order || 10}" disabled/>
-                </td>
-                <td class="text-center">
-                    <span class="badge" style="background-color: var(--glpi-badge-bg);" title="{{ __('Read-only fallback', 'singlesignon') }}"><i class="ti ti-lock"></i></span>
-                </td>
-            `;
+
+            const typeTd = document.createElement('td');
+            typeTd.appendChild(buildSelect(map.field_type || 'id', null, true));
+            tr.appendChild(typeTd);
+
+            const pathTd = document.createElement('td');
+            const pathInput = document.createElement('input');
+            pathInput.type = 'text';
+            pathInput.className = 'form-control';
+            pathInput.value = map.jsonpath || '';
+            pathInput.disabled = true;
+            pathTd.appendChild(pathInput);
+            tr.appendChild(pathTd);
+
+            const activeTd = document.createElement('td');
+            activeTd.className = 'text-center';
+            const activeInput = document.createElement('input');
+            activeInput.type = 'checkbox';
+            activeInput.className = 'form-check-input';
+            activeInput.value = '1';
+            activeInput.disabled = true;
+            activeInput.checked = Boolean(map.is_active);
+            activeInput.style.backgroundColor = 'var(--tblr-secondary)';
+            activeInput.style.borderColor = 'var(--tblr-secondary)';
+            activeTd.appendChild(activeInput);
+            tr.appendChild(activeTd);
+
+            const orderTd = document.createElement('td');
+            orderTd.className = 'text-center';
+            const orderInput = document.createElement('input');
+            orderInput.type = 'number';
+            orderInput.className = 'form-control text-end';
+            orderInput.style.maxWidth = '100px';
+            orderInput.style.margin = '0 auto';
+            orderInput.value = String(map.sort_order ?? 10);
+            orderInput.disabled = true;
+            orderTd.appendChild(orderInput);
+            tr.appendChild(orderTd);
+
+            const actionTd = document.createElement('td');
+            actionTd.className = 'text-center';
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.style.backgroundColor = 'var(--glpi-badge-bg)';
+            badge.title = readOnlyLabel;
+            const lockIcon = document.createElement('i');
+            lockIcon.className = 'ti ti-lock';
+            badge.appendChild(lockIcon);
+            actionTd.appendChild(badge);
+            tr.appendChild(actionTd);
+
             tbody.appendChild(tr);
         });
     };
 
     const init = () => {
-        tbody.innerHTML = '';
+        tbody.replaceChildren();
+        nextRowIndex = 0;
         if (initialMappings && initialMappings.length > 0) {
             initialMappings.forEach(map => {
                 addCustomRow(map, true);
@@ -210,11 +301,6 @@
 
     $(document).on('change', 'select[name="type"]', function() {
         const newType = $(this).val();
-        if (newType === 'generic') {
-            if (resetBtn) resetBtn.style.display = 'none';
-        } else {
-            if (resetBtn) resetBtn.style.display = '';
-        }
         loadDefaults(newType);
     });
 
