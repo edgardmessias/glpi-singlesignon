@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Glpi\Exception\TooManyResultsException;
 use RuleRight;
 use Throwable;
 use JsonPath\JsonObject;
@@ -1697,7 +1698,7 @@ class Provider extends ProviderBase
                     'entities_id' => $entityForProfile,
                     'profiles_id' => $profileId,
                 ]);
-            } catch (\Glpi\Exception\TooManyResultsException $exception) {
+            } catch (TooManyResultsException $exception) {
                 $this->logFailure(
                     __FUNCTION__,
                     sprintf(
@@ -1891,6 +1892,7 @@ class Provider extends ProviderBase
      */
     public function createUserFromOAuthResource(array $resource_array, array $overrides = [])
     {
+        global $DB;
         if (!empty($overrides['__registration_from_preview'])) {
             $login = trim((string) ($overrides['name'] ?? ''));
             $email = isset($overrides['_email']) ? trim((string) $overrides['_email']) : null;
@@ -2019,17 +2021,28 @@ class Provider extends ProviderBase
             $userPost['users_id_supervisor'] = $supervisorId;
         }
 
+        $DB->beginTransaction();
         try {
             $user = new User();
             $newId = $user->add($userPost);
             if (!$newId) {
                 $this->logFailure(__FUNCTION__, sprintf('failed to create user from OAuth resource for login="%s"', $login), $user);
+                $DB->rollback();
                 return false;
             }
 
             if (!$this->linkRemoteUserToProvider((int) $newId, (string) $remote_id)) {
+                $DB->rollback();
                 return false;
             }
+            $DB->commit();
+        } catch (Throwable $ex) {
+            $DB->rollback();
+            $this->logFailure(__FUNCTION__, 'exception during user creation: ' . $ex->getMessage());
+            return false;
+        }
+
+        try {
             $this->syncUserProfileAuthorization($user, $resource_array);
 
             return $user;
@@ -2078,7 +2091,7 @@ class Provider extends ProviderBase
             if ($success) {
                 return true;
             }
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->logFailure(__FUNCTION__, 'failed to save SSO account link: ' . $exception->getMessage());
         }
 

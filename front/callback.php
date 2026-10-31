@@ -247,7 +247,7 @@ $loginResult = $user_id !== 0 ? Provider::LOGIN_SUCCESS : $signon_provider->logi
 if ($user_id !== 0 && !$signon_provider->linkUser($user_id)) {
     $loginError = $signon_provider->getLastLoginError();
     Toolbox::logInFile('access-errors', "$loginError\n", true);
-    Session::addMessageAfterRedirect(__('Unable to link this single sign-on account. Please contact your administrator.', 'singlesignon'), false, ERROR);
+    Session::addMessageAfterRedirect(__s('Unable to link this single sign-on account. Please contact your administrator.', 'singlesignon'), false, ERROR);
     Html::redirect($CFG_GLPI['root_doc'] . '/front/preference.php');
 }
 

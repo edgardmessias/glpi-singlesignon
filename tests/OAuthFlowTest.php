@@ -37,6 +37,30 @@ use User;
 
 class OAuthFlowTest extends PluginTestCase
 {
+    public function testRegistrationRollsBackUserWhenRemoteIdentityIsAlreadyLinked(): void
+    {
+        $provider = $this->createProvider();
+        $existing = new User();
+        $this->assertTrue($existing->getFromDBbyName('glpi'));
+        $link = new Provider_User();
+        $linkId = $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $existing->getID(),
+            'remote_id' => 'occupied-registration-id',
+        ]);
+        $this->assertGreaterThan(0, (int) $linkId);
+        $login = 'sso_rollback_' . uniqid();
+
+        $this->assertFalse($provider->createUserFromOAuthResource([
+            'id' => 'occupied-registration-id',
+            'username' => $login,
+        ]));
+        $user = new User();
+        $this->assertFalse($user->getFromDBbyName($login));
+        $this->assertTrue($link->getFromDB($linkId));
+        $this->assertSame((int) $existing->getID(), (int) $link->fields['users_id']);
+    }
+
     public function testLinkUserCreatesNewLink(): void
     {
         $provider = $this->providerWithCode();
