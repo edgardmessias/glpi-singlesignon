@@ -3,6 +3,71 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [2.1.1](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.1) - 2026-10-31
+
+### Bug Fixes
+
+- Restore provider templates compatibility with GLPI 12 (fix #219) - ([96f052d](https://github.com/edgardmessias/glpi-singlesignon/commit/96f052d87f9fc685a0f2711e91913ac380c9c78a)) - Edgard
+- Handle multiple matching profile authorizations (fix #220) - ([7081ce1](https://github.com/edgardmessias/glpi-singlesignon/commit/7081ce1623f4469dd7651a0eddbe7a05fd143bc0)) - Edgard
+- Safely update SSO user links when remote IDs change (fix #209) - ([6863aac](https://github.com/edgardmessias/glpi-singlesignon/commit/6863aacbd6dfd4c82a81cbd0cd5350cf2f1dc368)) - Edgard
+- Roll back failed SSO registrations and address CI checks - ([3870f23](https://github.com/edgardmessias/glpi-singlesignon/commit/3870f23effbce45557002f1f04dfbedc1e3aff4a)) - Edgard
+
+---
+## [2.1.0](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.0) - 2026-10-25
+
+### Bug Fixes
+
+- **(ui)** Correct and optimize automatic redirection to default SSO provider (#178) - ([8e2222d](https://github.com/edgardmessias/glpi-singlesignon/commit/8e2222d579a05673acf09c09bcb51041a690c6ff)) - Eduardo Mozart de Oliveira
+- **(ui)** Fix visibility toggle of generic SSO fields and resolve SSO Type accessibility warning (#191) - ([226d5dc](https://github.com/edgardmessias/glpi-singlesignon/commit/226d5dcb1b2e2f2637c6cd30b41a09befbe3539c)) - Eduardo Mozart de Oliveira
+- **(ui)** Change client_secret field to passwordField (#194) - ([71b798f](https://github.com/edgardmessias/glpi-singlesignon/commit/71b798f25de053aa212f0884e43619fb394c4eb4)) - Eduardo Mozart de Oliveira
+- **(ui)** Use native get_plugin_web_dir Twig function for public assets (#203) - ([c0460b5](https://github.com/edgardmessias/glpi-singlesignon/commit/c0460b5020b287b3c970f54b6cc1781afc010cb2)) - Eduardo Mozart de Oliveira
+- Fix duplicate Twig function registration on plugin marketplace actions (#206) - ([aea6847](https://github.com/edgardmessias/glpi-singlesignon/commit/aea68471634cb2db26b068c58c44f5a55fbc87a2)) - Eduardo Mozart de Oliveira
+- Remove plugin config on uninstall - ([533e528](https://github.com/edgardmessias/glpi-singlesignon/commit/533e528ee42e8b03951d69cb6369e6d9f410d07f)) - Edgard
+- Replace empty-string ORDER BY in Location::find() calls (invalid SQL on GLPI 11) (#210) - ([208d570](https://github.com/edgardmessias/glpi-singlesignon/commit/208d570130ebd6cff6e7c9af1a6aa8614527f15e)) - silverspell03
+- Keep the OAuth provider test in the session - ([6f1a275](https://github.com/edgardmessias/glpi-singlesignon/commit/6f1a275debfcb04ef093ce67bf268e9c4d4a09e0)) - Eduardo Mozart de Oliveira
+- Validate the OAuth state independently of GLPI CSRF tokens - ([84211da](https://github.com/edgardmessias/glpi-singlesignon/commit/84211da3b218ca2eaf028bff8e2a753d42f60bde)) - sysoutES
+- Keep the Azure tenant ID in the provider URLs (#216) - ([c3bdeb8](https://github.com/edgardmessias/glpi-singlesignon/commit/c3bdeb820644067cdaa2848835feb3cb41d5f170)) - sysoutES
+- Drop the legacy Google approval_prompt parameter - ([38995e1](https://github.com/edgardmessias/glpi-singlesignon/commit/38995e1a124bf37f9c8145d11a42119ea9d6d1fc)) - Eduardo Mozart de Oliveira
+- Extract the plugin version without pcregrep - ([d203fe1](https://github.com/edgardmessias/glpi-singlesignon/commit/d203fe1a0367b67e64532690cba3d9dbc202339c)) - Edgard
+
+### Features
+
+- **(azure)** Custom Azure tenant support (#189) - ([8292d08](https://github.com/edgardmessias/glpi-singlesignon/commit/8292d08c1955c57988a07f48c5fb1920a81308b1)) - Eduardo Mozart de Oliveira
+- **(jwt)** Add ID Token (JWT) mapping support, multi-value JSONPath resolution, and ID Token debug tab (#171) - ([d51503c](https://github.com/edgardmessias/glpi-singlesignon/commit/d51503cad6bba4a56ede1d14cd67aec0c22fe9ca)) - Eduardo Mozart de Oliveira
+- **(logs)** Implement structured error logging, client IP resolution, and troubleshooting documentation (#169) - ([be8cb0c](https://github.com/edgardmessias/glpi-singlesignon/commit/be8cb0c306df50f2d89aff216642c95f6a2089c0)) - Eduardo Mozart de Oliveira
+- **(mappings)** Add support for mapping location, supervisor, and phone fields during user syncing (#170) - ([64c6c38](https://github.com/edgardmessias/glpi-singlesignon/commit/64c6c38dc17815bba9fd023bdca44750a2def4e9)) - Eduardo Mozart de Oliveira
+- **(mappings)** Dynamic IdP Role/Group mapping, native GLPI rules engine integration, and UI enhancements (#173) - ([9e18994](https://github.com/edgardmessias/glpi-singlesignon/commit/9e189940c4e52db58f2ffa8f68c2b85c7ce345d2)) - Eduardo Mozart de Oliveira
+- **(slo)** Add OAuth Single Logout (SLO) Support (#188) - ([6b0800a](https://github.com/edgardmessias/glpi-singlesignon/commit/6b0800a51700ebc5fd73c5cd6f66d6ad9d8071a2)) - Eduardo Mozart de Oliveira
+- **(ui)** Add 'Copy all tabs' export utility and externalize debug JS assets (#174) - ([7a9f03d](https://github.com/edgardmessias/glpi-singlesignon/commit/7a9f03dbdd57b0738f890e287e93123aef81d2fb)) - Eduardo Mozart de Oliveira
+- **(ui)** Add Authorization Assignment Rules shortcut to provider configuration menu (#176) - ([d340de4](https://github.com/edgardmessias/glpi-singlesignon/commit/d340de4490215b7563a82a18d5fc2eb8e30051d6)) - Eduardo Mozart de Oliveira
+- **(ui)** Replace "Yes/No" dropdowns with toggle switches and mask client secret (#193) - ([75a2bd0](https://github.com/edgardmessias/glpi-singlesignon/commit/75a2bd0188e2f9bd64995157f765d8ee9763f720)) - Eduardo Mozart de Oliveira
+- **(user)** Dynamically synchronize GLPI user profile authorizations on every SSO login (#182) - ([743a229](https://github.com/edgardmessias/glpi-singlesignon/commit/743a229de55a7aaa21370e4c18e55f6f2f750585)) - Eduardo Mozart de Oliveira
+- **(user)** Sync GLPI user profile fields from OAuth payload on every login (#187) - ([242d0b2](https://github.com/edgardmessias/glpi-singlesignon/commit/242d0b2572f063dde77db3019e090dc91f8059f6)) - Eduardo Mozart de Oliveira
+- Add GLPI 12 compatibility - ([fb2837d](https://github.com/edgardmessias/glpi-singlesignon/commit/fb2837d6ff79db81a99db35c44eca4d1230918b7)) - Edgard
+- Restrict login by allowed groups - ([121e1a8](https://github.com/edgardmessias/glpi-singlesignon/commit/121e1a89c5db4ac1a4e8e43813bd184670267811)) - Brandon Gachenot
+
+### Miscellaneous Chores
+
+- Fix LinkedIn typo in auth provider labels (#201) - ([8978efa](https://github.com/edgardmessias/glpi-singlesignon/commit/8978efa92381b0d279a5b911640f58981e341052)) - Eduardo Mozart de Oliveira
+- Release 2.1.0 - ([f44db61](https://github.com/edgardmessias/glpi-singlesignon/commit/f44db61bfc6e708b0649c54f380607894e3bf6d3)) - Edgard
+
+### Tests
+
+- Cover the OAuth flow with PHPUnit - ([8ed47fe](https://github.com/edgardmessias/glpi-singlesignon/commit/8ed47fe7f71590ac5f0f37afc34373637805465d)) - Edgard
+- Cover location lookup during OAuth user sync - ([f9550b1](https://github.com/edgardmessias/glpi-singlesignon/commit/f9550b12c54c3aef29987080294c55000cdca6e2)) - Edgard
+- Cover the OAuth provider test flag across the redirect - ([aa4a3d2](https://github.com/edgardmessias/glpi-singlesignon/commit/aa4a3d29eac82c008db0b0550f0845a55a117945)) - Edgard
+- Cover OAuth state session and cookie validation - ([c5eee96](https://github.com/edgardmessias/glpi-singlesignon/commit/c5eee96e7d67247815c2ef39436a2be4fa5b1b33)) - Edgard
+
+### Build
+
+- **(deps-dev)** bump twig/twig from 3.26.0 to 3.27.1 (#198) - ([4f31e9c](https://github.com/edgardmessias/glpi-singlesignon/commit/4f31e9c3a4a882710fd1ab5b0cf13f92d1d4f8a8)) - dependabot[bot]
+- **(deps-dev)** bump symfony/yaml from 7.4.6 to 7.4.14 (#199) - ([a4e4370](https://github.com/edgardmessias/glpi-singlesignon/commit/a4e437064e55ea9ebbbfe643da274a13eac3438b)) - dependabot[bot]
+
+### Ci
+
+- Test GLPI 11 and 12 in the plugin workflow - ([e21b2f0](https://github.com/edgardmessias/glpi-singlesignon/commit/e21b2f03ef763e555647bcbb9f8aaead89ddbe7a)) - Edgard
+
+---
 ## [2.0.3](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.0.3) - 2026-05-26
 
 ### Bug Fixes
