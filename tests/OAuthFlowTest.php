@@ -30,12 +30,54 @@ use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\RedirectException;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
+use GlpiPlugin\Singlesignon\Provider_Profile;
 use GlpiPlugin\Singlesignon\Provider_User;
 use Location;
 use User;
 
 class OAuthFlowTest extends PluginTestCase
 {
+    public function testProfileSyncPreservesMultipleMatchingAuthorizations(): void
+    {
+        global $DB;
+
+        $provider = $this->createProvider(['default_profiles_id' => 2, 'default_entities_id' => 0]);
+        $user = new User();
+        $userId = $user->add(['name' => 'sso_duplicate_' . uniqid()]);
+        $this->assertGreaterThan(0, (int) $userId);
+        $this->assertTrue($user->getFromDB($userId));
+
+        $link = new Provider_User();
+        $this->assertGreaterThan(0, (int) $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $userId,
+            'remote_id' => 'duplicate-profile-test',
+        ]));
+
+        $ids = [];
+        foreach ([[0, 0], [1, 1]] as [$dynamic, $recursive]) {
+            $this->assertTrue($DB->insert('glpi_profiles_users', [
+                'users_id' => $userId,
+                'profiles_id' => 2,
+                'entities_id' => 0,
+                'is_dynamic' => $dynamic,
+                'is_recursive' => $recursive,
+            ]));
+            $ids[] = (int) $DB->insertId();
+        }
+
+        $this->assertFalse($provider->syncUserProfileAuthorization($user, ['id' => 'duplicate-profile-test']));
+        $this->assertFalse(Provider_Profile::getForUser((int) $userId));
+        $rows = iterator_to_array($DB->request([
+            'FROM' => 'glpi_profiles_users',
+            'WHERE' => ['id' => $ids],
+            'ORDER' => ['id ASC'],
+        ]), false);
+        $this->assertCount(2, $rows);
+        $this->assertSame([0, 1], array_map('intval', array_column($rows, 'is_dynamic')));
+        $this->assertSame([0, 1], array_map('intval', array_column($rows, 'is_recursive')));
+    }
+
     public function testAuthorizationRedirectContainsOAuthParameters(): void
     {
         $provider = $this->createProvider();

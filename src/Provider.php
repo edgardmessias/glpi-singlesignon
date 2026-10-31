@@ -1687,6 +1687,28 @@ class Provider extends ProviderBase
             : 0;
 
         $pu = new Profile_User();
+        $matchingProfile = false;
+        if ($mappedProfileId <= 0) {
+            try {
+                $matchingProfile = $pu->getFromDBByCrit([
+                    'users_id'    => $userId,
+                    'entities_id' => $entityForProfile,
+                    'profiles_id' => $profileId,
+                ]);
+            } catch (\Glpi\Exception\TooManyResultsException $exception) {
+                $this->logFailure(
+                    __FUNCTION__,
+                    sprintf(
+                        'skipped profile synchronization: multiple authorizations match users_id=%d profiles_id=%d entities_id=%d; review them in GLPI',
+                        $userId,
+                        $profileId,
+                        $entityForProfile,
+                    ),
+                    $user,
+                );
+                return false;
+            }
+        }
         // Update or Create static mapped GLPI profile.
         // The profile is created as is_dynamic=0 so Auth::login() does not delete it
         // when running the rules engine.
@@ -1703,11 +1725,7 @@ class Provider extends ProviderBase
                 ], ['id' => $mappedProfileId]);
             }
             // If the admin deleted it manually, we DO NOT recreate it.
-        } elseif ($pu->getFromDBByCrit([
-            'users_id'    => $userId,
-            'entities_id' => $entityForProfile,
-            'profiles_id' => $profileId,
-        ])) {
+        } elseif ($matchingProfile) {
             // A matching authorization already exists — make it static and track it.
             $DB->update('glpi_profiles_users', [
                 'is_recursive' => $isRecursive,
