@@ -242,6 +242,15 @@ $query_params = [];
 $loginResult = Provider::LOGIN_FAILURE;
 $loginResult = $user_id !== 0 ? Provider::LOGIN_SUCCESS : $signon_provider->login();
 
+// An already authenticated user is linking an additional identity. Preserve the
+// existing session if linking fails and show the error instead of redirecting as success.
+if ($user_id !== 0 && !$signon_provider->linkUser($user_id)) {
+    $loginError = $signon_provider->getLastLoginError();
+    Toolbox::logInFile('access-errors', "$loginError\n", true);
+    Session::addMessageAfterRedirect(__('Unable to link this single sign-on account. Please contact your administrator.', 'singlesignon'), false, ERROR);
+    Html::redirect($CFG_GLPI['root_doc'] . '/front/preference.php');
+}
+
 if ($loginResult !== Provider::LOGIN_FAILURE) {
     // Retrieve redirect stored during authorization step, validating it
     $redirect_target = '';
@@ -275,10 +284,6 @@ if ($loginError !== '') {
 if ($user_id || $loginResult === Provider::LOGIN_SUCCESS) {
 
     $user_id = $user_id ?: Session::getLoginUserID();
-
-    if ($user_id) {
-        $signon_provider->linkUser($user_id);
-    }
 
     $url_redirect = $CFG_GLPI['root_doc'] . "/index.php?" . http_build_query($query_params);
     $url_redirect = rtrim($url_redirect, '?'); // remove `?` when there is no parameters

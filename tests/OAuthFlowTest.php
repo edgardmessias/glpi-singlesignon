@@ -37,6 +37,82 @@ use User;
 
 class OAuthFlowTest extends PluginTestCase
 {
+    public function testLinkUserCreatesNewLink(): void
+    {
+        $provider = $this->providerWithCode();
+        $user = new User();
+        $this->assertTrue($user->getFromDBbyName('glpi'));
+        $provider->responses = [
+            ['body' => (string) json_encode(['access_token' => 'token'])],
+            ['body' => (string) json_encode(['id' => 'new-id'])],
+        ];
+
+        $this->assertTrue($provider->linkUser($user->getID()));
+        $link = new Provider_User();
+        $this->assertTrue($link->getFromDBByCrit([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $user->getID(),
+        ]));
+        $this->assertSame('new-id', $link->fields['remote_id']);
+    }
+
+    public function testLinkUserUpdatesChangedRemoteIdAndIsIdempotent(): void
+    {
+        $provider = $this->providerWithCode();
+        $user = new User();
+        $this->assertTrue($user->getFromDBbyName('glpi'));
+        $link = new Provider_User();
+        $linkId = $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $user->getID(),
+            'remote_id' => 'old-id',
+        ]);
+        $this->assertGreaterThan(0, (int) $linkId);
+        $provider->responses = [
+            ['body' => (string) json_encode(['access_token' => 'token'])],
+            ['body' => (string) json_encode(['id' => 'new-id'])],
+        ];
+
+        $this->assertTrue($provider->linkUser($user->getID()));
+        $this->assertTrue($provider->linkUser($user->getID()));
+        $this->assertTrue($link->getFromDB($linkId));
+        $this->assertSame('new-id', $link->fields['remote_id']);
+    }
+
+    public function testLinkUserRejectsIdentityLinkedToAnotherUser(): void
+    {
+        $provider = $this->providerWithCode();
+        $user = new User();
+        $other = new User();
+        $this->assertTrue($user->getFromDBbyName('glpi'));
+        $this->assertTrue($other->getFromDBbyName('tech'));
+        $link = new Provider_User();
+        $firstId = $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $user->getID(),
+            'remote_id' => 'old-id',
+        ]);
+        $secondId = $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $other->getID(),
+            'remote_id' => 'occupied-id',
+        ]);
+        $this->assertGreaterThan(0, (int) $firstId);
+        $this->assertGreaterThan(0, (int) $secondId);
+        $provider->responses = [
+            ['body' => (string) json_encode(['access_token' => 'token'])],
+            ['body' => (string) json_encode(['id' => 'occupied-id'])],
+        ];
+
+        $this->assertFalse($provider->linkUser($user->getID()));
+        $this->assertStringContainsString('another user', $provider->getLastLoginError());
+        $this->assertTrue($link->getFromDB($firstId));
+        $this->assertSame('old-id', $link->fields['remote_id']);
+        $this->assertTrue($link->getFromDB($secondId));
+        $this->assertSame((int) $other->getID(), (int) $link->fields['users_id']);
+        $this->assertSame('occupied-id', $link->fields['remote_id']);
+    }
+
     public function testProfileSyncPreservesMultipleMatchingAuthorizations(): void
     {
         global $DB;
