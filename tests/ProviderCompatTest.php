@@ -27,11 +27,26 @@ declare(strict_types=1);
 namespace GlpiPlugin\Singlesignon\Tests;
 
 use GlpiPlugin\Singlesignon\Provider;
+use Glpi\Application\View\TemplateRenderer;
 use Plugin;
 use ReflectionProperty;
 
 class ProviderCompatTest extends PluginTestCase
 {
+    public function testProviderTemplatesCompile(): void
+    {
+        $twig = TemplateRenderer::getInstance()->getEnvironment();
+
+        foreach ([
+            'show_field_mappings_tab.html.twig',
+            'show_role_mappings_tab.html.twig',
+            'callback_test_result.html.twig',
+        ] as $template) {
+            $source = $twig->getLoader()->getSourceContext('@singlesignon/provider/' . $template);
+            $this->assertNotEmpty($twig->compileSource($source));
+        }
+    }
+
     public function testRightnameMatchesRunningGlpi(): void
     {
         $property = new ReflectionProperty(Provider::class, 'rightname');
