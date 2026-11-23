@@ -128,7 +128,10 @@
     {{ fields.textField('client_id', provider.fields.client_id|default(''), __('Client ID', 'singlesignon'), field_opts) }}
     {{ fields.passwordField('client_secret', provider.fields.client_secret|default(''), __('Client Secret', 'singlesignon'), {
         is_disclosable: true,
-        is_copyable: false
+        is_copyable: false,
+        additional_attributes: {
+            autocomplete: 'off'
+        }
     }|merge(field_opts)) }}
     {{ fields.textField('azure_endpoint', call([provider, 'getAzureEndpoint'], []), __('Azure Endpoint', 'singlesignon'), {
         add_field_class: 'sso_azure ' ~ sso_azure_hidden_class,
@@ -193,13 +196,11 @@
     {{ fields.urlField('slo_issuer', provider.fields.slo_issuer|default(''), __('OIDC issuer URL', 'singlesignon'), {
         add_field_class: 'sso_slo_discovery ' ~ (is_generic and slo_mode == 2 ? '' : 'd-none'),
         disabled: not (is_generic and slo_mode == 2),
-        helper: __('Enter the issuer URL for the OIDC provider. GLPI reads end_session_endpoint from its discovery document.', 'singlesignon')
+        helper: call('nl2br', [call('sprintf', [
+            __('Enter the issuer URL for the OIDC provider. GLPI reads %s from its discovery document.', 'singlesignon'),
+            '<code>end_session_endpoint</code>'
+        ])])
     }|merge(field_opts)) }}
-    <div class="col-12 sso_slo_discovery {{ is_generic and slo_mode == 2 ? '' : 'd-none' }}">
-        {{ __('Register this post-logout redirect URI with the identity provider:', 'singlesignon') }}
-        <code>{{ call(['GlpiPlugin\\Singlesignon\\SingleLogout', 'getReturnUrl'], []) }}</code>
-    </div>
-
     {{ fields.sliderField('preset_slo_mode', not is_generic and slo_mode == 1 ? 1 : 0, __('Use SLO', 'singlesignon'), {
         add_field_class: 'sso_preset_slo ' ~ sso_preset_slo_hidden_class,
         helper: _tip_use_slo
@@ -327,6 +328,18 @@ $("[name=color]").on("change", function () {
         <div class="hr-text my-3">{{ __('Test') }}</div>
     </div>
     {{ fields.htmlField('callback_url', cb_link, __('Callback URL', 'singlesignon'), {full_width: true}|merge(field_opts)) }}
+
+    {% set post_logout_url = call(['GlpiPlugin\\Singlesignon\\SingleLogout', 'getReturnUrl'], []) %}
+    {% set post_logout_link = '<a href="' ~ post_logout_url|e('html_attr') ~ '">' ~ post_logout_url|e ~ '</a>' %}
+    {{ fields.htmlField('post_logout_redirect_uri', post_logout_link, __('Post-logout redirect URL', 'singlesignon'), {
+        add_field_class: 'sso_slo_discovery ' ~ (is_generic and slo_mode == 2 ? '' : 'd-none'),
+        full_width: true,
+        helper: call('sprintf', [
+            __('Register this URL with the identity provider when %1$s is set to %2$s.', 'singlesignon'),
+            '<strong>' ~ __('Use SLO', 'singlesignon')|e ~ '</strong>',
+            '<strong>' ~ __('Discovery Metadata', 'singlesignon')|e ~ '</strong>'
+        ])
+    }|merge(field_opts)) }}
 {% endif %}
 </div>
 

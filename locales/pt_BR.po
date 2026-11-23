@@ -167,7 +167,7 @@ msgstr ""
 
 #: \templates\provider\show_form.html.twig \src\Provider.php:484
 msgid "Authorize URL"
-msgstr "URL de Autorização"
+msgstr "URL de autorização"
 
 #: \templates\provider\show_form.html.twig
 msgid ""
@@ -257,11 +257,11 @@ msgstr "Tipo SSO"
 
 #: \templates\provider\show_form.html.twig \src\Provider.php:452
 msgid "Client ID"
-msgstr "ID de Cliente"
+msgstr "ID de cliente"
 
 #: \templates\provider\show_form.html.twig \src\Provider.php:460
 msgid "Client Secret"
-msgstr "Segredo do Cliente"
+msgstr "Segredo do cliente"
 
 #: \templates\provider\show_form.html.twig
 msgid "OAuth URLs and HTTP"
@@ -273,15 +273,15 @@ msgstr "Escopo"
 
 #: \templates\provider\show_form.html.twig \src\Provider.php:476
 msgid "Extra Options"
-msgstr "Opções Extras"
+msgstr "Opções extras"
 
 #: \templates\provider\show_form.html.twig \src\Provider.php:492
 msgid "Access Token URL"
-msgstr "URL de Token de Acesso"
+msgstr "URL de token de acesso"
 
 #: \templates\provider\show_form.html.twig \src\Provider.php:500
 msgid "Resource Owner Details URL"
-msgstr "URL de Detalhes do Proprietário do Recurso"
+msgstr "URL de detalhes do proprietário do recurso"
 
 #: \templates\provider\show_form.html.twig
 msgid "Resource Owner Authorization"
@@ -305,27 +305,27 @@ msgstr "Comportamento do login"
 
 #: \templates\provider\show_form.html.twig
 msgid "IsDefault"
-msgstr "É Padrão"
+msgstr "É padrão"
 
 #: \templates\provider\show_form.html.twig
 msgid "PopupAuth"
-msgstr "Autenticação Pop-up"
+msgstr "Autenticação pop-up"
 
 #: \templates\provider\show_form.html.twig
 msgid "SplitDomain"
-msgstr "Dividir Domínio"
+msgstr "Dividir domínio"
 
 #: \templates\provider\show_form.html.twig
 msgid "AuthorizedDomains"
-msgstr "Domínios Autorizados"
+msgstr "Domínios autorizados"
 
 #: \templates\provider\show_form.html.twig
 msgid "Use Email as Login"
-msgstr "Usar E-mail como Login"
+msgstr "Usar e-mail como login"
 
 #: \templates\provider\show_form.html.twig
 msgid "Split Name"
-msgstr "Dividir Nome"
+msgstr "Dividir nome"
 
 #: \templates\provider\show_form.html.twig
 msgid "Registration"
@@ -369,7 +369,7 @@ msgstr "Cabeçalhos personalizados da foto"
 
 #: \templates\provider\show_form.html.twig
 msgid "Callback URL"
-msgstr "URL de Retorno"
+msgstr "URL de retorno"
 
 #: \templates\provider\show_form.html.twig
 msgid "Test Single Sign-on"
@@ -490,11 +490,11 @@ msgstr "Sempre no login"
 
 #: \src\Provider.php:371
 msgid "Authorization: Bearer <token>"
-msgstr "Autorização: Bearer <token>"
+msgstr "Authorization: Bearer <token>"
 
 #: \src\Provider.php:372
 msgid "Authorization: <token>"
-msgstr "Autorização: <token>"
+msgstr "Authorization: <token>"
 
 #: \src\Provider.php:580
 msgid "Generic"
@@ -555,3 +555,71 @@ msgstr "Salve este provedor antes de editar os mapeamentos de campos."
 #: \src\Provider_Field.php:278
 msgid "Field mappings updated."
 msgstr "Mapeamentos de campos atualizados."
+
+#: src/Provider.php:965
+msgid "Discovery Metadata"
+msgstr "Metadados de descoberta"
+
+#: src/Provider.php:993
+msgid "The Single Logout mode is invalid."
+msgstr "O modo de logout único é inválido."
+
+#: src/Provider.php:1012
+msgid "Enter a valid Single Logout URL."
+msgstr "Informe uma URL de logout único válida."
+
+#: src/Provider.php:1028
+msgid ""
+"Unable to verify an HTTPS logout endpoint from the OIDC issuer discovery "
+"metadata."
+msgstr ""
+"Não foi possível verificar um endpoint de logout HTTPS nos metadados de "
+"descoberta do emissor OIDC."
+
+#: templates/provider/show_form.html.twig:59
+msgid "Log out of the identity provider when the user logs out of GLPI."
+msgstr "Encerra a sessão no provedor de identidade quando o usuário sai do GLPI."
+
+#: templates/provider/show_form.html.twig:180
+#: templates/provider/show_form.html.twig:201
+msgid "Use SLO"
+msgstr "Usar logout único (SLO)"
+
+#: src/Provider.php:603 templates/provider/show_form.html.twig:187
+msgid "Single Logout URL"
+msgstr "URL de logout único"
+
+#: templates/provider/show_form.html.twig:58
+msgid ""
+"URL used by the Identity Provider to receive logout requests (Single Logout,"
+" SLO). If provided, users logging out of GLPI will also be logged out from "
+"the Identity Provider."
+msgstr ""
+"URL que o provedor de identidade usa para receber solicitações de logout "
+"(logout único, SLO). Ao informar essa URL, os usuários também saem do "
+"provedor de identidade ao sair do GLPI."
+
+#: templates/provider/show_form.html.twig:193
+msgid "OIDC issuer URL"
+msgstr "URL do emissor OIDC"
+
+#: templates/provider/show_form.html.twig:197
+#, php-format
+msgid ""
+"Enter the issuer URL for the OIDC provider. GLPI reads %s from its "
+"discovery document."
+msgstr ""
+"Informe a URL do emissor do provedor OIDC. O GLPI lê %s no documento de "
+"descoberta."
+
+#: templates/provider/show_form.html.twig:332
+msgid "Post-logout redirect URL"
+msgstr "URL de redirecionamento após o logout"
+
+#: templates/provider/show_form.html.twig:342
+#, php-format
+msgid ""
+"Register this URL with the identity provider when %1$s is set to %2$s."
+msgstr ""
+"Cadastre esta URL no provedor de identidade quando %1$s estiver definido "
+"como %2$s."

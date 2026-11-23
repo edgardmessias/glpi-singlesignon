@@ -515,3 +515,62 @@ msgstr ""
 #: \src\Provider_Field.php:278
 msgid "Field mappings updated."
 msgstr ""
+
+#: src/Provider.php:965
+msgid "Discovery Metadata"
+msgstr ""
+
+#: src/Provider.php:993
+msgid "The Single Logout mode is invalid."
+msgstr ""
+
+#: src/Provider.php:1012
+msgid "Enter a valid Single Logout URL."
+msgstr ""
+
+#: src/Provider.php:1028
+msgid ""
+"Unable to verify an HTTPS logout endpoint from the OIDC issuer discovery "
+"metadata."
+msgstr ""
+
+#: templates/provider/show_form.html.twig:59
+msgid "Log out of the identity provider when the user logs out of GLPI."
+msgstr ""
+
+#: templates/provider/show_form.html.twig:180
+#: templates/provider/show_form.html.twig:201
+msgid "Use SLO"
+msgstr ""
+
+#: src/Provider.php:603 templates/provider/show_form.html.twig:187
+msgid "Single Logout URL"
+msgstr ""
+
+#: templates/provider/show_form.html.twig:58
+msgid ""
+"URL used by the Identity Provider to receive logout requests (Single Logout,"
+" SLO). If provided, users logging out of GLPI will also be logged out from "
+"the Identity Provider."
+msgstr ""
+
+#: templates/provider/show_form.html.twig:193
+msgid "OIDC issuer URL"
+msgstr ""
+
+#: templates/provider/show_form.html.twig:197
+#, php-format
+msgid ""
+"Enter the issuer URL for the OIDC provider. GLPI reads %s from its "
+"discovery document."
+msgstr ""
+
+#: templates/provider/show_form.html.twig:332
+msgid "Post-logout redirect URL"
+msgstr ""
+
+#: templates/provider/show_form.html.twig:342
+#, php-format
+msgid ""
+"Register this URL with the identity provider when %1$s is set to %2$s."
+msgstr ""

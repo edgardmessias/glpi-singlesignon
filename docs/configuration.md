@@ -58,11 +58,11 @@ For a **Generic** provider, choose one of these modes:
 
 - **No** (default) ends the GLPI session locally. GLPI adds `noAUTO=1` to the login redirect after an SSO login or when an active provider has **Is Default** enabled.
 - **Yes** requires a **Single Logout URL**. Include any parameters your identity provider requires in that URL. If `post_logout_redirect_uri` points to this GLPI installation, GLPI adds `noAUTO=1` to the return URL.
-- **Discovery Metadata** requires the provider's HTTPS **OIDC issuer URL**. On save, GLPI retrieves the issuer's discovery document and reads the advertised **end_session_endpoint**, the URL that handles OIDC logout. When the current session has a matching ID token, GLPI sends it as **id_token_hint**. GLPI shows the **post-logout redirect URI** to register with your identity provider.
+- **Discovery Metadata** requires the provider's HTTPS **OIDC issuer URL**. On save, GLPI retrieves the issuer's discovery document and reads the advertised **end_session_endpoint**, the URL that handles OIDC logout. When the current session has a matching ID token, GLPI sends it as **id_token_hint**. Copy the **Post-logout redirect URI** from the provider form’s **Test** section and register it with your identity provider.
 
 `noAUTO=1` skips automatic SSO on the GLPI login page after logout, preventing a default provider from immediately signing the user back in. If your identity provider requires an exact match for post-logout redirection, register the full GLPI return URL including `noAUTO=1`.
 
-See the [Generic provider setup](identity-providers.md#generic-keycloak-okta-auth0-and-others) for a Keycloak example.
+See the [Generic provider setup](identity-providers.md#generic-keycloak-okta-auth0-and-others) for a Keycloak example or the [FAQ](faq.md#the-identity-provider-reports-an-invalid-redirect-uri-after-logout) if the provider rejects the URI.
 
 ### Resource Owner Authorization
 

@@ -35,6 +35,19 @@ Often the **URL of the application** matches only one environment. Each environm
 
 ---
 
+## Single Logout (SLO)
+
+### The identity provider reports an invalid redirect URI after logout
+
+The identity provider must allow the return URI sent as `post_logout_redirect_uri`. Keycloak returns **HTTP 400** for an invalid URI before it ends the Keycloak session. GLPI has already ended its local session. [Keycloak logout handler](https://github.com/keycloak/keycloak/blob/26.8.1/services/src/main/java/org/keycloak/protocol/oidc/endpoints/LogoutEndpoint.java#L211-L229)
+
+- In **Discovery Metadata** mode, copy the post-logout URI shown in the provider form’s **Test** section.
+- In **Yes** mode, the plugin automatically adds `noAUTO=1` to `post_logout_redirect_uri` when it points to this GLPI installation. Register the resulting URI, including `noAUTO=1`, with your identity provider.
+
+In Keycloak, add the full URI to the client’s **Valid Post Logout Redirect URIs**. Include the scheme, host, path, and query string. If GLPI displays the wrong public address, check [URL of the application](#the-callback-url-shows-the-wrong-host-or-protocol).
+
+---
+
 ## Installation
 
 ### Why does GLPI complain about the folder name?
