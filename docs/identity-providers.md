@@ -280,6 +280,7 @@ Vendor UIs differ, but you almost always set: **client ID**, **client secret**, 
 
 - After the first save, tune **[Field mappings](field-mappings.md)** to match your IdP’s JSON (claims may use other names than `email` or `sub`).
 - If your IdP publishes a **discovery** document (`.well-known/openid-configuration`), the JSON lists the exact **authorization_endpoint**, **token_endpoint**, and **userinfo_endpoint** URLs to paste into GLPI.
+- For Keycloak Single Logout, select **Discovery Metadata** and enter your realm issuer, for example **https://sso.example.com/realms/glpi**. GLPI fetches **https://sso.example.com/realms/glpi/.well-known/openid-configuration** and uses its **end_session_endpoint**. In the Keycloak client's **Valid post logout redirect URIs**, register the exact GLPI URL shown in the provider form. Sign in again with the **openid** scope so GLPI can use the new session's ID token as the logout hint.
 
 ---
 

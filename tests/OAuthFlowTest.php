@@ -242,6 +242,17 @@ class OAuthFlowTest extends PluginTestCase
         $this->assertFalse($provider->getAccessToken());
     }
 
+    public function testMalformedIdTokenDoesNotDiscardAccessToken(): void
+    {
+        $provider = $this->providerWithCode();
+        $provider->responses[] = [
+            'body' => (string) json_encode(['access_token' => 'token-1', 'id_token' => 'header.%invalid.signature']),
+        ];
+
+        $this->assertSame('token-1', $provider->getAccessToken());
+        $this->assertNull($provider->getIdTokenPayload());
+    }
+
     public function testAccessTokenMissingTokenReturnsFalse(): void
     {
         $provider = $this->providerWithCode();

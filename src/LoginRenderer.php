@@ -71,12 +71,12 @@ class LoginRenderer
         $env->addFunction(new TwigFunction('plugin_singlesignon_get_default_provider_url', fn($redirect = '') => self::getDefaultProviderUrl($redirect)));
 
         $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-        if ($requestPath !== null && str_contains((string) $requestPath, 'front/logout') && isset($_SESSION['glpi_singlesignon_provider'])) {
+        if ($requestPath !== null && str_ends_with((string) $requestPath, '/front/logout.php') && isset($_SESSION['glpi_singlesignon_provider'])) {
             $providerId = (int) $_SESSION['glpi_singlesignon_provider'];
             $provider = new Provider();
-            if ($provider->getFromDB($providerId) && !empty($provider->fields['url_slo'])) {
+            if ($provider->getFromDB($providerId) && ($logoutUrl = $provider->getSloRedirectUrl()) !== null) {
                 Session::cleanOnLogout();
-                header('Location: ' . $provider->fields['url_slo']);
+                header('Location: ' . $logoutUrl);
                 exit; // @phpstan-ignore-line
             }
         }

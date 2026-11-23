@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace GlpiPlugin\Singlesignon\Tests;
 
 use GlpiPlugin\Singlesignon\Provider;
+use GlpiPlugin\Singlesignon\SingleLogout;
 
 class ProviderAzureEndpointTest extends PluginTestCase
 {
@@ -34,7 +35,7 @@ class ProviderAzureEndpointTest extends PluginTestCase
     {
         $tenant = '5250a841-0000-4000-8000-000000000000';
 
-        $provider = new Provider();
+        $provider = new FakeHttpProvider();
         $id = $provider->add([
             'type'             => 'azure',
             'name'             => 'Azure',
@@ -43,7 +44,7 @@ class ProviderAzureEndpointTest extends PluginTestCase
             'azure_endpoint'   => $tenant,
             'url_authorize'    => 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
             'url_access_token' => 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-            '_use_slo'         => 1,
+            'preset_slo_mode'  => Provider::SLO_ON,
         ]);
 
         $this->assertGreaterThan(0, $id);
@@ -55,9 +56,44 @@ class ProviderAzureEndpointTest extends PluginTestCase
             'https://login.microsoftonline.com/' . $tenant . '/oauth2/v2.0/token',
             $provider->fields['url_access_token'],
         );
-        $this->assertSame(
-            'https://login.microsoftonline.com/' . $tenant . '/oauth2/v2.0/logout',
-            $provider->fields['url_slo'],
-        );
+        $this->assertNull($provider->fields['url_slo']);
+        $this->assertSame(Provider::SLO_ON, $provider->getSloMode());
+        $issuer = 'https://login.microsoftonline.com/' . $tenant . '/v2.0';
+        $logoutUrl = 'https://login.microsoftonline.com/' . $tenant . '/oauth2/v2.0/logout';
+        $originalDefaults = Provider::$default;
+        $defaults = Provider::$default;
+        $this->assertIsArray($defaults);
+        $template = $defaults['azure']['slo_discovery_url'];
+        $defaults['azure']['slo_discovery_url'] = $template . '?test=' . uniqid();
+        Provider::$default = $defaults;
+
+        try {
+            $provider->responses[] = ['error' => 'discovery unavailable'];
+            $this->assertSame($logoutUrl, $provider->getSloRedirectUrl());
+            $this->assertStringStartsWith($issuer . '/.well-known/openid-configuration?', $provider->requestUrls[0]);
+
+            $defaults['azure']['slo_discovery_url'] = $template . '?test=' . uniqid();
+            Provider::$default = $defaults;
+            $provider->responses[] = ['body' => (string) json_encode([
+                'issuer' => $issuer,
+                'end_session_endpoint' => $logoutUrl . '?source=discovery',
+            ])];
+            $this->assertSame($logoutUrl . '?source=discovery', $provider->getSloRedirectUrl());
+            $this->assertSame($logoutUrl . '?source=discovery', $provider->getSloRedirectUrl());
+            $this->assertCount(2, $provider->requestUrls);
+        } finally {
+            Provider::$default = $originalDefaults;
+        }
+    }
+
+    public function testTenantIndependentIssuerMatchesTokenTenant(): void
+    {
+        $tenantId = '5250a841-0000-4000-8000-000000000000';
+        $issuerTemplate = 'https://login.microsoftonline.com/{tenantid}/v2.0';
+        $issuer = 'https://login.microsoftonline.com/' . $tenantId . '/v2.0';
+
+        $this->assertTrue(SingleLogout::issuerMatches($issuerTemplate, $issuer, $tenantId, true));
+        $this->assertFalse(SingleLogout::issuerMatches($issuerTemplate, $issuer, '', true));
+        $this->assertFalse(SingleLogout::issuerMatches($issuerTemplate, 'https://other.example/v2.0', $tenantId, true));
     }
 }

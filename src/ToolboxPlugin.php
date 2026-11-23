@@ -31,6 +31,7 @@ use Throwable;
 use IPAddress;
 use Plugin;
 use Document;
+use GLPIKey;
 use Html;
 
 use function Safe\base64_decode;
@@ -505,6 +506,11 @@ class ToolboxPlugin
             $curlOptions[CURLOPT_PROXY] = $CFG_GLPI['proxy_name'];
             $curlOptions[CURLOPT_PROXYPORT] = (int) ($CFG_GLPI['proxy_port'] ?? 0);
             $curlOptions[CURLOPT_PROXYTYPE] = CURLPROXY_HTTP;
+            if (!empty($CFG_GLPI['proxy_user'])) {
+                $curlOptions[CURLOPT_PROXYAUTH] = CURLAUTH_BASIC;
+                $curlOptions[CURLOPT_PROXYUSERNAME] = $CFG_GLPI['proxy_user'];
+                $curlOptions[CURLOPT_PROXYPASSWORD] = (new GLPIKey())->decrypt($CFG_GLPI['proxy_passwd'] ?? '') ?: '';
+            }
         }
 
         curl_setopt_array($handle, $curlOptions);

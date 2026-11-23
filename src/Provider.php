@@ -71,6 +71,11 @@ class Provider extends ProviderBase
     public const LOGIN_SUCCESS = 1;
     public const LOGIN_REGISTRATION_PREVIEW = 2;
 
+    public const SLO_OFF = 0;
+    public const SLO_ON = 1;
+    public const SLO_DISCOVERY = 2;
+    public const SLO_SESSION_KEY = 'glpi_singlesignon_logout_token';
+
     public const PENDING_REGISTRATION_SESSION_KEY = 'glpi_singlesignon_pending_registration';
 
     public const PHOTO_SYNC_DISABLED = 0;
@@ -99,6 +104,8 @@ class Provider extends ProviderBase
      * @var null|string
      */
     protected $_token = null;
+
+    private ?string $idToken = null;
 
     /**
      *
@@ -327,17 +334,10 @@ class Provider extends ProviderBase
             } elseif (!filter_var($input['url_resource_owner_details'], FILTER_VALIDATE_URL)) {
                 $error_detected[] = __s('The Resource Owner Details URL is invalid', 'singlesignon');
             }
+        }
 
-            if (isset($input['url_slo']) && !empty($input['url_slo']) && !filter_var($input['url_slo'], FILTER_VALIDATE_URL)) {
-                $error_detected[] = __s('The Single Logout URL is invalid', 'singlesignon');
-            }
-        } else {
-            $default_slo = static::getDefault($type, 'url_slo');
-            if (!empty($default_slo)) {
-                $input['url_slo'] = isset($input['_use_slo']) && $input['_use_slo'] ? $default_slo : '';
-            } else {
-                $input['url_slo'] = '';
-            }
+        if ($error_detected === []) {
+            $input = $this->prepareSloInput($input, $type, $error_detected);
         }
 
         if (count($error_detected)) {
@@ -394,9 +394,6 @@ class Provider extends ProviderBase
             }
             if (!empty($input['url_access_token'])) {
                 $input['url_access_token'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '${1}' . $endpoint . '${2}', $input['url_access_token']);
-            }
-            if (!empty($input['url_slo'])) {
-                $input['url_slo'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '${1}' . $endpoint . '${2}', $input['url_slo']);
             }
         }
 
@@ -947,6 +944,142 @@ class Provider extends ProviderBase
         return 'common';
     }
 
+    public static function presetSupportsSlo(string $type): bool
+    {
+        return !empty(static::getDefault($type, 'url_slo')) || !empty(static::getDefault($type, 'slo_discovery_url'));
+    }
+
+    /** @return array<int, string> */
+    public static function getSloModes(): array
+    {
+        return [
+            self::SLO_OFF => __('No'),
+            self::SLO_ON => __('Yes'),
+            self::SLO_DISCOVERY => __('Discovery Metadata', 'singlesignon'),
+        ];
+    }
+
+    public function getSloMode(): int
+    {
+        return (int) ($this->fields['slo_mode'] ?? (empty($this->fields['url_slo']) ? self::SLO_OFF : self::SLO_ON));
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @param list<string> $errors
+     * @return array<string, mixed>
+     */
+    private function prepareSloInput(array $input, string $type, array &$errors): array
+    {
+        $generic = $type === 'generic';
+        $sameType = $type === ($this->fields['type'] ?? null);
+        $selected = ($generic ? null : ($input['preset_slo_mode'] ?? null))
+            ?? $input['slo_mode'] ?? ($sameType ? $this->getSloMode() : self::SLO_OFF);
+        if (!in_array($selected, [0, 1, 2, '0', '1', '2'], true)
+            || (!$generic && (int) $selected === self::SLO_DISCOVERY)) {
+            $errors[] = __('The Single Logout mode is invalid.', 'singlesignon');
+            return $input;
+        }
+
+        $input['slo_mode'] = !$generic && !static::presetSupportsSlo($type) ? self::SLO_OFF : (int) $selected;
+        $manualUrl = $sameType && $generic ? ($this->fields['url_slo'] ?? null) : null;
+        $submittedUrl = $input['url_slo'] ?? $manualUrl;
+        $submittedIssuer = $input['slo_issuer'] ?? ($sameType ? ($this->fields['slo_issuer'] ?? null) : null);
+        $refreshDiscovery = isset($input['slo_mode']) || isset($input['slo_issuer']);
+        $input['url_slo'] = $manualUrl;
+        $input['slo_issuer'] = null;
+        $input['slo_endpoint'] = null;
+        if (!$generic || $input['slo_mode'] === self::SLO_OFF) {
+            return $input;
+        }
+
+        if ($input['slo_mode'] === self::SLO_ON) {
+            $url = is_string($submittedUrl) ? trim($submittedUrl) : '';
+            if (strlen($url) > 255 || !SingleLogout::isWebUrl($url)) {
+                $errors[] = __('Enter a valid Single Logout URL.', 'singlesignon');
+            } else {
+                $input['url_slo'] = $url;
+            }
+            return $input;
+        }
+
+        if (!$refreshDiscovery && $sameType && isset($this->fields['slo_issuer'], $this->fields['slo_endpoint'])) {
+            $input['slo_issuer'] = $this->fields['slo_issuer'];
+            $input['slo_endpoint'] = $this->fields['slo_endpoint'];
+            return $input;
+        }
+
+        $issuer = is_string($submittedIssuer) ? trim($submittedIssuer) : '';
+        $metadata = SingleLogout::discover($issuer, $this->requestHttp(...));
+        if ($metadata === null) {
+            $errors[] = __('Unable to verify an HTTPS logout endpoint from the OIDC issuer discovery metadata.', 'singlesignon');
+        } else {
+            $input['slo_issuer'] = $metadata['issuer'];
+            $input['slo_endpoint'] = $metadata['endpoint'];
+        }
+
+        return $input;
+    }
+
+    private function usesSloDiscovery(): bool
+    {
+        $type = $this->getClientType();
+        return ($type === 'generic' && $this->getSloMode() === self::SLO_DISCOVERY)
+            || ($type !== 'generic' && $this->getSloMode() === self::SLO_ON
+                && !empty(static::getDefault($type, 'slo_discovery_url')));
+    }
+
+    public function getSloRedirectUrl(): ?string
+    {
+        if ($this->getSloMode() === self::SLO_OFF) {
+            return null;
+        }
+
+        $type = $this->getClientType();
+        $generic = $type === 'generic';
+        $fallback = $generic ? ($this->fields['url_slo'] ?? '') : static::getDefault($type, 'url_slo', '');
+        $fallback = is_string($fallback) ? $fallback : '';
+        $tenant = $type === 'azure' ? rawurlencode($this->getAzureEndpoint()) : '';
+        if ($type === 'azure') {
+            $fallback = str_replace('{tenant}', $tenant, $fallback);
+        }
+        if (!$this->usesSloDiscovery()) {
+            return SingleLogout::isWebUrl($fallback) ? $fallback : null;
+        }
+
+        if ($generic) {
+            $issuer = (string) ($this->fields['slo_issuer'] ?? '');
+            $endpoint = (string) ($this->fields['slo_endpoint'] ?? '');
+        } else {
+            $url = str_replace('{tenant}', $tenant, (string) static::getDefault($type, 'slo_discovery_url'));
+            $metadata = SingleLogout::discoverAzure($url, $this->requestHttp(...));
+            $issuer = $metadata['issuer'] ?? '';
+            $endpoint = $metadata['endpoint'] ?? '';
+        }
+
+        if ($issuer === '' || !SingleLogout::isWebUrl($endpoint, true) || str_contains($endpoint, '#')) {
+            return !$generic && SingleLogout::isWebUrl($fallback) ? $fallback : null;
+        }
+
+        $token = $_SESSION[self::SLO_SESSION_KEY] ?? null;
+        $parameters = ['id_token_hint' => null];
+        if (is_array($token)
+            && is_string($token['issuer'] ?? null)
+            && is_string($token['tenant_id'] ?? null)
+            && is_string($token['value'] ?? null)
+            && ($token['provider_id'] ?? null) === (int) $this->fields['id']
+            && ($token['client_id'] ?? null) === (string) $this->getClientId()
+            && SingleLogout::issuerMatches($issuer, $token['issuer'], $token['tenant_id'], $type === 'azure')) {
+            $parameters['id_token_hint'] = $token['value'];
+        }
+        if ($generic) {
+            $parameters['client_id'] = (string) $this->getClientId();
+            $parameters['post_logout_redirect_uri'] = SingleLogout::getReturnUrl();
+        }
+
+        return SingleLogout::withParameters($endpoint, $parameters);
+    }
+
     public function getAuthorizeUrl()
     {
         $type = $this->getClientType();
@@ -1154,11 +1287,19 @@ class Provider extends ProviderBase
             }
             $this->_token = $data['access_token'];
 
-            if (isset($data['id_token'])) {
+            if (is_string($data['id_token'] ?? null) && $data['id_token'] !== '') {
                 $parts = explode('.', $data['id_token']);
                 if (count($parts) >= 2) {
-                    $payloadStr = base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1]));
-                    $this->_id_token_payload = json_decode($payloadStr, true) ?: null;
+                    try {
+                        $payloadStr = base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1]), true);
+                        $payload = json_decode($payloadStr, true);
+                        $this->_id_token_payload = is_array($payload) ? $payload : null;
+                        if (count($parts) === 3 && $this->_id_token_payload !== null) {
+                            $this->idToken = $data['id_token'];
+                        }
+                    } catch (Exception) {
+                        // Optional ID token claims are unavailable. The OAuth access token is still usable.
+                    }
                 }
             }
         } catch (Exception $ex) {
@@ -1175,6 +1316,24 @@ class Provider extends ProviderBase
     public function getIdTokenPayload()
     {
         return $this->_id_token_payload;
+    }
+
+    /** @return array{provider_id: int, client_id: string, issuer: string, tenant_id: string, value: string}|null */
+    private function getSloSessionToken(): ?array
+    {
+        $issuer = $this->_id_token_payload['iss'] ?? null;
+        if ($this->idToken === null || !is_string($issuer) || $issuer === '' || !$this->usesSloDiscovery()) {
+            return null;
+        }
+
+        $tenantId = $this->_id_token_payload['tid'] ?? '';
+        return [
+            'provider_id' => (int) $this->fields['id'],
+            'client_id'   => (string) $this->getClientId(),
+            'issuer'      => $issuer,
+            'tenant_id'   => is_string($tenantId) ? $tenantId : '',
+            'value'       => $this->idToken,
+        ];
     }
 
     /**
@@ -2114,13 +2273,14 @@ class Provider extends ProviderBase
         $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
 
         $_SESSION[self::PENDING_REGISTRATION_SESSION_KEY] = [
-            'provider_id' => (int) $this->fields['id'],
-            'expires'     => time() + 900,
-            'firstname'   => $names['firstname'],
-            'realname'    => $names['realname'],
-            'login'       => $resolved['login'] !== false ? (string) $resolved['login'] : '',
-            'email'       => $resolved['email'] ?? '',
-            'remote_id'   => $remote_id !== null ? (string) $remote_id : '',
+            'provider_id'  => (int) $this->fields['id'],
+            'expires'      => time() + 900,
+            'logout_token' => $this->getSloSessionToken(),
+            'firstname'    => $names['firstname'],
+            'realname'     => $names['realname'],
+            'login'        => $resolved['login'] !== false ? (string) $resolved['login'] : '',
+            'email'        => $resolved['email'] ?? '',
+            'remote_id'    => $remote_id !== null ? (string) $remote_id : '',
         ];
     }
 
@@ -2165,9 +2325,10 @@ class Provider extends ProviderBase
      *
      * @param User $user User row (must include `name`, `id`, and `password` fields).
      *
+     * @param array<string, mixed>|null $logoutToken Server-side token data from registration preview.
      * @return bool True if {@see Auth::login} succeeded.
      */
-    public function performGlpiLogin(User $user): bool
+    public function performGlpiLogin(User $user, ?array $logoutToken = null): bool
     {
         /** @var DBmysql $DB */
         global $CFG_GLPI, $DB;
@@ -2257,6 +2418,12 @@ class Provider extends ProviderBase
         }
 
         $_SESSION['glpi_singlesignon_provider'] = $this->fields['id'];
+        $logoutToken ??= $this->getSloSessionToken();
+        if ($logoutToken !== null && $this->usesSloDiscovery()) {
+            $_SESSION[self::SLO_SESSION_KEY] = $logoutToken;
+        } else {
+            unset($_SESSION[self::SLO_SESSION_KEY]);
+        }
 
         try {
             $this->syncOAuthPhoto($user);

@@ -35,6 +35,9 @@ class FakeHttpProvider extends Provider
      */
     public array $responses = [];
 
+    /** @var list<string> */
+    public array $requestUrls = [];
+
     public static function getTable($classname = null)
     {
         return Provider::getTable();
@@ -45,6 +48,7 @@ class FakeHttpProvider extends Provider
      */
     protected function requestHttp(string $url, array $options, ?string &$msgerr = null): string
     {
+        $this->requestUrls[] = $url;
         $next = array_shift($this->responses);
         if (!is_array($next)) {
             $msgerr = 'no scripted response for ' . $url;

@@ -50,12 +50,17 @@ In simple terms:
 
 Preset types hide these in the form but still use the built-in values unless you switch to **Generic**.
 
-### Use SLO / Single Logout URL
+### Use SLO
 
-**Single Logout (SLO)** ensures that when a user logs out of GLPI, they are also signed out of their centralized Identity Provider. Depending on your chosen **SSO Type**, one of two configuration options will appear:
+Single Logout (SLO) sends the user to the identity provider after ending their GLPI session. Azure and Google have an **On/Off** switch. Azure uses the configured tenant's OIDC discovery metadata and falls back to its built-in tenant logout URL if discovery is unavailable. Google uses its built-in logout URL.
 
-- **Use SLO (for Preset Providers):** If your selected preset (e.g., Azure) natively supports Single Logout, a **Yes/No** dropdown is displayed. Setting this to **Yes** automatically applies the official logout endpoint for that Identity Provider, ensuring accurate routing without manual configuration.
-- **Single Logout URL (for Generic Providers):** If you are using a **Generic** provider, a text field is displayed. You can manually enter the URL used by your Identity Provider to receive logout requests. You can pass necessary parameters directly in the URL if required by the IdP.
+For a **Generic** provider, choose one of these modes:
+
+- **No** (default) ends the GLPI session locally.
+- **Yes** requires a **Single Logout URL**. Include any parameters your identity provider requires in that URL. GLPI redirects to it as entered.
+- **Discovery Metadata** requires the provider's HTTPS **OIDC issuer URL**. On save, GLPI retrieves the issuer's discovery document and reads the advertised **end_session_endpoint**, the URL that handles OIDC logout. When the current session has a matching ID token, GLPI sends it as **id_token_hint**. Register the exact **post-logout redirect URI** shown in the form with your identity provider. Its **noAUTO=1** parameter prevents GLPI from immediately starting a new automatic SSO login.
+
+See the [Generic provider setup](identity-providers.md#generic-keycloak-okta-auth0-and-others) for a Keycloak example.
 
 ### Resource Owner Authorization
 
