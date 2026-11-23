@@ -30,12 +30,154 @@ use Glpi\Exception\Http\BadRequestHttpException;
 use Glpi\Exception\RedirectException;
 use GlpiPlugin\Singlesignon\Provider;
 use GlpiPlugin\Singlesignon\Provider_Field;
+use GlpiPlugin\Singlesignon\Provider_Profile;
 use GlpiPlugin\Singlesignon\Provider_User;
 use Location;
 use User;
 
 class OAuthFlowTest extends PluginTestCase
 {
+    public function testRegistrationRollsBackUserWhenRemoteIdentityIsAlreadyLinked(): void
+    {
+        $provider = $this->createProvider();
+        $existing = new User();
+        $this->assertTrue($existing->getFromDBbyName('glpi'));
+        $link = new Provider_User();
+        $linkId = $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $existing->getID(),
+            'remote_id' => 'occupied-registration-id',
+        ]);
+        $this->assertGreaterThan(0, (int) $linkId);
+        $login = 'sso_rollback_' . uniqid();
+
+        $this->assertFalse($provider->createUserFromOAuthResource([
+            'id' => 'occupied-registration-id',
+            'username' => $login,
+        ]));
+        $user = new User();
+        $this->assertFalse($user->getFromDBbyName($login));
+        $this->assertTrue($link->getFromDB($linkId));
+        $this->assertSame((int) $existing->getID(), (int) $link->fields['users_id']);
+    }
+
+    public function testLinkUserCreatesNewLink(): void
+    {
+        $provider = $this->providerWithCode();
+        $user = new User();
+        $this->assertTrue($user->getFromDBbyName('glpi'));
+        $provider->responses = [
+            ['body' => (string) json_encode(['access_token' => 'token'])],
+            ['body' => (string) json_encode(['id' => 'new-id'])],
+        ];
+
+        $this->assertTrue($provider->linkUser($user->getID()));
+        $link = new Provider_User();
+        $this->assertTrue($link->getFromDBByCrit([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $user->getID(),
+        ]));
+        $this->assertSame('new-id', $link->fields['remote_id']);
+    }
+
+    public function testLinkUserUpdatesChangedRemoteIdAndIsIdempotent(): void
+    {
+        $provider = $this->providerWithCode();
+        $user = new User();
+        $this->assertTrue($user->getFromDBbyName('glpi'));
+        $link = new Provider_User();
+        $linkId = $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $user->getID(),
+            'remote_id' => 'old-id',
+        ]);
+        $this->assertGreaterThan(0, (int) $linkId);
+        $provider->responses = [
+            ['body' => (string) json_encode(['access_token' => 'token'])],
+            ['body' => (string) json_encode(['id' => 'new-id'])],
+        ];
+
+        $this->assertTrue($provider->linkUser($user->getID()));
+        $this->assertTrue($provider->linkUser($user->getID()));
+        $this->assertTrue($link->getFromDB($linkId));
+        $this->assertSame('new-id', $link->fields['remote_id']);
+    }
+
+    public function testLinkUserRejectsIdentityLinkedToAnotherUser(): void
+    {
+        $provider = $this->providerWithCode();
+        $user = new User();
+        $other = new User();
+        $this->assertTrue($user->getFromDBbyName('glpi'));
+        $this->assertTrue($other->getFromDBbyName('tech'));
+        $link = new Provider_User();
+        $firstId = $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $user->getID(),
+            'remote_id' => 'old-id',
+        ]);
+        $secondId = $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $other->getID(),
+            'remote_id' => 'occupied-id',
+        ]);
+        $this->assertGreaterThan(0, (int) $firstId);
+        $this->assertGreaterThan(0, (int) $secondId);
+        $provider->responses = [
+            ['body' => (string) json_encode(['access_token' => 'token'])],
+            ['body' => (string) json_encode(['id' => 'occupied-id'])],
+        ];
+
+        $this->assertFalse($provider->linkUser($user->getID()));
+        $this->assertStringContainsString('another user', $provider->getLastLoginError());
+        $this->assertTrue($link->getFromDB($firstId));
+        $this->assertSame('old-id', $link->fields['remote_id']);
+        $this->assertTrue($link->getFromDB($secondId));
+        $this->assertSame((int) $other->getID(), (int) $link->fields['users_id']);
+        $this->assertSame('occupied-id', $link->fields['remote_id']);
+    }
+
+    public function testProfileSyncPreservesMultipleMatchingAuthorizations(): void
+    {
+        global $DB;
+
+        $provider = $this->createProvider(['default_profiles_id' => 2, 'default_entities_id' => 0]);
+        $user = new User();
+        $userId = $user->add(['name' => 'sso_duplicate_' . uniqid()]);
+        $this->assertGreaterThan(0, (int) $userId);
+        $this->assertTrue($user->getFromDB($userId));
+
+        $link = new Provider_User();
+        $this->assertGreaterThan(0, (int) $link->add([
+            'plugin_singlesignon_providers_id' => $provider->getID(),
+            'users_id' => $userId,
+            'remote_id' => 'duplicate-profile-test',
+        ]));
+
+        $ids = [];
+        foreach ([[0, 0], [1, 1]] as [$dynamic, $recursive]) {
+            $this->assertTrue($DB->insert('glpi_profiles_users', [
+                'users_id' => $userId,
+                'profiles_id' => 2,
+                'entities_id' => 0,
+                'is_dynamic' => $dynamic,
+                'is_recursive' => $recursive,
+            ]));
+            $ids[] = (int) $DB->insertId();
+        }
+
+        $this->assertFalse($provider->syncUserProfileAuthorization($user, ['id' => 'duplicate-profile-test']));
+        $this->assertFalse(Provider_Profile::getForUser((int) $userId));
+        $rows = iterator_to_array($DB->request([
+            'FROM' => 'glpi_profiles_users',
+            'WHERE' => ['id' => $ids],
+            'ORDER' => ['id ASC'],
+        ]), false);
+        $this->assertCount(2, $rows);
+        $this->assertSame([0, 1], array_map('intval', array_column($rows, 'is_dynamic')));
+        $this->assertSame([0, 1], array_map('intval', array_column($rows, 'is_recursive')));
+    }
+
     public function testAuthorizationRedirectContainsOAuthParameters(): void
     {
         $provider = $this->createProvider();

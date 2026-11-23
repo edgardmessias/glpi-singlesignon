@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace GlpiPlugin\Singlesignon;
 
+use Glpi\Exception\TooManyResultsException;
 use RuleRight;
 use Throwable;
 use JsonPath\JsonObject;
@@ -1599,7 +1600,9 @@ class Provider extends ProviderBase
         // This handles existing GLPI users logging in via SSO for the first time.
         $link = new Provider_User();
         if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
-            $this->linkRemoteUserToProvider($userId, (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''));
+            if (!$this->linkRemoteUserToProvider($userId, (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''))) {
+                return false;
+            }
             // Reload $link after creation.
             if (!$link->getFromDBByCrit(['users_id' => $userId, 'plugin_singlesignon_providers_id' => $this->fields['id']])) {
                 $this->logFailure(__FUNCTION__, 'failed to create provider-user link for Profile_User assignment', $user);
@@ -1661,6 +1664,28 @@ class Provider extends ProviderBase
             : 0;
 
         $pu = new Profile_User();
+        $matchingProfile = false;
+        if ($mappedProfileId <= 0) {
+            try {
+                $matchingProfile = $pu->getFromDBByCrit([
+                    'users_id'    => $userId,
+                    'entities_id' => $entityForProfile,
+                    'profiles_id' => $profileId,
+                ]);
+            } catch (TooManyResultsException $exception) {
+                $this->logFailure(
+                    __FUNCTION__,
+                    sprintf(
+                        'skipped profile synchronization: multiple authorizations match users_id=%d profiles_id=%d entities_id=%d; review them in GLPI',
+                        $userId,
+                        $profileId,
+                        $entityForProfile,
+                    ),
+                    $user,
+                );
+                return false;
+            }
+        }
         // Update or Create static mapped GLPI profile.
         // The profile is created as is_dynamic=0 so Auth::login() does not delete it
         // when running the rules engine.
@@ -1677,11 +1702,7 @@ class Provider extends ProviderBase
                 ], ['id' => $mappedProfileId]);
             }
             // If the admin deleted it manually, we DO NOT recreate it.
-        } elseif ($pu->getFromDBByCrit([
-            'users_id'    => $userId,
-            'entities_id' => $entityForProfile,
-            'profiles_id' => $profileId,
-        ])) {
+        } elseif ($matchingProfile) {
             // A matching authorization already exists — make it static and track it.
             $DB->update('glpi_profiles_users', [
                 'is_recursive' => $isRecursive,
@@ -1845,6 +1866,7 @@ class Provider extends ProviderBase
      */
     public function createUserFromOAuthResource(array $resource_array, array $overrides = [])
     {
+        global $DB;
         if (!empty($overrides['__registration_from_preview'])) {
             $login = trim((string) ($overrides['name'] ?? ''));
             $email = isset($overrides['_email']) ? trim((string) $overrides['_email']) : null;
@@ -1973,14 +1995,28 @@ class Provider extends ProviderBase
             $userPost['users_id_supervisor'] = $supervisorId;
         }
 
+        $DB->beginTransaction();
         try {
             $user = new User();
             $newId = $user->add($userPost);
             if (!$newId) {
                 $this->logFailure(__FUNCTION__, sprintf('failed to create user from OAuth resource for login="%s"', $login), $user);
+                $DB->rollback();
                 return false;
             }
 
+            if (!$this->linkRemoteUserToProvider((int) $newId, (string) $remote_id)) {
+                $DB->rollback();
+                return false;
+            }
+            $DB->commit();
+        } catch (Throwable $ex) {
+            $DB->rollback();
+            $this->logFailure(__FUNCTION__, 'exception during user creation: ' . $ex->getMessage());
+            return false;
+        }
+
+        try {
             $this->syncUserProfileAuthorization($user, $resource_array);
 
             return $user;
@@ -1990,19 +2026,52 @@ class Provider extends ProviderBase
         }
     }
 
-    private function linkRemoteUserToProvider(int $users_id, string $remote_id): void
+    private function linkRemoteUserToProvider(int $users_id, string $remote_id): bool
     {
-        $link = new Provider_User();
-        // Unlink from another user
-        $link->deleteByCriteria([
-            'plugin_singlesignon_providers_id' => $this->fields['id'],
-            'remote_id'                         => $remote_id,
-        ]);
-        $link->add([
-            'plugin_singlesignon_providers_id' => $this->fields['id'],
-            'users_id'                         => $users_id,
-            'remote_id'                        => $remote_id,
-        ]);
+        if ($remote_id === '') {
+            $this->lastLoginError = 'SSO account linking failed: the remote user ID is missing';
+            return false;
+        }
+
+        try {
+            $providerId = (int) $this->fields['id'];
+            $remoteLink = new Provider_User();
+            if ($remoteLink->getFromDBByCrit([
+                'plugin_singlesignon_providers_id' => $providerId,
+                'remote_id' => $remote_id,
+            ]) && (int) $remoteLink->fields['users_id'] !== $users_id) {
+                $this->lastLoginError = 'SSO account linking failed: the remote identity is already linked to another user';
+                $this->logFailure(__FUNCTION__, $this->lastLoginError);
+                return false;
+            }
+
+            $link = new Provider_User();
+            if ($link->getFromDBByCrit([
+                'plugin_singlesignon_providers_id' => $providerId,
+                'users_id' => $users_id,
+            ])) {
+                if ((string) $link->fields['remote_id'] === $remote_id) {
+                    return true;
+                }
+                $success = $link->update(['id' => $link->getID(), 'remote_id' => $remote_id]);
+            } else {
+                $success = $link->add([
+                    'plugin_singlesignon_providers_id' => $providerId,
+                    'users_id' => $users_id,
+                    'remote_id' => $remote_id,
+                ]);
+            }
+
+            if ($success) {
+                return true;
+            }
+        } catch (Throwable $exception) {
+            $this->logFailure(__FUNCTION__, 'failed to save SSO account link: ' . $exception->getMessage());
+        }
+
+        $this->lastLoginError = 'SSO account linking failed: unable to save the account link';
+        $this->logFailure(__FUNCTION__, $this->lastLoginError);
+        return false;
     }
 
     /**
@@ -2288,6 +2357,9 @@ class Provider extends ProviderBase
 
         $user = $this->findUser($resource_array);
         if ($user) {
+            if (!$this->linkRemoteUserToProvider((int) $user->getID(), (string) ($this->resolveFieldValueFromMappings($resource_array, 'id') ?? ''))) {
+                return self::LOGIN_FAILURE;
+            }
             $this->syncUserFieldsFromResource($user, $resource_array);
             $this->syncUserProfileAuthorization($user, $resource_array);
             return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
@@ -2331,11 +2403,12 @@ class Provider extends ProviderBase
         return $this->performGlpiLogin($user) ? self::LOGIN_SUCCESS : self::LOGIN_FAILURE;
     }
 
-    public function linkUser($user_id)
+    public function linkUser($user_id): bool
     {
         $user = new User();
 
         if (!$user->getFromDB($user_id)) {
+            $this->lastLoginError = 'SSO account linking failed: the GLPI user was not found';
             $this->logFailure(__FUNCTION__, sprintf('GLPI user with id=%d not found', $user_id));
             return false;
         }
@@ -2343,6 +2416,7 @@ class Provider extends ProviderBase
         $resource_array = $this->getResourceOwner();
 
         if (!$resource_array) {
+            $this->lastLoginError = 'SSO account linking failed: could not retrieve the remote identity';
             $this->logFailure(__FUNCTION__, 'failed to retrieve resource owner from identity provider', $user);
             return false;
         }
@@ -2350,11 +2424,12 @@ class Provider extends ProviderBase
         $remote_id = $this->resolveFieldValueFromMappings($resource_array, 'id');
 
         if (!$remote_id) {
+            $this->lastLoginError = 'SSO account linking failed: the remote user ID is missing';
             $this->logFailure(__FUNCTION__, 'could not resolve remote user ID from the identity provider response', $user);
             return false;
         }
 
-        $this->linkRemoteUserToProvider((int) $user_id, (string) $remote_id);
+        return $this->linkRemoteUserToProvider((int) $user_id, (string) $remote_id);
     }
 
 
