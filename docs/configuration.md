@@ -56,9 +56,11 @@ Single Logout (SLO) sends the user to the identity provider after ending their G
 
 For a **Generic** provider, choose one of these modes:
 
-- **No** (default) ends the GLPI session locally.
-- **Yes** requires a **Single Logout URL**. Include any parameters your identity provider requires in that URL. GLPI redirects to it as entered.
-- **Discovery Metadata** requires the provider's HTTPS **OIDC issuer URL**. On save, GLPI retrieves the issuer's discovery document and reads the advertised **end_session_endpoint**, the URL that handles OIDC logout. When the current session has a matching ID token, GLPI sends it as **id_token_hint**. Register the exact **post-logout redirect URI** shown in the form with your identity provider. Its **noAUTO=1** parameter prevents GLPI from immediately starting a new automatic SSO login.
+- **No** (default) ends the GLPI session locally. GLPI adds `noAUTO=1` to the login redirect after an SSO login or when an active provider has **Is Default** enabled.
+- **Yes** requires a **Single Logout URL**. Include any parameters your identity provider requires in that URL. If `post_logout_redirect_uri` points to this GLPI installation, GLPI adds `noAUTO=1` to the return URL.
+- **Discovery Metadata** requires the provider's HTTPS **OIDC issuer URL**. On save, GLPI retrieves the issuer's discovery document and reads the advertised **end_session_endpoint**, the URL that handles OIDC logout. When the current session has a matching ID token, GLPI sends it as **id_token_hint**. GLPI shows the **post-logout redirect URI** to register with your identity provider.
+
+`noAUTO=1` skips automatic SSO on the GLPI login page after logout, preventing a default provider from immediately signing the user back in. If your identity provider requires an exact match for post-logout redirection, register the full GLPI return URL including `noAUTO=1`.
 
 See the [Generic provider setup](identity-providers.md#generic-keycloak-okta-auth0-and-others) for a Keycloak example.
 

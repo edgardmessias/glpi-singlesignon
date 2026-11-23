@@ -36,6 +36,9 @@ class SingleLogoutTest extends PluginTestCase
     private const ISSUER = 'https://idp.example/realms/glpi';
     private const ENDPOINT = self::ISSUER . '/logout?tenant=glpi';
 
+    /**
+     * Verify that manual SLO requires a URL and keeps its configured query parameters.
+     */
     public function testManualLogoutRequiresUrlAndPreservesQuery(): void
     {
         $provider = $this->createProvider();
@@ -57,6 +60,31 @@ class SingleLogoutTest extends PluginTestCase
         $this->assertSame([], $provider->requestUrls);
     }
 
+    /**
+     * Verify that manual SLO adds noAUTO to a GLPI return URL and preserves external destinations.
+     */
+    public function testManualLogoutAddsNoAutoToLocalReturnUrl(): void
+    {
+        [$loginUrl] = explode('?', SingleLogout::getReturnUrl(), 2);
+        $returnUrl = $loginUrl . '?redirect=%2Ffront%2Fcentral.php';
+        $logoutUrl = 'https://idp.example/logout?client_id=glpi&post_logout_redirect_uri=';
+        $provider = $this->createProvider([
+            'slo_mode' => Provider::SLO_ON,
+            'url_slo' => $logoutUrl . rawurlencode($returnUrl . '#login') . '#logout',
+        ]);
+
+        $expected = $logoutUrl . rawurlencode($returnUrl . '&noAUTO=1#login') . '#logout';
+        $this->assertSame($expected, $provider->getSloRedirectUrl());
+        $this->assertSame($expected, SingleLogout::withNoAutoOnManualReturn($expected));
+
+        $otherReturn = $logoutUrl . rawurlencode('https://unrelated.example/index.php');
+        $this->assertSame($otherReturn, SingleLogout::withNoAutoOnManualReturn($otherReturn));
+        $this->assertSame('https://idp.example/logout', SingleLogout::withNoAutoOnManualReturn('https://idp.example/logout'));
+    }
+
+    /**
+     * Verify that invalid discovery data leaves the previously verified logout endpoint usable.
+     */
     public function testDiscoveryRejectsMismatchedIssuerAndPreservesSavedEndpoint(): void
     {
         $provider = $this->createProvider();
@@ -76,9 +104,13 @@ class SingleLogoutTest extends PluginTestCase
         $this->assertSame(self::ENDPOINT, $provider->fields['slo_endpoint']);
     }
 
+    /**
+     * Verify that discovery preserves the issuer identifier while building the well-known URL.
+     */
     public function testDiscoveryRetainsAnIssuerTrailingSlash(): void
     {
         $issuer = self::ISSUER . '/';
+        // The mock checks the request URL and returns the original issuer identifier.
         $metadata = SingleLogout::discover($issuer, function (string $url) use ($issuer): string {
             $this->assertSame(self::ISSUER . '/.well-known/openid-configuration', $url);
             return (string) json_encode(['issuer' => $issuer, 'end_session_endpoint' => self::ENDPOINT]);
@@ -87,6 +119,9 @@ class SingleLogoutTest extends PluginTestCase
         $this->assertSame(['issuer' => $issuer, 'endpoint' => self::ENDPOINT], $metadata);
     }
 
+    /**
+     * Verify that confirmed registration carries its ID token into logout and rejects tokens from another provider or issuer.
+     */
     public function testRegistrationPreviewCarriesOnlyItsOwnIdTokenIntoLogout(): void
     {
         $provider = $this->createProvider();
@@ -127,6 +162,9 @@ class SingleLogoutTest extends PluginTestCase
         $this->assertSame($unhintedUrl, $confirmedProvider->getSloRedirectUrl());
     }
 
+    /**
+     * Verify that Google logout follows the current preset without persisting the endpoint.
+     */
     public function testGoogleUsesCurrentPresetWithoutResaving(): void
     {
         $provider = $this->createProvider(['type' => 'google', 'slo_mode' => Provider::SLO_ON]);
@@ -144,6 +182,9 @@ class SingleLogoutTest extends PluginTestCase
         }
     }
 
+    /**
+     * Save a Generic provider with scripted discovery metadata and verify the stored issuer and endpoint.
+     */
     private function enableDiscovery(FakeHttpProvider $provider): void
     {
         $provider->responses[] = ['body' => (string) json_encode([

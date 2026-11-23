@@ -40,6 +40,10 @@ final class SingleLogout
     private const AZURE_ISSUER = 'https://login.microsoftonline.com/{tenantid}/v2.0';
     private const TENANT_ID_PATTERN = '[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}';
 
+    /**
+     * Validate an absolute web URL with a host and no embedded credentials.
+     * Use HTTPS-only validation for OIDC metadata and advertised logout endpoints.
+     */
     public static function isWebUrl(string $url, bool $httpsOnly = false): bool
     {
         if (filter_var($url, FILTER_VALIDATE_URL) === false) {
@@ -55,6 +59,9 @@ final class SingleLogout
     }
 
     /**
+     * Read logout metadata from the configured issuer's discovery document.
+     * The returned issuer must match exactly, including any trailing slash.
+     *
      * @param callable(string, array<int, mixed>): string $request
      * @return array{issuer: string, endpoint: string}|null
      */
@@ -69,6 +76,9 @@ final class SingleLogout
     }
 
     /**
+     * Cache Azure logout metadata by tenant discovery URL and plugin version.
+     * A null result lets the caller use the preset's static logout URL.
+     *
      * @param callable(string, array<int, mixed>): string $request
      * @return array{issuer: string, endpoint: string}|null
      */
@@ -78,6 +88,7 @@ final class SingleLogout
             $cache = new FilesystemAdapter('singlesignon-slo', 3600, Kernel::getCacheRootDir());
             $key = hash('sha256', PLUGIN_SINGLESIGNON_VERSION . '|' . $url);
 
+            // Fetch on a cache miss and give failed discovery a shorter lifetime.
             return $cache->get($key, static function (ItemInterface $item) use ($url, $request): ?array {
                 $metadata = self::fetch($url, $request);
                 if ($metadata !== null && (
@@ -96,6 +107,9 @@ final class SingleLogout
     }
 
     /**
+     * Fetch discovery metadata through the caller's proxy-aware HTTP transport.
+     * Require verified HTTPS, bound the request time, and validate the advertised logout URL.
+     *
      * @param callable(string, array<int, mixed>): string $request
      * @return array{issuer: string, endpoint: string}|null
      */
@@ -126,6 +140,10 @@ final class SingleLogout
         return ['issuer' => $issuer, 'endpoint' => $endpoint];
     }
 
+    /**
+     * Match the token issuer to the verified discovery issuer.
+     * For Azure tenant-independent metadata, expand the template using the token's tenant ID.
+     */
     public static function issuerMatches(string $issuer, string $tokenIssuer, string $tenantId, bool $azure): bool
     {
         if ($azure && $issuer === self::AZURE_ISSUER) {
@@ -138,7 +156,73 @@ final class SingleLogout
         return $issuer === $tokenIssuer;
     }
 
+    /**
+     * Build the GLPI login URL that skips automatic SSO after logout.
+     */
     public static function getReturnUrl(): string
+    {
+        return self::withParameters(self::getGlpiBaseUrl() . '/index.php', ['noAUTO' => '1']);
+    }
+
+    /**
+     * Add noAUTO=1 to a manual logout URL's post_logout_redirect_uri when it points to this GLPI installation.
+     */
+    public static function withNoAutoOnManualReturn(string $url): string
+    {
+        foreach (explode('&', (string) parse_url($url, PHP_URL_QUERY)) as $parameter) {
+            [$name, $value] = array_pad(explode('=', $parameter, 2), 2, '');
+            if (urldecode($name) !== 'post_logout_redirect_uri') {
+                continue;
+            }
+
+            $returnUrl = urldecode($value);
+            if (!self::isGlpiReturnUrl($returnUrl)) {
+                return $url;
+            }
+
+            parse_str((string) parse_url($returnUrl, PHP_URL_QUERY), $query);
+            if (($query['noAUTO'] ?? null) === '1') {
+                return $url;
+            }
+
+            return self::withParameters($url, [
+                'post_logout_redirect_uri' => self::withParameters($returnUrl, ['noAUTO' => '1']),
+            ]);
+        }
+
+        return $url;
+    }
+
+    /**
+     * Check that the return URL shares GLPI's origin and falls within its installation path.
+     */
+    private static function isGlpiReturnUrl(string $url): bool
+    {
+        if (!self::isWebUrl($url)) {
+            return false;
+        }
+
+        $target = parse_url($url);
+        $local = parse_url(self::getGlpiBaseUrl());
+        if (!is_array($target) || !is_array($local)) {
+            return false;
+        }
+
+        $scheme = strtolower($local['scheme'] ?? '');
+        $port = $scheme === 'https' ? 443 : 80;
+        $root = rtrim($local['path'] ?? '', '/');
+        $path = $target['path'] ?? '/';
+
+        return strtolower($target['scheme'] ?? '') === $scheme
+            && strcasecmp($target['host'] ?? '', $local['host'] ?? '') === 0
+            && ($target['port'] ?? $port) === ($local['port'] ?? $port)
+            && ($path === $root || str_starts_with($path, $root . '/'));
+    }
+
+    /**
+     * Resolve the public GLPI base URL, including the installation subdirectory.
+     */
+    private static function getGlpiBaseUrl(): string
     {
         global $CFG_GLPI;
 
@@ -147,12 +231,17 @@ final class SingleLogout
             $base .= rtrim($CFG_GLPI['root_doc'] ?? '', '/');
         }
 
-        return $base . '/index.php?noAUTO=1';
+        return $base;
     }
 
-    /** @param array<string, string|null> $parameters */
+    /**
+     * Set or remove named query parameters while preserving unrelated parameters and the URL fragment.
+     *
+     * @param array<string, string|null> $parameters
+     */
     public static function withParameters(string $url, array $parameters): string
     {
+        [$url, $fragment] = array_pad(explode('#', $url, 2), 2, null);
         [$base, $query] = array_pad(explode('?', $url, 2), 2, '');
         $parts = [];
         foreach (explode('&', $query) as $part) {
@@ -167,6 +256,7 @@ final class SingleLogout
             }
         }
 
-        return $base . ($parts === [] ? '' : '?' . implode('&', $parts));
+        return $base . ($parts === [] ? '' : '?' . implode('&', $parts))
+            . ($fragment === null ? '' : '#' . $fragment);
     }
 }

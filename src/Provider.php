@@ -944,12 +944,19 @@ class Provider extends ProviderBase
         return 'common';
     }
 
+    /**
+     * Check whether a provider preset supplies a logout URL or an OIDC discovery URL.
+     */
     public static function presetSupportsSlo(string $type): bool
     {
         return !empty(static::getDefault($type, 'url_slo')) || !empty(static::getDefault($type, 'slo_discovery_url'));
     }
 
-    /** @return array<int, string> */
+    /**
+     * Return the translated logout modes for the Generic provider form.
+     *
+     * @return array<int, string>
+     */
     public static function getSloModes(): array
     {
         return [
@@ -959,12 +966,18 @@ class Provider extends ProviderBase
         ];
     }
 
+    /**
+     * Read the saved logout mode, inferring On or Off from the logout URL for legacy rows.
+     */
     public function getSloMode(): int
     {
         return (int) ($this->fields['slo_mode'] ?? (empty($this->fields['url_slo']) ? self::SLO_OFF : self::SLO_ON));
     }
 
     /**
+     * Prepare and validate the SLO fields for saving.
+     * Verify Generic discovery settings and resolve preset endpoints from providers.json at runtime.
+     *
      * @param array<string, mixed> $input
      * @param list<string> $errors
      * @return array<string, mixed>
@@ -1021,6 +1034,9 @@ class Provider extends ProviderBase
         return $input;
     }
 
+    /**
+     * Check whether the selected mode uses discovery to resolve the logout endpoint.
+     */
     private function usesSloDiscovery(): bool
     {
         $type = $this->getClientType();
@@ -1029,6 +1045,10 @@ class Provider extends ProviderBase
                 && !empty(static::getDefault($type, 'slo_discovery_url')));
     }
 
+    /**
+     * Build the identity-provider logout redirect while the GLPI session still holds its token.
+     * Return null when GLPI should handle logout locally.
+     */
     public function getSloRedirectUrl(): ?string
     {
         if ($this->getSloMode() === self::SLO_OFF) {
@@ -1044,7 +1064,10 @@ class Provider extends ProviderBase
             $fallback = str_replace('{tenant}', $tenant, $fallback);
         }
         if (!$this->usesSloDiscovery()) {
-            return SingleLogout::isWebUrl($fallback) ? $fallback : null;
+            if (!SingleLogout::isWebUrl($fallback)) {
+                return null;
+            }
+            return $generic ? SingleLogout::withNoAutoOnManualReturn($fallback) : $fallback;
         }
 
         if ($generic) {
@@ -1318,7 +1341,12 @@ class Provider extends ProviderBase
         return $this->_id_token_payload;
     }
 
-    /** @return array{provider_id: int, client_id: string, issuer: string, tenant_id: string, value: string}|null */
+    /**
+     * Build the server-side logout token record for a login that uses OIDC discovery.
+     * Keep the provider, client, and issuer with the token so logout can verify where to send it.
+     *
+     * @return array{provider_id: int, client_id: string, issuer: string, tenant_id: string, value: string}|null
+     */
     private function getSloSessionToken(): ?array
     {
         $issuer = $this->_id_token_payload['iss'] ?? null;

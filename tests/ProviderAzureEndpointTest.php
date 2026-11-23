@@ -86,6 +86,9 @@ class ProviderAzureEndpointTest extends PluginTestCase
         }
     }
 
+    /**
+     * Verify that Azure's tenant-independent issuer matches the tenant from the ID token.
+     */
     public function testTenantIndependentIssuerMatchesTokenTenant(): void
     {
         $tenantId = '5250a841-0000-4000-8000-000000000000';

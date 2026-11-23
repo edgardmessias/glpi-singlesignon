@@ -278,18 +278,6 @@ function plugin_singlesignon_install()
         ],
     );
 
-    $migration->addField($providersTable, 'slo_mode', 'TINYINT UNSIGNED', ['nodefault' => true, 'null' => true]);
-    $migration->addField($providersTable, 'slo_issuer', 'text', ['nodefault' => true, 'null' => true]);
-    $migration->addField($providersTable, 'slo_endpoint', 'text', ['nodefault' => true, 'null' => true]);
-    $sloOff = Provider::SLO_OFF;
-    $sloOn = Provider::SLO_ON;
-    $migration->addPostQuery(
-        "UPDATE `$providersTable`
-         SET `slo_mode` = CASE WHEN COALESCE(`url_slo`, '') <> '' THEN $sloOn ELSE $sloOff END,
-             `url_slo` = CASE WHEN `type` = 'generic' THEN `url_slo` ELSE NULL END
-         WHERE `slo_mode` IS NULL",
-    );
-
     // Stores role-mapping configuration per provider:
     // provider + remote role/group key -> GLPI group target.
     if (!$DB->tableExists($providersRolesTable)) {
@@ -337,6 +325,21 @@ function plugin_singlesignon_install()
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         );
     }
+
+    /**
+     * Version 2.1.2
+     */
+    $migration->addField($providersTable, 'slo_mode', 'TINYINT UNSIGNED', ['nodefault' => true, 'null' => true]);
+    $migration->addField($providersTable, 'slo_issuer', 'text', ['nodefault' => true, 'null' => true]);
+    $migration->addField($providersTable, 'slo_endpoint', 'text', ['nodefault' => true, 'null' => true]);
+    $sloOff = Provider::SLO_OFF;
+    $sloOn = Provider::SLO_ON;
+    $migration->addPostQuery(
+        "UPDATE `$providersTable`
+         SET `slo_mode` = CASE WHEN COALESCE(`url_slo`, '') <> '' THEN $sloOn ELSE $sloOff END,
+             `url_slo` = CASE WHEN `type` = 'generic' THEN `url_slo` ELSE NULL END
+         WHERE `slo_mode` IS NULL",
+    );
 
     $migration->executeMigration();
 

@@ -242,6 +242,9 @@ class OAuthFlowTest extends PluginTestCase
         $this->assertFalse($provider->getAccessToken());
     }
 
+    /**
+     * Verify that malformed optional ID-token claims leave the OAuth access token usable.
+     */
     public function testMalformedIdTokenDoesNotDiscardAccessToken(): void
     {
         $provider = $this->providerWithCode();
