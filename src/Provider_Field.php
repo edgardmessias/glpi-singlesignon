@@ -142,41 +142,9 @@ class Provider_Field extends ProviderFieldBase
             ];
         }
 
-        if ($normalized === [] && $providerType === 'generic') {
-            return self::getGenericDefaultMappings();
-        }
-
         return $normalized;
     }
 
-    /**
-     * @return list<array{field_type: string, jsonpath: string, is_active: int, sort_order: int}>
-     */
-    private static function getGenericDefaultMappings(): array
-    {
-        return [
-            ['field_type' => 'id', 'jsonpath' => '$.id', 'is_active' => 1, 'sort_order' => 10],
-            ['field_type' => 'id', 'jsonpath' => '$.username', 'is_active' => 1, 'sort_order' => 20],
-            ['field_type' => 'id', 'jsonpath' => '$.sub', 'is_active' => 1, 'sort_order' => 30],
-            ['field_type' => 'email', 'jsonpath' => '$.email', 'is_active' => 1, 'sort_order' => 40],
-            ['field_type' => 'email', 'jsonpath' => '$[\'e-mail\']', 'is_active' => 1, 'sort_order' => 50],
-            ['field_type' => 'email', 'jsonpath' => '$[\'email-address\']', 'is_active' => 1, 'sort_order' => 60],
-            ['field_type' => 'email', 'jsonpath' => '$.mail', 'is_active' => 1, 'sort_order' => 70],
-            ['field_type' => 'email', 'jsonpath' => '$.userPrincipalName', 'is_active' => 1, 'sort_order' => 75],
-            ['field_type' => 'username', 'jsonpath' => '$.userPrincipalName', 'is_active' => 1, 'sort_order' => 80],
-            ['field_type' => 'username', 'jsonpath' => '$.login', 'is_active' => 1, 'sort_order' => 90],
-            ['field_type' => 'username', 'jsonpath' => '$.username', 'is_active' => 1, 'sort_order' => 100],
-            ['field_type' => 'username', 'jsonpath' => '$.id', 'is_active' => 1, 'sort_order' => 110],
-            ['field_type' => 'username', 'jsonpath' => '$.name', 'is_active' => 1, 'sort_order' => 120],
-            ['field_type' => 'username', 'jsonpath' => '$.displayName', 'is_active' => 1, 'sort_order' => 130],
-            ['field_type' => 'firstname', 'jsonpath' => '$.givenName', 'is_active' => 1, 'sort_order' => 135],
-            ['field_type' => 'lastname', 'jsonpath' => '$.surname', 'is_active' => 1, 'sort_order' => 136],
-            ['field_type' => 'fullname', 'jsonpath' => '$.displayName', 'is_active' => 1, 'sort_order' => 137],
-            ['field_type' => 'avatar_url', 'jsonpath' => '$.picture', 'is_active' => 1, 'sort_order' => 140],
-            ['field_type' => 'roles', 'jsonpath' => '$.roles', 'is_active' => 1, 'sort_order' => 150],
-            ['field_type' => 'roles', 'jsonpath' => '$.groups', 'is_active' => 1, 'sort_order' => 160],
-        ];
-    }
 
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
@@ -220,12 +188,19 @@ class Provider_Field extends ProviderFieldBase
         }
 
         $mappings = static::getMappingsForProvider((int) $provider->getID());
+
+        $all_defaults = [];
+        foreach (array_keys(Provider::getTypes()) as $type) {
+            $all_defaults[$type] = static::getDefaultMappings($type);
+        }
+
         echo TemplateRenderer::getInstance()->render('@singlesignon/provider/show_field_mappings_tab.html.twig', [
-            'provider'    => $provider,
-            'provider_id' => (int) $provider->getID(),
-            'mappings'    => $mappings,
-            'field_types' => static::getFieldTypes(),
-            'form_action' => ToolboxPlugin::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/provider_field.form.php',
+            'provider'     => $provider,
+            'provider_id'  => (int) $provider->getID(),
+            'mappings'     => $mappings,
+            'all_defaults' => $all_defaults,
+            'field_types'  => static::getFieldTypes(),
+            'form_action'  => ToolboxPlugin::getBaseURL() . Plugin::getPhpDir('singlesignon', false) . '/front/provider_field.form.php',
         ]);
     }
 
