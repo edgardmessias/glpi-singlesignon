@@ -340,6 +340,18 @@ class Provider extends ProviderBase
             }
         }
 
+        $endpoint = 'common';
+        if ($type === 'azure') {
+            $submittedEndpoint = $input['azure_endpoint'] ?? (
+                ($this->fields['type'] ?? '') === 'azure' ? $this->getAzureEndpoint() : 'common'
+            );
+            $endpoint = is_string($submittedEndpoint) ? trim($submittedEndpoint) : '';
+            $endpoint = $endpoint === '' ? 'common' : $endpoint;
+            if (!is_string($submittedEndpoint) || !preg_match('/\A[a-z0-9](?:[a-z0-9.-]{0,253}[a-z0-9])?\z/i', $endpoint)) {
+                $error_detected[] = __s('Enter a valid Azure tenant ID or domain.', 'singlesignon');
+            }
+        }
+
         if (count($error_detected)) {
             foreach ($error_detected as $error) {
                 Session::addMessageAfterRedirect(
@@ -349,6 +361,12 @@ class Provider extends ProviderBase
                 );
             }
             return false;
+        }
+
+        if ($type !== 'generic') {
+            $input['url_authorize'] = null;
+            $input['url_access_token'] = null;
+            $input['url_resource_owner_details'] = null;
         }
 
         if (isset($input["_blank_bgcolor"]) && $input["_blank_bgcolor"]) {
@@ -387,14 +405,10 @@ class Provider extends ProviderBase
         $input['resource_owner_custom_headers'] = trim((string) ($input['resource_owner_custom_headers'] ?? ''));
         $input['resource_owner_picture_custom_headers'] = trim((string) ($input['resource_owner_picture_custom_headers'] ?? ''));
 
-        if (($input['type'] ?? '') === 'azure') {
-            $endpoint = !empty($input['azure_endpoint']) ? $input['azure_endpoint'] : 'common';
-            if (!empty($input['url_authorize'])) {
-                $input['url_authorize'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '${1}' . $endpoint . '${2}', $input['url_authorize']);
-            }
-            if (!empty($input['url_access_token'])) {
-                $input['url_access_token'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '${1}' . $endpoint . '${2}', $input['url_access_token']);
-            }
+        $input['azure_endpoint'] = null;
+        if ($type === 'azure') {
+            $input['azure_endpoint'] = $endpoint;
+
             if (!empty($input['url_slo'])) {
                 $input['url_slo'] = preg_replace('/(https:\/\/login\.microsoftonline\.com\/)[^\/]+(\/.*)/i', '${1}' . $endpoint . '${2}', $input['url_slo']);
             }
@@ -938,65 +952,42 @@ class Provider extends ProviderBase
         return $value;
     }
 
+    private function getOAuthUrl(string $field, ?string $default = null, array $hookFields = []): ?string
+    {
+        $fields = $hookFields + $this->fields;
+        $type = $this->getClientType();
+        if ($type === 'generic') {
+            $fields[$field] = ($fields[$field] ?? '') ?: $default;
+        } else {
+            $fields[$field] = static::getDefault($type, $field, $default);
+            if ($type === 'azure' && $fields[$field] !== null) {
+                $fields[$field] = str_replace('<tenant>', rawurlencode($this->getAzureEndpoint()), $fields[$field]);
+            }
+        }
+
+        $fields = Plugin::doHookFunction('sso:' . $field, $fields);
+
+        return $fields[$field];
+    }
+
     public function getAzureEndpoint()
     {
-        $url = (string) $this->getAuthorizeUrl();
-        if ($url !== '' && preg_match('/https:\/\/login\.microsoftonline\.com\/([^\/]+)\//i', $url, $matches) !== 0) {
-            return $matches[1];
-        }
-        return 'common';
+        return ($this->fields['azure_endpoint'] ?? '') ?: 'common';
     }
 
     public function getAuthorizeUrl()
     {
-        $type = $this->getClientType();
-
-        $value = static::getDefault($type, "url_authorize");
-
-        $fields = $this->fields;
-
-        if (!isset($fields['url_authorize']) || empty($fields['url_authorize'])) {
-            $fields['url_authorize'] = $value;
-        }
-
-        $fields = Plugin::doHookFunction("sso:url_authorize", $fields);
-
-        return $fields['url_authorize'];
+        return $this->getOAuthUrl('url_authorize');
     }
 
     public function getAccessTokenUrl()
     {
-        $type = $this->getClientType();
-
-        $value = static::getDefault($type, "url_access_token");
-
-        $fields = $this->fields;
-
-        if (!isset($fields['url_access_token']) || empty($fields['url_access_token'])) {
-            $fields['url_access_token'] = $value;
-        }
-
-        $fields = Plugin::doHookFunction("sso:url_access_token", $fields);
-
-        return $fields['url_access_token'];
+        return $this->getOAuthUrl('url_access_token');
     }
 
     public function getResourceOwnerDetailsUrl($access_token = null)
     {
-        $type = $this->getClientType();
-
-        $value = static::getDefault($type, "url_resource_owner_details", "");
-
-        $fields = $this->fields;
-        $fields['access_token'] = $access_token;
-
-        if (!isset($fields['url_resource_owner_details']) || empty($fields['url_resource_owner_details'])) {
-            $fields['url_resource_owner_details'] = $value;
-        }
-
-        $fields = Plugin::doHookFunction("sso:url_resource_owner_details", $fields);
-
-        $url = $fields['url_resource_owner_details'];
+        $url = $this->getOAuthUrl('url_resource_owner_details', '', ['access_token' => $access_token]);
 
         if (!IS_NULL($access_token)) {
             $url = str_replace("<access_token>", $access_token, $url);
