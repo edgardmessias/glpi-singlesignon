@@ -47,13 +47,17 @@ class ProviderAzureEndpointTest extends PluginTestCase
         ]);
 
         $this->assertGreaterThan(0, $id);
+        $this->assertTrue($provider->getFromDB($id));
+        $this->assertSame($tenant, $provider->fields['azure_endpoint']);
+        $this->assertNull($provider->fields['url_authorize']);
+        $this->assertNull($provider->fields['url_access_token']);
         $this->assertSame(
             'https://login.microsoftonline.com/' . $tenant . '/oauth2/v2.0/authorize',
-            $provider->fields['url_authorize'],
+            $provider->getAuthorizeUrl(),
         );
         $this->assertSame(
             'https://login.microsoftonline.com/' . $tenant . '/oauth2/v2.0/token',
-            $provider->fields['url_access_token'],
+            $provider->getAccessTokenUrl(),
         );
         $this->assertSame(
             'https://login.microsoftonline.com/' . $tenant . '/oauth2/v2.0/logout',

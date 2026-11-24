@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [unreleased]
+
+### Bug Fixes
+
+- Resolve preset authorization, token, and user-info URLs from `providers.json` so plugin updates apply to existing providers. Generic providers keep their configured URLs. ([#226](https://github.com/edgardmessias/glpi-singlesignon/pull/226)) - Eduardo Mozart de Oliveira
+- Preserve configured Azure tenants on upgrade by recovering them from legacy Microsoft login URLs before clearing saved preset OAuth URLs. ([#226](https://github.com/edgardmessias/glpi-singlesignon/pull/226)) - Eduardo Mozart de Oliveira
+
+---
 ## [2.1.1](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.1) - 2026-10-31
 
 ### Bug Fixes

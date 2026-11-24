@@ -323,6 +323,38 @@ function plugin_singlesignon_install()
         );
     }
 
+    /**
+     * Version 2.1.2
+     */
+    // Older releases saved copies of preset OAuth URLs. Clear those copies during the upgrade so
+    // future changes to providers.json take effect for providers that are already configured.
+    $migration->addField($providersTable, 'azure_endpoint', 'string', ['nodefault' => true, 'null' => true]);
+    // For Azure, COALESCE keeps a non-empty azure_endpoint or takes the tenant from the first matching
+    // Microsoft login URL in this order: authorization, token, then logout. One matching URL is enough.
+    // If the URLs contain different tenants, the earlier match wins. The tenant is the first path segment.
+    // With no stored or recoverable tenant, Azure uses common. Run this before the SLO migration
+    // because the logout URL can be the only source of a legacy tenant.
+    // For presets, the UPDATE clears the authorization, token, and user-info URL columns.
+    // Generic rows are excluded because those URLs are their configuration.
+    $migration->addPostQuery(
+        "UPDATE `$providersTable`
+         SET `azure_endpoint` = CASE WHEN `type` = 'azure' THEN COALESCE(
+                 NULLIF(`azure_endpoint`, ''),
+                 CASE WHEN `url_authorize` LIKE 'https://login.microsoftonline.com/_%/%'
+                     THEN SUBSTRING_INDEX(SUBSTRING_INDEX(`url_authorize`, '/', 4), '/', -1) END,
+                 CASE WHEN `url_access_token` LIKE 'https://login.microsoftonline.com/_%/%'
+                     THEN SUBSTRING_INDEX(SUBSTRING_INDEX(`url_access_token`, '/', 4), '/', -1) END,
+                 CASE WHEN `url_slo` LIKE 'https://login.microsoftonline.com/_%/%'
+                     THEN SUBSTRING_INDEX(SUBSTRING_INDEX(`url_slo`, '/', 4), '/', -1) END
+             ) ELSE NULL END,
+             `url_authorize` = NULL,
+             `url_access_token` = NULL,
+             `url_resource_owner_details` = NULL
+         WHERE `type` <> 'generic'
+           AND (`url_authorize` IS NOT NULL OR `url_access_token` IS NOT NULL OR `url_resource_owner_details` IS NOT NULL
+                OR (`type` = 'azure' AND COALESCE(`azure_endpoint`, '') = '' AND `url_slo` IS NOT NULL))",
+    );
+
     $migration->executeMigration();
 
     $current['version'] = PLUGIN_SINGLESIGNON_VERSION;
