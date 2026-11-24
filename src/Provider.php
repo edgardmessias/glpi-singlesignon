@@ -994,11 +994,11 @@ class Provider extends ProviderBase
             return $input;
         }
 
+        $refreshDiscovery = isset($input['slo_mode']) || isset($input['slo_issuer']);
         $input['slo_mode'] = !$generic && !static::presetSupportsSlo($type) ? self::SLO_OFF : (int) $selected;
         $manualUrl = $sameType && $generic ? ($this->fields['url_slo'] ?? null) : null;
         $submittedUrl = $input['url_slo'] ?? $manualUrl;
         $submittedIssuer = $input['slo_issuer'] ?? ($sameType ? ($this->fields['slo_issuer'] ?? null) : null);
-        $refreshDiscovery = isset($input['slo_mode']) || isset($input['slo_issuer']);
         $input['url_slo'] = $manualUrl;
         $input['slo_issuer'] = null;
         $input['slo_endpoint'] = null;

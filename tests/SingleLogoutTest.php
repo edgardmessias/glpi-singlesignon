@@ -83,6 +83,27 @@ class SingleLogoutTest extends PluginTestCase
     }
 
     /**
+     * Verify that an unrelated provider update keeps the verified discovery settings without fetching them again.
+     */
+    public function testDiscoveryKeepsSavedMetadataWhenSettingsAreOmitted(): void
+    {
+        $provider = $this->createProvider();
+        $this->enableDiscovery($provider);
+
+        $input = $provider->fields;
+        unset($input['slo_mode'], $input['slo_issuer'], $input['slo_endpoint']);
+        $input['name'] = 'Renamed provider';
+        $this->assertTrue($provider->update($input));
+        $this->assertSame([self::ISSUER . '/.well-known/openid-configuration'], $provider->requestUrls);
+
+        $this->assertTrue($provider->getFromDB($provider->getID()));
+        $this->assertSame('Renamed provider', $provider->fields['name']);
+        $this->assertSame(Provider::SLO_DISCOVERY, $provider->getSloMode());
+        $this->assertSame(self::ISSUER, $provider->fields['slo_issuer']);
+        $this->assertSame(self::ENDPOINT, $provider->fields['slo_endpoint']);
+    }
+
+    /**
      * Verify that invalid discovery data leaves the previously verified logout endpoint usable.
      */
     public function testDiscoveryRejectsMismatchedIssuerAndPreservesSavedEndpoint(): void
