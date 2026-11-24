@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 ---
+## [unreleased]
+
+### Bug Fixes
+
+- **(slo)** Prevent the default SSO provider from immediately signing users back in after logout. ([#225](https://github.com/edgardmessias/glpi-singlesignon/pull/225)) - Eduardo Mozart de Oliveira
+
+### Features
+
+- **(slo)** Add OIDC discovery for Generic providers such as Keycloak. Administrators can disable federated logout, enter a logout URL, or use the issuer’s `end_session_endpoint`. The provider form shows the post-logout redirect URI to register with the identity provider. ([#225](https://github.com/edgardmessias/glpi-singlesignon/pull/225)) - Eduardo Mozart de Oliveira
+- **(slo)** Add a Google logout switch and use tenant-specific OIDC discovery for Azure, with a tenant-specific logout URL as a fallback. Preset URLs are resolved from the current `providers.json`. ([#225](https://github.com/edgardmessias/glpi-singlesignon/pull/225)) - Eduardo Mozart de Oliveira
+
+---
 ## [2.1.1](https://github.com/edgardmessias/glpi-singlesignon/releases/tag/v2.1.1) - 2026-10-31
 
 ### Bug Fixes

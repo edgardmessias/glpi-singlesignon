@@ -25,12 +25,14 @@
 
 {% set slo_supported_types = [] %}
 {% for type, label in call(['GlpiPlugin\\Singlesignon\\Provider', 'getTypes'], []) %}
-  {% if call(['GlpiPlugin\\Singlesignon\\Provider', 'getDefault'], [type, 'url_slo']) is not empty %}
+  {% if call(['GlpiPlugin\\Singlesignon\\Provider', 'presetSupportsSlo'], [type]) %}
     {% set slo_supported_types = slo_supported_types|merge([type]) %}
   {% endif %}
 {% endfor %}
 
-{% set sso_hidden_class = provider.fields.type|default('generic') != 'generic' ? 'd-none' : '' %}
+{% set is_generic = provider.fields.type|default('generic') == 'generic' %}
+{% set slo_mode = call([provider, 'getSloMode'], []) %}
+{% set sso_hidden_class = is_generic ? '' : 'd-none' %}
 {% set sso_azure_hidden_class = provider.fields.type != 'azure' ? 'd-none' : '' %}
 {% set sso_preset_slo_hidden_class = provider.fields.type|default('generic') in slo_supported_types ? '' : 'd-none' %}
 {% set picture_style = 'max-width: 100px; max-height: 100px; background-image: linear-gradient(45deg, #b0b0b0 25%, transparent 25%), linear-gradient(-45deg, #b0b0b0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #b0b0b0 75%), linear-gradient(-45deg, transparent 75%, #b0b0b0 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;' %}
@@ -54,7 +56,19 @@
 {% set _tip_split_name = call('nl2br', [__('When enabled, the full name returned by the IdP is automatically split into first name and last name fields.', 'singlesignon')]) %}
 {% set _tip_azure_endpoint = call('nl2br', [call('sprintf', [__('Use %1$s to allow login from any work, school, or personal account. If you specify a custom tenant (Example: %2$s), only users belonging to that specific tenant will be able to log in.', 'singlesignon'), '<code>common</code>', '<code>example.com</code>'])]) %}
 {% set _tip_slo = call('nl2br', [__('URL used by the Identity Provider to receive logout requests (Single Logout, SLO). If provided, users logging out of GLPI will also be logged out from the Identity Provider.', 'singlesignon')]) %}
-{% set _tip_use_slo = call('nl2br', [__('Enables the usage of the predefined Single Logout URL (SLO) for this Identity Provider.', 'singlesignon')]) %}
+{% set _tip_use_slo = __('Log out of the identity provider when the user logs out of GLPI.', 'singlesignon') %}
+
+{% set slo_on_change %}
+    var isGenericSlo = this.form.elements.namedItem('type').value === 'generic';
+    var sloMode = this.form.elements.namedItem('slo_mode').value;
+    var showManualSlo = isGenericSlo && sloMode === '1';
+    var showDiscoverySlo = isGenericSlo && sloMode === '2';
+    $(this.form).find('.sso_slo_modes').toggleClass('d-none', !isGenericSlo);
+    $(this.form).find('.sso_slo_manual').toggleClass('d-none', !showManualSlo)
+        .find('input').prop('disabled', !showManualSlo);
+    $(this.form).find('.sso_slo_discovery').toggleClass('d-none', !showDiscoverySlo)
+        .find('input').prop('disabled', !showDiscoverySlo);
+{% endset %}
 
 {% set type_on_change %}
     var _value = this.options[this.selectedIndex].value; 
@@ -71,6 +85,7 @@
     var slo_types = {{ slo_supported_types|json_encode|raw }};
     var isPresetSlo = slo_types.includes(_value);
     $(".sso_preset_slo").toggleClass("d-none", !isPresetSlo).toggle(isPresetSlo);
+    {{ slo_on_change }}
 {% endset %}
 {% set field_opts = {
     align_label_right: true,
@@ -113,7 +128,10 @@
     {{ fields.textField('client_id', provider.fields.client_id|default(''), __('Client ID', 'singlesignon'), field_opts) }}
     {{ fields.passwordField('client_secret', provider.fields.client_secret|default(''), __('Client Secret', 'singlesignon'), {
         is_disclosable: true,
-        is_copyable: false
+        is_copyable: false,
+        additional_attributes: {
+            autocomplete: 'off'
+        }
     }|merge(field_opts)) }}
     {{ fields.textField('azure_endpoint', call([provider, 'getAzureEndpoint'], []), __('Azure Endpoint', 'singlesignon'), {
         add_field_class: 'sso_azure ' ~ sso_azure_hidden_class,
@@ -162,12 +180,28 @@
         helper: _tip_ssl_verify_peer
     }|merge(field_opts)) }}
 
+    {{ fields.dropdownArrayField('slo_mode', is_generic ? slo_mode : 0, call(['GlpiPlugin\\Singlesignon\\Provider', 'getSloModes'], []), __('Use SLO', 'singlesignon'), {
+        add_field_class: 'sso_slo_modes ' ~ sso_hidden_class,
+        display_emptychoice: false,
+        on_change: slo_on_change,
+        helper: _tip_use_slo
+    }|merge(field_opts)) }}
+
     {{ fields.urlField('url_slo', provider.fields.url_slo|default(''), __('Single Logout URL', 'singlesignon'), {
-        add_field_class: 'sso_url ' ~ sso_hidden_class,
+        add_field_class: 'sso_slo_manual ' ~ (is_generic and slo_mode == 1 ? '' : 'd-none'),
+        disabled: not (is_generic and slo_mode == 1),
         helper: _tip_slo
     }|merge(field_opts)) }}
-    {% set _use_slo = provider.fields.url_slo|default('') is not empty ? 1 : 0 %}
-    {{ fields.sliderField('_use_slo', _use_slo, __('Use SLO', 'singlesignon'), {
+
+    {{ fields.urlField('slo_issuer', provider.fields.slo_issuer|default(''), __('OIDC issuer URL', 'singlesignon'), {
+        add_field_class: 'sso_slo_discovery ' ~ (is_generic and slo_mode == 2 ? '' : 'd-none'),
+        disabled: not (is_generic and slo_mode == 2),
+        helper: call('nl2br', [call('sprintf', [
+            __('Enter the issuer URL for the OIDC provider. GLPI reads %s from its discovery document.', 'singlesignon'),
+            '<code>end_session_endpoint</code>'
+        ])])
+    }|merge(field_opts)) }}
+    {{ fields.sliderField('preset_slo_mode', not is_generic and slo_mode == 1 ? 1 : 0, __('Use SLO', 'singlesignon'), {
         add_field_class: 'sso_preset_slo ' ~ sso_preset_slo_hidden_class,
         helper: _tip_use_slo
     }|merge(field_opts)) }}
@@ -294,6 +328,18 @@ $("[name=color]").on("change", function () {
         <div class="hr-text my-3">{{ __('Test') }}</div>
     </div>
     {{ fields.htmlField('callback_url', cb_link, __('Callback URL', 'singlesignon'), {full_width: true}|merge(field_opts)) }}
+
+    {% set post_logout_url = call(['GlpiPlugin\\Singlesignon\\SingleLogout', 'getReturnUrl'], []) %}
+    {% set post_logout_link = '<a href="' ~ post_logout_url|e('html_attr') ~ '">' ~ post_logout_url|e ~ '</a>' %}
+    {{ fields.htmlField('post_logout_redirect_uri', post_logout_link, __('Post-logout redirect URL', 'singlesignon'), {
+        add_field_class: 'sso_slo_discovery ' ~ (is_generic and slo_mode == 2 ? '' : 'd-none'),
+        full_width: true,
+        helper: call('sprintf', [
+            __('Register this URL with the identity provider when %1$s is set to %2$s.', 'singlesignon'),
+            '<strong>' ~ __('Use SLO', 'singlesignon')|e ~ '</strong>',
+            '<strong>' ~ __('Discovery Metadata', 'singlesignon')|e ~ '</strong>'
+        ])
+    }|merge(field_opts)) }}
 {% endif %}
 </div>
 

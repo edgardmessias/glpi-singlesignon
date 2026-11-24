@@ -124,7 +124,8 @@ if (isset($_POST['confirm_register'])) {
 
     Provider::clearPendingRegistrationSession();
 
-    if (!$signon_provider->performGlpiLogin($user)) {
+    $logoutToken = $pending['logout_token'] ?? null;
+    if (!$signon_provider->performGlpiLogin($user, is_array($logoutToken) ? $logoutToken : null)) {
         Html::nullHeader(__('Login', 'singlesignon'), $CFG_GLPI['root_doc'] . '/index.php');
         echo '<div class="center b">' . htmlspecialchars(
             __('User created but login failed. Please try signing in again.', 'singlesignon'),
