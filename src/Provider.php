@@ -1061,7 +1061,7 @@ class Provider extends ProviderBase
         $fallback = is_string($fallback) ? $fallback : '';
         $tenant = $type === 'azure' ? rawurlencode($this->getAzureEndpoint()) : '';
         if ($type === 'azure') {
-            $fallback = str_replace('{tenant}', $tenant, $fallback);
+            $fallback = str_replace('<tenant>', $tenant, $fallback);
         }
         if (!$this->usesSloDiscovery()) {
             if (!SingleLogout::isWebUrl($fallback)) {
@@ -1074,7 +1074,7 @@ class Provider extends ProviderBase
             $issuer = (string) ($this->fields['slo_issuer'] ?? '');
             $endpoint = (string) ($this->fields['slo_endpoint'] ?? '');
         } else {
-            $url = str_replace('{tenant}', $tenant, (string) static::getDefault($type, 'slo_discovery_url'));
+            $url = str_replace('<tenant>', $tenant, (string) static::getDefault($type, 'slo_discovery_url'));
             $metadata = SingleLogout::discoverAzure($url, $this->requestHttp(...));
             $issuer = $metadata['issuer'] ?? '';
             $endpoint = $metadata['endpoint'] ?? '';
