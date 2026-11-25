@@ -2260,7 +2260,7 @@ class Provider extends ProviderBase
 
         try {
             $this->syncOAuthPhoto($user);
-        } catch (Exception $ex) {
+        } catch (Throwable $ex) {
             $this->logFailure(__FUNCTION__, 'exception during OAuth photo synchronization: ' . $ex->getMessage(), $user);
         }
 
@@ -2744,10 +2744,28 @@ class Provider extends ProviderBase
             mkdir(GLPI_PICTURE_DIR . "/$sub");
         }
 
-        $outjpeg = fopen($file, 'wb');
+        $outjpeg = @fopen($file, 'wb');
+        if ($outjpeg === false) {
+            $this->logFailure(__FUNCTION__, sprintf('failed to open picture file "%s" for writing', $file), $user);
+            return false;
+        }
         fwrite($outjpeg, $img);
         fclose($outjpeg);
-        Toolbox::resizePicture($file, $thumb);
+
+        // Never let a thumbnail failure (warnings/errors) break the login flow.
+        try {
+            $resized = @Toolbox::resizePicture($file, $thumb);
+        } catch (Throwable $e) {
+            $resized = false;
+            $this->logFailure(__FUNCTION__, 'exception while resizing picture: ' . $e->getMessage(), $user);
+        }
+
+        if (!$resized || !file_exists($thumb)) {
+            $this->logFailure(__FUNCTION__, 'failed to generate picture thumbnail, skipping photo sync', $user);
+            @unlink($file);
+            @unlink($thumb);
+            return false;
+        }
 
         $user->fields['picture'] = $newPicture;
         $success = $user->updateInDB(['picture']);
