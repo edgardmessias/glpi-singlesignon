@@ -2223,10 +2223,33 @@ class Provider extends ProviderBase
             $_SERVER['singlesignon_ssofield_email2'] = $defaultEmail;
         }
 
+        // Users imported from LDAP/AD have authtype=LDAP. Auth::login() would try to validate them again
+        // against the directory (using a login that may be altered by "clean domain") and reject them
+        // with "User not authorized to connect in GLPI", even though the IdP already authenticated them.
+        // Treat them as EXTERNAL only while Auth::login() runs; the original auth type is restored below.
+        $userId = (int) ($user->fields['id'] ?? 0);
+        $original_authtype = (int) ($user->fields['authtype'] ?? 0);
+        $authtype_overridden = false;
+        if ($original_authtype === Auth::LDAP && $userId > 0) {
+            $DB->update('glpi_users', ['authtype' => Auth::EXTERNAL], ['id' => $userId]);
+            $authtype_overridden = true;
+        }
+
+        // Keep the exact GLPI login: stripping "@domain" would no longer match the imported user.
+        $original_clean_domain = $CFG_GLPI['existing_auth_server_field_clean_domain'] ?? 0;
+        $CFG_GLPI['existing_auth_server_field_clean_domain'] = 0;
+
         // --- 3. Login via external auth (password unused) ---
         // Force Enable Rule synchappens in Auth::login when using EXTERNAL auth.
         $auth = new Auth();
-        $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
+        try {
+            $authResult = $auth->login($user->fields['name'], '', false, $remember_me);
+        } finally {
+            $CFG_GLPI['existing_auth_server_field_clean_domain'] = $original_clean_domain;
+            if ($authtype_overridden) {
+                $DB->update('glpi_users', ['authtype' => $original_authtype], ['id' => $userId, 'authtype' => Auth::EXTERNAL]);
+            }
+        }
 
         // --- 4. Post-login cleanup (success or failure): undo temporary SSO context ---
         unset($_SESSION['glpi_remote_user']);
@@ -2248,10 +2271,17 @@ class Provider extends ProviderBase
                 $userName = (string) ($user->fields['name'] ?? '');
                 $this->lastLoginError = "SSO login failed for user '$userName' via provider '$providerName': User not authorized to connect in GLPI";
             }
+            $glpiError = implode('; ', array_map('strval', $auth->getErrors()));
+            if ($glpiError !== '') {
+                $this->lastLoginError .= " (GLPI: $glpiError)";
+            }
             return false;
         }
 
         // --- 5. Success: restore session snapshot ---
+        if ($authtype_overridden) {
+            $_SESSION['glpiauthtype'] = $original_authtype;
+        }
         foreach ($save as $key => $value) {
             $_SESSION[$key] = $value;
         }
@@ -2260,7 +2290,7 @@ class Provider extends ProviderBase
 
         try {
             $this->syncOAuthPhoto($user);
-        } catch (Exception $ex) {
+        } catch (Throwable $ex) {
             $this->logFailure(__FUNCTION__, 'exception during OAuth photo synchronization: ' . $ex->getMessage(), $user);
         }
 
@@ -2744,10 +2774,28 @@ class Provider extends ProviderBase
             mkdir(GLPI_PICTURE_DIR . "/$sub");
         }
 
-        $outjpeg = fopen($file, 'wb');
+        $outjpeg = @fopen($file, 'wb');
+        if ($outjpeg === false) {
+            $this->logFailure(__FUNCTION__, sprintf('failed to open picture file "%s" for writing', $file), $user);
+            return false;
+        }
         fwrite($outjpeg, $img);
         fclose($outjpeg);
-        Toolbox::resizePicture($file, $thumb);
+
+        // Never let a thumbnail failure (warnings/errors) break the login flow.
+        try {
+            $resized = @Toolbox::resizePicture($file, $thumb);
+        } catch (Throwable $e) {
+            $resized = false;
+            $this->logFailure(__FUNCTION__, 'exception while resizing picture: ' . $e->getMessage(), $user);
+        }
+
+        if (!$resized || !file_exists($thumb)) {
+            $this->logFailure(__FUNCTION__, 'failed to generate picture thumbnail, skipping photo sync', $user);
+            @unlink($file);
+            @unlink($thumb);
+            return false;
+        }
 
         $user->fields['picture'] = $newPicture;
         $success = $user->updateInDB(['picture']);
